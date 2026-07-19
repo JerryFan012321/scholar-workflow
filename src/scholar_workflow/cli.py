@@ -1,6 +1,17 @@
 """CLI entry point."""
 from __future__ import annotations
+import json
+import os
+from pathlib import Path
 import click
+
+from scholar_workflow.config import DEFAULT_HOME
+
+
+def _state_db_path() -> Path:
+    home = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME))
+    home.mkdir(parents=True, exist_ok=True)
+    return home / "state.db"
 
 
 @click.group()
@@ -54,8 +65,24 @@ def resume(job_id: str) -> None:
 @main.command()
 @click.argument("identifier")
 def locate(identifier: str) -> None:
-    """Locate a resource and return its local path."""
-    raise NotImplementedError
+    """Check whether a resource already exists (read-only, exact + fuzzy recall)."""
+    from scholar_workflow.resolver import resolve_one
+    from scholar_workflow.state import StateStore
+    from scholar_workflow.dedup import check_existence, Match
+
+    if not identifier.strip():
+        raise click.ClickException("empty identifier")
+    store = StateStore(_state_db_path())
+    try:
+        result = check_existence(resolve_one(identifier), store)
+        click.echo(json.dumps({
+            "match": result.match.value,
+            "resource_id": result.resource_id,
+            "zotero_item_key": result.zotero_item_key,
+            "candidates": result.candidates,
+        }, ensure_ascii=False))
+    finally:
+        store.close()
 
 
 @main.command()

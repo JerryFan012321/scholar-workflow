@@ -3,6 +3,14 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.9] — 2026-07-20
+
+### Added
+- `state.py` — `resources` identity cache table + `upsert_resource` (exact write), `find_exact` (DOI/arXiv/resource_id lookup), `find_candidates` (cheap fuzzy prefilter). Local authoritative exact-match cache AND fast recall surface — does not touch the state machine (handoff.schema.json unchanged)
+- `dedup.py` — `check_existence(resource, state) -> ExistenceResult` with EXACT / FUZZY / NONE. Exact match is deterministic and guards INV1; fuzzy only returns a candidate shortlist (no decision), leaving judgment to the LLM upstream (NG3 keeps write-path fuzzy hits as conflicts)
+- `cli.py` — wired `locate` (was a stub): read-only existence check, emits `{match, resource_id, zotero_item_key, candidates}` JSON for find-resource fast recall
+- `tests/unit/test_dedup.py` — 5 tests (none / exact-by-arxiv / exact-by-doi / fuzzy-candidates / INV1 version collapse); 12 unit tests pass total
+
 ## [0.1.8] — 2026-07-19
 
 ### Added

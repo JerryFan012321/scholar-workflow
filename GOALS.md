@@ -62,7 +62,7 @@
 | 阶段 | 目标 | 状态 |
 |---|---|---|
 | Phase 0 | 插件骨架、契约、evals 基线、开发规范 | ✅ 完成 |
-| Phase 1 | 论文发现 + 导入（find-resource / ingest-resource 真实可用） | ⏳ 未开始 |
+| Phase 1 | 论文发现 + 导入（find-resource / ingest-resource 真实可用） | 🚧 进行中（resolver / dedup / locate 已落地） |
 | Phase 2 | 投影同步（Obsidian 索引 + Notion） | ⏳ 未开始 |
 | Phase 3 | 文献脉络树 | ⏳ 未开始 |
 | Phase 4 | 一致性审计 | ⏳ 未开始 |
