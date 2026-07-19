@@ -3,6 +3,13 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.8] — 2026-07-19
+
+### Added
+- `resolver.py` — offline input resolution: classify + normalize raw inputs (arXiv id/URL, DOI, URL, title, CSV) into `Resource` objects; batch dedup by identity
+- `tests/unit/test_resolver.py` — 7 unit tests covering classification, arXiv version dedup, DOI identity, batch collapse, CSV (first real tests in the repo)
+- `tests/` package skeleton (unit / contract)
+
 ## [0.1.7] — 2026-07-19
 
 ### Fixed
