@@ -3,6 +3,11 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.10] — 2026-07-20
+
+### Fixed
+- `cli.py` — `locate` on empty input exited 1 (click default); now raises `InputError` (exit code 2) per the AGENT.md CLI exit-code contract. Found during end-to-end verification of 0.1.9
+
 ## [0.1.9] — 2026-07-20
 
 ### Added

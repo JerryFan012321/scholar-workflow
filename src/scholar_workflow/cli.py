@@ -8,6 +8,11 @@ import click
 from scholar_workflow.config import DEFAULT_HOME
 
 
+class InputError(click.ClickException):
+    """Bad user input — maps to exit code 2 (see AGENT.md CLI exit codes)."""
+    exit_code = 2
+
+
 def _state_db_path() -> Path:
     home = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME))
     home.mkdir(parents=True, exist_ok=True)
@@ -71,7 +76,7 @@ def locate(identifier: str) -> None:
     from scholar_workflow.dedup import check_existence, Match
 
     if not identifier.strip():
-        raise click.ClickException("empty identifier")
+        raise InputError("empty identifier")
     store = StateStore(_state_db_path())
     try:
         result = check_existence(resolve_one(identifier), store)
