@@ -18,7 +18,7 @@ class ObsidianAdapter:
 
         content = full_path.read_text(encoding="utf-8")
         header = (
-            "| 论文 | 作者 | 年份 | Venue | Zotero | PDF | arXiv | DOI | 同步时间 |\n"
+            "| Title | Authors | Year | Venue | Zotero | PDF | arXiv | DOI | Synced |\n"
             "|---|---|---:|---|---|---|---|---|---|\n"
         )
         block_content = header + "\n".join(rows)
@@ -38,7 +38,7 @@ class ObsidianAdapter:
         content = (
             f"# {heading}\n\n"
             f"{self._start}\n"
-            "| 论文 | 作者 | 年份 | Venue | Zotero | PDF | arXiv | DOI | 同步时间 |\n"
+            "| Title | Authors | Year | Venue | Zotero | PDF | arXiv | DOI | Synced |\n"
             "|---|---|---:|---|---|---|---|---|---|\n"
             f"{self._end}\n"
         )

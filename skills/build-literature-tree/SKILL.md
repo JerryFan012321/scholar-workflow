@@ -26,3 +26,11 @@ description: Generate evidence-based literature lineage graphs, timelines, and m
 - Never auto-flag "milestone" or "breakthrough" without evidence
 - Graph data requires user approval before it is written
 - Output conforms to `contracts/literature-graph.schema.json`
+
+## References
+
+Load on demand.
+
+- `references/edge-evidence.md` — relation types, evidence and confidence rules
+- `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md` — approval before writing graph data
+- `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md` — where the graph JSON lives

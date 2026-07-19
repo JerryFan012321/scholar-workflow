@@ -24,3 +24,10 @@ description: Audit cross-system consistency across Zotero, papers_root, Obsidian
 - Read-only throughout — never fix or delete any discovered issue
 - Tag each issue with severity (error / warning / info) and a suggested remedy
 - Remedies require user confirmation and run in the corresponding Agent, not in this skill
+
+## References
+
+Load on demand.
+
+- `references/consistency-invariants.md` — per-system checks and drift categories
+- `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md` — canonical invariants being audited

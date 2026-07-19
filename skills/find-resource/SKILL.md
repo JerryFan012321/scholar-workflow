@@ -30,3 +30,12 @@ Candidate list (discovery) or local path + URL (locate).
 - Crossref / OpenAlex may be used to verify metadata, but never to download PDFs
 - Discovery produces no file writes
 - Never relay paper PDFs from non-arXiv sources
+
+## References
+
+Load on demand.
+
+- `references/resource-location.md` — resolving existing resources to local paths
+- `${CLAUDE_PLUGIN_ROOT}/references/identity-policy.md` — normalization, dedup keys, metadata priority
+- `${CLAUDE_PLUGIN_ROOT}/references/source-policy.md` — arXiv-only, metadata-vs-download rules
+- `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md` — which root holds what

@@ -67,9 +67,11 @@ part of the shipped plugin. **When the build targets in `dev-guide/` are met:**
 ### Language
 
 - **SKILL.md** — Written in English. Chinese trigger words in the `description` field are fine.
+- **Agent files (`agents/*.md`)** — English. They are runtime-loaded plugin artifacts, same as SKILL.md.
+- **References** (top-level and per-skill) — English.
 - **README.md** — English.
 - **README.zh-CN.md** — Chinese (use `zh-CN` suffix, not `zh`).
-- **Python code comments** — English.
+- **Python code, comments, and user-facing string literals** — English.
 
 ## Behavior Boundaries
 

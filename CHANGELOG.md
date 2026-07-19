@@ -3,6 +3,17 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.4] — 2026-07-19
+
+### Added
+- `## References` section in all 5 SKILL.md, with `${CLAUDE_PLUGIN_ROOT}/references/` prefix for shared policies and `references/` for skill-local docs
+- AGENT.md Language: extended to cover agents, references, and user-facing string literals (English)
+- dev-guide/skill-authoring.md: documented the `${CLAUDE_PLUGIN_ROOT}` vs `references/` path convention
+
+### Changed
+- All 5 `agents/*.md` rewritten in English (runtime-loaded artifacts, same language rule as SKILL.md)
+- `obsidian.py` table headers aligned to English column names matching obsidian-index-format.md spec
+
 ## [0.1.3] — 2026-07-19
 
 ### Added

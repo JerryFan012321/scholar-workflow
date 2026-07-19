@@ -24,6 +24,17 @@ skills/<name>/
 4. **Constraints** — the runtime safety rules this skill must obey.
 5. **References** — list the exact files to load at runtime (see below).
 
+## Reference path convention
+
+In a SKILL.md `## References` section:
+
+- **Skill-local** file → `references/<file>.md` (relative to the skill dir).
+- **Shared top-level** file → `${CLAUDE_PLUGIN_ROOT}/references/<file>.md`.
+
+The two prefixes make local vs shared unambiguous at a glance and match the
+`${CLAUDE_PLUGIN_ROOT}` convention used in `hooks/`. Never point a `## References`
+entry into `dev-guide/`.
+
 ## Runtime references, two tiers
 
 - Cross-skill policies live in top-level `references/` (storage / source / identity

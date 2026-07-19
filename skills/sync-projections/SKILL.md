@@ -29,3 +29,13 @@ description: Rebuild Obsidian paper index tables and sync Notion management proj
 - The Obsidian paper table is a derived index; the rebuild source is Zotero plus the state mapping
 - The Notion `Sync Revision` field drives incremental updates to avoid needless overwrites
 - The two subtasks may run in parallel but report status independently
+
+## References
+
+Load on demand.
+
+- `references/obsidian-index-format.md` — managed block, table columns, hierarchy
+- `references/notion-schema.md` — machine vs human fields, upsert rules
+- `references/link-format.md` — local-link service URL format
+- `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md` — derived-index invariant
+- `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md` — loopback links, no file upload

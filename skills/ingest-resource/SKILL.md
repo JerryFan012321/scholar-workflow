@@ -36,3 +36,16 @@ description: Import papers or archive technical documents into the local library
 - If arXiv has no PDF, record metadata and candidate status; do not fetch from other sources
 - If the Bridge health check fails, stop — never fall back to Local API or another bypass
 - On identity conflict, stop that item without affecting other safe items in the batch
+
+## References
+
+Load on demand.
+
+- `references/resource-model.md` — kind classification and storage targets
+- `references/download-validation.md` — temp-dir download and PDF validation
+- `references/zotero-fields.md` — Zotero field mapping and attachment shape
+- `references/bridge-contract.md` — the write client contract
+- `${CLAUDE_PLUGIN_ROOT}/references/source-policy.md` — arXiv-only acquisition
+- `${CLAUDE_PLUGIN_ROOT}/references/identity-policy.md` — dedup keys, version handling
+- `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md` — storage-root invariants
+- `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md` — approval gate, permission boundary
