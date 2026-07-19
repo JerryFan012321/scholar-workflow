@@ -3,6 +3,12 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.7] — 2026-07-19
+
+### Fixed
+- `pyproject.toml` build-backend was an invalid name (`setuptools.backends.legacy:build`) → `setuptools.build_meta`; editable install now works
+- Bump `pydantic` 2.11.7 → 2.13.4 and `pyyaml` 6.0.2 → 6.0.3 for prebuilt Python 3.14 wheels (dev machine only has 3.14; older pins had no cp314 wheels)
+
 ## [0.1.6] — 2026-07-19
 
 ### Removed
