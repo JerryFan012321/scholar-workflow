@@ -3,6 +3,15 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.1] — 2026-07-19
+
+### Added
+- README.md + README.zh-CN.md for each of the 5 skills (Skill Anatomy compliance)
+- Root README.md + README.zh-CN.md with architecture overview and skill table
+
+### Changed
+- All 5 SKILL.md bodies rewritten in English (AGENT.md Never Do: no Chinese in SKILL.md body); bilingual trigger words retained in the `description` frontmatter
+
 ## [0.1.0] — 2026-07-19
 
 ### Added

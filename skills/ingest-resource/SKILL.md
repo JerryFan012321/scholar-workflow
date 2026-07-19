@@ -5,34 +5,34 @@ description: Import papers or archive technical documents into the local library
 
 # ingest-resource
 
-## 触发
-- 用户给出论文列表或候选，希望加入系统
-- 用户要求归档技术文档、网页快照、draw.io 或其他非论文技术资料
-- 用户批准某个导入计划（持有 `plan_id`）
+## Triggers
+- User provides a paper list or candidates to add to the system
+- User asks to archive a technical document, web snapshot, draw.io, or other non-paper material
+- User approves an import plan (holds a `plan_id`)
 
-## 步骤
+## Steps
 
-### 阶段一：计划（永远 dry-run）
-1. 分类资源 `kind`（paper / technical_document / snapshot / drawio / image）
-2. 规范化 DOI、arXiv ID、标题、作者、年份
-3. 检查输入批次、状态库、目标目录、Zotero（判重）
-4. 论文：推荐 Zotero Collection 和 Obsidian 索引位置
-5. 技术文档：推荐 Vault 分类目录
-6. 生成结构化 `action-plan.json`，展示新增、更新、跳过、冲突、下载目标
-7. 等待用户批准，返回 `plan_id`
+### Phase 1: Plan (always dry-run)
+1. Classify resource `kind` (paper / technical_document / snapshot / drawio / image)
+2. Normalize DOI, arXiv ID, title, authors, year
+3. Check the input batch, state store, target directories, and Zotero (dedup)
+4. Papers: recommend a Zotero Collection and Obsidian index location
+5. Technical documents: recommend a Vault category directory
+6. Generate a structured `action-plan.json` showing create / update / skip / conflict / download targets
+7. Wait for user approval; return the `plan_id`
 
-### 阶段二：执行（必须持有有效 plan_id）
-8. 验证 `plan_id`、输入散列、配置版本和批准状态
-9. 论文：从 arXiv 下载 PDF 到临时目录，校验 %PDF / 大小 / SHA-256
-10. 论文：调用 `ZoteroWriteAdapter` upsert 条目和 linked_file
-11. 技术文档：下载或复制到 Vault 对应分类，写来源/时间/散列元数据
-12. 返回 Zotero key、PDF 路径、Vault 路径等回执
+### Phase 2: Execute (requires a valid plan_id)
+8. Validate `plan_id`, input digest, config version, and approval status
+9. Papers: download the PDF from arXiv to a temp dir; verify %PDF magic / size / SHA-256
+10. Papers: call `ZoteroWriteAdapter` to upsert the item and linked_file
+11. Technical documents: download or copy into the Vault category; write source/time/hash metadata
+12. Return receipt: Zotero key, PDF path, Vault path
 
-## 约束
-- 阶段一永远不写外部系统
-- 阶段二没有有效 `plan_id` 不得执行
-- 计划内容变化时旧批准自动失效
-- 论文 PDF 只放 `papers_root`；技术文档只放 Vault——禁止互换
-- arXiv 无 PDF 时记录元数据和候选状态，不从其他来源获取
-- Bridge 健康检查失败时停止，不回退到 Local API 或其他旁路
-- 身份冲突时停止该条目，不影响批次中其他安全条目
+## Constraints
+- Phase 1 never writes to external systems
+- Phase 2 must not run without a valid `plan_id`
+- Any change to plan content invalidates the prior approval
+- Paper PDFs go only to `papers_root`; technical documents only to the Vault — never swap
+- If arXiv has no PDF, record metadata and candidate status; do not fetch from other sources
+- If the Bridge health check fails, stop — never fall back to Local API or another bypass
+- On identity conflict, stop that item without affecting other safe items in the batch

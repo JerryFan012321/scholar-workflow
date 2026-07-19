@@ -5,28 +5,28 @@ description: Search for papers, verify paper identity, build candidate lists, lo
 
 # find-resource
 
-## 触发
-- 用户搜索论文、核验论文身份、整理候选列表
-- 用户询问某篇论文/文档在哪里、要求定位或在 cmux 中打开
+## Triggers
+- User searches for papers, verifies paper identity, or builds a candidate list
+- User asks where a paper/document is, or wants to locate or open it in cmux
 
-## 步骤
+## Steps
 
-1. 判断请求类型：**发现**（搜索新资源）还是**定位**（找已有资源）
-2. **发现模式**
-   - 规范化输入标识符（DOI / arXiv ID / 标题）
-   - 检查本地状态库和 Zotero 是否已有该资源
-   - 用户明确要求时联网查询（Crossref / OpenAlex / Semantic Scholar）
-   - 返回候选列表、匹配依据、arXiv PDF 可用性、已有状态
-3. **定位模式**
-   - 论文：先查 Zotero item/attachment key，再解析 `papers_root` 下相对路径
-   - 技术文档：从状态映射解析 Vault 相对路径
-   - 返回本地路径和本地链接服务 URL，默认不复制文件
+1. Determine request type: **discovery** (search for new resources) or **locate** (find existing ones)
+2. **Discovery mode**
+   - Normalize input identifiers (DOI / arXiv ID / title)
+   - Check the local state store and Zotero for existing copies
+   - Query the web only when explicitly authorized (Crossref / OpenAlex / Semantic Scholar)
+   - Return candidate list, match rationale, arXiv PDF availability, existing status
+3. **Locate mode**
+   - Papers: resolve Zotero item/attachment key first, then the relative path under `papers_root`
+   - Technical documents: resolve the Vault relative path from the state mapping
+   - Return the local path and local-link service URL; do not copy files by default
 
-## 输出
-候选列表（发现）或本地路径 + URL（定位）
+## Output
+Candidate list (discovery) or local path + URL (locate).
 
-## 约束
-- 联网搜索需用户明确授权
-- 可使用 Crossref / OpenAlex 等核验元数据，但不得从这些来源下载 PDF
-- 发现阶段不产生任何文件写入
-- 不得从非 arXiv 来源传递论文 PDF
+## Constraints
+- Web search requires explicit user authorization
+- Crossref / OpenAlex may be used to verify metadata, but never to download PDFs
+- Discovery produces no file writes
+- Never relay paper PDFs from non-arXiv sources

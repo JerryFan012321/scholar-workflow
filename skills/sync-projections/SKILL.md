@@ -5,27 +5,27 @@ description: Rebuild Obsidian paper index tables and sync Notion management proj
 
 # sync-projections
 
-## 触发
-- 论文导入完成后（library-agent 交接）
-- 用户要求重建主题论文表或同步 Notion 结构
-- Collection 调整、PDF 迁移或用户要求定期维护
+## Triggers
+- After a paper import completes (handoff from library-agent)
+- User asks to rebuild a topic paper table or sync Notion structure
+- Collection changes, PDF migration, or a periodic-maintenance request
 
-## 步骤
+## Steps
 
-### Obsidian 索引更新
-1. 从 Zotero 和状态映射重建目标索引表，不把现有 Obsidian 表当主数据
-2. 定位目标文件中的 managed block（`<!-- scholar-workflow:start/end -->`）
-3. 只更新 managed block 内的表格行，保留 block 外所有人工内容
-4. 大型目录先更新上层描述和子索引，再更新叶级表格
-5. 表格必须包含：题名、作者、年份、Venue、Zotero item key、PDF 相对路径、arXiv、DOI、同步时间
+### Obsidian index update
+1. Rebuild the target index table from Zotero and the state mapping — do not treat the existing Obsidian table as source of truth
+2. Locate the managed block in the target file (`<!-- scholar-workflow:start/end -->`)
+3. Update only the rows inside the managed block; preserve all human content outside it
+4. For large directories, update the parent description and sub-indexes before leaf tables
+5. The table must include: title, authors, year, venue, Zotero item key, PDF relative path, arXiv, DOI, synced time
 
-### Notion 管理投影
-6. 通过稳定 Resource ID upsert，不按标题盲目新建页面
-7. 只写机器管理字段（见 `references/notion-schema.md`），不覆盖人工正文
-8. 链接指向本地链接解析服务或稳定 Web 入口，不写死绝对 file:// 路径
-9. 不上传任何文件
+### Notion management projection
+6. Upsert by stable Resource ID — never blindly create pages by title
+7. Write only machine-managed fields (see `references/notion-schema.md`); never overwrite human content
+8. Point links at the local-link service or a stable web entry; never hardcode absolute file:// paths
+9. Upload no files
 
-## 约束
-- Obsidian 论文表是派生索引，重建依据是 Zotero 和状态映射
-- Notion 的 `Sync Revision` 字段用于增量判断，避免不必要覆盖
-- 两个子任务可并行执行，但各自独立报告状态
+## Constraints
+- The Obsidian paper table is a derived index; the rebuild source is Zotero plus the state mapping
+- The Notion `Sync Revision` field drives incremental updates to avoid needless overwrites
+- The two subtasks may run in parallel but report status independently
