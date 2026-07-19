@@ -3,6 +3,13 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.3] — 2026-07-19
+
+### Added
+- `dev-guide/`: development-time docs (skill-authoring, skill-iteration, eval-loop) — never loaded at runtime
+- AGENT.md: Documentation boundary section separating dev-time docs from runtime docs
+- AGENT.md: Lifecycle note — dev-guide is scaffolding, to be archived + untracked once its build targets are met
+
 ## [0.1.2] — 2026-07-19
 
 ### Added
