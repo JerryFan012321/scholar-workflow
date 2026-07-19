@@ -3,6 +3,14 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.6] — 2026-07-19
+
+### Removed
+- `project_references/` (DESIGN.md, PROJECT.md, design image) archived out of the repo to `archived/scholar-workflow/project_references/`; intent layer already lives in GOALS.md, architecture layer is a frozen snapshot
+
+### Changed
+- GOALS.md and AGENT.md references updated to point at the archived location instead of the in-repo path
+
 ## [0.1.5] — 2026-07-19
 
 ### Added

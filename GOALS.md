@@ -1,8 +1,9 @@
 # Scholar Workflow — 目标（活文档）
 
-> 这是项目的 north star，持续更新。它高于 `project_references/DESIGN.md` 的实现层。
-> 开发一旦展开，DESIGN.md 的架构图/目录布局即为历史快照，不再维护；本文的目标与
-> 不变量才是权威对照基准。每条目标带稳定 ID，`evals/` 用 ID 回指来守护它。
+> 这是项目的 north star，持续更新。原始设计文档（DESIGN.md / PROJECT.md）的意图层
+> 已提取进本文，源文件已归档到仓库外 `archived/scholar-workflow/project_references/`，
+> 不再是仓库的一部分。本文的目标与不变量是权威对照基准。每条目标带稳定 ID，
+> `evals/` 用 ID 回指来守护它。
 >
 > 权威关系：目标（本文） → 守护（evals/） → 实现（代码）。
 > 校验一条目标是否达成，看它的 eval，而不是看设计文档。
@@ -71,5 +72,5 @@
 - 目标/不变量/非目标**变化时更新本文**，但**保持 ID 稳定**；新增项分配新 ID，不复用旧 ID。
 - 每条目标应由 `evals/` 的用例守护。`（待补）` 标记尚未有守护 eval 的缺口。
 - 目标或范围变化必须同步记入 `CHANGELOG.md`。
-- 这是活文档，不归档；`project_references/DESIGN.md` 的实现层才是历史快照。
+- 这是活文档，不归档。原始设计文档已移出仓库（`archived/scholar-workflow/project_references/`），仅作历史快照留存。
 

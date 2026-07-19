@@ -53,10 +53,10 @@ runtime docs or vice versa.
 - `GOALS.md` (repo root) — the living **intent layer**: upstream goals, long-term
   invariants, non-goals, phase status. Continuously updated, never archived. It is
   the north star; `evals/` guards each goal by its stable ID (G/INV/NG).
-- `project_references/` (DESIGN.md, PROJECT.md) — the **implementation layer** is a
-  frozen historical snapshot once development starts; do not maintain or sync it to
-  the code. The code is authoritative for architecture. Only DESIGN.md's intent has
-  been lifted into `GOALS.md`.
+- Original design docs (DESIGN.md, PROJECT.md) have been **archived out of the repo**
+  to `archived/scholar-workflow/project_references/`. Their intent layer lives on in
+  `GOALS.md`; the architecture layer is a frozen snapshot — the code is authoritative
+  for architecture, so do not restore or sync those docs.
 
 ### Lifecycle (dev docs are temporary)
 
