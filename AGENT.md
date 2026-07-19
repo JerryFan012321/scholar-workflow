@@ -50,8 +50,13 @@ runtime docs or vice versa.
 - Runtime docs describe *what the plugin does*, not *how to develop it*. A skill's
   `## References` section lists exactly which runtime files to load — it must never
   point into `dev-guide/`.
-- `project_references/` (DESIGN.md, PROJECT.md) is source-of-truth design input, not
-  a doc the plugin ships or loads.
+- `GOALS.md` (repo root) — the living **intent layer**: upstream goals, long-term
+  invariants, non-goals, phase status. Continuously updated, never archived. It is
+  the north star; `evals/` guards each goal by its stable ID (G/INV/NG).
+- `project_references/` (DESIGN.md, PROJECT.md) — the **implementation layer** is a
+  frozen historical snapshot once development starts; do not maintain or sync it to
+  the code. The code is authoritative for architecture. Only DESIGN.md's intent has
+  been lifted into `GOALS.md`.
 
 ### Lifecycle (dev docs are temporary)
 
@@ -81,6 +86,7 @@ part of the shipped plugin. **When the build targets in `dev-guide/` are met:**
 - Read the existing SKILL.md / agent file before modifying
 - Update `CHANGELOG.md` before every commit — group entries under the skill name
 - Bump `.claude-plugin/plugin.json` version on every skill change — minor for new features, patch for fixes
+- Update `GOALS.md` when a goal, invariant, non-goal, or phase status changes — keep IDs stable, assign new IDs for new items
 - Update the Agent → Skill mapping table when adding or renaming a skill
 - Test skill triggering by reviewing the `description` field — it's the primary routing mechanism
 - Write contract test before modifying any adapter interface
