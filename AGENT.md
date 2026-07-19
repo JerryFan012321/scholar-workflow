@@ -21,10 +21,19 @@ skills/<name>/
 ├── README.md         # English documentation
 ├── README.zh-CN.md   # Chinese documentation
 ├── scripts/          # Executable scripts (if any)
-└── references/       # Policy docs loaded into context as needed
+└── references/       # Skill-specific operational docs, loaded on demand
 ```
 
 SKILL.md 的 `description` 字段是 Claude 判断是否触发该 skill 的主要机制，触发词准确性直接影响路由质量。运行期安全约束写在各 SKILL.md 的 Constraints 小节，不放本文。
+
+### References: two tiers
+
+- **Top-level `references/`** — canonical cross-skill policies (storage / source /
+  identity / security). One source of truth; every skill and agent obeys them.
+- **Per-skill `references/`** — operational detail specific to one skill.
+
+Never duplicate a rule across tiers. When a skill needs a shared rule, its own
+reference points to the top-level file rather than restating it.
 
 ### Language
 

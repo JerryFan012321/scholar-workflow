@@ -1,34 +1,31 @@
-# 安全策略
+# Security Policy (shared)
 
-## Zotero Bridge
+Canonical safety boundaries. Applies to all skills, agents, and services.
 
-- 仅监听 `127.0.0.1`
-- 使用随机 token，放在请求头（`X-Scholar-Token`），不放在 URL
-- 所有写请求要求 `Idempotency-Key` 请求头
-- 只允许 `papers_root` 和受控临时目录中的规范化路径
-- 拒绝 `..`、符号链接越界、超大请求（>50MB）、非 PDF 附件
-- 限制 `Origin` 和 `Content-Type`，防止网页构造 POST 触发写入
-- 不直接写 SQLite；只调用 Zotero JavaScript API 并使用事务保存
-- Bridge 接口白名单：`health` / `collections` / `items/{key}` / `papers/upsert` / `attachments/link` / `items/update-metadata`
-- 禁止：`eval_javascript` / `execute_sql` / `execute_shell` / 任意路径操作
+## Claude permission boundary
 
-## 本地链接服务
+| Action | Rule |
+|---|---|
+| Read local index / state / Zotero Local API | Allowed |
+| User-authorized web search | Allowed |
+| Download PDF from arXiv | Show plan, get approval first |
+| Write Zotero / move PDF / write Vault / write Notion | Show plan, get approval first |
+| Delete, overwrite conflicts, merge items | Never automatic — per-item approval |
+| Write `zotero.sqlite` directly | Permanently forbidden |
 
-- 仅监听 `127.0.0.1:23128`
-- 只接受不透明 Resource ID，不接受任意文件路径
-- 最终文件必须位于 `papers_root` 或 `vault_root` 内
-- 不提供任意 shell 执行能力
+## Approval gate
 
-## 日志约定
+- External writes require a valid, approved `plan_id`.
+- Any change to plan content invalidates the prior approval.
+- On identity conflict, stop that item without affecting other safe items.
 
-- 日志不得记录 token、论文全文或用户的敏感绝对路径
-- 只记录规范化相对路径和资源 ID
+## Loopback services
 
-## Claude 权限边界
+- Zotero Bridge and the local-link service bind to `127.0.0.1` only.
+- Tokens go in headers, never in URLs. Write requests require `Idempotency-Key`.
+- Services accept opaque IDs / canonical paths only; reject `..` and symlink escapes.
 
-- 读取本地索引、状态、Zotero Local API：允许
-- 用户明确要求的网络检索：允许
-- 从 arXiv 下载 PDF：必须先展示计划并批准
-- 写 Zotero / 移动 PDF / 写 Vault / 写 Notion：必须先展示计划并批准
-- 删除、覆盖冲突、合并条目：禁止自动执行，逐项批准
-- 直接写 Zotero SQLite：永久禁止
+## Logging
+
+Never log tokens, paper full text, or sensitive absolute paths. Log normalized
+relative paths and resource IDs only.

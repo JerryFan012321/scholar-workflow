@@ -3,6 +3,25 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.2] — 2026-07-19
+
+### Added
+- Per-skill `references/` dirs with tailored operational docs (11 files)
+- Top-level `references/`: storage-policy, source-policy, identity-policy, security-policy (4 canonical shared policies)
+- AGENT.md: two-tier references convention documented
+
+### Changed
+- Replaced 8 original Chinese top-level reference files with 4 English canonical policies
+- Removed all cross-tier duplication — per-skill references point to shared policies rather than repeating rules
+- Renamed ingest acquisition-policy → download-validation (focused on mechanics only)
+
+### Removed
+- `references/classification-policy.md` → absorbed into `skills/ingest-resource/references/resource-model.md`
+- `references/literature-edge-evidence.md` → `skills/build-literature-tree/references/edge-evidence.md`
+- `references/notion-schema.md` → `skills/sync-projections/references/notion-schema.md`
+- `references/obsidian-index-format.md` → `skills/sync-projections/references/obsidian-index-format.md`
+- `references/zotero-fields.md` → `skills/ingest-resource/references/zotero-fields.md`
+
 ## [0.1.1] — 2026-07-19
 
 ### Added
