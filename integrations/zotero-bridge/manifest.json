@@ -1,0 +1,39 @@
+{
+  "name": "scholar-workflow-bridge",
+  "version": "0.1.0",
+  "description": "Zotero plugin that exposes a restricted local HTTP API for scholar-workflow writes",
+  "author": "Scholar Workflow contributors",
+  "targetApp": "Zotero",
+  "minZoteroVersion": "7.0",
+
+  "endpoints": [
+    "GET  /scholar-workflow/v1/health",
+    "GET  /scholar-workflow/v1/collections",
+    "GET  /scholar-workflow/v1/items/{itemKey}",
+    "POST /scholar-workflow/v1/papers/upsert",
+    "POST /scholar-workflow/v1/attachments/link",
+    "POST /scholar-workflow/v1/items/update-metadata"
+  ],
+
+  "forbidden": [
+    "eval_javascript",
+    "execute_sql",
+    "execute_shell",
+    "arbitrary_path_write"
+  ],
+
+  "security": {
+    "bind": "127.0.0.1",
+    "auth_header": "X-Scholar-Token",
+    "require_idempotency_key": true,
+    "allowed_roots": ["papers_root"],
+    "max_request_bytes": 52428800
+  },
+
+  "notes": [
+    "Token is generated at install time and stored in Zotero preferences.",
+    "All write operations call Zotero JS API with saveTx(); never write SQLite directly.",
+    "ZotMoov integration is attempted after item creation if ZotMoov is installed.",
+    "Partial failures return structured phase status for Saga recovery."
+  ]
+}

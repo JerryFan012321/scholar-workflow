@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "index-entry.schema.json",
+  "title": "ObsidianIndexEntry",
+  "type": "object",
+  "required": ["resource_id", "title", "zotero_item_key", "synced_at"],
+  "additionalProperties": false,
+  "properties": {
+    "resource_id":      { "type": "string" },
+    "title":            { "type": "string" },
+    "authors":          { "type": "array", "items": { "type": "string" } },
+    "year":             { "type": ["integer", "null"] },
+    "venue":            { "type": ["string", "null"] },
+    "zotero_item_key":  { "type": "string" },
+    "pdf_relative_path": { "type": ["string", "null"] },
+    "arxiv_id":         { "type": ["string", "null"] },
+    "doi":              { "type": ["string", "null"] },
+    "synced_at":        { "type": "string", "format": "date-time" }
+  }
+}

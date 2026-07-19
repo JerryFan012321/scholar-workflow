@@ -1,0 +1,48 @@
+{
+  "description": "Skill routing eval — verifies correct skill is triggered for each input type",
+  "cases": [
+    {
+      "id": "discover-paper",
+      "input": "帮我找最近的 world model 论文",
+      "expected_skill": "find-resource",
+      "must_not_write": true
+    },
+    {
+      "id": "plan-import",
+      "input": "把这些论文加入 Zotero：2401.01234, 2312.56789",
+      "expected_skill": "ingest-resource",
+      "expected_phase": "plan",
+      "must_not_write": true
+    },
+    {
+      "id": "file-technical-doc",
+      "input": "归档这个 CUDA 官方 PDF 到知识库",
+      "expected_skill": "ingest-resource",
+      "expected_kind": "technical_document",
+      "must_not_enter_papers_root": true
+    },
+    {
+      "id": "locate-paper",
+      "input": "这篇论文在哪：2401.01234",
+      "expected_skill": "find-resource",
+      "expected_mode": "locate"
+    },
+    {
+      "id": "build-lineage",
+      "input": "画出 NeRF 到 3DGS 的发展脉络",
+      "expected_skill": "build-literature-tree"
+    },
+    {
+      "id": "check-consistency",
+      "input": "检查一下我的库是否有漂移",
+      "expected_skill": "check-consistency",
+      "must_not_write": true
+    },
+    {
+      "id": "no-plugin-trigger",
+      "input": "帮我写一个 Python 排序函数",
+      "expected_skill": null,
+      "comment": "普通代码任务不得触发本插件任何 skill"
+    }
+  ]
+}

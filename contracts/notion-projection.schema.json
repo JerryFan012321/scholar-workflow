@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "notion-projection.schema.json",
+  "title": "NotionProjection",
+  "description": "Machine-managed fields written to Notion. Human content fields are never included.",
+  "type": "object",
+  "required": ["resource_id", "name", "type", "sync_revision", "last_synced"],
+  "additionalProperties": false,
+  "properties": {
+    "resource_id":      { "type": "string" },
+    "name":             { "type": "string" },
+    "type":             { "type": "string", "enum": ["Paper", "TechnicalDocument", "Dataset", "Project"] },
+    "category":         { "type": ["string", "null"] },
+    "project":          { "type": ["string", "null"] },
+    "status":           { "type": ["string", "null"] },
+    "zotero_item_key":  { "type": ["string", "null"] },
+    "local_url":        { "type": ["string", "null"], "pattern": "^http://127\\.0\\.0\\.1:23128/" },
+    "web_source":       { "type": ["string", "null"], "format": "uri" },
+    "sync_revision":    { "type": "string" },
+    "last_synced":      { "type": "string", "format": "date-time" }
+  }
+}

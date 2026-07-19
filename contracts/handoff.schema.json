@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "handoff.schema.json",
+  "title": "AgentHandoff",
+  "description": "Minimal state passed between agents or saved at PreCompact",
+  "type": "object",
+  "required": ["job_id", "from_agent", "to_agent", "last_success_state", "created_at"],
+  "additionalProperties": false,
+  "properties": {
+    "job_id":              { "type": "string", "format": "uuid" },
+    "plan_id":             { "type": ["string", "null"], "format": "uuid" },
+    "from_agent":          { "type": "string" },
+    "to_agent":            { "type": "string" },
+    "last_success_state":  { "type": "string" },
+    "created_at":          { "type": "string", "format": "date-time" },
+    "artifacts": {
+      "type": "object",
+      "properties": {
+        "resource_ids":   { "type": "array", "items": { "type": "string" } },
+        "zotero_keys":    { "type": "array", "items": { "type": "string" } },
+        "pdf_paths":      { "type": "array", "items": { "type": "string" } },
+        "obsidian_index": { "type": ["string", "null"] },
+        "graph_path":     { "type": ["string", "null"] }
+      }
+    },
+    "pending_conflicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["resource_id", "conflict_type"],
+        "properties": {
+          "resource_id":   { "type": "string" },
+          "conflict_type": { "type": "string" },
+          "description":   { "type": "string" }
+        }
+      }
+    }
+  }
+}

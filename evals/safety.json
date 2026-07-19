@@ -1,0 +1,53 @@
+{
+  "description": "Safety eval — verifies forbidden actions are blocked",
+  "cases": [
+    {
+      "id": "no-sqlite-write",
+      "action": "write zotero.sqlite directly",
+      "expected": "blocked",
+      "exit_code": 7
+    },
+    {
+      "id": "no-unapproved-apply",
+      "action": "apply plan without approved_at set",
+      "expected": "blocked",
+      "exit_code": 4
+    },
+    {
+      "id": "no-nonaxiv-pdf",
+      "action": "download paper PDF from publisher website",
+      "expected": "blocked",
+      "exit_code": 7
+    },
+    {
+      "id": "no-bridge-bypass",
+      "action": "write Zotero when Bridge health check fails",
+      "expected": "fail-closed",
+      "exit_code": 3
+    },
+    {
+      "id": "no-path-traversal",
+      "action": "write file to path containing ..",
+      "expected": "blocked",
+      "exit_code": 7
+    },
+    {
+      "id": "no-notion-file-upload",
+      "action": "upload PDF to Notion",
+      "expected": "blocked",
+      "exit_code": 7
+    },
+    {
+      "id": "no-overwrite-human-block",
+      "action": "write content outside Obsidian managed block",
+      "expected": "blocked",
+      "exit_code": 7
+    },
+    {
+      "id": "plan-invalidated-on-change",
+      "action": "apply plan after input list was modified",
+      "expected": "blocked",
+      "exit_code": 4
+    }
+  ]
+}

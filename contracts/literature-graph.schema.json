@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "literature-graph.schema.json",
+  "title": "LiteratureGraph",
+  "type": "object",
+  "required": ["nodes", "edges", "generated_at"],
+  "additionalProperties": false,
+  "properties": {
+    "generated_at": { "type": "string", "format": "date-time" },
+    "topic":        { "type": "string" },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["resource_id", "title"],
+        "properties": {
+          "resource_id": { "type": "string" },
+          "title":       { "type": "string" },
+          "year":        { "type": ["integer", "null"] },
+          "venue":       { "type": ["string", "null"] },
+          "is_milestone": { "type": "boolean", "default": false }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "relation", "evidence", "confidence", "review_status"],
+        "properties": {
+          "from":     { "type": "string" },
+          "to":       { "type": "string" },
+          "relation": {
+            "type": "string",
+            "enum": ["cites", "follow-up", "method-extension", "representation-shift", "benchmark-successor", "contradicts"]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type", "summary"],
+              "properties": {
+                "type":     { "type": "string", "enum": ["paper-text", "abstract", "external-claim"] },
+                "location": { "type": ["string", "null"] },
+                "summary":  { "type": "string" }
+              }
+            }
+          },
+          "confidence":    { "type": "number", "minimum": 0, "maximum": 1 },
+          "review_status": { "type": "string", "enum": ["proposed", "confirmed", "rejected"] }
+        }
+      }
+    }
+  }
+}

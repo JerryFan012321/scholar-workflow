@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "zotero-import.schema.json",
+  "title": "ZoteroImportRequest",
+  "description": "Payload sent to ZoteroWriteAdapter for paper upsert",
+  "type": "object",
+  "required": ["idempotency_key", "title", "item_type", "collection_key", "attachment"],
+  "additionalProperties": false,
+  "properties": {
+    "idempotency_key":  { "type": "string", "minLength": 8 },
+    "item_type":        { "type": "string", "enum": ["journalArticle", "conferencePaper", "preprint"] },
+    "title":            { "type": "string", "minLength": 1 },
+    "authors":          { "type": "array", "items": { "type": "string" } },
+    "doi":              { "type": ["string", "null"] },
+    "arxiv_id":         { "type": ["string", "null"], "pattern": "^\\d{4}\\.\\d{4,5}(v\\d+)?$" },
+    "year":             { "type": ["integer", "null"] },
+    "venue":            { "type": ["string", "null"] },
+    "abstract":         { "type": ["string", "null"] },
+    "tags":             { "type": "array", "items": { "type": "string" } },
+    "collection_key":   { "type": "string" },
+    "attachment": {
+      "type": "object",
+      "required": ["mode", "absolute_path"],
+      "properties": {
+        "mode":          { "type": "string", "enum": ["linked_file"] },
+        "absolute_path": { "type": "string" },
+        "sha256":        { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "description": "Outcome eval — end-to-end acceptance criteria from DESIGN.md §18.2",
+  "cases": [
+    {
+      "id": "dedup-same-doi",
+      "description": "相同 DOI 重复输入只产生一个 Zotero 条目和一份 PDF",
+      "status": "pending"
+    },
+    {
+      "id": "arxiv-version-dedup",
+      "description": "v1/v2/v3 被识别为同一 arXiv 论文",
+      "status": "pending"
+    },
+    {
+      "id": "no-nonarxiv-autodownload",
+      "description": "无 arXiv PDF 时不从其他网站自动下载全文",
+      "status": "pending"
+    },
+    {
+      "id": "identity-conflict-stop",
+      "description": "同名但标识符冲突时停止并报告，不影响批次其他条目",
+      "status": "pending"
+    },
+    {
+      "id": "papers-root-remap",
+      "description": "papers_root 改变后路径通过配置重新解析，不需改代码",
+      "status": "pending"
+    },
+    {
+      "id": "tech-doc-isolation",
+      "description": "技术 PDF 不进入 papers_root 或论文 Zotero 流程",
+      "status": "pending"
+    },
+    {
+      "id": "zotero-upsert-not-duplicate",
+      "description": "Zotero 已有条目时只补充缺失元数据，不创建重复条目",
+      "status": "pending"
+    },
+    {
+      "id": "obsidian-human-block-preserved",
+      "description": "Obsidian 索引重建不覆盖 managed block 外的人工内容",
+      "status": "pending"
+    },
+    {
+      "id": "bridge-fail-closed",
+      "description": "Bridge 关闭时 Zotero 写入失败关闭，不回退到其他旁路",
+      "status": "pending"
+    },
+    {
+      "id": "saga-resume",
+      "description": "任一步骤失败后可以恢复且不重复副作用",
+      "status": "pending"
+    }
+  ]
+}

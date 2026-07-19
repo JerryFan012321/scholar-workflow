@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "scholar-workflow"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "click==8.1.8",
+    "pydantic==2.11.7",
+    "httpx==0.28.1",
+    "jsonschema==4.23.0",
+    "pyyaml==6.0.2",
+    "aiofiles==24.1.0",
+]
+
+[project.scripts]
+scholar-workflow = "scholar_workflow.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
