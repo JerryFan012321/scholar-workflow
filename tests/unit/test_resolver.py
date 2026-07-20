@@ -5,10 +5,16 @@ from scholar_workflow.resolver import (
 )
 
 
-def test_arxiv_resolves_to_placeholder_title():
+def test_arxiv_resolves_with_no_offline_title():
     res = resolve_one("2401.01234")
-    assert res.title == "arXiv:2401.01234"  # metadata comes from Zotero Local API downstream
+    assert res.title is None  # offline resolver has no real title; filled from Zotero downstream
     assert res.identifiers.arxiv == "2401.01234"
+
+
+def test_doi_resolves_with_no_offline_title():
+    res = resolve_one("10.1145/1234567.8901234")
+    assert res.title is None
+    assert res.identifiers.doi == "10.1145/1234567.8901234"
 
 
 def test_classify_arxiv_bare_and_versioned():

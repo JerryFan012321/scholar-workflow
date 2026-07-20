@@ -17,7 +17,9 @@ description: Search for papers, verify paper identity, build candidate lists, lo
    - Run `scholar-workflow locate <identifier>` — read-only, deterministic. It
      normalizes the input, queries the Zotero Local API (authority), and returns
      `{match, resource_id, zotero_item_key, conflicts}`:
-     - `exact` — already in the library; report the Zotero item key.
+     - `exact` — already in the library; report the Zotero item key. To name the
+       item for the user (display only), read its title from `catalog` or Zotero
+       `get_item` by that key; if unavailable, show the identifier as-is.
      - `conflict` — several items carry the same identifier; stop and present the
        keys in `conflicts` for human adjudication. Never auto-merge (NG3).
      - `none` — not in the library.
@@ -48,6 +50,8 @@ with rationale (recall), or a candidate list with rationale (discovery).
 ## Constraints
 - Existence is authoritative from the Zotero Local API; fail-closed on unreachable
 - Semantic recall reads the catalog projection only — no embeddings, no vector index
+- The resolver has no offline title (`title` is null for identifier inputs); any
+  display title is an optional display-layer enrichment, never a decision input
 - Web search requires explicit user authorization
 - Crossref / OpenAlex may be used to verify metadata, but never to download PDFs
 - Discovery produces no file writes

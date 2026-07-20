@@ -18,6 +18,13 @@ description: Import papers or archive technical documents into the local library
 2. Read that JSON and present it to the user in a human-readable form: how many are
    new (create), already present (skip), or identifier conflicts (several Zotero items
    carry the same identifier) needing a human decision.
+   - The plan is keyed by `resource_id`; it carries no title. To name items for the
+     user (display only — never a decision input), enrich in the display layer:
+     for `skip` (already in Zotero) read the title from `catalog` / Zotero `get_item`
+     by the item key; for `create` (new, not yet in Zotero) use the title from the
+     conversation, or fetch the arXiv abs page if the user is present to authorize it.
+     This is optional: if no real title is available, show the identifier as-is
+     (`arxiv:2601.18089`). Never invent a title.
 3. For papers, note the recommended Zotero Collection and Obsidian index location;
    for technical documents, the Vault category directory.
 4. Wait for the user to approve in-conversation. Approval is a dialogue act — there

@@ -44,6 +44,7 @@
 | INV12 | 存在性判定以 Zotero Local API 为权威、实时查询；Zotero 不可达时失败关闭（退出码 3），绝不因"查不到"判为新建 | safety: no-existence-on-unreachable |
 | INV13 | 本地 `resources` 缓存是 Zotero 的派生只读镜像，仅经 Local API 单向同步（用户触发），不反向影响 Zotero | （待补） |
 | INV14 | 模糊/语义召回由宿主 LLM 读目录投影（标题+摘要）完成，不生成 embedding、不建向量索引 | （待补） |
+| INV15 | 离线解析器对标识符输入不造占位标题（`title` 为 null）；显示用真名由展示层可选补齐（EXACT 读 catalog、NONE 用对话/抓取），绝不作为判定输入。契约自描述，能力缺失时降级为显示 identifier | resolver: title-null-for-identifier |
 
 ## 非目标（NG）
 

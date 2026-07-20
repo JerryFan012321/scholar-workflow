@@ -41,18 +41,20 @@ def resolve_one(raw: str) -> Resource:
     """Resolve a single raw input into a Resource (offline; no network)."""
     kind = classify_input(raw)
     identifiers = Identifiers()
-    title = raw.strip()
+    # For identifier inputs we have no real title offline; leave it None so no host
+    # can mistake a placeholder for a title. url/title inputs keep the user's text.
+    title: str | None = raw.strip()
 
     if kind == "arxiv":
         arxiv_id = _extract_arxiv_id(raw)
         identifiers.arxiv = arxiv_id
         identifiers.url = f"https://arxiv.org/abs/{arxiv_id}"
-        title = f"arXiv:{arxiv_id}"  # placeholder until metadata enrichment
+        title = None
         rid = make_resource_id("paper", {"arxiv": arxiv_id})
     elif kind == "doi":
         doi = normalize_doi(DOI_RE.match(raw.strip()).group(2))
         identifiers.doi = doi
-        title = f"doi:{doi}"
+        title = None
         rid = make_resource_id("paper", {"doi": doi})
     elif kind == "url":
         identifiers.url = raw.strip()

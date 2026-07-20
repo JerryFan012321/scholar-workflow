@@ -69,7 +69,7 @@ class Projections(BaseModel):
 class Resource(BaseModel):
     resource_id: str
     kind: ResourceKind
-    title: str
+    title: str | None = None  # None when the offline resolver has no real title; fill from Zotero downstream
     authors: list[str] = Field(default_factory=list)
     year: int | None = None
     identifiers: Identifiers = Field(default_factory=Identifiers)

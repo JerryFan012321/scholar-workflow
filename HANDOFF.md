@@ -56,17 +56,38 @@ Phase 1（find-resource / ingest-resource 真实可用）**进行中**。
   `resume` / `doctor` / `report` 已接通，依赖不可达统一 `DependencyDown`（退出码 3）；`discover` / `audit` 仍是桩
 - `doctor.py`：探 `papers_root` / `paper_inbox` / `vault_root` + Zotero Local API 可达性
 - 测试：`pytest tests/` **36 passed**（unit + contract + integration）
+- **真实 Zotero Local API 已验证**（2026-07-20，隔离临时 home，用后即弃，未碰真实配置）：
+  `doctor` 全绿 → `sync` = `{synced:145, skipped:6}` → `catalog` 145 条字段齐全 →
+  `locate 2601.18089` = `exact`/`SWBTY83N` → `locate 9999.99999` = `none` →
+  错端口 `locate` = **退出码 3 失败关闭**（不回退 none，INV12 守住）。
+  关键字段发现：arXiv id 三条提取路径（`DOI`=`10.48550/arXiv.<id>` / `url`=`arxiv.org/abs/<id>`
+  / `extra`=`arXiv:<id>`）真实数据里都在且被正确解析；**附件在响应顶层 `links.attachment`，不在
+  `data` 里**——将来 `get_attachments` 取权威路径按此结构取。
+
+## 业务逻辑（resolve → dedup → plan 的数据流，动手前先懂）
+
+CLI 是唯一入口，四条命令把用户原始输入喂进 `resolve_*`，产出的 `Resource` 只流向两个下游：
+
+```
+用户输入(arXiv/DOI/URL/标题/CSV)
+  └─ resolve_one / resolve_many  （resolver.py，纯离线规范化，不联网）
+       └─ Resource{ resource_id, identifiers, title=None(标识符输入), authors=[], year=None }
+            ├─ check_existence(dedup.py)  只读 identifiers → 查 Zotero Local API → EXACT/CONFLICT/NONE
+            └─ generate_plan(planning.py) 只读 resource_id / identifiers.arxiv / kind / projections
+```
+
+**关键事实**：两个下游都**不读** `title`/`authors`/`year`——判定纯靠 identifier。既然标题
+不参与判定，离线解析器对标识符输入干脆不造标题（`title=None`，见 INV15/v0.1.20），杜绝把
+占位符误当真名。显示用真名是**展示层可选增强**：EXACT 命中读 `catalog`/Zotero 取名，NONE
+用对话或抓 arXiv 页，拿不到就照实显示 identifier。`ActionItem`（models.py）里也没有 title 字段。
 
 ## 下一步（有序）
 
-1. **接 Zotero Local API 元数据链路**：`resolve_one` 产出的占位标题 `arXiv:<id>`，需在 find/ingest
-   流程里经 Local API（`search_by_arxiv` / `search_by_doi` 已具备）查真实标题/作者/年份填充。
-2. **把 `evals/safety.json` / `evals/outcomes.json` 用例变成真 pytest**：新加的
+1. **把 `evals/safety.json` / `evals/outcomes.json` 用例变成真 pytest**：新加的
    `no-existence-on-unreachable`（退出码 3，已有 `test_sync_fails_closed` / `test_dedup` 覆盖逻辑）
    与 `dedup-exact-collapse` 需要端到端断言；补 `GOALS.md` 里 `（待补）` 的 eval
-   （INV7 / INV10 / INV11 / NG2 / NG7 / NG8）。
-3. **验证真实 Zotero Local API**：现全靠 fake（FakeZotero / FakeClient）。需对着真实运行的 Zotero
-   跑一次 `sync` + `catalog` + `locate`，确认字段路径（DOI / url / extra / attachment）与真实响应吻合。
+   （INV7 / INV10 / INV11 / INV13 / INV14 / NG2 / NG7 / NG8）。INV15 的守护 eval
+   `resolver: title-null-for-identifier` 目前只以 pytest 断言存在（`test_resolver.py`），也待落进 JSON。
 
 ## 未来项（暂不做，见 GOALS.md F1/F2）
 
@@ -75,7 +96,9 @@ Phase 1（find-resource / ingest-resource 真实可用）**进行中**。
 
 ## 已知遗留
 
-- `resolve_one` 的标题仍是占位符（`arXiv:<id>` / `doi:<doi>`），真实元数据链路见「下一步 1」。
-- 全部 Zotero 交互仅经 fake 测过，未对真实 Local API 验证（见「下一步 3」）。
+- ~~`resolve_one` 标题占位符~~ 已解决（v0.1.20，INV15）：标识符输入 `title=None`，不再造假名；
+  显示真名由展示层可选补齐，拿不到就显示 identifier。下游本就只认 identifier，判定零影响。
+- 单元/契约测试仍全靠 fake（FakeZotero / FakeClient）；真实 Local API 已手工验证一轮（见「已完成」），
+  但尚无自动化 pytest 对着真实服务跑——真实回归靠手工重跑上述命令。
 - `catalog` 语义召回依赖缓存新鲜度：用户不 `sync` 则 catalog 为空或陈旧。find-resource 已写「先看
   `oldest_sync`，陈旧则提醒用户 sync」，但提醒时机是宿主 LLM 的行为约定，无代码强制。

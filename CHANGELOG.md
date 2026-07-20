@@ -3,6 +3,24 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.20] — 2026-07-20
+
+Makes the resolver contract self-describing: for identifier inputs (arXiv/DOI) the
+offline resolver no longer fabricates a placeholder title (`arXiv:<id>` / `doi:<id>`)
+that could be mistaken for a real one. `Resource.title` is now nullable and set to
+`null` for those inputs. Titles never affect any decision (dedup and planning read
+identifiers only), so a real display title is an optional display-layer enrichment:
+EXACT hits read it from the catalog / Zotero, new items use the conversation or an
+arXiv fetch, and when unavailable the identifier is shown as-is. This fails safe on
+port to any host — a null can never be misread as a title. See GOALS.md INV15.
+
+### Changed
+- `models.py` — `Resource.title: str` → `str | None` (null when the offline resolver has no real title)
+- `resolver.py` — arXiv/DOI branches set `title = None` instead of a placeholder string; url/title inputs still keep the user's text
+- `skills/find-resource/SKILL.md` + `skills/ingest-resource/SKILL.md` — document display-layer title enrichment (optional; show identifier when no real title is available) and add the null-title constraint
+- GOALS.md — added INV15 (self-describing resolver contract: null title, display-layer enrichment, never a decision input)
+- `tests/unit/test_resolver.py` — assert `title is None` for arXiv/DOI inputs (added a DOI case); 34 tests pass
+
 ## [0.1.19] — 2026-07-20
 
 Existence is now decided by the Zotero Local API (the authority), not the local
