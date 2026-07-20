@@ -3,7 +3,7 @@
 Plan-first scholarly resource management for Claude Code. Import papers, archive
 technical documents, keep Obsidian indexes and Notion projections in sync, and
 build evidence-based literature lineage trees — with deterministic safety checks
-and an explicit approval gate before any external write.
+and an explicit approval gate before any download.
 
 [中文文档](./README.zh-CN.md)
 
@@ -11,10 +11,11 @@ and an explicit approval gate before any external write.
 
 Claude handles understanding, recommendation, and approval interactions; a
 deterministic CLI (`src/scholar_workflow/`) performs testable, resumable
-execution. Zotero is the source of truth for papers; all writes go through a
-self-hosted Zotero Bridge via a unified `ZoteroWriteAdapter`. Obsidian holds
-knowledge and derived indexes; Notion holds a management projection. Files stay
-in a single local store.
+execution. Zotero (and its PDF storage) is the authoritative library for papers;
+metadata and existence come from the Zotero Local API (read-only). Zotero has no
+local write API, so approved papers download into `paper_inbox` and the user
+imports them into Zotero manually. Obsidian holds knowledge and derived indexes;
+Notion holds a management projection.
 
 ## Skills
 

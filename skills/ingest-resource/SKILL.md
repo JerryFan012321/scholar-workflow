@@ -23,18 +23,20 @@ description: Import papers or archive technical documents into the local library
    is no plan file and no `plan_id` to hand back.
 
 ### Phase 2: Execute (only after in-conversation approval)
-5. Run `scholar-workflow apply <inputs...>` — it re-resolves, re-dedups, and writes.
-   Papers: download the PDF from arXiv (temp dir, %PDF magic / size / SHA-256 verified),
-   then upsert the Zotero item + linked_file via `ZoteroWriteAdapter`.
+5. Run `scholar-workflow apply <inputs...>` — it re-resolves, re-dedups, and downloads.
+   Papers: download the PDF from arXiv into the `paper_inbox` (%PDF magic / size /
+   SHA-256 verified). The workflow ends here — Zotero has no local write API.
 6. Technical documents: copy into the Vault category; write source/time/hash metadata.
-7. Report the receipt: Zotero key, PDF path, Vault path.
+7. Report the receipt: inbox PDF path + SHA-256, Vault path. Then tell the user to
+   import the inbox PDFs into Zotero manually — Zotero is the authoritative library.
 
 ## Constraints
 - Phase 1 never writes to external systems
 - Never run `apply` until the user has approved the plan in-conversation
-- Paper PDFs go only to `papers_root`; technical documents only to the Vault — never swap
-- If arXiv has no PDF, record metadata and candidate status; do not fetch from other sources
-- If the Bridge health check fails, stop — never fall back to Local API or another bypass
+- Never write to Zotero programmatically — import is manual; Local API is read-only
+- Downloaded PDFs land only in `paper_inbox`; technical documents only in the Vault — never swap
+- If arXiv has no PDF, record candidate status; do not fetch from other sources
+- Metadata (title/authors/year) is read from the Zotero Local API, never parsed from arXiv
 - A `conflict` action is never written automatically — surface it for the user to adjudicate
 - On identity conflict, stop that item without affecting other safe items in the batch
 
@@ -43,9 +45,7 @@ description: Import papers or archive technical documents into the local library
 Load on demand.
 
 - `references/resource-model.md` — kind classification and storage targets
-- `references/download-validation.md` — temp-dir download and PDF validation
-- `references/zotero-fields.md` — Zotero field mapping and attachment shape
-- `references/bridge-contract.md` — the write client contract
+- `references/download-validation.md` — inbox download and PDF validation
 - `${CLAUDE_PLUGIN_ROOT}/references/source-policy.md` — arXiv-only acquisition
 - `${CLAUDE_PLUGIN_ROOT}/references/identity-policy.md` — dedup keys, version handling
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md` — storage-root invariants

@@ -28,7 +28,7 @@ def main() -> None:
 @main.command()
 @click.option("--json", "as_json", is_flag=True)
 def doctor(as_json: bool) -> None:
-    """Check runtime dependencies (config paths, Zotero Bridge)."""
+    """Check runtime dependencies (config paths, Zotero Local API)."""
     from scholar_workflow.config import load_config
     from scholar_workflow.doctor import run_doctor
 
@@ -96,8 +96,9 @@ def plan_import(inputs: tuple[str, ...]) -> None:
 @main.command()
 @click.argument("inputs", nargs=-1, required=True)
 def apply(inputs: tuple[str, ...]) -> None:
-    """Execute an import: resolve, dedup, then write Zotero. Call only after the
-    user has approved the plan in-conversation — this command performs the writes."""
+    """Execute an import: resolve, dedup, then download approved PDFs to the inbox.
+    Call only after the user has approved the plan in-conversation. Zotero import
+    is manual — this command never writes to Zotero."""
     from scholar_workflow.resolver import resolve_many
     from scholar_workflow.state import StateStore
     from scholar_workflow.planning import generate_plan

@@ -1,7 +1,7 @@
 # Identity Policy (shared)
 
 How a resource is normalized, identified, and matched. Used by find-resource
-(discovery dedup) and ingest-resource (Zotero upsert dedup).
+(discovery dedup) and ingest-resource (existence check before download).
 
 ## Identifier normalization
 

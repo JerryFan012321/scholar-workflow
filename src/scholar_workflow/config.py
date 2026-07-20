@@ -8,14 +8,11 @@ from pydantic import BaseModel, field_validator
 
 
 DEFAULT_HOME = Path.home() / ".config" / "scholar-workflow"
+DEFAULT_PAPER_INBOX = Path.home() / "documents" / "0-inbox" / "paper-inbox"
 
 
 class ZoteroConfig(BaseModel):
     local_api_url: str = "http://127.0.0.1:23119/api"
-    bridge_url: str = "http://127.0.0.1:23119/scholar-workflow/v1"
-    write_backend: str = "auto"
-    allow_direct_sqlite_write: bool = False
-    attachment_mode: str = "linked_file"
 
 
 class ObsidianConfig(BaseModel):
@@ -34,21 +31,20 @@ class NotionConfig(BaseModel):
 class PolicyConfig(BaseModel):
     paper_pdf_source: str = "arxiv_only"
     require_approval_for_download: bool = True
-    require_approval_for_write: bool = True
-    allow_direct_zotero_sqlite_write: bool = False
     notion_file_upload: bool = False
 
 
 class Config(BaseModel):
     version: int = 1
     papers_root: Path
+    paper_inbox: Path = DEFAULT_PAPER_INBOX
     vault_root: Path
     zotero: ZoteroConfig = ZoteroConfig()
     obsidian: ObsidianConfig = ObsidianConfig()
     notion: NotionConfig = NotionConfig()
     policy: PolicyConfig = PolicyConfig()
 
-    @field_validator("papers_root", "vault_root", mode="before")
+    @field_validator("papers_root", "paper_inbox", "vault_root", mode="before")
     @classmethod
     def expand_path(cls, v: Any) -> Path:
         return Path(os.path.expandvars(str(v))).expanduser().resolve()

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "scholar-workflow",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "description": "Plan-first scholarly resource management: import papers, archive technical documents, sync Obsidian indexes and Notion projections, build literature lineage trees.",
   "author": {
     "name": "Scholar Workflow contributors"
@@ -12,6 +12,12 @@
       "title": "Paper PDF root",
       "description": "The only allowed root for managed paper PDFs.",
       "required": true
+    },
+    "paper_inbox": {
+      "type": "directory",
+      "title": "Paper download inbox",
+      "description": "Where downloaded PDFs land, awaiting manual import into Zotero.",
+      "required": false
     },
     "vault_root": {
       "type": "directory",

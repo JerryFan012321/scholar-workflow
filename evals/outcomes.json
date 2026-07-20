@@ -32,8 +32,8 @@
       "status": "pending"
     },
     {
-      "id": "zotero-upsert-not-duplicate",
-      "description": "Zotero 已有条目时只补充缺失元数据，不创建重复条目",
+      "id": "dedup-exact-collapse",
+      "description": "精确命中（DOI/arXiv 基础 id）判为已存在并跳过，不重复下载或重复建立身份",
       "status": "pending"
     },
     {
@@ -42,8 +42,8 @@
       "status": "pending"
     },
     {
-      "id": "bridge-fail-closed",
-      "description": "Bridge 关闭时 Zotero 写入失败关闭，不回退到其他旁路",
+      "id": "download-to-inbox",
+      "description": "批准后论文 PDF 下载并落入 paper_inbox，插件不对 Zotero 做程序化写入",
       "status": "pending"
     },
     {

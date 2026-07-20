@@ -6,7 +6,8 @@
 5 Agents: intake / library / knowledge / lineage / audit
 5 Skills: find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency
 确定性 CLI: src/scholar_workflow/ + bin/scholar-workflow
-Zotero 写入: integrations/zotero-bridge/（唯一写入后端）
+Zotero 只读: adapters/zotero_local.py（Local API，元数据/存在性权威来源）
+论文下载: 落入 paper_inbox 收件箱，Zotero 导入由人工完成
 ```
 
 ## Conventions
@@ -98,7 +99,7 @@ part of the shipped plugin. **When the build targets in `dev-guide/` are met:**
 - Renaming a skill or agent directory (breaks existing references)
 - Removing a skill from the plugin
 - Changing the `description` field format or triggering strategy
-- Switching Zotero write backend implementation (affects all write paths)
+- Reintroducing any programmatic Zotero write path (currently read-only via Local API; import is manual)
 - Modifying hook interception rules
 - Adding external dependencies to a skill's `scripts/`
 

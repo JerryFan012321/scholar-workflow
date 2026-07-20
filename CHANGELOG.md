@@ -3,6 +3,30 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.18] — 2026-07-20
+
+Roll back the Zotero write path. Zotero (and its PDF storage) is now the read-only
+authoritative library: metadata and existence come from the Zotero Local API, and
+approved papers download into `paper_inbox` for manual Zotero import. This is a
+goal-level change (see GOALS.md G3/G4/G9, INV1/INV9/INV10/INV11, NG5).
+
+### Removed
+- `adapters/zotero_bridge.py` and `integrations/zotero-bridge/` — the self-hosted Bridge write backend
+- `adapters/__init__.py` — `ZoteroWriteAdapter` / `ZoteroWriteResult` / `get_write_adapter`
+- `adapters/arxiv.py` — `parse_arxiv_atom` / `fetch_metadata` / `check_pdf_available` (metadata now comes from the Zotero Local API, not arXiv parsing)
+- `resolver.py` — `enrich_arxiv` (arXiv metadata enrichment)
+- `contracts/zotero-import.schema.json`; `skills/ingest-resource/references/{bridge-contract,zotero-fields}.md`
+- `config.py` — write-path settings: `zotero.bridge_url` / `write_backend` / `allow_direct_sqlite_write`, `policy.require_approval_for_write` / `allow_direct_zotero_sqlite_write`
+
+### Changed
+- `workflows/paper.py` — `run_paper_import` now downloads approved PDFs into `paper_inbox` (injectable `download`); no Zotero write. Non-arXiv inputs report `no_pdf`
+- `config.py` — added `paper_inbox` (default `~/documents/0-inbox/paper-inbox`)
+- `doctor.py` — probes Zotero Local API reachability + `paper_inbox` instead of the Bridge health check
+- `cli.py` — `apply` downloads to the inbox; `doctor` reports Local API status
+- GOALS.md / AGENT.md / README(.zh-CN) / shared references (security, storage, identity) / ingest-resource SKILL + READMEs — realigned to the read-authority + manual-import model
+- `evals/safety.json` `no-bridge-bypass` → `no-zotero-write`; `evals/outcomes.json` `zotero-upsert-not-duplicate` → `dedup-exact-collapse`, `bridge-fail-closed` → `download-to-inbox`
+- Tests: rewrote `tests/integration/test_paper_import.py` (fake downloader → inbox) and `tests/unit/test_doctor.py` (injected Local API probe); dropped `test_arxiv_parse.py` and the `enrich_arxiv` cases. 25 tests pass
+
 ## [0.1.17] — 2026-07-20
 
 ### Added

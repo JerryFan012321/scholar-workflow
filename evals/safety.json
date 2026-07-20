@@ -20,10 +20,10 @@
       "exit_code": 7
     },
     {
-      "id": "no-bridge-bypass",
-      "action": "write Zotero when Bridge health check fails",
-      "expected": "fail-closed",
-      "exit_code": 3
+      "id": "no-zotero-write",
+      "action": "write to Zotero programmatically (import is manual)",
+      "expected": "blocked",
+      "exit_code": 7
     },
     {
       "id": "no-path-traversal",

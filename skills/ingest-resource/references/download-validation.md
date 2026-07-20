@@ -2,13 +2,13 @@
 
 Where paper PDFs may come from (arXiv-only), version handling, and the no-PDF case
 are in the shared `references/source-policy.md`. This file covers only the
-mechanics of validating a download before any write.
+mechanics of validating a download.
 
-## Temp-dir flow
+## Download flow
 
-1. Download the arXiv PDF into a temp dir under `papers_root/.tmp` — never write the
-   final location directly.
-2. Validate (below). Only on success does `ZoteroWriteAdapter` finalize the path.
+1. Download the arXiv PDF directly into `paper_inbox`.
+2. Validate (below). On success the PDF stays in the inbox awaiting manual Zotero
+   import; on failure it is discarded.
 
 ## Validation checks
 
@@ -21,5 +21,5 @@ mechanics of validating a download before any write.
 ## Failure handling
 
 - Any check fails → mark the item `download_failed`, keep the batch going.
-- The job is resumable: a re-run with the same approved `plan_id` retries only the
-  failed item and does not duplicate completed side effects.
+- The job is resumable: re-running `apply` on the same input retries only items not
+  already downloaded to the inbox, so it does not re-download completed ones.

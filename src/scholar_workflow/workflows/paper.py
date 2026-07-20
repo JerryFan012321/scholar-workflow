@@ -1,20 +1,26 @@
-"""Paper import workflow (Saga: each step retryable, no auto-rollback)."""
+"""Paper import workflow: download PDFs to the inbox for manual Zotero import.
+
+Zotero has no local write API, so the automated workflow ends at "PDF in the
+inbox". The user imports into Zotero by hand; Zotero (and its storage) is the
+authoritative library. Each step is retryable with no auto-rollback (Saga).
+"""
 from __future__ import annotations
 import uuid
 from pathlib import Path
 from scholar_workflow.models import Resource, ActionPlan, TaskState
 from scholar_workflow.approvals import assert_executable
-from scholar_workflow.adapters import get_write_adapter
 from scholar_workflow.adapters.arxiv import download_pdf, sha256_file
 from scholar_workflow.state import StateStore
 
 
 def run_paper_import(plan: ActionPlan, resources: list[Resource],
-                     config, store: StateStore, adapter=None) -> dict:
+                     config, store: StateStore, download=None) -> dict:
+    """Download approved papers into the inbox. `download` is injectable for tests."""
     assert_executable(plan, resources)
-    results = {}
-    if adapter is None:
-        adapter = get_write_adapter(config)
+    if download is None:
+        download = download_pdf
+    inbox = Path(config.paper_inbox)
+    results: dict = {}
 
     for action in plan.actions:
         if action.operation in ("skip", "conflict"):
@@ -26,52 +32,28 @@ def run_paper_import(plan: ActionPlan, resources: list[Resource],
         job_id = str(uuid.uuid4())
         store.upsert(job_id, res.resource_id, TaskState.APPROVED, plan_id=plan.plan_id)
 
-        try:
-            # Download (arXiv only; other kinds carry no PDF in phase 1)
-            pdf_path = None
-            if action.download_url and res.identifiers.arxiv:
-                tmp = Path(config.papers_root) / ".tmp"
-                pdf_path = download_pdf(res.identifiers.arxiv, tmp)
-                sha = sha256_file(pdf_path)
-                store.upsert(job_id, res.resource_id, TaskState.DOWNLOADED,
-                             artifacts={"tmp_path": str(pdf_path), "sha256": sha})
-
-            # Zotero upsert
-            idempotency_key = f"{plan.plan_id}:{res.resource_id}:zotero"
-            zr = adapter.upsert_paper(
-                _build_zotero_payload(res, action,
-                                      str(pdf_path) if pdf_path else None),
-                idempotency_key,
-            )
-            store.upsert(job_id, res.resource_id, TaskState.ZOTERO_SYNCED,
-                         artifacts={"item_key": zr.item_key, "final_path": zr.final_path})
-
+        # arXiv is the only PDF source in phase 1; other inputs carry no PDF.
+        if not res.identifiers.arxiv:
+            store.upsert(job_id, res.resource_id, TaskState.NO_ARXIV_PDF)
             results[res.resource_id] = {
-                "status": "completed",
-                "item_key": zr.item_key,
-                "attachment_key": zr.attachment_key,
-                "final_path": zr.final_path,
+                "status": "no_pdf",
+                "reason": "no arXiv PDF source; add to Zotero manually",
             }
-            store.upsert(job_id, res.resource_id, TaskState.COMPLETED)
+            continue
 
+        try:
+            pdf_path = download(res.identifiers.arxiv, inbox)
+            sha = sha256_file(pdf_path)
+            store.upsert(job_id, res.resource_id, TaskState.DOWNLOADED,
+                         artifacts={"inbox_path": str(pdf_path), "sha256": sha})
+            results[res.resource_id] = {
+                "status": "downloaded",
+                "inbox_path": str(pdf_path),
+                "sha256": sha,
+            }
         except Exception as exc:
-            store.upsert(job_id, res.resource_id, TaskState.ZOTERO_FAILED,
+            store.upsert(job_id, res.resource_id, TaskState.DOWNLOAD_FAILED,
                          artifacts={"error": str(exc)})
             results[res.resource_id] = {"status": "failed", "error": str(exc)}
 
     return results
-
-
-def _build_zotero_payload(res: Resource, action, pdf_path: str | None) -> dict:
-    attachment = ({"mode": "linked_file", "absolute_path": pdf_path}
-                  if pdf_path else None)
-    return {
-        "title": res.title,
-        "authors": res.authors,
-        "doi": res.identifiers.doi,
-        "arxiv_id": res.identifiers.arxiv,
-        "year": res.year,
-        "tags": [],
-        "collection_key": action.zotero_collection_key or "",
-        "attachment": attachment,
-    }
