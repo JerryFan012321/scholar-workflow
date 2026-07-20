@@ -4,6 +4,7 @@ import hashlib
 import json
 from datetime import datetime, timedelta
 from scholar_workflow.models import ActionPlan, ActionItem, Resource, ResourceKind
+from scholar_workflow.dedup import check_existence, decide_operation
 
 
 PLAN_TTL_HOURS = 24
@@ -14,13 +15,22 @@ def _input_digest(resources: list[Resource]) -> str:
     return "sha256:" + hashlib.sha256(payload.encode()).hexdigest()
 
 
-def generate_plan(resources: list[Resource], config_version: str = "0") -> ActionPlan:
-    """Build an ActionPlan from a list of resolved resources. Never writes externally."""
+def generate_plan(resources: list[Resource], config_version: str = "0",
+                  state=None) -> ActionPlan:
+    """Build an ActionPlan from resolved resources. Never writes externally.
+
+    When `state` is given, the deterministic existence check sets each operation
+    (create / skip / conflict); a fuzzy hit becomes a conflict, never an auto-merge.
+    """
     actions: list[ActionItem] = []
     for res in resources:
         item = ActionItem(resource_id=res.resource_id, operation="create")
 
-        if res.zotero.item_key:
+        if state is not None:
+            op, conflicts = decide_operation(check_existence(res, state))
+            item.operation = op
+            item.conflicts = conflicts
+        elif res.zotero.item_key:
             item.operation = "update"
 
         if res.kind == ResourceKind.PAPER:

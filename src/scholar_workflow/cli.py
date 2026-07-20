@@ -40,17 +40,47 @@ def discover(query: str) -> None:
 
 
 @main.command()
-@click.argument("input_path")
-def resolve(input_path: str) -> None:
-    """Normalize and look up a single resource identifier."""
-    raise NotImplementedError
+@click.argument("identifier")
+def resolve(identifier: str) -> None:
+    """Normalize a single identifier and report its existence (read-only)."""
+    from scholar_workflow.resolver import resolve_one
+    from scholar_workflow.state import StateStore
+    from scholar_workflow.dedup import check_existence
+
+    if not identifier.strip():
+        raise InputError("empty identifier")
+    res = resolve_one(identifier)
+    store = StateStore(_state_db_path())
+    try:
+        existence = check_existence(res, store)
+    finally:
+        store.close()
+    click.echo(json.dumps({
+        "resource": res.model_dump(mode="json"),
+        "existence": {"match": existence.match.value,
+                      "resource_id": existence.resource_id,
+                      "zotero_item_key": existence.zotero_item_key,
+                      "candidates": existence.candidates},
+    }, ensure_ascii=False))
 
 
 @main.command("plan")
-@click.argument("input_path")
-def plan_import(input_path: str) -> None:
+@click.argument("inputs", nargs=-1, required=True)
+def plan_import(inputs: tuple[str, ...]) -> None:
     """Generate an import action plan (dry-run, never writes)."""
-    raise NotImplementedError
+    from scholar_workflow.resolver import resolve_many
+    from scholar_workflow.state import StateStore
+    from scholar_workflow.planning import generate_plan
+
+    resources = resolve_many(list(inputs))
+    if not resources:
+        raise InputError("no resolvable inputs")
+    store = StateStore(_state_db_path())
+    try:
+        plan = generate_plan(resources, state=store)
+    finally:
+        store.close()
+    click.echo(plan.model_dump_json(indent=2))
 
 
 @main.command()

@@ -3,6 +3,15 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.11] — 2026-07-20
+
+### Added
+- `dedup.py` — `decide_operation(result) -> (operation, conflicts)`: NONE→create, EXACT→skip, FUZZY→conflict (NG3: a fuzzy hit is surfaced for human adjudication, never auto-merged). 3 unit tests
+- `cli.py` — wired `resolve` (normalize one identifier + report existence, read-only) and `plan` (dry-run action plan over N inputs, never writes); both use exit code 2 on bad input
+
+### Changed
+- `planning.generate_plan` — optional `state` arg; when given, the deterministic existence check drives each action's operation (create/skip/conflict) instead of the item_key heuristic
+
 ## [0.1.10] — 2026-07-20
 
 ### Fixed

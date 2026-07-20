@@ -46,3 +46,17 @@ def check_existence(resource: Resource, state) -> ExistenceResult:
         return ExistenceResult(Match.FUZZY, candidates=candidates)
 
     return ExistenceResult(Match.NONE)
+
+
+def decide_operation(result: ExistenceResult) -> tuple[str, list[str]]:
+    """Map an existence result to a plan operation + conflict list (deterministic).
+
+    NONE  -> create. EXACT -> skip (already in library; offline resolver carries no
+    fresh metadata to justify an update). FUZZY -> conflict for human adjudication
+    (NG3): a fuzzy hit is never an automatic merge or skip.
+    """
+    if result.match is Match.EXACT:
+        return "skip", []
+    if result.match is Match.FUZZY:
+        return "conflict", [c["resource_id"] for c in result.candidates]
+    return "create", []

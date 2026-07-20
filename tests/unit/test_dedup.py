@@ -2,7 +2,7 @@
 from __future__ import annotations
 import pytest
 from scholar_workflow.state import StateStore
-from scholar_workflow.dedup import check_existence, Match
+from scholar_workflow.dedup import check_existence, decide_operation, ExistenceResult, Match
 from scholar_workflow.resolver import resolve_one
 from scholar_workflow.identity import normalize_title
 
@@ -54,3 +54,20 @@ def test_inv1_versions_collapse_to_one_exact(state):
     keys = {check_existence(resolve_one(v), state).zotero_item_key
             for v in ("2401.01234", "2401.01234v1", "arxiv:2401.01234v7")}
     assert keys == {"ONE"}
+
+
+def test_decide_none_creates():
+    assert decide_operation(ExistenceResult(Match.NONE)) == ("create", [])
+
+
+def test_decide_exact_skips():
+    r = ExistenceResult(Match.EXACT, resource_id="paper:arxiv:2401.01234")
+    assert decide_operation(r) == ("skip", [])
+
+
+def test_decide_fuzzy_is_conflict_not_merge():
+    # NG3: a fuzzy hit is surfaced for human adjudication, never auto-merged.
+    r = ExistenceResult(Match.FUZZY, candidates=[{"resource_id": "paper:meta:x"}])
+    op, conflicts = decide_operation(r)
+    assert op == "conflict"
+    assert conflicts == ["paper:meta:x"]
