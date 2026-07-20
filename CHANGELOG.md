@@ -3,6 +3,20 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.21] — 2026-07-20
+
+Backs the `no-existence-on-unreachable` eval case (evals/safety.json) with a real
+CLI-boundary test: commands run through CliRunner must exit 3 when the Zotero Local
+API is unreachable, never silently treating it as "not found" (INV12). This is the
+first test to cover the `DependencyError → exit 3` mapping in `cli.py` itself, not
+just the logic layer. Scope was deliberately limited to eval cases that have a real
+CLI trigger path — the exit-4 cases (`no-unapproved-apply`, `plan-invalidated-on-change`)
+have none (the `apply` command signs its own plan in-process), so their guard stays
+at the logic layer (`approvals.assert_executable`).
+
+### Added
+- `tests/eval/test_cli_exit_codes.py` (3) — `locate`/`plan` exit 3 on unreachable Zotero (fail-closed, INV12); empty identifier exits 2 (input error). 40 tests pass
+
 ## [0.1.20] — 2026-07-20
 
 Makes the resolver contract self-describing: for identifier inputs (arXiv/DOI) the
