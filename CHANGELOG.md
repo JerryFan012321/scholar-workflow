@@ -3,6 +3,25 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.2.0] — 2026-07-20
+
+Goal-layer pivot: adopt zotero-mcp (a third-party Zotero 7 MCP server exposing read /
+write / semantic-search tools to the host LLM) as the way scholar-workflow reaches
+Zotero. This removes the premises several invariants rested on ("Zotero has no local
+write API, no semantic search") — GOALS.md F2's "reinstate programmatic writes once a
+local write API exists" is now fulfilled, third-party. **This entry rewrites the goal
+layer only (GOALS.md); no code, MCP wiring, or downstream references/SKILL/evals were
+touched — those are staged for later phases.** Three user-ratified decisions: writes
+go through zotero-mcp and require user approval (batchable); semantic recall is
+delegated to zotero-mcp's `semantic_search`; zotero-mcp is a hard dependency (doctor
+must check it, fail-fast on exit 3, no degrade branch).
+
+### Changed
+- GOALS.md — G4/G8/G9 rewritten (approved-write import, MCP-provided Zotero access, CLI shrinks to arXiv/inbox/projection); INV1 reworded (dedup via zotero-mcp); INV9 rewritten (writes only via zotero-mcp, per-write user approval, no bypass); INV10/INV12 authority moved Local API → zotero-mcp; INV14 rewritten (delegate semantic_search, no self-ban on embeddings); INV15 display-name path via zotero-mcp; NG5 narrowed ("any programmatic write" → "unapproved write / bypassing the approval gate"); Phase 1 status and F2 updated
+- GOALS.md — added INV16 (hard dependency on zotero-mcp + doctor fail-fast)
+- GOALS.md — deprecated INV13 (local resource cache dropped; existence/metadata/semantic all delegated live to zotero-mcp; ID retained, not reused)
+- GOALS.md — added a downstream-sync checklist under 维护规则 (security/storage/identity policies, find/ingest/sync-projections SKILLs, evals/safety.json, and code retirement of zotero_local.py / sync.py / dedup.check_existence / CLI sync·locate·resolve·catalog) to align in later phases
+
 ## [0.1.21] — 2026-07-20
 
 Backs the `no-existence-on-unreachable` eval case (evals/safety.json) with a real
