@@ -28,8 +28,18 @@ def main() -> None:
 @main.command()
 @click.option("--json", "as_json", is_flag=True)
 def doctor(as_json: bool) -> None:
-    """Check runtime dependencies (Zotero, Obsidian, Bridge)."""
-    raise NotImplementedError
+    """Check runtime dependencies (config paths, Zotero Bridge)."""
+    from scholar_workflow.config import load_config
+    from scholar_workflow.doctor import run_doctor
+
+    report = run_doctor(load_config())
+    if as_json:
+        click.echo(json.dumps(report, ensure_ascii=False))
+    else:
+        for c in report["checks"]:
+            click.echo(f"[{'ok' if c['ok'] else 'FAIL'}] {c['name']}: {c['detail']}")
+    if not report["ok"]:
+        raise SystemExit(3)  # dependency not running (see AGENT.md exit codes)
 
 
 @main.command()

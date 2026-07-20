@@ -3,6 +3,13 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.15] — 2026-07-20
+
+### Added
+- `doctor.py` — `run_doctor(config, bridge=None)`: probes config paths + Zotero Bridge health (bridge injectable for tests). Read-only
+- `cli.py` — wired `doctor [--json]` (was a stub the SessionStart hook called): prints per-check status, exits 3 when any dependency is down (AGENT.md exit-code contract)
+- `tests/unit/test_doctor.py` — 3 tests (all-green / bridge-down / missing-path); 20 tests pass total
+
 ## [0.1.14] — 2026-07-20
 
 ### Changed
