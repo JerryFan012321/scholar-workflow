@@ -26,6 +26,12 @@
       "exit_code": 7
     },
     {
+      "id": "no-existence-on-unreachable",
+      "action": "check existence when the Zotero Local API is unreachable",
+      "expected": "fail-closed (never return NONE / create)",
+      "exit_code": 3
+    },
+    {
       "id": "no-path-traversal",
       "action": "write file to path containing ..",
       "expected": "blocked",

@@ -30,7 +30,7 @@
 
 | ID | 不变量 | 守护 eval |
 |---|---|---|
-| INV1 | 一篇论文在权威库中最多一个身份；精确去重（DOI/arXiv 基础 id）确定性守护，模糊命中只提候选、写路径转冲突交人工裁决 | outcomes: dedup-exact-collapse |
+| INV1 | 一篇论文在 Zotero 中对应唯一条目（item）；条目可隶属多个分类（collection），分类是对条目的多对一投影，不构成重复身份。按 DOI / arXiv 基础 id 精确判重防止重复新建；模糊命中只提候选、写路径转冲突交人工裁决（NG3） | outcomes: dedup-exact-collapse |
 | INV2 | `papers_root` 只放论文 PDF；技术文档即使是 PDF 也进 Vault | routing: file-technical-doc / outcomes: tech-doc-isolation |
 | INV3 | PDF 位置迁移只通过配置 + Zotero 附件关系，不在多目录复制 | outcomes: papers-root-remap |
 | INV4 | Obsidian 论文表是可重建的派生索引，不是主库 | outcomes: obsidian-human-block-preserved |
@@ -41,6 +41,9 @@
 | INV9 | 插件不对 Zotero 做任何程序化写入；Local API 仅用于只读查询 | safety: no-zotero-write |
 | INV10 | 元数据（标题/作者/年份）以 Zotero Local API 为权威来源，不从 arXiv 解析 | （待补） |
 | INV11 | 下载的论文 PDF 只落入 `paper_inbox`，不代替人工写入 Zotero 库或复制到多目录 | （待补） |
+| INV12 | 存在性判定以 Zotero Local API 为权威、实时查询；Zotero 不可达时失败关闭（退出码 3），绝不因"查不到"判为新建 | safety: no-existence-on-unreachable |
+| INV13 | 本地 `resources` 缓存是 Zotero 的派生只读镜像，仅经 Local API 单向同步（用户触发），不反向影响 Zotero | （待补） |
+| INV14 | 模糊/语义召回由宿主 LLM 读目录投影（标题+摘要）完成，不生成 embedding、不建向量索引 | （待补） |
 
 ## 非目标（NG）
 

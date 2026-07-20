@@ -25,7 +25,9 @@ CREATE TABLE IF NOT EXISTS resources (
     resource_id     TEXT PRIMARY KEY,
     doi             TEXT,
     arxiv           TEXT,
+    title           TEXT,
     title_norm      TEXT,
+    abstract        TEXT,
     first_author    TEXT,
     year            INTEGER,
     zotero_item_key TEXT,
@@ -77,23 +79,25 @@ class StateStore:
     # --- resources identity cache (exact-match authority + fuzzy recall surface) ---
 
     def upsert_resource(self, resource_id: str, *, doi: str | None = None,
-                        arxiv: str | None = None, title_norm: str | None = None,
+                        arxiv: str | None = None, title: str | None = None,
+                        title_norm: str | None = None, abstract: str | None = None,
                         first_author: str | None = None, year: int | None = None,
                         zotero_item_key: str | None = None,
                         status: str | None = None) -> None:
         now = datetime.utcnow().isoformat()
         self._db.execute(
             """INSERT INTO resources
-                 (resource_id, doi, arxiv, title_norm, first_author, year,
-                  zotero_item_key, status, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 (resource_id, doi, arxiv, title, title_norm, abstract,
+                  first_author, year, zotero_item_key, status, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                ON CONFLICT(resource_id) DO UPDATE SET
-                 doi=excluded.doi, arxiv=excluded.arxiv,
-                 title_norm=excluded.title_norm, first_author=excluded.first_author,
-                 year=excluded.year, zotero_item_key=excluded.zotero_item_key,
+                 doi=excluded.doi, arxiv=excluded.arxiv, title=excluded.title,
+                 title_norm=excluded.title_norm, abstract=excluded.abstract,
+                 first_author=excluded.first_author, year=excluded.year,
+                 zotero_item_key=excluded.zotero_item_key,
                  status=excluded.status, updated_at=excluded.updated_at""",
-            (resource_id, doi, arxiv, title_norm, first_author, year,
-             zotero_item_key, status, now),
+            (resource_id, doi, arxiv, title, title_norm, abstract, first_author,
+             year, zotero_item_key, status, now),
         )
         self._db.commit()
 
@@ -112,19 +116,21 @@ class StateStore:
                     return rows[0]
         return None
 
-    def find_candidates(self, title_norm: str, *, year: int | None = None,
-                        limit: int = 5) -> list[dict]:
-        """Cheap fuzzy prefilter for LLM recall — never decides, just narrows."""
-        tokens = [t for t in title_norm.split() if len(t) > 3][:6]
-        if not tokens:
-            return []
-        where = " OR ".join("title_norm LIKE ?" for _ in tokens)
-        params = tuple(f"%{t}%" for t in tokens)
-        if year is not None:
-            where = f"({where}) AND (year IS NULL OR ABS(year - ?) <= 1)"
-            params = params + (year,)
+    def catalog(self) -> list[dict]:
+        """Projection the host LLM reads for semantic recall (plan C: no embeddings).
+
+        Returns id/title/authors/year/abstract + Zotero key per cached resource.
+        """
         return self._rows(
-            f"SELECT * FROM resources WHERE {where} LIMIT ?", params + (limit,))
+            """SELECT resource_id, title, first_author, year, abstract,
+                      zotero_item_key, doi, arxiv, updated_at
+               FROM resources ORDER BY updated_at DESC""", ())
+
+    def oldest_sync(self) -> str | None:
+        """Oldest `updated_at` across the cache, for staleness reminders. None if empty."""
+        row = self._db.execute(
+            "SELECT MIN(updated_at) FROM resources").fetchone()
+        return row[0] if row else None
 
     def close(self) -> None:
         self._db.close()

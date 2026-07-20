@@ -16,7 +16,8 @@ description: Import papers or archive technical documents into the local library
    the state store, and emits a structured plan (one action per resource:
    create / skip / conflict, with arXiv download targets for papers).
 2. Read that JSON and present it to the user in a human-readable form: how many are
-   new (create), already present (skip), or fuzzy-matched conflicts needing a decision.
+   new (create), already present (skip), or identifier conflicts (several Zotero items
+   carry the same identifier) needing a human decision.
 3. For papers, note the recommended Zotero Collection and Obsidian index location;
    for technical documents, the Vault category directory.
 4. Wait for the user to approve in-conversation. Approval is a dialogue act — there

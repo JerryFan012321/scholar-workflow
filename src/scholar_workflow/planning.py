@@ -16,18 +16,20 @@ def _input_digest(resources: list[Resource]) -> str:
 
 
 def generate_plan(resources: list[Resource], config_version: str = "0",
-                  state=None) -> ActionPlan:
+                  zotero=None, state=None) -> ActionPlan:
     """Build an ActionPlan from resolved resources. Never writes externally.
 
-    When `state` is given, the deterministic existence check sets each operation
-    (create / skip / conflict); a fuzzy hit becomes a conflict, never an auto-merge.
+    When `zotero` (a Zotero Local API reader) is given, the existence check sets each
+    operation (create / skip / conflict). Zotero is authoritative; if it is
+    unreachable the check raises DependencyError (exit code 3) — a plan is never
+    built on the assumption that an unreachable library means "new".
     """
     actions: list[ActionItem] = []
     for res in resources:
         item = ActionItem(resource_id=res.resource_id, operation="create")
 
-        if state is not None:
-            op, conflicts = decide_operation(check_existence(res, state))
+        if zotero is not None:
+            op, conflicts = decide_operation(check_existence(res, zotero, state))
             item.operation = op
             item.conflicts = conflicts
         elif res.zotero.item_key:

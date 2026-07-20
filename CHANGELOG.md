@@ -3,6 +3,35 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.19] — 2026-07-20
+
+Existence is now decided by the Zotero Local API (the authority), not the local
+cache — fixing a phantom-cache bug where dedup queried an empty SQLite table (no
+production code ever populated it) and so always judged papers as new. Adds a
+user-triggered cache sync and a catalog projection for host-LLM semantic recall.
+Splits identity work into two disjoint tools: exact existence (deterministic
+identifier query, fail-closed) and fuzzy recall (host LLM reads the catalog, no
+embeddings). See GOALS.md INV1/INV12/INV13/INV14.
+
+### Added
+- `adapters/zotero_local.py` — `search_by_arxiv(arxiv_id)` (field-verified against DOI/url/extra to reject text false-positives) and `get_items(start, limit)` paging; client is now injectable for tests
+- `dedup.py` — `DependencyError` (maps to exit code 3); `check_existence` queries the Local API and fails closed when unreachable (INV12 — never returns `none` on error)
+- `workflows/sync.py` — `sync_cache(zotero, store, page_size=100)`: pages Zotero top-level items into the derived cache (user-triggered, fail-closed); `_resource_from_item` maps an item → cache row (arXiv id pulled from DOI/url/extra), skipping identity-less items
+- `state.py` — `resources` cache gains `title`/`abstract`; `catalog()` (title + abstract projection for semantic recall) and `oldest_sync()` (staleness signal)
+- `cli.py` — `sync` (refresh the cache from Zotero) and `catalog` (emit the projection with `oldest_sync` for the host LLM); `DependencyDown` (exit code 3)
+- `tests/contract/test_zotero_local.py` (6) + `tests/unit/test_sync.py` (5); rewrote `tests/unit/test_dedup.py` (8, fake Zotero). 36 tests pass
+
+### Changed
+- `dedup.Match` enum EXACT/FUZZY/NONE → EXACT/CONFLICT/NONE; `conflict` now means several Zotero items carry the same identifier (surfaced for human adjudication, never auto-merged — NG3)
+- `planning.generate_plan(resources, config_version, zotero, state)` — existence check now drives each action via the Local API
+- `cli.py` — `resolve`/`plan`/`apply`/`locate` pass the Zotero reader and map `DependencyError` → exit 3; `locate` is exact-only (fuzzy recall → `catalog`); output field `candidates` → `conflicts`
+- GOALS.md — INV1 reworded (unique item; collections are many-to-one projections); added INV12 (existence authority + fail-closed), INV13 (cache is a derived read-only mirror), INV14 (semantic recall by host LLM reading the catalog, no embeddings/index)
+- `evals/safety.json` — added `no-existence-on-unreachable` (exit 3)
+- References (identity-policy, storage-policy) + find-resource/ingest-resource SKILL + resource-location — realigned to the read-authority + sync/catalog + exact-vs-fuzzy model
+
+### Removed
+- `state.py` — `find_candidates` (the CLI fuzzy prefilter); semantic recall is now the host LLM reading the catalog
+
 ## [0.1.18] — 2026-07-20
 
 Roll back the Zotero write path. Zotero (and its PDF storage) is now the read-only
