@@ -3,6 +3,12 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.16] — 2026-07-20
+
+### Added
+- `cli.py` — wired `report [job_id] [--format json|md|csv] [--active] [--handoff]`: job lookup or active-job list; `--handoff` emits an AgentHandoff snapshot (used by the PreCompact hook). No-target invocation exits 2
+- `tests/contract/test_handoff_report.py` — first contract test: validates `report --handoff` output against `contracts/handoff.schema.json` via jsonschema (now the declared dependency is exercised). 23 tests pass total
+
 ## [0.1.15] — 2026-07-20
 
 ### Added

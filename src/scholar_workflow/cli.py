@@ -166,10 +166,56 @@ def audit(scope: tuple[str, ...]) -> None:
 
 
 @main.command()
-@click.argument("job_id")
+@click.argument("job_id", required=False)
 @click.option("--format", "fmt", default="json", type=click.Choice(["json", "md", "csv"]))
 @click.option("--active", is_flag=True)
-@click.option("--handoff", is_flag=True)
+@click.option("--handoff", is_flag=True, help="Emit an AgentHandoff snapshot of active jobs (PreCompact).")
 def report(job_id: str | None, fmt: str, active: bool, handoff: bool) -> None:
-    """Retrieve job report."""
-    raise NotImplementedError
+    """Retrieve a job report, or list active jobs with --active (read-only)."""
+    from scholar_workflow.state import StateStore
+
+    store = StateStore(_state_db_path())
+    try:
+        rows = store.active_jobs() if (active or handoff) else None
+        if rows is None:
+            if not job_id:
+                raise InputError("provide a job_id or --active")
+            job = store.get(job_id)
+            if job is None:
+                raise InputError(f"unknown job: {job_id}")
+            rows = [job]
+    finally:
+        store.close()
+
+    if handoff:
+        click.echo(json.dumps(_handoff_snapshot(rows), ensure_ascii=False))
+    else:
+        click.echo(_format_rows(rows, fmt))
+
+
+def _handoff_snapshot(rows: list[dict]) -> dict:
+    """Build an AgentHandoff (contracts/handoff.schema.json) from active jobs."""
+    from datetime import datetime
+    return {
+        "job_id": rows[0]["job_id"] if rows else "00000000-0000-0000-0000-000000000000",
+        "plan_id": rows[0].get("plan_id") if rows else None,
+        "from_agent": "precompact",
+        "to_agent": "precompact",
+        "last_success_state": rows[0]["state"] if rows else "received",
+        "created_at": datetime.utcnow().isoformat() + "Z",
+        "artifacts": {"resource_ids": [r["resource_id"] for r in rows]},
+    }
+
+
+def _format_rows(rows: list[dict], fmt: str) -> str:
+    if fmt == "json":
+        return json.dumps(rows, ensure_ascii=False, indent=2)
+    cols = ["job_id", "resource_id", "state", "updated_at"]
+    if fmt == "csv":
+        lines = [",".join(cols)]
+        lines += [",".join(str(r.get(c, "")) for c in cols) for r in rows]
+        return "\n".join(lines)
+    # md
+    lines = ["| " + " | ".join(cols) + " |", "|" + "---|" * len(cols)]
+    lines += ["| " + " | ".join(str(r.get(c, "")) for c in cols) + " |" for r in rows]
+    return "\n".join(lines)
