@@ -84,17 +84,45 @@ def plan_import(inputs: tuple[str, ...]) -> None:
 
 
 @main.command()
-@click.argument("plan_id")
-def apply(plan_id: str) -> None:
-    """Execute an approved action plan."""
-    raise NotImplementedError
+@click.argument("inputs", nargs=-1, required=True)
+def apply(inputs: tuple[str, ...]) -> None:
+    """Execute an import: resolve, dedup, then write Zotero. Call only after the
+    user has approved the plan in-conversation — this command performs the writes."""
+    from scholar_workflow.resolver import resolve_many
+    from scholar_workflow.state import StateStore
+    from scholar_workflow.planning import generate_plan
+    from scholar_workflow.approvals import approve_plan
+    from scholar_workflow.workflows.paper import run_paper_import
+    from scholar_workflow.config import load_config
+
+    resources = resolve_many(list(inputs))
+    if not resources:
+        raise InputError("no resolvable inputs")
+    config = load_config()
+    store = StateStore(_state_db_path())
+    try:
+        plan = approve_plan(generate_plan(resources, state=store))
+        results = run_paper_import(plan, resources, config, store)
+    finally:
+        store.close()
+    click.echo(json.dumps({"plan_id": plan.plan_id, "results": results},
+                          ensure_ascii=False))
 
 
 @main.command()
 @click.argument("job_id")
 def resume(job_id: str) -> None:
-    """Resume a partially completed job."""
-    raise NotImplementedError
+    """Report a job's persisted state so it can be resumed (read-only)."""
+    from scholar_workflow.state import StateStore
+
+    store = StateStore(_state_db_path())
+    try:
+        job = store.get(job_id)
+    finally:
+        store.close()
+    if job is None:
+        raise InputError(f"unknown job: {job_id}")
+    click.echo(json.dumps(job, ensure_ascii=False))
 
 
 @main.command()

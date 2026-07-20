@@ -3,6 +3,11 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.13] — 2026-07-20
+
+### Added
+- `cli.py` — wired `apply <inputs...>` (resolve + dedup + Zotero write in one shot; approval is a conversation act, so the command takes no approval flag and is called only after the user approves in-conversation) and `resume <job_id>` (read-only: report a job's persisted state)
+
 ## [0.1.12] — 2026-07-20
 
 ### Fixed
