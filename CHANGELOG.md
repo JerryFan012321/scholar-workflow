@@ -3,6 +3,17 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.12] — 2026-07-20
+
+### Fixed
+- `workflows/paper.py` — `run_paper_import` referenced `pdf_path` on the no-arXiv branch where it was never defined (NameError); now initialized to None and the Zotero payload carries a null attachment when there is no PDF
+
+### Changed
+- `workflows/paper.py` — `run_paper_import` accepts an injectable `adapter` (defaults to `get_write_adapter`) for testability; `conflict` operations are now skipped alongside `skip` (NG3: never write a fuzzy/conflict hit)
+
+### Added
+- `tests/integration/test_paper_import.py` — 2 tests with a fake bridge: no-arXiv path completes without NameError; skip/conflict actions never reach the adapter. 17 tests pass total
+
 ## [0.1.11] — 2026-07-20
 
 ### Added

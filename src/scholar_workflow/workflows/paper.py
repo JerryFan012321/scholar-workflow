@@ -10,13 +10,14 @@ from scholar_workflow.state import StateStore
 
 
 def run_paper_import(plan: ActionPlan, resources: list[Resource],
-                     config, store: StateStore) -> dict:
+                     config, store: StateStore, adapter=None) -> dict:
     assert_executable(plan, resources)
     results = {}
-    adapter = get_write_adapter(config)
+    if adapter is None:
+        adapter = get_write_adapter(config)
 
     for action in plan.actions:
-        if action.operation == "skip":
+        if action.operation in ("skip", "conflict"):
             continue
         res = next((r for r in resources if r.resource_id == action.resource_id), None)
         if res is None:
@@ -26,7 +27,8 @@ def run_paper_import(plan: ActionPlan, resources: list[Resource],
         store.upsert(job_id, res.resource_id, TaskState.APPROVED, plan_id=plan.plan_id)
 
         try:
-            # Download
+            # Download (arXiv only; other kinds carry no PDF in phase 1)
+            pdf_path = None
             if action.download_url and res.identifiers.arxiv:
                 tmp = Path(config.papers_root) / ".tmp"
                 pdf_path = download_pdf(res.identifiers.arxiv, tmp)
@@ -37,7 +39,8 @@ def run_paper_import(plan: ActionPlan, resources: list[Resource],
             # Zotero upsert
             idempotency_key = f"{plan.plan_id}:{res.resource_id}:zotero"
             zr = adapter.upsert_paper(
-                _build_zotero_payload(res, action, str(pdf_path)),
+                _build_zotero_payload(res, action,
+                                      str(pdf_path) if pdf_path else None),
                 idempotency_key,
             )
             store.upsert(job_id, res.resource_id, TaskState.ZOTERO_SYNCED,
@@ -59,7 +62,9 @@ def run_paper_import(plan: ActionPlan, resources: list[Resource],
     return results
 
 
-def _build_zotero_payload(res: Resource, action, pdf_path: str) -> dict:
+def _build_zotero_payload(res: Resource, action, pdf_path: str | None) -> dict:
+    attachment = ({"mode": "linked_file", "absolute_path": pdf_path}
+                  if pdf_path else None)
     return {
         "title": res.title,
         "authors": res.authors,
@@ -68,5 +73,5 @@ def _build_zotero_payload(res: Resource, action, pdf_path: str) -> dict:
         "year": res.year,
         "tags": [],
         "collection_key": action.zotero_collection_key or "",
-        "attachment": {"mode": "linked_file", "absolute_path": pdf_path},
+        "attachment": attachment,
     }
