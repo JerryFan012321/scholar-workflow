@@ -11,19 +11,24 @@ description: Search for papers, verify paper identity, build candidate lists, lo
 
 ## Steps
 
-1. Determine request type: **discovery** (search for new resources) or **locate** (find existing ones)
-2. **Discovery mode**
-   - Normalize input identifiers (DOI / arXiv ID / title)
-   - Check the local state store and Zotero for existing copies
-   - Query the web only when explicitly authorized (Crossref / OpenAlex / Semantic Scholar)
-   - Return candidate list, match rationale, arXiv PDF availability, existing status
-3. **Locate mode**
-   - Papers: resolve Zotero item/attachment key first, then the relative path under `papers_root`
-   - Technical documents: resolve the Vault relative path from the state mapping
-   - Return the local path and local-link service URL; do not copy files by default
+1. Determine request type: **locate** (is it already in our library?) or
+   **discovery** (search for new resources).
+2. **Locate mode**
+   - Run `scholar-workflow locate <identifier>` — read-only. It normalizes the input
+     and returns `{match, resource_id, zotero_item_key, candidates}`:
+     - `exact` — the resource is already in the library (report the Zotero key / path)
+     - `fuzzy` — the CLI surfaces candidates only; judge whether any is truly the same
+       paper and present the reasoning. A fuzzy result is never treated as a decision.
+     - `none` — not found locally
+   - Report the local path / local-link URL; do not copy files by default.
+3. **Discovery mode**
+   - Run `scholar-workflow resolve <identifier>` to normalize + check local existence.
+   - Web query (Crossref / OpenAlex / Semantic Scholar) requires explicit user
+     authorization and is metadata-only — never a PDF source.
+   - Return a candidate list with match rationale, arXiv PDF availability, existing status.
 
 ## Output
-Candidate list (discovery) or local path + URL (locate).
+Local path + URL (locate) or a candidate list with rationale (discovery).
 
 ## Constraints
 - Web search requires explicit user authorization

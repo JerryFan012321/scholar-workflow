@@ -3,6 +3,12 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.14] — 2026-07-20
+
+### Changed
+- `ingest-resource` SKILL.md + README(.zh-CN) — align the two-phase flow with the wired CLI: `plan <inputs...>` → present + in-conversation approval → `apply <inputs...>`. Removed the stale `action-plan.json` / `plan_id` round-trip semantics (plans are not persisted; approval is a dialogue act)
+- `find-resource` SKILL.md — steps now point at the real commands (`locate` implemented, `resolve`); fuzzy locate surfaces candidates only (never a decision); discovery web query marked as authorization-gated
+
 ## [0.1.13] — 2026-07-20
 
 ### Added

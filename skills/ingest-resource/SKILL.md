@@ -8,33 +8,34 @@ description: Import papers or archive technical documents into the local library
 ## Triggers
 - User provides a paper list or candidates to add to the system
 - User asks to archive a technical document, web snapshot, draw.io, or other non-paper material
-- User approves an import plan (holds a `plan_id`)
 
 ## Steps
 
-### Phase 1: Plan (always dry-run)
-1. Classify resource `kind` (paper / technical_document / snapshot / drawio / image)
-2. Normalize DOI, arXiv ID, title, authors, year
-3. Check the input batch, state store, target directories, and Zotero (dedup)
-4. Papers: recommend a Zotero Collection and Obsidian index location
-5. Technical documents: recommend a Vault category directory
-6. Generate a structured `action-plan.json` showing create / update / skip / conflict / download targets
-7. Wait for user approval; return the `plan_id`
+### Phase 1: Plan (dry-run, never writes)
+1. Run `scholar-workflow plan <inputs...>` — it resolves each input, dedups against
+   the state store, and emits a structured plan (one action per resource:
+   create / skip / conflict, with arXiv download targets for papers).
+2. Read that JSON and present it to the user in a human-readable form: how many are
+   new (create), already present (skip), or fuzzy-matched conflicts needing a decision.
+3. For papers, note the recommended Zotero Collection and Obsidian index location;
+   for technical documents, the Vault category directory.
+4. Wait for the user to approve in-conversation. Approval is a dialogue act — there
+   is no plan file and no `plan_id` to hand back.
 
-### Phase 2: Execute (requires a valid plan_id)
-8. Validate `plan_id`, input digest, config version, and approval status
-9. Papers: download the PDF from arXiv to a temp dir; verify %PDF magic / size / SHA-256
-10. Papers: call `ZoteroWriteAdapter` to upsert the item and linked_file
-11. Technical documents: download or copy into the Vault category; write source/time/hash metadata
-12. Return receipt: Zotero key, PDF path, Vault path
+### Phase 2: Execute (only after in-conversation approval)
+5. Run `scholar-workflow apply <inputs...>` — it re-resolves, re-dedups, and writes.
+   Papers: download the PDF from arXiv (temp dir, %PDF magic / size / SHA-256 verified),
+   then upsert the Zotero item + linked_file via `ZoteroWriteAdapter`.
+6. Technical documents: copy into the Vault category; write source/time/hash metadata.
+7. Report the receipt: Zotero key, PDF path, Vault path.
 
 ## Constraints
 - Phase 1 never writes to external systems
-- Phase 2 must not run without a valid `plan_id`
-- Any change to plan content invalidates the prior approval
+- Never run `apply` until the user has approved the plan in-conversation
 - Paper PDFs go only to `papers_root`; technical documents only to the Vault — never swap
 - If arXiv has no PDF, record metadata and candidate status; do not fetch from other sources
 - If the Bridge health check fails, stop — never fall back to Local API or another bypass
+- A `conflict` action is never written automatically — surface it for the user to adjudicate
 - On identity conflict, stop that item without affecting other safe items in the batch
 
 ## References
