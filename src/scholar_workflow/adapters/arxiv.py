@@ -1,25 +1,50 @@
 """arXiv adapter: metadata resolution and PDF download."""
 from __future__ import annotations
 import hashlib
-import re
-import tempfile
 from pathlib import Path
+from xml.etree import ElementTree as ET
 import httpx
 
 
-ARXIV_API = "https://export.arxiv.org/abs/{arxiv_id}"
+ARXIV_API = "https://export.arxiv.org/api/query?id_list={arxiv_id}&max_results=1"
 ARXIV_PDF = "https://arxiv.org/pdf/{arxiv_id}"
 PDF_MAGIC = b"%PDF"
 MAX_PDF_BYTES = 50 * 1024 * 1024  # 50 MB hard limit
 
+_ATOM = "{http://www.w3.org/2005/Atom}"
+_ARXIV = "{http://arxiv.org/schemas/atom}"
+
+
+def parse_arxiv_atom(xml_text: str) -> dict:
+    """Parse an arXiv Atom feed into normalized metadata (pure, offline).
+
+    Returns {} when the feed has no <entry> (unknown id). Raises on malformed XML.
+    """
+    root = ET.fromstring(xml_text)
+    entry = root.find(f"{_ATOM}entry")
+    if entry is None:
+        return {}
+
+    title = (entry.findtext(f"{_ATOM}title") or "").strip()
+    title = " ".join(title.split())
+    authors = [n.strip() for a in entry.findall(f"{_ATOM}author")
+               if (n := a.findtext(f"{_ATOM}name"))]
+    published = entry.findtext(f"{_ATOM}published") or ""
+    year = int(published[:4]) if published[:4].isdigit() else None
+    doi = entry.findtext(f"{_ARXIV}doi")
+
+    return {"title": title, "authors": authors, "year": year,
+            "doi": doi.strip() if doi else None}
+
 
 def fetch_metadata(arxiv_id: str) -> dict:
-    """Return normalized metadata dict from arXiv API. Raises on failure."""
-    url = f"https://export.arxiv.org/api/query?id_list={arxiv_id}&max_results=1"
-    r = httpx.get(url, timeout=20)
+    """Fetch + parse arXiv metadata. Returns {} for an unknown id. Raises on network error."""
+    r = httpx.get(ARXIV_API.format(arxiv_id=arxiv_id), timeout=20)
     r.raise_for_status()
-    # minimal XML parse — replace with feedparser in real implementation
-    return {"arxiv_id": arxiv_id, "raw_xml": r.text}
+    meta = parse_arxiv_atom(r.text)
+    if meta:
+        meta["arxiv_id"] = arxiv_id
+    return meta
 
 
 def check_pdf_available(arxiv_id: str) -> bool:

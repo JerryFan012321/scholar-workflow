@@ -63,6 +63,30 @@ def resolve_one(raw: str) -> Resource:
                     identifiers=identifiers)
 
 
+def enrich_arxiv(resource: Resource, fetch=None) -> Resource:
+    """Fill title/authors/year/doi from arXiv metadata (network). No-op off arXiv.
+
+    Kept separate from resolve_one so resolution stays offline and unit-testable;
+    `fetch` is injectable for tests. Never overwrites a non-placeholder title.
+    """
+    if not resource.identifiers.arxiv:
+        return resource
+    if fetch is None:
+        from scholar_workflow.adapters.arxiv import fetch_metadata as fetch
+    meta = fetch(resource.identifiers.arxiv)
+    if not meta:
+        return resource
+    if meta.get("title"):
+        resource.title = meta["title"]
+    if meta.get("authors"):
+        resource.authors = meta["authors"]
+    if meta.get("year"):
+        resource.year = meta["year"]
+    if meta.get("doi") and not resource.identifiers.doi:
+        resource.identifiers.doi = meta["doi"]
+    return resource
+
+
 def resolve_many(raws: list[str]) -> list[Resource]:
     """Resolve a batch, collapsing inputs that share a resource_id (dedup by identity)."""
     seen: dict[str, Resource] = {}

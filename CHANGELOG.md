@@ -3,6 +3,15 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.1.17] — 2026-07-20
+
+### Added
+- `adapters/arxiv.py` — `parse_arxiv_atom(xml_text)`: pure stdlib `xml.etree` parser for arXiv Atom feeds (title/authors/year/doi), returns {} for an unknown id. Shared base for discover + apply. 3 unit tests
+- `resolver.py` — `enrich_arxiv(resource, fetch=None)`: fills title/authors/year/doi from arXiv metadata (network), kept separate from offline `resolve_one` so resolution stays unit-testable; `fetch` injectable. 3 unit tests
+
+### Changed
+- `adapters/arxiv.py` — `fetch_metadata` now parses the feed instead of returning raw XML; dropped the feedparser placeholder (stdlib only). 29 tests pass total
+
 ## [0.1.16] — 2026-07-20
 
 ### Added

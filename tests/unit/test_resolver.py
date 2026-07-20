@@ -1,8 +1,32 @@
 """Unit tests for the offline input resolver."""
 from __future__ import annotations
 from scholar_workflow.resolver import (
-    classify_input, resolve_one, resolve_many, resolve_csv,
+    classify_input, resolve_one, resolve_many, resolve_csv, enrich_arxiv,
 )
+
+
+def test_enrich_arxiv_fills_placeholder():
+    res = resolve_one("2401.01234")
+    assert res.title == "arXiv:2401.01234"  # placeholder before enrichment
+    meta = {"title": "Real Title", "authors": ["A. B."], "year": 2024,
+            "doi": "10.1/x"}
+    out = enrich_arxiv(res, fetch=lambda _id: meta)
+    assert out.title == "Real Title"
+    assert out.authors == ["A. B."]
+    assert out.year == 2024
+    assert out.identifiers.doi == "10.1/x"
+
+
+def test_enrich_noop_when_not_arxiv():
+    res = resolve_one("Some Paper Title")
+    out = enrich_arxiv(res, fetch=lambda _id: {"title": "should not apply"})
+    assert out.title == "Some Paper Title"
+
+
+def test_enrich_noop_when_metadata_empty():
+    res = resolve_one("2401.09999")
+    out = enrich_arxiv(res, fetch=lambda _id: {})
+    assert out.title == "arXiv:2401.09999"  # unknown id -> untouched
 
 
 def test_classify_arxiv_bare_and_versioned():
