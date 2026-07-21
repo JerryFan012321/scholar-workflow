@@ -1,10 +1,9 @@
 """Cross-system consistency audit workflow."""
 from __future__ import annotations
 from pathlib import Path
-from scholar_workflow.adapters.zotero_local import ZoteroLocalAdapter
 
 
-def audit_papers_root(papers_root: Path, zotero: ZoteroLocalAdapter) -> list[dict]:
+def audit_papers_root(papers_root: Path) -> list[dict]:
     """Find PDFs in papers_root with no matching Zotero attachment."""
     issues: list[dict] = []
     for pdf in papers_root.rglob("*.pdf"):
@@ -17,8 +16,7 @@ def audit_papers_root(papers_root: Path, zotero: ZoteroLocalAdapter) -> list[dic
     return issues
 
 
-def audit_obsidian_index(index_path: Path, vault_root: Path,
-                         zotero: ZoteroLocalAdapter) -> list[dict]:
+def audit_obsidian_index(index_path: Path, vault_root: Path) -> list[dict]:
     """Check that index entries resolve to valid Zotero keys and PDF paths."""
     # Full implementation in Phase 6
     return []

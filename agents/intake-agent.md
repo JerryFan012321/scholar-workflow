@@ -18,9 +18,11 @@ passes through this agent first.
 - `find-resource`
 
 ## Forbidden
-- Writing to any external system (Zotero, Obsidian, Notion, file system)
+- Writing to any external system (Zotero, Obsidian, Notion, file system) — zotero-mcp
+  queries for existence/metadata are reads and are allowed; creating/importing is the
+  library-agent's job
 - Downloading paper PDFs or any files
-- Starting a web search without explicit user authorization
+- Fabricating a title for an identifier-only input (show the identifier as-is)
 
 ## Handoff
 Emit the normalized resource list to library-agent or lineage-agent.

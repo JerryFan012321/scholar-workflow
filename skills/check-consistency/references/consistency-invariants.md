@@ -8,7 +8,8 @@ The audit checks these invariants against the canonical rules in the shared
 | System | Check |
 |---|---|
 | Zotero | item exists; no duplicates; correct Collection assignment |
-| Files | PDF exists under `papers_root`; SHA-256 matches attachment record |
+| Attachments | file resolves on disk; linked files (linkMode 2) store a **relative** path (`attachments:…`), not absolute |
+| Files | attachment file exists at its resolved path; not a size-0 ghost |
 | Obsidian | index-row Zotero keys resolve; PDF relative paths are valid |
 | Notion | no duplicate Resource IDs; local-link URLs resolve |
 | Hierarchy | parent index descriptions match actual sub-directory contents |
@@ -16,7 +17,13 @@ The audit checks these invariants against the canonical rules in the shared
 ## Drift categories
 
 Orphaned PDFs, dead Zotero keys, stale index rows, broken local links, duplicate
-Resource IDs.
+Resource IDs, plus two cross-machine attachment risks:
+
+- **Absolute-path linked file** — a linkMode-2 attachment whose `get_item_details` path
+  is absolute (`/Users/…`, `C:\…`) instead of relative. It resolves on its origin
+  machine but breaks on every other synced machine. Report as cross-machine drift.
+- **Ghost attachment** — an attachment record with no file at its resolved path (size 0).
+  Remedy: re-import the source file, or delete the record (deletion needs approval).
 
 ## Reporting
 

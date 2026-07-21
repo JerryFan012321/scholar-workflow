@@ -10,8 +10,8 @@ description: Generate evidence-based literature lineage graphs, timelines, and m
 
 ## Steps
 
-1. Determine the paper set from a Zotero Collection, a paper index, or a user list
-2. Read the hierarchical index; fetch abstracts or introductions on demand (not full text)
+1. Determine the paper set from a Zotero Collection (via zotero-mcp), a paper index, or a user list
+2. Read the hierarchical index; fetch abstracts or introductions on demand via zotero-mcp `get_content` / `get_item_abstract` (not full text)
 3. Generate candidate citation edges (`cites`) and method-relation edges
 4. For each non-citation relation, extract evidence: source location in the paper, abstract basis, confidence
 5. Classify relation types: `cites` / `follow-up` / `method-extension` / `representation-shift` / `benchmark-successor` / `contradicts`

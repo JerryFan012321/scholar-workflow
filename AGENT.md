@@ -70,6 +70,21 @@ part of the shipped plugin. **When the build targets in `dev-guide/` are met:**
 3. Leave only what the plugin needs to run and be understood (structure, runtime
    references, behavior boundaries, agent↔skill map, exit codes, changelog rule).
 
+### Audience: human docs vs agent docs
+
+A second, orthogonal split (independent of dev-vs-runtime above). Before writing any
+doc, ask "who reads it, to do what," and route by audience — never mix the two forms.
+
+| Audience | Files | Content |
+|---|---|---|
+| **Human** | `README*.md`, `GOALS.md`, `HANDOFF.md`, `CHANGELOG.md` | usage, setup notes, troubleshooting narrative, background, trade-offs, the *why* |
+| **Agent** | `skills/*/SKILL.md`, `agents/*.md`, `references/*.md` | terse operational instructions the host LLM executes at runtime |
+
+The same lesson may appear on both sides in different form: the README tells the story
+(root cause, past incident, options weighed); the SKILL/reference gives one executable
+constraint. **Never** put troubleshooting narrative into an agent doc's operational
+context — keep agent docs short, operational facts only, no history.
+
 ### Language
 
 - **SKILL.md** — Written in English. Chinese trigger words in the `description` field are fine.

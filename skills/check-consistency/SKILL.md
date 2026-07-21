@@ -12,18 +12,23 @@ description: Audit cross-system consistency across Zotero, papers_root, Obsidian
 ## Steps
 
 1. Determine scope (full / specific Collection / specific Vault directory / specific Notion project)
-2. **Zotero check**: item existence, duplicates, correct Collection assignment
-3. **File check**: PDF exists under `papers_root`; SHA-256 matches the attachment record
-4. **Obsidian check**: index row Zotero keys resolve; PDF paths are valid
-5. **Notion check**: no duplicate Resource IDs; local-link URLs resolve
-6. **Hierarchical index check**: parent index descriptions match actual sub-directory contents
-7. Compile a drift report: orphaned PDFs, dead keys, stale index rows, broken links, duplicates
-8. Output a structured JSON report; optionally a Markdown summary
+2. **Zotero check** (via zotero-mcp, read-only): item existence, duplicate identities,
+   correct Collection assignment
+3. **File check**: the attachment path from `get_item_details` resolves to a real file
+   on disk (a ghost attachment — DB record with no file, size 0 — is drift to report)
+4. **Linked-file portability check**: for linkMode-2 attachments, the `get_item_details`
+   path must be relative (`attachments:…`), not absolute (`/Users/…`, `C:\…`). An
+   absolute path locks the file to one machine — cross-machine drift to report.
+5. **Obsidian check**: index-row Zotero keys resolve via zotero-mcp; PDF paths are valid
+6. **Notion check**: no duplicate Resource IDs; local-link URLs resolve
+7. **Hierarchical index check**: parent index descriptions match actual sub-directory contents
+8. Compile a drift report: orphaned PDFs, ghost attachments, absolute-path linked files, dead keys, stale index rows, broken links, duplicate identities
+9. Output a structured JSON report; optionally a Markdown summary
 
 ## Constraints
 - Read-only throughout — never fix or delete any discovered issue
 - Tag each issue with severity (error / warning / info) and a suggested remedy
-- Remedies require user confirmation and run in the corresponding Agent, not in this skill
+- Remedies require the corresponding Agent; deletion/merge remedies need user approval
 
 ## References
 

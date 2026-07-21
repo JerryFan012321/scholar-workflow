@@ -3,6 +3,79 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.4.0] — 2026-07-20
+
+Doc/eval alignment for the zotero-mcp pivot, plus an approval-model change ratified in
+a live ingest exercise. The 0.2.0/0.3.0 rounds pivoted the goal layer and retired the
+Zotero-touching CLI code; this round rewrites every runtime doc (references, SKILLs,
+agents) and the safety evals to the zotero-mcp model, so no doc still describes the old
+"import is manual / Local API read-only" world. It also changes the approval rule:
+additive writes (download, create, import, metadata fill, add-to-collection) now
+proceed under the user's standing instruction; only destructive/irreversible actions
+(delete, overwrite-conflict, merge) require per-item approval. Verified end-to-end by
+repairing a real dirty record (Text2CAD, NeurIPS 2024): filled empty abstract, fixed a
+wrong DOI, overrode the arXiv label with the conference venue, and re-attached a ghost
+PDF via zotero-mcp.
+
+### Changed
+- Approval model — from "every Zotero write needs approval" to "additive writes proceed,
+  only destructive actions gate" (G4/G9/INV9/NG5). Mirrored into `~/.claude/CLAUDE.md`
+  and `references/security-policy.md`
+- `references/security-policy.md` — permission table flipped (create/import/metadata/
+  download are additive-allowed; delete/overwrite/merge gate); added fetch-vs-write
+  distinction, ask-collection-before-write, zotero-mcp channel, and the itemType caveat
+- `references/storage-policy.md` — dropped the resource-cache mirror (INV13) and manual
+  import; PDFs ingested via zotero-mcp; live queries, no local mirror
+- `references/identity-policy.md` — dedup key is Zotero canonical identity (DOI /
+  title+authors), arXiv id demoted to a download-source label; two-step existence check
+  (search_library recall → get_item_details confirm); itemType read-layer caveat; new
+  items take metadata from authoritative web sources, venue overrides preprint label
+- `references/source-policy.md` — metadata acquisition reworded to zotero-mcp + web
+  sources; arXiv-only download rule unchanged
+- All 5 SKILLs — `find-resource` (locate/catalog/resolve/sync commands → zotero-mcp
+  search/semantic/get_details), `ingest-resource` (rewritten to the zotero-mcp write
+  flow + 4 lessons: paper = PDF+metadata, venue override, itemType caveat, don't hammer
+  unreachable sites), `sync-projections` (rebuild source → zotero-mcp live, not a
+  mirror), `check-consistency` (Zotero check via zotero-mcp, ghost-attachment drift),
+  `build-literature-tree` (paper set + abstracts via zotero-mcp)
+- `agents/library-agent.md` — rewritten (dropped `plan_id` execution gate and the
+  Bridge health check; existence-check-before-create, zotero-mcp writes)
+- `agents/intake-agent.md` — clarified zotero-mcp queries are reads (allowed); no title
+  fabrication for identifier-only inputs
+- `evals/safety.json` — removed `no-zotero-write` (contradicts additive writes) and the
+  `plan_id`-era `no-unapproved-apply` / `plan-invalidated-on-change`; added
+  `no-unapproved-destructive-zotero` and `no-create-without-existence-check`;
+  `no-existence-on-unreachable` semantics moved Local API → zotero-mcp
+- `GOALS.md` — G3/G4/G9, INV1/INV9/INV10/INV11, NG5, Phase 1 status, F2 updated to the
+  new approval model and dedup key; downstream-sync checklist marked complete; added an
+  INV16 footnote (doctor is two-layer: CLI checks paths, skill layer checks MCP)
+
+## [0.3.0] — 2026-07-20
+
+First code landing of the zotero-mcp pivot (GOALS.md v2, 0.2.0). All Zotero access
+(existence, dedup, metadata, semantic search, writes) is delegated to the host LLM
+via zotero-mcp; since the CLI is a standalone subprocess that cannot reach MCP tools,
+the Zotero-touching CLI logic is **removed** rather than rewritten. The CLI shrinks to
+arXiv-fetch-to-inbox, job state, reporting, and a path-only `doctor`. Docs/SKILL/
+references/evals sync and the INV1 dedup-key rewording are staged for the next round.
+
+### Removed
+- `adapters/zotero_local.py` — the Zotero Local API HTTP client (all reads now via zotero-mcp, host LLM)
+- `workflows/sync.py` — `sync_cache` + helpers (INV13 deprecated; no local cache mirror)
+- `dedup.py` — `check_existence` / `_search` / `decide_operation` / `Match` / `ExistenceResult` / `DependencyError` (existence + dedup move to the skill layer; `run_paper_import` already skips non-create ops on its own)
+- `cli.py` commands `sync` / `catalog` / `resolve` / `plan` / `locate`, plus `_zotero_reader()` and the `DependencyDown` exception
+- `state.py` — `resources` cache table + `upsert_resource` / `find_exact` / `catalog` / `oldest_sync` / `_rows` (jobs table retained)
+- `config.py` — `ZoteroConfig` / `zotero.local_api_url` (CLI no longer connects to Zotero directly; stale `zotero:` blocks in config.yml load fine — Pydantic ignores unknown keys)
+- `doctor.py` — `_probe_local_api` and the `zotero_local_api` check (MCP reachability is a skill-layer check the CLI cannot perform)
+- Tests: `test_dedup.py` (8), `test_sync.py` (5), `test_zotero_local.py` (6); the just-added `tests/eval/test_cli_exit_codes.py` was rewritten (its `locate`/`plan` targets retired)
+
+### Changed
+- `planning.generate_plan(resources, config_version)` — dropped the `zotero`/`state` params and the existence check; plans are now purely deterministic (every resource → `create`), dedup decided upstream by the host LLM
+- `cli.py apply` — resolves inputs → builds a deterministic all-`create` plan (no existence check) → downloads arXiv PDFs to `paper_inbox`; the host LLM does dedup via zotero-mcp before invoking `apply`
+- `doctor` — now checks only local config paths; exit 3 survives but its meaning shifts from "Zotero unreachable" to "a required local path is missing"
+- `workflows/audit.py` — dropped the `ZoteroLocalAdapter` import and the unused `zotero` params on the two Phase-6 stubs
+- `tests/eval/test_cli_exit_codes.py` — rewritten: `doctor` exits 3 on a missing local path; `apply ""` exits 2 (input error). Full suite 19 passed
+
 ## [0.2.0] — 2026-07-20
 
 Goal-layer pivot: adopt zotero-mcp (a third-party Zotero 7 MCP server exposing read /

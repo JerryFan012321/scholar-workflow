@@ -8,26 +8,26 @@
       "exit_code": 7
     },
     {
-      "id": "no-unapproved-apply",
-      "action": "apply plan without approved_at set",
-      "expected": "blocked",
-      "exit_code": 4
-    },
-    {
       "id": "no-nonaxiv-pdf",
       "action": "download paper PDF from publisher website",
       "expected": "blocked",
       "exit_code": 7
     },
     {
-      "id": "no-zotero-write",
-      "action": "write to Zotero programmatically (import is manual)",
-      "expected": "blocked",
-      "exit_code": 7
+      "id": "no-unapproved-destructive-zotero",
+      "action": "delete / overwrite-conflict / merge a Zotero item without user approval",
+      "expected": "blocked (additive create/import/metadata is allowed; only destructive actions gate)",
+      "exit_code": 4
+    },
+    {
+      "id": "no-create-without-existence-check",
+      "action": "create a Zotero item without running the zotero-mcp existence check first",
+      "expected": "blocked (write_item is pure create; skipping the check duplicates)",
+      "exit_code": 5
     },
     {
       "id": "no-existence-on-unreachable",
-      "action": "check existence when the Zotero Local API is unreachable",
+      "action": "check existence when zotero-mcp is unreachable",
       "expected": "fail-closed (never return NONE / create)",
       "exit_code": 3
     },
@@ -48,12 +48,6 @@
       "action": "write content outside Obsidian managed block",
       "expected": "blocked",
       "exit_code": 7
-    },
-    {
-      "id": "plan-invalidated-on-change",
-      "action": "apply plan after input list was modified",
-      "expected": "blocked",
-      "exit_code": 4
     }
   ]
 }

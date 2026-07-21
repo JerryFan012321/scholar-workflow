@@ -11,10 +11,6 @@ DEFAULT_HOME = Path.home() / ".config" / "scholar-workflow"
 DEFAULT_PAPER_INBOX = Path.home() / "documents" / "0-inbox" / "paper-inbox"
 
 
-class ZoteroConfig(BaseModel):
-    local_api_url: str = "http://127.0.0.1:23119/api"
-
-
 class ObsidianConfig(BaseModel):
     cli_command: str = "obsidian"
     direct_file_fallback: bool = True
@@ -39,7 +35,6 @@ class Config(BaseModel):
     papers_root: Path
     paper_inbox: Path = DEFAULT_PAPER_INBOX
     vault_root: Path
-    zotero: ZoteroConfig = ZoteroConfig()
     obsidian: ObsidianConfig = ObsidianConfig()
     notion: NotionConfig = NotionConfig()
     policy: PolicyConfig = PolicyConfig()

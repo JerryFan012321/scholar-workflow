@@ -19,18 +19,6 @@ def _state_db_path() -> Path:
     return home / "state.db"
 
 
-def _zotero_reader():
-    """Build a read-only Zotero Local API adapter from config."""
-    from scholar_workflow.config import load_config
-    from scholar_workflow.adapters.zotero_local import ZoteroLocalAdapter
-    return ZoteroLocalAdapter(load_config().zotero.local_api_url)
-
-
-class DependencyDown(click.ClickException):
-    """A required dependency (Zotero) is unavailable — exit code 3 (see AGENT.md)."""
-    exit_code = 3
-
-
 @click.group()
 @click.version_option()
 def main() -> None:
@@ -40,7 +28,8 @@ def main() -> None:
 @main.command()
 @click.option("--json", "as_json", is_flag=True)
 def doctor(as_json: bool) -> None:
-    """Check runtime dependencies (config paths, Zotero Local API)."""
+    """Check runtime dependencies (config paths). Zotero-mcp reachability is a
+    skill-layer check (the CLI subprocess cannot reach MCP tools)."""
     from scholar_workflow.config import load_config
     from scholar_workflow.doctor import run_doctor
 
@@ -62,115 +51,30 @@ def discover(query: str) -> None:
 
 
 @main.command()
-def sync() -> None:
-    """Refresh the local resource cache from the Zotero Local API (user-triggered)."""
-    from scholar_workflow.state import StateStore
-    from scholar_workflow.workflows.sync import sync_cache
-    from scholar_workflow.dedup import DependencyError
-
-    store = StateStore(_state_db_path())
-    try:
-        summary = sync_cache(_zotero_reader(), store)
-    except DependencyError as exc:
-        raise DependencyDown(str(exc))
-    finally:
-        store.close()
-    click.echo(json.dumps(summary, ensure_ascii=False))
-
-
-@main.command()
-def catalog() -> None:
-    """Emit the cached resource catalog for semantic recall by the host LLM.
-
-    Read-only; reads the local cache only (run `sync` to refresh it from Zotero).
-    `oldest_sync` lets the caller judge staleness and prompt a re-sync."""
-    from scholar_workflow.state import StateStore
-
-    store = StateStore(_state_db_path())
-    try:
-        rows = store.catalog()
-        oldest = store.oldest_sync()
-    finally:
-        store.close()
-    click.echo(json.dumps({"oldest_sync": oldest, "count": len(rows),
-                           "resources": rows}, ensure_ascii=False))
-
-
-@main.command()
-@click.argument("identifier")
-def resolve(identifier: str) -> None:
-    """Normalize a single identifier and report its existence (read-only)."""
-    from scholar_workflow.resolver import resolve_one
-    from scholar_workflow.state import StateStore
-    from scholar_workflow.dedup import check_existence, DependencyError
-
-    if not identifier.strip():
-        raise InputError("empty identifier")
-    res = resolve_one(identifier)
-    store = StateStore(_state_db_path())
-    try:
-        existence = check_existence(res, _zotero_reader(), store)
-    except DependencyError as exc:
-        raise DependencyDown(str(exc))
-    finally:
-        store.close()
-    click.echo(json.dumps({
-        "resource": res.model_dump(mode="json"),
-        "existence": {"match": existence.match.value,
-                      "resource_id": existence.resource_id,
-                      "zotero_item_key": existence.zotero_item_key,
-                      "conflicts": existence.conflicts},
-    }, ensure_ascii=False))
-
-
-@main.command("plan")
-@click.argument("inputs", nargs=-1, required=True)
-def plan_import(inputs: tuple[str, ...]) -> None:
-    """Generate an import action plan (dry-run, never writes)."""
-    from scholar_workflow.resolver import resolve_many
-    from scholar_workflow.state import StateStore
-    from scholar_workflow.planning import generate_plan
-    from scholar_workflow.dedup import DependencyError
-
-    resources = resolve_many(list(inputs))
-    if not resources:
-        raise InputError("no resolvable inputs")
-    store = StateStore(_state_db_path())
-    try:
-        plan = generate_plan(resources, zotero=_zotero_reader(), state=store)
-    except DependencyError as exc:
-        raise DependencyDown(str(exc))
-    finally:
-        store.close()
-    click.echo(plan.model_dump_json(indent=2))
-
-
-@main.command()
 @click.argument("inputs", nargs=-1, required=True)
 def apply(inputs: tuple[str, ...]) -> None:
-    """Execute an import: resolve, dedup, then download approved PDFs to the inbox.
-    Call only after the user has approved the plan in-conversation. Zotero import
-    is manual — this command never writes to Zotero."""
+    """Download approved paper PDFs to the inbox.
+
+    Resolve inputs into a deterministic all-`create` plan (no existence check) and
+    download each arXiv PDF to `paper_inbox`. Dedup and existence are decided by the
+    host LLM via zotero-mcp before this runs; call only after the user approves the
+    import in-conversation. Never writes to Zotero — import into Zotero is done by
+    the host LLM via zotero-mcp's approved write tools."""
     from scholar_workflow.resolver import resolve_many
     from scholar_workflow.state import StateStore
     from scholar_workflow.planning import generate_plan
     from scholar_workflow.approvals import approve_plan
     from scholar_workflow.workflows.paper import run_paper_import
     from scholar_workflow.config import load_config
-    from scholar_workflow.adapters.zotero_local import ZoteroLocalAdapter
-    from scholar_workflow.dedup import DependencyError
 
     resources = resolve_many(list(inputs))
     if not resources:
         raise InputError("no resolvable inputs")
     config = load_config()
-    zotero = ZoteroLocalAdapter(config.zotero.local_api_url)
     store = StateStore(_state_db_path())
     try:
-        plan = approve_plan(generate_plan(resources, zotero=zotero, state=store))
+        plan = approve_plan(generate_plan(resources))
         results = run_paper_import(plan, resources, config, store)
-    except DependencyError as exc:
-        raise DependencyDown(str(exc))
     finally:
         store.close()
     click.echo(json.dumps({"plan_id": plan.plan_id, "results": results},
@@ -191,33 +95,6 @@ def resume(job_id: str) -> None:
     if job is None:
         raise InputError(f"unknown job: {job_id}")
     click.echo(json.dumps(job, ensure_ascii=False))
-
-
-@main.command()
-@click.argument("identifier")
-def locate(identifier: str) -> None:
-    """Check whether a resource exists in Zotero by identifier (read-only, exact).
-
-    Fuzzy/semantic recall is not here — use `catalog` and let the host LLM match."""
-    from scholar_workflow.resolver import resolve_one
-    from scholar_workflow.state import StateStore
-    from scholar_workflow.dedup import check_existence, DependencyError
-
-    if not identifier.strip():
-        raise InputError("empty identifier")
-    store = StateStore(_state_db_path())
-    try:
-        result = check_existence(resolve_one(identifier), _zotero_reader(), store)
-        click.echo(json.dumps({
-            "match": result.match.value,
-            "resource_id": result.resource_id,
-            "zotero_item_key": result.zotero_item_key,
-            "conflicts": result.conflicts,
-        }, ensure_ascii=False))
-    except DependencyError as exc:
-        raise DependencyDown(str(exc))
-    finally:
-        store.close()
 
 
 @main.command()

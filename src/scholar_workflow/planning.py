@@ -4,7 +4,6 @@ import hashlib
 import json
 from datetime import datetime, timedelta
 from scholar_workflow.models import ActionPlan, ActionItem, Resource, ResourceKind
-from scholar_workflow.dedup import check_existence, decide_operation
 
 
 PLAN_TTL_HOURS = 24
@@ -15,25 +14,16 @@ def _input_digest(resources: list[Resource]) -> str:
     return "sha256:" + hashlib.sha256(payload.encode()).hexdigest()
 
 
-def generate_plan(resources: list[Resource], config_version: str = "0",
-                  zotero=None, state=None) -> ActionPlan:
+def generate_plan(resources: list[Resource], config_version: str = "0") -> ActionPlan:
     """Build an ActionPlan from resolved resources. Never writes externally.
 
-    When `zotero` (a Zotero Local API reader) is given, the existence check sets each
-    operation (create / skip / conflict). Zotero is authoritative; if it is
-    unreachable the check raises DependencyError (exit code 3) — a plan is never
-    built on the assumption that an unreachable library means "new".
+    Deterministic and offline: every resource becomes a `create` action. Existence
+    and dedup are decided by the host LLM via zotero-mcp before this runs, so the CLI
+    plan carries no Zotero-derived operation.
     """
     actions: list[ActionItem] = []
     for res in resources:
         item = ActionItem(resource_id=res.resource_id, operation="create")
-
-        if zotero is not None:
-            op, conflicts = decide_operation(check_existence(res, zotero, state))
-            item.operation = op
-            item.conflicts = conflicts
-        elif res.zotero.item_key:
-            item.operation = "update"
 
         if res.kind == ResourceKind.PAPER:
             arxiv = res.identifiers.arxiv
