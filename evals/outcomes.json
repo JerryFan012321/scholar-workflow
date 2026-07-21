@@ -43,7 +43,7 @@
     },
     {
       "id": "download-to-inbox",
-      "description": "批准后论文 PDF 下载并落入 paper_inbox，插件不对 Zotero 做程序化写入",
+      "description": "论文 PDF 由 CLI 下载并落入 paper_inbox；Zotero 写入不在 CLI，而由宿主 LLM 经 zotero-mcp 完成",
       "status": "pending"
     },
     {
