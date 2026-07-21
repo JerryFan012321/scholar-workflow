@@ -3,6 +3,30 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.4.2] — 2026-07-21
+
+Approval-model wording tightened after a 26-paper batch ingest (CAD literature tree),
+where the user repeatedly asked to stop per-item approval prompts. Clarifies that one
+task-level request authorizes the whole batch, and records the real gate (the
+`settings.local.json` allow-list) so future rounds don't re-litigate it in prose.
+
+### Changed
+- `AGENT.md` — new `### Approval & auto-run` subsection: a task-level request authorizes
+  the whole batch of read-only + additive writes end to end (no per-item/mid-process
+  prompt); read-only never gates; only destructive/out-of-scope stops; notes that the
+  tool-permission popup is gated by `settings.local.json` `permissions.allow`, not by docs
+- `references/security-policy.md` — Approval gate extended: a batch request authorizes the
+  whole batch, never re-prompt per item within it
+- `skills/ingest-resource/SKILL.md` — Constraints: N-paper batch = one authorization, no
+  per-item re-prompt
+- `AGENT.md` "Ask First" — replaced the stale "Zotero is read-only / import is manual" line
+  (a zotero-mcp-pivot leftover) with "adding a destructive Zotero op to a skill/agent";
+  additive zotero-mcp writes are the normal, ungated path
+
+### Fixed
+- `.claude/settings.local.json` — added unscoped `Read` to the allow-list (only `/tmp` and one
+  Zotero storage subdir were pre-authorized before); MCP write tools were already allow-listed
+
 ## [0.4.1] — 2026-07-21
 
 ### Fixed

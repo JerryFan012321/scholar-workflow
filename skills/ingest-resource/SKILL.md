@@ -61,6 +61,8 @@ authoritative web source — never parsed out of the PDF.
   standing instruction; only delete/overwrite-conflict/merge need approval
 - Ingesting a paper is ONE authorized action: existence check → download → create →
   import → add-to-collection runs end to end with no mid-process approval gate
+- A batch request (N papers) authorizes the whole batch — never re-prompt per item;
+  additive writes for every item run end to end. Only conflicts/destructive stop
 - Attachments must stay imported (linkMode 0, in Zotero storage) so Zotero File Syncing
   carries them across machines; do not convert them to linked files
 - Downloaded PDFs land only in `paper_inbox`; technical documents only in the Vault

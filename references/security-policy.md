@@ -26,8 +26,10 @@ item, merge identities. Overwriting human-authored content is never done.
 ## Approval gate
 
 - Additive writes proceed under the user's standing instruction: a request to ingest
-  or update a resource authorizes the create / import / metadata / collection writes
-  it entails. Do not re-prompt for the same action.
+  or update a resource — or a batch of resources — authorizes the create / import /
+  metadata / collection writes it entails. Do not re-prompt for the same action.
+- A batch request (e.g. N papers) authorizes the whole batch; never re-prompt per
+  item within an already-authorized batch. Additive steps run end to end.
 - Destructive actions (delete, overwrite-conflict, merge) require in-conversation
   approval, per item. On identity conflict, stop that item without affecting others
   (NG3).

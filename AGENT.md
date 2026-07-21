@@ -96,6 +96,20 @@ context — keep agent docs short, operational facts only, no history.
 
 ## Behavior Boundaries
 
+### Approval & auto-run
+
+- The canonical approval boundary lives in `references/security-policy.md`
+  ("Claude permission boundary"). This section only routes; that file rules.
+- One task-level request authorizes the whole batch of read-only and additive
+  writes it entails — existence check, download, create, import, add-to-collection,
+  tag, note, metadata fill run end to end with **no per-item or mid-process prompt**.
+- Read-only actions (file read, search, status, web metadata fetch) never need approval.
+- Only destructive or out-of-scope actions stop to ask: delete, overwrite a
+  conflicting item, merge identities, force-push.
+- The actual tool-permission popup is gated by the permission mode plus
+  `.claude/settings.local.json` `permissions.allow` (machine-specific, git-ignored) —
+  not by this file or any SKILL. To silence popups, pre-authorize the tool there.
+
 ### Always Do
 
 - Read `dev-guide/` (skill-authoring / skill-iteration / eval-loop) before authoring or iterating a skill
@@ -114,7 +128,7 @@ context — keep agent docs short, operational facts only, no history.
 - Renaming a skill or agent directory (breaks existing references)
 - Removing a skill from the plugin
 - Changing the `description` field format or triggering strategy
-- Reintroducing any programmatic Zotero write path (currently read-only via Local API; import is manual)
+- Adding any destructive Zotero operation (delete, overwrite-conflict, merge) to a skill/agent — additive writes via zotero-mcp are the normal path and need no gate
 - Modifying hook interception rules
 - Adding external dependencies to a skill's `scripts/`
 
