@@ -2,7 +2,7 @@
 from __future__ import annotations
 import hashlib
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from scholar_workflow.models import ActionPlan, ActionItem, Resource, ResourceKind
 
 
@@ -39,7 +39,7 @@ def generate_plan(resources: list[Resource], config_version: str = "0") -> Actio
     return ActionPlan(
         input_digest=_input_digest(resources),
         config_version=config_version,
-        expires_at=datetime.utcnow() + timedelta(hours=PLAN_TTL_HOURS),
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=PLAN_TTL_HOURS),
         actions=actions,
     )
 

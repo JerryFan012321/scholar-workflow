@@ -2,7 +2,7 @@
 from __future__ import annotations
 import sqlite3
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from scholar_workflow.models import TaskState
 
@@ -31,7 +31,7 @@ class StateStore:
 
     def upsert(self, job_id: str, resource_id: str, state: TaskState,
                plan_id: str | None = None, artifacts: dict | None = None) -> None:
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         self._db.execute(
             """INSERT INTO jobs (job_id, plan_id, resource_id, state, created_at, updated_at, artifacts)
                VALUES (?, ?, ?, ?, ?, ?, ?)

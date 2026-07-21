@@ -3,6 +3,21 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.4.1] — 2026-07-21
+
+### Fixed
+- Replaced deprecated `datetime.utcnow()` with timezone-aware `datetime.now(timezone.utc)`
+  across `models.py`, `approvals.py`, `planning.py`, `state.py`, `cli.py`, and the paper-import
+  test. Clears all 18 DeprecationWarnings under Python 3.14; the handoff snapshot keeps its
+  `Z`-suffixed UTC timestamp via `.isoformat().replace("+00:00", "Z")`. No behavior change.
+
+### Changed
+- Fixed two stale docs from the zotero-mcp pivot: rewrote `HANDOFF.md` (was still describing
+  the abandoned ZotMoov linked-file workflow as required and claiming changes were uncommitted;
+  now reflects imported attachments via Zotero File Syncing + committed state), and reworded the
+  `outcomes.json` download-to-inbox case that wrongly claimed the plugin does no programmatic
+  Zotero writes (writes happen in the host LLM via zotero-mcp, just not in the CLI).
+
 ## [0.4.0] — 2026-07-20
 
 Doc/eval alignment for the zotero-mcp pivot, plus an approval-model change ratified in

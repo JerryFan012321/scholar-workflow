@@ -4,7 +4,7 @@ from enum import StrEnum
 from typing import Any
 from pydantic import BaseModel, Field
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class ResourceKind(StrEnum):
@@ -92,7 +92,7 @@ class ActionItem(BaseModel):
 
 class ActionPlan(BaseModel):
     plan_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     expires_at: datetime
     input_digest: str
     config_version: str | None = None
@@ -103,4 +103,4 @@ class ActionPlan(BaseModel):
         return self.approved_at is not None
 
     def is_expired(self) -> bool:
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc) > self.expires_at

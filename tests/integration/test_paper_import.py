@@ -1,6 +1,6 @@
 """Paper import workflow with an injected fake downloader (no network)."""
 from __future__ import annotations
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import pytest
 from scholar_workflow.models import Resource, ResourceKind, Identifiers, ActionPlan, ActionItem
@@ -21,8 +21,8 @@ def store(tmp_path):
 
 
 def _plan(*items):
-    return ActionPlan(input_digest="x", expires_at=datetime.utcnow() + timedelta(hours=1),
-                      approved_at=datetime.utcnow(), actions=list(items))
+    return ActionPlan(input_digest="x", expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+                      approved_at=datetime.now(timezone.utc), actions=list(items))
 
 
 def _res(rid, **ids):

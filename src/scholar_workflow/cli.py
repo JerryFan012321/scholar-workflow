@@ -134,14 +134,14 @@ def report(job_id: str | None, fmt: str, active: bool, handoff: bool) -> None:
 
 def _handoff_snapshot(rows: list[dict]) -> dict:
     """Build an AgentHandoff (contracts/handoff.schema.json) from active jobs."""
-    from datetime import datetime
+    from datetime import datetime, timezone
     return {
         "job_id": rows[0]["job_id"] if rows else "00000000-0000-0000-0000-000000000000",
         "plan_id": rows[0].get("plan_id") if rows else None,
         "from_agent": "precompact",
         "to_agent": "precompact",
         "last_success_state": rows[0]["state"] if rows else "received",
-        "created_at": datetime.utcnow().isoformat() + "Z",
+        "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "artifacts": {"resource_ids": [r["resource_id"] for r in rows]},
     }
 

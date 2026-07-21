@@ -1,13 +1,13 @@
 """Approval gate: plan signing and verification."""
 from __future__ import annotations
-from datetime import datetime
+from datetime import datetime, timezone
 from scholar_workflow.models import ActionPlan
 from scholar_workflow.planning import validate_plan
 
 
 def approve_plan(plan: ActionPlan) -> ActionPlan:
     """Mark plan as approved. Call only after user confirmation."""
-    plan.approved_at = datetime.utcnow()
+    plan.approved_at = datetime.now(timezone.utc)
     return plan
 
 
