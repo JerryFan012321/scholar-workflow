@@ -51,24 +51,19 @@ authoritative web source — never parsed out of the PDF.
     collection, Obsidian/Notion projection status.
 
 ## Constraints
-- `write_item` is pure create with no dedup — the Phase 1 existence check MUST precede
-  every create, or duplicates result
-- `itemType` reads back empty through zotero-mcp for every item and cannot be set via
-  `write_metadata`; this is a read-layer artifact, not corruption — never judge a
-  record dirty by it, and judge health by title/creators/DOI/attachment-on-disk instead
-- All Zotero writes go through zotero-mcp controlled tools; never write `zotero.sqlite`
-- Additive writes (create/import/collection/metadata/download) proceed under the user's
-  standing instruction; only delete/overwrite-conflict/merge need approval
-- Ingesting a paper is ONE authorized action: existence check → download → create →
-  import → add-to-collection runs end to end with no mid-process approval gate
-- A batch request (N papers) authorizes the whole batch — never re-prompt per item;
-  additive writes for every item run end to end. Only conflicts/destructive stop
-- Attachments must stay imported (linkMode 0, in Zotero storage) so Zotero File Syncing
-  carries them across machines; do not convert them to linked files
-- Downloaded PDFs land only in `paper_inbox`; technical documents only in the Vault
-- If arXiv has no PDF, tag `no_arxiv_pdf`; do not fetch from other sources
-- A `conflict` is never written automatically — surface it for the user
-- On identity conflict, stop that item without affecting other safe items in the batch
+- Existence check precedes every create — `write_item` is pure create, no dedup;
+  skipping it duplicates (identity-policy, security-policy)
+- A `conflict` is never auto-written — stop that item, surface keys, leave the rest of
+  the batch running (identity-policy)
+- Ingest is one authorized action, and a batch of N papers is one authorization:
+  existence check → download → create → import → add-to-collection runs end to end, no
+  per-item re-prompt; only delete / overwrite-conflict / merge gate (security-policy)
+- All writes go through zotero-mcp; never write `zotero.sqlite` (security-policy)
+- arXiv is the only PDF source; if none, tag `no_arxiv_pdf`, don't fetch elsewhere (source-policy)
+- Downloaded PDFs land only in `paper_inbox`, tech docs only in the Vault; attachments
+  stay imported (linkMode 0) for File Syncing (storage-policy)
+- Judge record health by title / creators / DOI / attachment — never by `itemType`
+  (reads back empty via zotero-mcp) (security-policy)
 
 ## References
 

@@ -4,10 +4,10 @@
 
 ```
 5 Agents: intake / library / knowledge / lineage / audit
-5 Skills: find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency
-确定性 CLI: src/scholar_workflow/ + bin/scholar-workflow
-Zotero 只读: adapters/zotero_local.py（Local API，元数据/存在性权威来源）
-论文下载: 落入 paper_inbox 收件箱，Zotero 导入由人工完成
+6 Skills: find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations
+确定性 CLI: src/scholar_workflow/ + bin/(scholar-workflow, zotero-annotations.py)
+Zotero 经 zotero-mcp: 元数据/存在性/语义检索权威来源；读与写(create/import/元数据)均经 zotero-mcp 受控工具
+论文下载: CLI 落入 paper_inbox 收件箱，再经 zotero-mcp 入库
 ```
 
 ## Conventions
@@ -70,21 +70,6 @@ part of the shipped plugin. **When the build targets in `dev-guide/` are met:**
 3. Leave only what the plugin needs to run and be understood (structure, runtime
    references, behavior boundaries, agent↔skill map, exit codes, changelog rule).
 
-### Audience: human docs vs agent docs
-
-A second, orthogonal split (independent of dev-vs-runtime above). Before writing any
-doc, ask "who reads it, to do what," and route by audience — never mix the two forms.
-
-| Audience | Files | Content |
-|---|---|---|
-| **Human** | `README*.md`, `GOALS.md`, `HANDOFF.md`, `CHANGELOG.md` | usage, setup notes, troubleshooting narrative, background, trade-offs, the *why* |
-| **Agent** | `skills/*/SKILL.md`, `agents/*.md`, `references/*.md` | terse operational instructions the host LLM executes at runtime |
-
-The same lesson may appear on both sides in different form: the README tells the story
-(root cause, past incident, options weighed); the SKILL/reference gives one executable
-constraint. **Never** put troubleshooting narrative into an agent doc's operational
-context — keep agent docs short, operational facts only, no history.
-
 ### Language
 
 - **SKILL.md** — Written in English. Chinese trigger words in the `description` field are fine.
@@ -95,20 +80,6 @@ context — keep agent docs short, operational facts only, no history.
 - **Python code, comments, and user-facing string literals** — English.
 
 ## Behavior Boundaries
-
-### Approval & auto-run
-
-- The canonical approval boundary lives in `references/security-policy.md`
-  ("Claude permission boundary"). This section only routes; that file rules.
-- One task-level request authorizes the whole batch of read-only and additive
-  writes it entails — existence check, download, create, import, add-to-collection,
-  tag, note, metadata fill run end to end with **no per-item or mid-process prompt**.
-- Read-only actions (file read, search, status, web metadata fetch) never need approval.
-- Only destructive or out-of-scope actions stop to ask: delete, overwrite a
-  conflicting item, merge identities, force-push.
-- The actual tool-permission popup is gated by the permission mode plus
-  `.claude/settings.local.json` `permissions.allow` (machine-specific, git-ignored) —
-  not by this file or any SKILL. To silence popups, pre-authorize the tool there.
 
 ### Always Do
 
@@ -146,7 +117,7 @@ context — keep agent docs short, operational facts only, no history.
 |---|---|
 | intake | find-resource |
 | library | ingest-resource |
-| knowledge | sync-projections |
+| knowledge | sync-projections, export-annotations |
 | lineage | build-literature-tree, find-resource（只读） |
 | audit | check-consistency |
 

@@ -47,13 +47,13 @@ Zotero item key + resolved path (locate), a ranked candidate list with rationale
 (recall), or a candidate list with rationale (discovery).
 
 ## Constraints
-- Existence and metadata are authoritative from zotero-mcp, queried live — never cached
+- Existence/metadata is authoritative from zotero-mcp, queried live, never cached;
+  semantic recall via `semantic_search`, no local embeddings (identity-policy, INV14)
+- This skill is read-only — locate / recall / discovery produce no writes; web metadata
+  fetch is read-only and needs no approval (source-policy)
+- Metadata may come from Crossref / OpenAlex / CVF / DBLP, never a PDF source; never
+  relay non-arXiv PDFs — arXiv is the only PDF source (source-policy)
 - The CLI cannot reach zotero-mcp; all Zotero queries run in the host LLM here
-- Semantic recall is delegated to zotero-mcp `semantic_search`; no local embeddings
-- Web fetch for metadata/identity is read-only — no approval needed
-- Crossref / OpenAlex / CVF / DBLP may verify metadata, never download PDFs
-- Discovery produces no writes
-- Never relay paper PDFs from non-arXiv sources
 
 ## References
 

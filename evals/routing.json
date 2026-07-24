@@ -39,6 +39,12 @@
       "must_not_write": true
     },
     {
+      "id": "export-annotations",
+      "input": "把我在 DeepCAD 这篇论文里的批注整理成笔记",
+      "expected_skill": "export-annotations",
+      "must_not_write": true
+    },
+    {
       "id": "no-plugin-trigger",
       "input": "帮我写一个 Python 排序函数",
       "expected_skill": null,

@@ -3,6 +3,32 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.4.3] — 2026-07-23
+
+Provenance-preservation rule for export-annotations, learned from the first real run
+(Text2CAD, 44 annotations). The user corrected three drifts in turn: I had paraphrased
+and supplemented their comments, blurred my own additions into their words, and padded
+with restatements of what a comment or highlight already said. Codifies the fix.
+
+### Added
+- `tests/unit/test_annotations.py` — unit tests for the annotation extractor: `clean()`
+  translation stripping, `page()` fallback, `TYPE` map, and `annotations()` parent-filter
+  + sortIndex ordering against an in-memory SQLite (no real Zotero DB)
+- `tests/unit/test_evals_schema.py` — schema-validation for `evals/*.json` (valid JSON,
+  unique ids, required fields, `expected_skill` points to a real skill, `exit_code` within
+  the AGENT.md set). Guards structure only; LLM-behavior cases stay un-asserted
+
+### Changed
+- `skills/export-annotations/SKILL.md` — split provenance out of Step 5 into a new Step 6:
+  three sources kept distinct — user comments reproduced **verbatim** (never paraphrase /
+  condense / supplement / drop), highlights as plain quotes, Claude's additions only in an
+  explicitly-labeled `补充（Claude）` callout. Additions are information-only (never evaluate
+  the user's comments) and non-padding (add nothing if comment/highlight already says it)
+- `skills/ingest-resource/SKILL.md` + `skills/find-resource/SKILL.md` — slimmed Constraints
+  by removing cross-tier duplication (AGENT.md rule): rules that fully restated a top-level
+  reference are now one-line pointers to their canonical policy. Ingest 12→7 constraints,
+  find 7→4; no change to `description`, Steps, or References
+
 ## [0.4.2] — 2026-07-21
 
 Approval-model wording tightened after a 26-paper batch ingest (CAD literature tree),
