@@ -3,6 +3,25 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.8.0] — 2026-07-26
+
+Link service auto-start (macOS launchd). The loopback PDF service now survives login and
+process death, so Obsidian/Notion PDF links stop breaking between sessions.
+
+### Added
+- `scholar-workflow install-service` — writes a per-user LaunchAgent
+  (`com.scholar-workflow.link-service`) with RunAtLoad + KeepAlive pointing at
+  `serve-links`, then loads it. Idempotent (unload+replace). macOS only.
+- `workflows/service.py` — pure `render_plist()` (XML-escaped, optional
+  SCHOLAR_WORKFLOW_HOME env injection) + `tests/unit/test_service.py` (3)
+
+### Notes
+- The service must run from a venv **outside** `~/Documents`: macOS TCC denies launchd
+  read access to Documents, crashing a venv there on `pyvenv.cfg` (`PermissionError`).
+  Install target is a self-contained venv at `~/.local/share/scholar-workflow/venv`
+  (non-editable install), so the running service never touches Documents. Code changes
+  require reinstalling that venv to take effect.
+
 ## [0.7.0] — 2026-07-26
 
 T4 polish + first real-vault projection. `project-tree` gained a dry-run gate, hub notes

@@ -168,6 +168,36 @@ def serve_links() -> None:
         server.shutdown()
 
 
+@main.command(name="install-service")
+@click.option("--load/--no-load", default=True,
+              help="Load into launchd immediately (default: load).")
+def install_service(load: bool) -> None:
+    """Install a macOS LaunchAgent so serve-links auto-starts at login (KeepAlive).
+
+    Writes ~/Library/LaunchAgents/com.scholar-workflow.link-service.plist pointing at
+    this executable + `serve-links`, then bootstraps it. Idempotent: an existing agent
+    is unloaded and replaced. macOS only."""
+    import subprocess
+    import sys
+    from scholar_workflow.workflows.service import LABEL, plist_path, render_plist
+
+    if sys.platform != "darwin":
+        raise InputError("install-service is macOS-only (launchd)")
+    executable = str(Path(sys.argv[0]).resolve())
+    log_dir = str(Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME)))
+    Path(log_dir).mkdir(parents=True, exist_ok=True)
+    home_env = os.environ.get("SCHOLAR_WORKFLOW_HOME")
+    dest = plist_path()
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(render_plist(executable, log_dir, home_env), encoding="utf-8")
+    if load:
+        subprocess.run(["launchctl", "unload", str(dest)],
+                       capture_output=True, check=False)
+        subprocess.run(["launchctl", "load", str(dest)], check=True)
+    click.echo(json.dumps({"label": LABEL, "plist": str(dest), "loaded": load},
+                          ensure_ascii=False))
+
+
 @main.command()
 @click.argument("job_id")
 def resume(job_id: str) -> None:
