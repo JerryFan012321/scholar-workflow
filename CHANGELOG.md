@@ -3,6 +3,28 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.7.0] — 2026-07-26
+
+T4 polish + first real-vault projection. `project-tree` gained a dry-run gate, hub notes
+moved to nested `index.md` (fixes the same-named folder/note collision in Obsidian's file
+tree), leaf headings gained a `相关论文` suffix. Rendered the real `科研项目 → 上汽标注 →
+text2cad` branch (8 papers, importance column) into the vault's `paper/` tree.
+
+### Added
+- `project-tree --dry-run` — prints every planned file (path/heading/body) as JSON and
+  writes nothing; re-run without the flag to apply. Backed by a pure `plan_tree()`
+  (no filesystem) that `project_tree()` also consumes, so preview == apply (zero drift)
+- `tests/unit/test_hierarchy.py` — dry-run purity + heading-suffix assertions
+
+### Changed
+- `hierarchy.py` — hub node (has children) renders to `<parent>/<name>/index.md`, leaf to
+  `<parent>/<name>.md`; MOC links resolve hub children to their `index`. Leaf heading =
+  `<name>相关论文`, hub heading = bare name. (Heading is written only on file creation;
+  re-runs rewrite the managed block, not the `# heading`.)
+- `sync-projections` SKILL + `obsidian-index-format.md` — document both projection shapes,
+  the dry-run gate, the serve-links dependency for PDF links, and the nested-index layout
+- `HANDOFF.md` — status refreshed to Phase 2 / v0.6.0+; added an "immediate TODO" list
+
 ## [0.6.0] — 2026-07-26
 
 T4 core — hierarchical index (option C). Mirror the Zotero collection tree as a folder

@@ -111,7 +111,9 @@ def project_obsidian_cmd(input_file) -> None:
 @main.command(name="project-tree")
 @click.option("--input", "input_file", type=click.File("r"), default="-",
               help="JSON with {root, tree}; default stdin.")
-def project_tree_cmd(input_file) -> None:
+@click.option("--dry-run", is_flag=True,
+              help="Print the files that would be written (path/heading/body) as JSON; write nothing.")
+def project_tree_cmd(input_file, dry_run: bool) -> None:
     """Mirror a Zotero collection tree as a folder of managed-block notes (option C).
 
     Input (from the host LLM via zotero-mcp): {"root": "<vault-rel base dir>", "tree":
@@ -122,7 +124,7 @@ def project_tree_cmd(input_file) -> None:
     from pathlib import Path
     from scholar_workflow.config import load_config
     from scholar_workflow.adapters.obsidian import ObsidianAdapter
-    from scholar_workflow.workflows.hierarchy import project_tree
+    from scholar_workflow.workflows.hierarchy import plan_tree, project_tree
 
     payload = json.load(input_file)
     tree = payload.get("tree")
@@ -130,6 +132,13 @@ def project_tree_cmd(input_file) -> None:
         raise InputError("input must contain a non-empty 'tree' with a 'name'")
     root = payload.get("root") or "31-paper"
     cfg = load_config()
+    if dry_run:
+        plan = plan_tree(tree, root, cfg.link_service.port)
+        click.echo(json.dumps(
+            {"root": root, "dry_run": True, "files": len(plan),
+             "papers": sum(p["papers"] for p in plan), "plan": plan},
+            ensure_ascii=False, indent=2))
+        return
     adapter = ObsidianAdapter(Path(cfg.vault_root),
                               cfg.obsidian.managed_block_start,
                               cfg.obsidian.managed_block_end)

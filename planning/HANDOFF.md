@@ -1,17 +1,30 @@
 # HANDOFF — 从这里接着干
 
 > 交接文档,供下一个开发会话快速进入状态。与 `GOALS.md`(意图层,同目录)、`../CHANGELOG.md`(变更史)
-> 配合看。最后更新:2026-07-26(v0.4.3 已提交;Phase 2 规格已落 `phase2-sync-projections.md`。上游:v0.4.2 `b99d9bc` 批量审批措辞收紧 + 记录真实权限闸门。
-> 上游:v0.4.1 datetime 清理已提交,v0.4.0 zotero-mcp 转向代码退场 + 文档/评测层全对齐 + 审批原则
-> 变更;跨机同步用 imported 附件,已弃用 ZotMoov)。
+> 配合看。最后更新:2026-07-26(v0.6.0 T4 核心已提交 + 层级索引已落真机 vault。上游:v0.5.0 Phase 2
+> 曳光弹已提交;Phase 2 规格见 `phase2-sync-projections.md`;v0.4.x zotero-mcp 转向 + 审批原则)。
 
 ## 当前状态一句话
 
-Phase 1 **进行中,第一个功能(论文入库闭环)实战可用**。架构已从「Zotero 只读权威 + Local API +
-人工导入」**转向 zotero-mcp**:存在性/元数据/语义检索/写入全部经宿主 LLM 调 zotero-mcp 完成,
-CLI 收缩为「arXiv 下载到收件箱 + job 状态 + 报告 + 只查本地路径的 doctor」。pivot 的代码退场 +
-文档层 + 评测层已全对齐;19 passed,CLI 收敛为 6 命令(apply/audit/discover/doctor/report/resume)。
-HEAD `b99d9bc`(v0.4.2),工作区干净。
+Phase 2 **进行中,层级 Obsidian 投影已在真机 vault 跑通**。`project-tree` 把 Zotero 分类子树镜像成
+文件夹笔记:枢纽 = `<父>/<名>/index.md`(MOC wikilink 列表),叶子 = `<父>/<名>.md`(10 列论文表,
+标题带「相关论文」后缀)。已把 `科研项目 → 上汽标注 → text2cad`(8 篇,含重要性列)落到
+`…/02-科研技术文档/paper/`。63 passed。链接服务 `serve-links` 提供 PDF 一键打开(仅进程存活期间可用,
+尚无开机自启)。**注意几处未提交/未决**(见下「立即待办」)。HEAD 见 git log(v0.6.0 `d82d03e` 之后又有
+未提交改动)。
+
+## 立即待办(本会话遗留,下次优先)
+
+1. **未提交改动**:option A(枢纽内嵌 index.md)+「相关论文」标题 + `--dry-run` + SKILL/参考文档更新
+   都还没提交。跑 pytest 后按惯例 bump+CHANGELOG+commit。
+2. **旧扁平 `31-paper/index.md`**(vault 内,纯 tracer)已被 `paper/` 层级取代,待删;删后 `rmdir` 空
+   目录。删除是不可逆动作,动手前与用户确认。
+3. **CLI 默认路径仍是 `31-paper`**:`project-tree` 默认 root、`project-obsidian` 默认 index 路径、
+   评测里的示例都还写 `31-paper`,应改为 `paper` 以免不带 `--root` 时落错地方。
+4. **launchd 开机自启**:`serve-links` 现在靠手动/会话临时起,PDF 链接时通时断。用户已两次因此踩坑,
+   建议做 launchd(macOS)常驻。
+5. **只落了 `科研项目` 一枝**:其余 5 枝(New Things / 基本方法 / 机器学习方法 / 其他论文 /
+   数学和自然科学工具)未抓未铺。
 
 ## 承重原则(动手前必读,勿违背)
 
