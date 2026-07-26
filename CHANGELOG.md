@@ -3,6 +3,46 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.5.0] — 2026-07-26
+
+Phase 2 tracer-bullet: project ingested papers into an Obsidian managed-block index,
+and open each paper's raw PDF one-click in the local browser via a loopback link
+service. Planner (host LLM + zotero-mcp) and executor (CLI) stay split — they exchange
+JSON only; the CLI never touches MCP (INV18). Hierarchical/Notion projections deferred
+to a later round.
+
+### Added
+- `src/scholar_workflow/adapters/local_links.py` — loopback PDF link service:
+  `GET /open/paper/<attachment-key>` globs `<storage_root>/<key>/*.pdf` and streams it
+  inline (`application/pdf`). Binds `127.0.0.1` only; validates key against `[A-Z0-9]+`
+  before touching the filesystem (blocks path traversal); 404 on no-PDF, 400 on bad key
+- `src/scholar_workflow/workflows/projection.py` — pure `format_row` (deterministic;
+  `Synced` from the input row, not `now()`, so re-projection is idempotent) +
+  `project_obsidian` (ensure managed block → replace rows; content outside markers
+  untouched, INV4)
+- CLI `serve-links` — run the link service in the foreground (Ctrl-C to stop)
+- CLI `project-obsidian` — read `{index, heading, entries}` JSON (stdin/`--input`) and
+  render the managed-block table into the vault index
+- `config.LinkServiceConfig` — `link_service.port` (23128) + `storage_root`
+  (`~/Zotero/storage`)
+- `tests/unit/test_local_links.py` (7) + `tests/unit/test_projection.py` (5)
+- `planning/` — permanent planning layer; migrated `GOALS.md` + `HANDOFF.md`, added
+  `planning/phase2-sync-projections.md` spec + DR-1 (loopback link-service decision)
+- `GOALS.md` — INV17 (loopback link service, opaque attachment key) + INV18
+  (planner/executor split, CLI never reaches MCP); Phase 2 marked in progress
+- `evals/outcomes.json` — `obsidian-projection-idempotent` + `pdf-link-inline-local` cases
+
+### Changed
+- `skills/sync-projections/` — SKILL.md step 5 and both reference docs
+  (`link-format.md`, `obsidian-index-format.md`) aligned to the shipped design:
+  attachment-key link-service URL (not item key / relative path), `31-paper` path,
+  `; `-joined authors, idempotent `Synced`
+- `skills/check-consistency/references/consistency-invariants.md` — Obsidian audit now
+  checks link-service URLs resolve, not relative paths
+- `dev-guide/{skill-authoring,skill-iteration,eval-loop}.md` — reflect reality: pytest
+  guards schema/contract, eval suites are review-judged; planning/ is a permanent layer
+- `AGENT.md` — added planning-docs row; dev-guide and planning both permanent
+
 ## [0.4.3] — 2026-07-23
 
 Provenance-preservation rule for export-annotations, learned from the first real run

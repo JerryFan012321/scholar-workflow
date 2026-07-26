@@ -44,31 +44,29 @@ runtime docs or vice versa.
 | Set | Location | Audience | Loaded when |
 |---|---|---|---|
 | **Development docs** | `dev-guide/` | The developer / Claude authoring or iterating a skill | While working in this repo |
+| **Planning docs** | `planning/` | The developer / Claude planning a phase | While working in this repo |
 | **Runtime docs** | `references/`, `skills/*/references/` | The Claude executing a user task | When a skill fires |
 
 - `dev-guide/` — how to build and evolve skills: `skill-authoring.md`,
   `skill-iteration.md`, `eval-loop.md`. **Never loaded at skill runtime.**
+- `planning/` — the living **planning layer**: `GOALS.md` (intent), `HANDOFF.md`
+  (session hand-off), and per-phase specs (e.g. `phase2-sync-projections.md`).
+  Permanent, **never archived**. Never loaded at skill runtime.
+
+Both `dev-guide/` and `planning/` are permanent, development-time layers. They differ
+by content, not lifecycle: `dev-guide/` is the cross-phase **"how to build"**
+methodology (stable); `planning/` is the per-phase **"what to build / goals / hand-off"**
+(changes with each phase). Neither is loaded at skill runtime.
 - Runtime docs describe *what the plugin does*, not *how to develop it*. A skill's
   `## References` section lists exactly which runtime files to load — it must never
-  point into `dev-guide/`.
-- `GOALS.md` (repo root) — the living **intent layer**: upstream goals, long-term
+  point into `dev-guide/` or `planning/`.
+- `planning/GOALS.md` — the living **intent layer**: upstream goals, long-term
   invariants, non-goals, phase status. Continuously updated, never archived. It is
   the north star; `evals/` guards each goal by its stable ID (G/INV/NG).
 - Original design docs (DESIGN.md, PROJECT.md) have been **archived out of the repo**
   to `archived/scholar-workflow/project_references/`. Their intent layer lives on in
-  `GOALS.md`; the architecture layer is a frozen snapshot — the code is authoritative
+  `planning/GOALS.md`; the architecture layer is a frozen snapshot — the code is authoritative
   for architecture, so do not restore or sync those docs.
-
-### Lifecycle (dev docs are temporary)
-
-`dev-guide/` and the development-process rules in this file are scaffolding, not
-part of the shipped plugin. **When the build targets in `dev-guide/` are met:**
-
-1. Archive `dev-guide/` and add it to `.gitignore`; untrack it (`git rm --cached -r dev-guide`).
-2. Strip development-process content from AGENT.md — the `dev-guide` read step in
-   Always Do, this Lifecycle note, and any authoring/iteration rules.
-3. Leave only what the plugin needs to run and be understood (structure, runtime
-   references, behavior boundaries, agent↔skill map, exit codes, changelog rule).
 
 ### Language
 
@@ -87,7 +85,7 @@ part of the shipped plugin. **When the build targets in `dev-guide/` are met:**
 - Read the existing SKILL.md / agent file before modifying
 - Update `CHANGELOG.md` before every commit — group entries under the skill name
 - Bump `.claude-plugin/plugin.json` version on every skill change — minor for new features, patch for fixes
-- Update `GOALS.md` when a goal, invariant, non-goal, or phase status changes — keep IDs stable, assign new IDs for new items
+- Update `planning/GOALS.md` when a goal, invariant, non-goal, or phase status changes — keep IDs stable, assign new IDs for new items
 - Update the Agent → Skill mapping table when adding or renaming a skill
 - Test skill triggering by reviewing the `description` field — it's the primary routing mechanism
 - Write contract test before modifying any adapter interface

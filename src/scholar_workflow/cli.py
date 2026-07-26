@@ -81,6 +81,55 @@ def apply(inputs: tuple[str, ...]) -> None:
                           ensure_ascii=False))
 
 
+@main.command(name="project-obsidian")
+@click.option("--input", "input_file", type=click.File("r"), default="-",
+              help="JSON file with {index, heading, entries}; default stdin.")
+def project_obsidian_cmd(input_file) -> None:
+    """Write a managed-block index into the vault from Zotero-sourced JSON.
+
+    Input (from the host LLM via zotero-mcp): {"index": "<rel path>", "heading":
+    "<h1>", "entries": [{title, authors, year, venue, zotero_key, attachment_key,
+    arxiv, doi, synced}, ...]}. Content outside the managed markers is preserved;
+    re-running the same input is idempotent (GOALS INV4/INV18)."""
+    from pathlib import Path
+    from scholar_workflow.config import load_config
+    from scholar_workflow.adapters.obsidian import ObsidianAdapter
+    from scholar_workflow.workflows.projection import project_obsidian
+
+    payload = json.load(input_file)
+    entries = payload.get("entries", [])
+    cfg = load_config()
+    index = payload.get("index") or "31-paper/index.md"
+    heading = payload.get("heading") or "Papers"
+    adapter = ObsidianAdapter(Path(cfg.vault_root),
+                              cfg.obsidian.managed_block_start,
+                              cfg.obsidian.managed_block_end)
+    n = project_obsidian(entries, index, heading, adapter, cfg.link_service.port)
+    click.echo(json.dumps({"index": index, "rows": n}, ensure_ascii=False))
+
+
+@main.command(name="serve-links")
+def serve_links() -> None:
+    """Run the loopback PDF link service (foreground, blocks until Ctrl-C).
+
+    Serves GET /open/paper/<attachment-key> as an inline PDF from the Zotero
+    storage folder, so projection links open in a local browser (GOALS INV17).
+    Read-only filesystem access; never reaches MCP."""
+    import threading as _t
+    from scholar_workflow.config import load_config
+    from scholar_workflow.adapters.local_links import start_link_server
+
+    cfg = load_config()
+    server = start_link_server(cfg.link_service.port, cfg.link_service.storage_root)
+    host, port = server.server_address
+    click.echo(f"link-service on http://{host}:{port}  (storage: "
+               f"{cfg.link_service.storage_root})  Ctrl-C to stop")
+    try:
+        _t.Event().wait()
+    except KeyboardInterrupt:
+        server.shutdown()
+
+
 @main.command()
 @click.argument("job_id")
 def resume(job_id: str) -> None:

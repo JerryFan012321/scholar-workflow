@@ -19,7 +19,7 @@ description: Rebuild Obsidian paper index tables and sync Notion management proj
 2. Locate the managed block in the target file (`<!-- scholar-workflow:start/end -->`)
 3. Update only the rows inside the managed block; preserve all human content outside it
 4. For large directories, update the parent description and sub-indexes before leaf tables
-5. The table must include: title, authors, year, venue, Zotero item key, PDF relative path, arXiv, DOI, synced time
+5. The table must include: title, authors, year, venue, Zotero link (`zotero://select/items/@<item-key>`), PDF link (link-service URL by attachment key — see `references/link-format.md`), arXiv, DOI, synced time. Assemble one JSON row per paper and hand them to the CLI (`scholar-workflow project-obsidian`); the CLI renders the managed block — it never queries zotero-mcp itself (INV18)
 
 ### Notion management projection
 6. Upsert by stable Resource ID — never blindly create pages by title

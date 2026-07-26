@@ -10,7 +10,7 @@ The audit checks these invariants against the canonical rules in the shared
 | Zotero | item exists; no duplicates; correct Collection assignment |
 | Attachments | file resolves on disk; linked files (linkMode 2) store a **relative** path (`attachments:…`), not absolute |
 | Files | attachment file exists at its resolved path; not a size-0 ghost |
-| Obsidian | index-row Zotero keys resolve; PDF relative paths are valid |
+| Obsidian | index-row Zotero item keys resolve; PDF link-service URLs resolve (attachment key globs a real PDF under storage_root); content outside managed markers untouched |
 | Notion | no duplicate Resource IDs; local-link URLs resolve |
 | Hierarchy | parent index descriptions match actual sub-directory contents |
 

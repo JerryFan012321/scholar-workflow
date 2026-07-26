@@ -1,15 +1,17 @@
 # HANDOFF — 从这里接着干
 
-> 交接文档,供下一个开发会话快速进入状态。与 `GOALS.md`(意图层)、`CHANGELOG.md`(变更史)
-> 配合看。最后更新:2026-07-21(v0.4.0 已提交为 `f3cc507`;zotero-mcp 转向的代码退场 +
-> 文档/评测层全对齐 + 审批原则变更;跨机同步改用 imported 附件,已弃用 ZotMoov)。
+> 交接文档,供下一个开发会话快速进入状态。与 `GOALS.md`(意图层,同目录)、`../CHANGELOG.md`(变更史)
+> 配合看。最后更新:2026-07-26(v0.4.3 已提交;Phase 2 规格已落 `phase2-sync-projections.md`。上游:v0.4.2 `b99d9bc` 批量审批措辞收紧 + 记录真实权限闸门。
+> 上游:v0.4.1 datetime 清理已提交,v0.4.0 zotero-mcp 转向代码退场 + 文档/评测层全对齐 + 审批原则
+> 变更;跨机同步用 imported 附件,已弃用 ZotMoov)。
 
 ## 当前状态一句话
 
-Phase 1 **进行中**。架构已从「Zotero 只读权威 + Local API + 人工导入」**转向 zotero-mcp**:
-存在性/元数据/语义检索/写入全部经宿主 LLM 调 zotero-mcp 完成,CLI 收缩为「arXiv 下载到收件箱 +
-job 状态 + 报告 + 只查本地路径的 doctor」。pivot 的**代码退场 + 文档层 + 评测层**已全部对齐并
-提交(`f3cc507`),工作区干净。
+Phase 1 **进行中,第一个功能(论文入库闭环)实战可用**。架构已从「Zotero 只读权威 + Local API +
+人工导入」**转向 zotero-mcp**:存在性/元数据/语义检索/写入全部经宿主 LLM 调 zotero-mcp 完成,
+CLI 收缩为「arXiv 下载到收件箱 + job 状态 + 报告 + 只查本地路径的 doctor」。pivot 的代码退场 +
+文档层 + 评测层已全对齐;19 passed,CLI 收敛为 6 命令(apply/audit/discover/doctor/report/resume)。
+HEAD `b99d9bc`(v0.4.2),工作区干净。
 
 ## 承重原则(动手前必读,勿违背)
 
@@ -44,31 +46,42 @@ Zotero **9.0.6**,Mac + Windows 双机。当前正确模型(2026-07-21 起):
 
 ## 近期完成
 
-1. **v0.4.0 已提交(`f3cc507`)**:zotero-mcp 转向的代码退场(删 `adapters/zotero_local.py`/
+1. **第一个功能实战可用**:论文入库闭环跑通——26 篇 CAD 文献经 zotero-mcp 完成 create + import +
+   补元数据 + 归入 5 个分类,判重两步核验(`search_library` 召回 → `get_item_details` 回读字段确认)
+   全程走通,无重复身份。这是 Phase 1 find-resource / ingest-resource 的首次端到端实战验证。
+2. **v0.4.2 已提交(`b99d9bc`)**:批量审批措辞收紧——一次任务级指令授权整批只读 + 新增性写入端到端,
+   不逐项二次批准;记录真实权限闸门是 `settings.local.json` allow-list(非文档措辞)。对齐 AGENT.md
+   `### Approval & auto-run`、security-policy、ingest-resource SKILL。
+3. **v0.4.1 已提交(`c71e634`)**:`datetime.utcnow()` 全量替换为 `datetime.now(timezone.utc)`,清掉
+   Python 3.14 的 18 条弃用警告(models/approvals/planning/state/cli + paper-import 测试);无行为变更。
+4. **v0.4.0 已提交(`f3cc507`)**:zotero-mcp 转向的代码退场(删 `adapters/zotero_local.py`/
    `dedup.py`/`workflows/sync.py` + 对应测试;退掉 CLI 的 sync/catalog/resolve/plan/locate;
    `state.py` 去 resources 缓存;删 `ZoteroConfig` 与 doctor 的 Local API 探针;`generate_plan`
-   变确定性全 create)+ 文档/评测层对齐(safety.json、GOALS v2、storage-policy linkMode 模型、
-   ingest-resource 单动作入库 + imported 约束、跨机同步 README、AGENT.md 受众二分)。19 passed。
-2. **审批原则变更**(见承重原则)。
-3. **弃用 ZotMoov、回到 imported 附件**:根因是 ZotMoov 的 linked-file 工作流与「坚果云 WebDAV 当
+   变确定性全 create)+ 文档/评测层对齐。审批原则变更(见承重原则)。
+5. **弃用 ZotMoov、回到 imported 附件**:根因是 ZotMoov 的 linked-file 工作流与「坚果云 WebDAV 当
    Zotero 文件同步后端」根本矛盾(WebDAV 只同步 stored/imported 附件)。Text2CAD 已删旧条目、以
    imported 重新入库验证(item `8USWVHLD`,附件 `S6LZUS6S`,linkMode 0,落在 storage)。
-4. **skill 固化教训**:storage-policy 补 attachment linkMode 模型;check-consistency 保留两类漂移
+6. **skill 固化教训**:storage-policy 补 attachment linkMode 模型;check-consistency 保留两类漂移
    检查(绝对路径 linked-file、幽灵附件);ingest-resource 补 imported 约束 + 跨机同步 README(给人)。
 
-## 下一步(有序)
+## 下一步(有序)—— Phase 2 投影同步(规格见 `phase2-sync-projections.md`)
 
-1. **DeepCAD(arXiv 2105.09492)入库仍未完成**:元数据已备齐,PDF 下到 inbox
-   (`~/documents/0-inbox/paper-inbox/2105.09492.pdf`),但还没经 zotero-mcp 写入。按审批原则可直接
-   两步核验判重 → create + import + 归到 text2cad 相关分类。inbox 里另有 `2409.17106.pdf`
-   (Text2CAD 已入库,inbox 副本可清)。
-2. **datetime.utcnow() 弃用清理**(已排为下一轮代码清理):`models.py`/`approvals.py`/`cli.py`/
-   `planning.py`/`state.py` 用 `datetime.utcnow()`,Python 3.14 报弃用警告,改 `datetime.now(timezone.utc)`。
-3. **SKILL 瘦身**(单独一轮,需先对齐):5 个 SKILL 重复触发语义/MCP/审批/身份核验,ingest-resource
-   尤其臃肿。做法按 AGENT.md:共享规则进 references、SKILL 只留触发 + 最小决策流 + 3–5 条硬约束。
-4. **evals JSON → 真 pytest**:`no-existence-on-unreachable`、`no-create-without-existence-check`、
-   `no-unapproved-destructive-zotero` 需端到端断言;outcomes.json 10 例全 pending。注意安全 eval 现在守的
-   是**宿主 LLM 在 skill 层的行为**,CLI 够不到 MCP,部分用例无 CLI 触发路径,得想清在哪一层断言。
+本轮范围 = Obsidian 索引 + 本机 PDF 链接服务;**Notion 押后**(未来:一个 Notion 条目 = PDF 链接 + 笔记,
+笔记跨机 Mac/手机,PDF 仅本机点)。tracer-bullet 依赖序:
+
+1. **T0 规格 + planning 迁移**(进行中):建 `planning/`、迁 GOALS+HANDOFF、写 spec、GOALS 补 INV17/18。
+2. **T1 link-service 做实**:修 `local_links.py` guard bug;解析改按**附件 key** glob
+   `~/Zotero/storage/<key>/*.pdf`;inline 流原始 PDF + Content-Type/Length + 路径逃逸防护;config 补
+   `link_service.port`/`storage_root`;加 CLI `serve-links` + pytest。**机制已在当前环境实测通过**
+   (200/application-pdf/16MB/%PDF-)。
+3. **T2 obsidian 写入**:加 CLI `project-obsidian` 读 JSON rows → `obsidian.py` managed-block 精确替换;
+   链接列 = `http://127.0.0.1:23128/open/paper/<附件key>`;pytest 断言 marker 外人工内容零改动。
+4. **T3 端到端**:真拿 Text2CAD(item `8USWVHLD`/附件 `S6LZUS6S`)贯穿 MCP→JSON→CLI→adapter→service→
+   cmux 浏览器看 PDF。之后 T4+ 拓宽:N 篇→层级索引→开机自启(launchd/Windows)→Notion。
+
+承重原则(Phase 2):规划(LLM 经 MCP)与执行(CLI 写文件/起服务)分离,只经 JSON 通信,CLI 不碰 MCP
+(INV18);PDF 链接按附件 key 本机 loopback 解析、吐原始 PDF,批注家在笔记侧(INV17);Obsidian 表是
+可重建派生索引、managed-block 内增量、marker 外人工内容零改动(INV4)。
 
 ## 已知遗留
 

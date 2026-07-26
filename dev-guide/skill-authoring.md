@@ -7,11 +7,16 @@ never loaded at skill runtime. Read it when creating or reviewing a skill.
 
 ```
 skills/<name>/
-├── SKILL.md          # required
+├── SKILL.md          # required — frontmatter + trigger, steps, constraints
 ├── README.md         # English
 ├── README.zh-CN.md   # Chinese
-└── references/       # skill-specific operational docs (optional)
+├── scripts/          # skill-specific executables (if any)
+└── references/       # skill-specific operational docs, loaded on demand
 ```
+
+Shared CLI executables live in top-level `bin/` (e.g. `scholar-workflow`,
+`zotero-annotations.py`), not under a skill — put a script in `skills/<name>/scripts/`
+only when it is specific to that one skill. (See AGENT.md 插件结构 / Skill Anatomy.)
 
 ## SKILL.md structure
 
@@ -19,8 +24,11 @@ skills/<name>/
    mechanism: pack it with concrete English + Chinese trigger phrases a user would
    actually type. Vague descriptions cause mis-routing.
 2. **Triggers** — bullet list of when this skill fires.
-3. **Steps** — the procedure, numbered. Split into phases when there is an approval
-   gate (plan → execute).
+3. **Steps** — the procedure, numbered. Additive writes (download / create / import /
+   metadata / add-to-collection) run directly once the user has given the ingest
+   instruction — no per-write gate. Split into an approval phase only around a
+   **destructive / irreversible** action (delete, overwrite-conflict, merge identity),
+   which must be confirmed one by one. See AGENT.md Ask First, GOALS G4/G9/INV9/NG5.
 4. **Constraints** — the runtime safety rules this skill must obey.
 5. **References** — list the exact files to load at runtime (see below).
 
@@ -33,7 +41,8 @@ In a SKILL.md `## References` section:
 
 The two prefixes make local vs shared unambiguous at a glance and match the
 `${CLAUDE_PLUGIN_ROOT}` convention used in `hooks/`. Never point a `## References`
-entry into `dev-guide/`.
+entry into `dev-guide/` or `planning/` — those are development-time layers, never
+loaded at skill runtime.
 
 ## Runtime references, two tiers
 

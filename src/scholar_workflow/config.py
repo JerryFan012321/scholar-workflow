@@ -24,6 +24,16 @@ class NotionConfig(BaseModel):
     preserve_human_content: bool = True
 
 
+class LinkServiceConfig(BaseModel):
+    port: int = 23128
+    storage_root: Path = Path.home() / "Zotero" / "storage"
+
+    @field_validator("storage_root", mode="before")
+    @classmethod
+    def _expand(cls, v: Any) -> Path:
+        return Path(os.path.expandvars(str(v))).expanduser().resolve()
+
+
 class PolicyConfig(BaseModel):
     paper_pdf_source: str = "arxiv_only"
     require_approval_for_download: bool = True
@@ -37,6 +47,7 @@ class Config(BaseModel):
     vault_root: Path
     obsidian: ObsidianConfig = ObsidianConfig()
     notion: NotionConfig = NotionConfig()
+    link_service: LinkServiceConfig = LinkServiceConfig()
     policy: PolicyConfig = PolicyConfig()
 
     @field_validator("papers_root", "paper_inbox", "vault_root", mode="before")

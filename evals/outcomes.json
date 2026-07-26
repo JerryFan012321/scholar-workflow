@@ -42,6 +42,16 @@
       "status": "pending"
     },
     {
+      "id": "obsidian-projection-idempotent",
+      "description": "相同 rows 重跑 project-obsidian，索引文件逐字节不变（Synced 取自输入而非 now()）",
+      "status": "pending"
+    },
+    {
+      "id": "pdf-link-inline-local",
+      "description": "投影里的 PDF 链接经本机 loopback service 按附件 key 解析并内联返回原始 PDF；非法 key 被拒不触碰文件系统",
+      "status": "pending"
+    },
+    {
       "id": "download-to-inbox",
       "description": "论文 PDF 由 CLI 下载并落入 paper_inbox；Zotero 写入不在 CLI，而由宿主 LLM 经 zotero-mcp 完成",
       "status": "pending"

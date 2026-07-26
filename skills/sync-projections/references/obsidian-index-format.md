@@ -13,7 +13,7 @@ Human notes above stay untouched.
 <!-- scholar-workflow:start -->
 | Title | Authors | Year | Venue | Zotero | PDF | arXiv | DOI | Synced |
 |---|---|---:|---|---|---|---|---|---|
-| ... | A et al. | 2024 | CVPR | [key](zotero://...) | [pdf](../31-papers/...) | [2401.01234](...) | 10.xxxx | 2024-01-15 |
+| ... | A One; B Two | 2024 | CVPR | [open](zotero://select/items/@8USWVHLD) | [PDF](http://127.0.0.1:23128/open/paper/S6LZUS6S) | [2401.01234](https://arxiv.org/abs/2401.01234) | 10.xxxx | 2024-01-15 |
 <!-- scholar-workflow:end -->
 
 Human notes below stay untouched.
@@ -21,8 +21,10 @@ Human notes below stay untouched.
 
 ## Required columns
 
-Title, Authors (first author + et al.), Year, Venue, Zotero (`zotero://select/...`),
-PDF (path relative to `vault_root`), arXiv, DOI, Synced (ISO date).
+Title, Authors (`; `-joined), Year, Venue, Zotero (`zotero://select/items/@<item-key>`),
+PDF (link-service URL `http://127.0.0.1:<port>/open/paper/<attachment-key>` — never a
+relative or absolute file path), arXiv (`[id](https://arxiv.org/abs/id)`), DOI, Synced
+(ISO date, taken from the input row, not `now()` — keeps re-projection idempotent).
 
 ## Hierarchical structure
 

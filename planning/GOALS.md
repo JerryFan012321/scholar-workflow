@@ -46,6 +46,8 @@
 | INV14 | 模糊/语义召回委托 zotero-mcp 的 `semantic_search`；不再在本项目内自建或自禁 embedding/向量索引 | （待补） |
 | INV15 | 离线解析器对标识符输入不造占位标题（`title` 为 null）；显示用真名由展示层可选补齐（EXACT 经 zotero-mcp 取名、NONE 用对话/抓取），绝不作为判定输入。契约自描述，能力缺失时降级为显示 identifier | resolver: title-null-for-identifier |
 | INV16 | scholar-workflow 硬依赖 zotero-mcp 提供 Zotero 读/写/语义检索；doctor 必检其可达性；不可用则 fail-fast（退出码 3），目标层不设降级分支 | （待补） |
+| INV17 | 投影中指向论文 PDF 的链接指向本机 loopback link-service（`127.0.0.1`），按**附件 key** glob `~/Zotero/storage/<附件key>/*.pdf` 解析、inline 流式吐**原始** PDF（不含批注，批注家在笔记/Notion 侧）；URL 只存不透明附件 key，绝不存绝对路径。PDF 仅本机点开，跨机不要求 | （待补） |
+| INV18 | sync-projections 的规划（宿主 LLM 经 zotero-mcp 取字段）与执行（CLI 写文件 / 起 link-service）分离，只经 JSON 消息通信；CLI 不碰 MCP、不读写 `zotero.sqlite`（link-service 只读文件系统） | （待补） |
 
 ## 非目标（NG）
 
@@ -68,7 +70,7 @@
 |---|---|---|
 | Phase 0 | 插件骨架、契约、evals 基线、开发规范 | ✅ 完成 |
 | Phase 1 | 论文发现 + 下载到收件箱 + 经 zotero-mcp 入库（find-resource / ingest-resource 真实可用；存在性/语义/写入经 zotero-mcp） | 🚧 进行中（resolver / 下载到 inbox 已落地；CLI 的 sync/locate/resolve/catalog 退场；存在性/写入迁移至 MCP；skill/reference/agent/evals 已按 zotero-mcp 重写并对齐；实战已完成 create/import/补元数据/加入分类闭环） |
-| Phase 2 | 投影同步（Obsidian 索引 + Notion） | ⏳ 未开始 |
+| Phase 2 | 投影同步（Obsidian 索引 + 本机 PDF 链接服务；Notion 押后） | 🚧 进行中（规格已落 `planning/phase2-sync-projections.md`；tracer-bullet T0 规格→T1 link-service→T2 obsidian 写入→T3 端到端；Notion 移出本轮，作后续 ticket） |
 | Phase 3 | 文献脉络树 | ⏳ 未开始 |
 | Phase 4 | 一致性审计 | ⏳ 未开始 |
 
@@ -88,4 +90,6 @@
 - **zotero-mcp 转向的下游同步（✅ 已完成对齐）**：全部 4 个顶层 references（security / storage / identity / source）、全部 5 个 SKILL.md、全部 5 个 agents、`evals/safety.json`（`no-zotero-write` 删除 → `no-unapproved-destructive-zotero` + `no-create-without-existence-check`；`no-existence-on-unreachable` 语义迁至 MCP；删除守护已删机制的 `no-unapproved-apply` / `plan-invalidated-on-change`）均已按 zotero-mcp 新模型重写；代码层退场项（`adapters/zotero_local.py`、`workflows/sync.py`、`dedup`、CLI 的 `sync`/`locate`/`resolve`/`catalog`）已删除。
 - **审批原则变更（本轮）**：写入审批从"每次写入须批准"改为"新增性写入直接执行、仅破坏性动作须批准"（G4/G9/INV9/NG5），并同步至 `~/.claude/CLAUDE.md` 与 `references/security-policy.md`。
 - **INV16 doctor 分层脚注**：doctor 的 Python 探针只查本地路径；zotero-mcp 可达性由宿主 LLM 在 skill 层核验（CLI 子进程够不到 MCP）。字面"doctor 必检其可达性"应理解为分两层：CLI 查路径 + SKILL 查 MCP。
+- **规划文档迁入 `planning/`（本轮）**：`GOALS.md`、`HANDOFF.md` 及 per-phase 规格从仓库根迁入永久、不归档的 `planning/`（区别于将被归档的 `dev-guide/`）。AGENT.md 文档边界表已加 planning 层。历史 CHANGELOG 行不追改。
+- **INV17/INV18（Phase 2）**：新增本机 loopback PDF link-service（附件-key glob storage、inline 流原始 PDF、URL 只存不透明 key）与 sync-projections 的规划/执行分离（LLM↔CLI 只经 JSON、CLI 不碰 MCP）。决策记录 DR-1 见 `planning/phase2-sync-projections.md`。
 
