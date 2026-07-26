@@ -3,6 +3,35 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.6.0] — 2026-07-26
+
+T4 core — hierarchical index (option C). Mirror the Zotero collection tree as a folder
+of managed-block notes: each collection becomes one file, parent collections get a MOC
+(map-of-content) wikilink list to their children, leaf collections get a paper table.
+Adds an Importance column (Zotero `prio:★★★`). Rendered in tmp dirs + tests only — not
+yet run against the real vault (awaiting dry-run preview). Note-URL (`/open/note/...`)
+is a later ticket.
+
+### Added
+- `src/scholar_workflow/workflows/hierarchy.py` — `project_tree` walks a tree JSON
+  `{root, tree:{name, collection_key, papers[], children[]}}` and renders one file per
+  node at `<parent>/<name>.md`; a node's block = MOC wikilink section (children) +
+  10-column paper table (direct papers). CLI owns all path computation (INV18); names
+  sanitized so a stray collection name can't escape the mirror root
+- CLI `project-tree` — read the tree JSON (stdin/`--input`), render the folder mirror
+- `render_table` in `projection.py` — full table body (header + rows) for one block
+- `tests/contract/test_obsidian.py` (6) — pins the generalized adapter contract
+- `tests/unit/test_hierarchy.py` (3) — folder mirror, MOC-vs-table placement, idempotency
+
+### Changed
+- `adapters/obsidian.py` — generalized: `update_managed_block(path, body:str)` replaces
+  the inter-marker region with a caller-supplied body (was: hardcoded 9-col header);
+  `ensure_managed_block` creates an empty block. Lets one adapter serve both paper tables
+  and non-table MOC blocks
+- `projection.py` `format_row` — 10 columns; adds Importance between Venue and Zotero
+- `skills/sync-projections/references/obsidian-index-format.md` — 10-column table +
+  concrete folder-mirror/MOC structure (replaces the old 9-col + aspirational hierarchy)
+
 ## [0.5.0] — 2026-07-26
 
 Phase 2 tracer-bullet: project ingested papers into an Obsidian managed-block index,

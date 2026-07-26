@@ -16,8 +16,15 @@ def _cell(v: object) -> str:
     return str(v).replace("|", "\\|").replace("\n", " ").strip()
 
 
+HEADER = (
+    "| Title | Authors | Year | Venue | Importance | Zotero | PDF | arXiv | DOI | Synced |\n"
+    "|---|---|---:|---|---|---|---|---|---|---|"
+)
+
+
 def format_row(entry: dict, port: int) -> str:
-    """Render one entry as a 9-column row: Title|Authors|Year|Venue|Zotero|PDF|arXiv|DOI|Synced."""
+    """Render one entry as a 10-column row:
+    Title|Authors|Year|Venue|Importance|Zotero|PDF|arXiv|DOI|Synced."""
     authors = entry.get("authors") or []
     authors = "; ".join(authors) if isinstance(authors, list) else authors
     attach = entry.get("attachment_key")
@@ -28,10 +35,15 @@ def format_row(entry: dict, port: int) -> str:
     arxiv_cell = f"[{_cell(arxiv)}](https://arxiv.org/abs/{arxiv})" if arxiv else ""
     cells = [
         _cell(entry.get("title")), _cell(authors), _cell(entry.get("year")),
-        _cell(entry.get("venue")), zotero, pdf, arxiv_cell,
-        _cell(entry.get("doi")), _cell(entry.get("synced")),
+        _cell(entry.get("venue")), _cell(entry.get("importance")), zotero, pdf,
+        arxiv_cell, _cell(entry.get("doi")), _cell(entry.get("synced")),
     ]
     return "| " + " | ".join(cells) + " |"
+
+
+def render_table(entries: list[dict], port: int) -> str:
+    """Full paper-table body (header + rows) for a managed block."""
+    return "\n".join([HEADER, *(format_row(e, port) for e in entries)])
 
 
 def project_obsidian(entries: list[dict], index_path: Path, heading: str,
@@ -41,6 +53,5 @@ def project_obsidian(entries: list[dict], index_path: Path, heading: str,
     Content outside the managed markers is never touched (INV4). Returns row count.
     """
     adapter.ensure_managed_block(Path(index_path), heading)
-    rows = [format_row(e, port) for e in entries]
-    adapter.update_managed_block(Path(index_path), rows)
-    return len(rows)
+    adapter.update_managed_block(Path(index_path), render_table(entries, port))
+    return len(entries)

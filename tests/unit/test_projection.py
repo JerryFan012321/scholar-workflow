@@ -7,8 +7,9 @@ from scholar_workflow.workflows.projection import format_row, project_obsidian
 START, END = "<!-- s -->", "<!-- e -->"
 ENTRY = {
     "title": "Text2CAD", "authors": ["A. One", "B. Two"], "year": 2024,
-    "venue": "NeurIPS", "zotero_key": "8USWVHLD", "attachment_key": "S6LZUS6S",
-    "arxiv": "2409.17106", "doi": "10.1/x", "synced": "2026-07-26",
+    "venue": "NeurIPS", "importance": "★★★", "zotero_key": "8USWVHLD",
+    "attachment_key": "S6LZUS6S", "arxiv": "2409.17106", "doi": "10.1/x",
+    "synced": "2026-07-26",
 }
 
 
@@ -18,10 +19,11 @@ def _adapter(tmp_path):
 
 def test_format_row_links_and_columns():
     row = format_row(ENTRY, port=23128)
-    assert row.count("|") == 10  # 9 cells -> 10 pipes
+    assert row.count("|") == 11  # 10 cells -> 11 pipes
     assert "http://127.0.0.1:23128/open/paper/S6LZUS6S" in row
     assert "zotero://select/items/@8USWVHLD" in row
     assert "A. One; B. Two" in row
+    assert "★★★" in row  # importance column
 
 
 def test_format_row_escapes_pipe():
