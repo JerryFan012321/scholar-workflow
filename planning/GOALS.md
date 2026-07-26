@@ -46,8 +46,9 @@
 | INV14 | 模糊/语义召回委托 zotero-mcp 的 `semantic_search`；不再在本项目内自建或自禁 embedding/向量索引 | （待补） |
 | INV15 | 离线解析器对标识符输入不造占位标题（`title` 为 null）；显示用真名由展示层可选补齐（EXACT 经 zotero-mcp 取名、NONE 用对话/抓取），绝不作为判定输入。契约自描述，能力缺失时降级为显示 identifier | resolver: title-null-for-identifier |
 | INV16 | scholar-workflow 硬依赖 zotero-mcp 提供 Zotero 读/写/语义检索；doctor 必检其可达性；不可用则 fail-fast（退出码 3），目标层不设降级分支 | （待补） |
-| INV17 | 投影中指向论文 PDF 的链接指向本机 loopback link-service（`127.0.0.1`），按**附件 key** glob `~/Zotero/storage/<附件key>/*.pdf` 解析、inline 流式吐**原始** PDF（不含批注，批注家在笔记/Notion 侧）；URL 只存不透明附件 key，绝不存绝对路径。PDF 仅本机点开，跨机不要求 | （待补） |
+| INV17 | 投影中指向论文 PDF 的链接**按投影目标分策略**:**Obsidian**(本机 app)指向 loopback link-service（`127.0.0.1`），按**附件 key** glob `~/Zotero/storage/<附件key>/*.pdf` 解析、inline 流式吐**原始** PDF；URL 只存不透明附件 key，绝不存绝对路径，PDF 仅本机点开。**Notion**(云文档、跨设备)PDF 链接指向 **arXiv abs / DOI web URL**（`Web Source` 字段），任意设备/浏览器可开，绕过 Notion 服务端抓不到回环、他机够不到本机的问题；Notion 不用 loopback URL | （待补） |
 | INV18 | sync-projections 的规划（宿主 LLM 经 zotero-mcp 取字段）与执行（CLI 写文件 / 起 link-service）分离，只经 JSON 消息通信；CLI 不碰 MCP、不读写 `zotero.sqlite`（link-service 只读文件系统） | （待补） |
+| INV19 | Notion 投影**单向 本地→Notion**（本地=真相源，机器只推、不回流）；笔记正文渲染为 **Notion 原生 page blocks**（受管区域,marker 界定,区外人工内容不碰）——是内容投影非文件上传,故 INV5「不上传文件」仍成立;知识库层次经 `Category` + `Project` relation + 父子页面镜像 Zotero 分类树 | （待补,Notion ticket） |
 
 ## 非目标（NG）
 
