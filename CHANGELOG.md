@@ -13,6 +13,11 @@ and assembled a callout-card topic page with per-paper links (Papers row · loca
 arXiv). Part of Phase 2 (projection sync), not a standalone release.
 
 ### Added
+- `bin/notion-project.py` — the mechanical two-DB upsert, and the *only* component that
+  calls the Notion API (the CLI still makes no outbound network calls). Reads
+  `{papers, related_docs}` JSON on stdin, upserts papers then related docs (auto-wiring the
+  `Paper` relation from `paper_resource_id`), prints resource_id/doc_id → page_id. Token via
+  `SCHOLAR_WORKFLOW_NOTION_TOKEN` only. Topic-page assembly stays in SKILL.md (host LLM).
 - `Related Docs` DB in the Notion schema — one row per companion document (reading /
   direction / supplementary), keyed by `Doc ID` (vault-relative path), `Paper` relation
   back to the Papers DB row. Orchestration: upsert paper → capture page_id → upsert docs

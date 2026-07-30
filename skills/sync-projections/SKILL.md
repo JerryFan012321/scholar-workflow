@@ -40,14 +40,33 @@ computation and never queries zotero-mcp itself (INV18).
    is down — start it; it is not a data error.
 
 ### Notion management projection (two-DB model)
-6. Upsert the **paper** into the Papers DB by stable Resource ID → capture its page_id;
-   then upsert each **related document** into the Related Docs DB by Doc ID, setting its
-   `Paper` relation to that page_id (see `references/notion-schema.md`). Never create by title
-7. Write only machine-managed fields; never overwrite human content. A related doc projects
-   a one-paragraph Summary + a Vault backlink only — the full note body stays in Obsidian
-8. Point links at a stable web entry (arXiv/DOI `Web Source`) or the Vault; never hardcode
-   absolute file:// paths, and leave the host-only loopback Local URL empty for Notion
-9. Upload no files — no note body is projected, only Summary + backlink
+
+Two layers. The **mechanical layer** is `bin/notion-project.py` — it upserts the two DBs and
+wires relations, and is the *only* place that talks to the Notion API. The **presentation
+layer** is you (the host LLM) assembling the topic page from the returned page_ids. The CLI
+never touches Notion (no outbound network from `scholar-workflow`); this script is separate.
+
+6. **Prepare the payload.** From zotero-mcp fields, build
+   `{papers:[{resource_id, fields}], related_docs:[{doc_id, paper_resource_id, fields}]}`.
+   `fields` are raw Notion property objects (see `references/notion-schema.md` for which
+   machine fields exist). For each paper set both PDF links: `Web Source` = arXiv/DOI (reachable
+   cross-device) **and** `Local URL` = link-service URL (opens the annotated PDF on the host —
+   INV17). A related doc carries only a one-paragraph `Summary` + a `Vault Link` backlink; the
+   full note body stays in Obsidian, never projected.
+7. **Push (mechanical).** Pipe the payload to
+   `SCHOLAR_WORKFLOW_NOTION_TOKEN=… bin/notion-project.py`. It upserts papers first (key
+   `Resource ID`), then related docs (key `Doc ID`, `Paper` relation auto-wired from
+   `paper_resource_id`), and prints `{papers:{resource_id:page_id}, related_docs:{doc_id:page_id}}`.
+   Upsert is idempotent — re-running never duplicates. Never create pages by title.
+8. **Assemble the topic page (presentation).** Using the returned page_ids, build the topic
+   page as a self-contained block body (Notion's API can't create filtered linked-DB views):
+   an icon + a colored intro callout, importance tiers (`prio:★★★/★★/★` from Zotero) as
+   colored headings split by dividers, and one callout card per paper whose body carries a
+   `mention` to the Papers page + a `Local URL` (📕 local PDF) + a `Web Source` (🌐 arXiv) link.
+   Link the related-materials hub via a `mention` to its Related Docs page.
+9. **Boundaries.** Write only machine-managed fields; never overwrite human content. Upload
+   no files — only a Summary + backlinks are projected. If a `Local URL` returns
+   connection-refused, the link service is down (`serve-links`), not a data error.
 
 ## Hierarchical layout (project-tree)
 - The tree mirrors the Zotero collection tree. A **hub** node (has child collections)
@@ -69,6 +88,9 @@ computation and never queries zotero-mcp itself (INV18).
 - The vault index directory is a plain `paper/` subtree (no numeric prefix); PDFs live
   under `papers_root` and are reached only via link-service URLs, never copied into the vault
 - The Notion `Sync Revision` field drives incremental updates to avoid needless overwrites
+- `bin/notion-project.py` is the *only* component that calls the Notion API; the CLI makes
+  no outbound network calls. The token is read from `SCHOLAR_WORKFLOW_NOTION_TOKEN` only —
+  never a flag, config, or git
 - The two subtasks may run in parallel but report status independently
 
 ## References
@@ -76,7 +98,10 @@ computation and never queries zotero-mcp itself (INV18).
 Load on demand.
 
 - `references/obsidian-index-format.md` — managed block, 10-column table, folder-mirror/MOC hierarchy
-- `references/notion-schema.md` — machine vs human fields, upsert rules
+- `references/notion-schema.md` — two-DB schema, machine vs human fields, upsert order
 - `references/link-format.md` — local-link service URL format
+- `${CLAUDE_PLUGIN_ROOT}/bin/notion-project.py` — mechanical two-DB upsert; reads
+  `{papers, related_docs}` JSON on stdin, prints resource_id/doc_id → page_id. The only
+  Notion-API caller; run its `--help`-equivalent header docstring for the payload shape
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md` — derived-index invariant
 - `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md` — loopback links, no file upload

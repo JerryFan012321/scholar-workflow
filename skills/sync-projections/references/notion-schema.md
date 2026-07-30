@@ -16,8 +16,8 @@ paper index row (INV1) plus its related-materials hub (INV20).
 | Project | Relation | owning project page |
 | Status | Select | reading / research / project status |
 | Zotero Item Key | Text | jump link |
-| Web Source | URL | **PDF link for Notion = arXiv abs / DOI / origin site.** Resolves from any device/browser — unlike a loopback Local URL, which Notion's server can't unfurl and other machines can't reach |
-| Local URL | URL | optional; `http://127.0.0.1:23128/open/...` — host-Mac only, leave empty for Notion |
+| Web Source | URL | arXiv abs / DOI / origin site. Resolves from any device/browser — the cross-device PDF entry, and the fallback when off the host machine |
+| Local URL | URL | `http://127.0.0.1:23128/open/...` link-service URL. Opens the annotated PDF instantly when Notion is viewed **on the host Mac** (INV17: both links coexist — Web Source for cross-device, Local URL for host). Stores the opaque attachment key only, never an absolute path |
 | Sync Revision | Text | content hash for incremental updates |
 | Last Synced | Date | last machine update |
 
@@ -56,7 +56,9 @@ This preserves the single-source-of-truth architecture (G2, G5).
    `Paper` relation to the paper's `page_id` from step 1.
 
 The relation must point at a real page id, so the paper upsert always precedes its
-documents. `upsert_page(..., key_property="Doc ID")` selects the Related-Docs key.
+documents. This order is implemented by `bin/notion-project.py` — feed it
+`{papers, related_docs}` JSON and it wires the `Paper` relation automatically from each
+doc's `paper_resource_id`; you do not call `upsert_page` by hand.
 
 ## Hierarchy (mirror the Zotero collection tree)
 
