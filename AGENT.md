@@ -84,7 +84,7 @@ methodology (stable); `planning/` is the per-phase **"what to build / goals / ha
 - Read `dev-guide/` (skill-authoring / skill-iteration / eval-loop) before authoring or iterating a skill
 - Read the existing SKILL.md / agent file before modifying
 - Update `CHANGELOG.md` before every commit — group entries under the skill name
-- Bump `.claude-plugin/plugin.json` version on every skill change — minor for new features, patch for fixes
+- Bump `.claude-plugin/plugin.json` version **per coherent capability batch, not per commit** — a user-perceivable feature batch is minor, fixes are patch. During the 0.x pre-release phase, iterations *within* one batch (multiple commits refining the same capability) share a version and don't each bump. This avoids same-day triple-jumps like 0.6→0.7→0.8.
 - Update `planning/GOALS.md` when a goal, invariant, non-goal, or phase status changes — keep IDs stable, assign new IDs for new items
 - Update the Agent → Skill mapping table when adding or renaming a skill
 - Test skill triggering by reviewing the `description` field — it's the primary routing mechanism

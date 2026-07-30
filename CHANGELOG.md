@@ -3,6 +3,40 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.8.1] — 2026-07-30
+
+Notion two-DB projection model, wired live against a real workspace. Related-materials
+documents now project as their own Notion rows, relation-linked to papers, carrying a
+summary + backlink instead of full note bodies. Validated end-to-end with the text2cad
+topic (8 papers): built the Related Docs DB, upserted the papers + related-materials hub,
+and assembled a callout-card topic page with per-paper links (Papers row · local PDF ·
+arXiv). Part of Phase 2 (projection sync), not a standalone release.
+
+### Added
+- `Related Docs` DB in the Notion schema — one row per companion document (reading /
+  direction / supplementary), keyed by `Doc ID` (vault-relative path), `Paper` relation
+  back to the Papers DB row. Orchestration: upsert paper → capture page_id → upsert docs
+  with relation.
+- `NotionConfig.related_docs_database_id` / `related_docs_data_source_id`.
+- Two contract tests (`test_related_doc_upserts_by_doc_id_and_links_paper_relation`,
+  `test_papers_db_still_defaults_to_resource_id_key`) — 3 → 5.
+- GOALS `INV21` (Notion two-DB model) + `INV20` (related-materials hub, tracer-verified).
+
+### Changed
+- `NotionAdapter.upsert_page` gained a `key_property` param (default `Resource ID`, so
+  Papers-DB behavior is unchanged) so the Related Docs DB can key on `Doc ID`.
+- GOALS `INV19` rewritten: related docs project a one-paragraph summary + Vault backlink;
+  full note bodies stay in Obsidian and are never sent to Notion (was: full body rendered
+  as native Notion page blocks).
+- GOALS `INV17` revised: Notion now carries **both** a `Web Source` (arXiv/DOI, reachable
+  cross-device) **and** a `Local URL` (loopback link-service, opens the annotated PDF
+  instantly on the host Mac) — was "Notion never uses loopback URLs". URL still stores only
+  the opaque attachment key, never an absolute path.
+- `references/notion-schema.md` single-DB → two-DB; `sync-projections/SKILL.md` Notion
+  steps aligned to the paper-then-doc upsert order.
+- Version-bump rule relaxed (AGENT.md): bump per coherent capability batch, not per commit
+  — avoids the 0.6→0.7→0.8 same-day triple-jump.
+
 ## [0.8.0] — 2026-07-26
 
 Link service auto-start (macOS launchd). The loopback PDF service now survives login and

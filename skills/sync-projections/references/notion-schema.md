@@ -1,13 +1,18 @@
 # Notion Schema
 
-## Machine-managed fields (sync may write)
+Two databases, relation-linked. **Papers DB** holds one row per Zotero paper; **Related
+Docs DB** holds one row per companion document (reading note / direction note /
+supplementary), each pointing back to its paper. This mirrors the Obsidian layout: a
+paper index row (INV1) plus its related-materials hub (INV20).
+
+## Papers DB — machine-managed fields (sync may write)
 
 | Field | Type | Note |
 |---|---|---|
-| Resource ID | Text | idempotent upsert key |
-| Name | Title | title or document name |
+| Resource ID | Text | idempotent upsert key = Zotero identity (DOI / title+authors) |
+| Name | Title | paper title |
 | Type | Select | Paper / TechnicalDocument / Dataset / Project |
-| Category | Select | knowledge category |
+| Category | Select | knowledge category (leaf collection) |
 | Project | Relation | owning project page |
 | Status | Select | reading / research / project status |
 | Zotero Item Key | Text | jump link |
@@ -16,22 +21,42 @@
 | Sync Revision | Text | content hash for incremental updates |
 | Last Synced | Date | last machine update |
 
+## Related Docs DB — machine-managed fields (sync may write)
+
+| Field | Type | Note |
+|---|---|---|
+| Doc ID | Text | idempotent upsert key = vault-relative path (stable, unique, doubles as backlink target) |
+| Name | Title | document name |
+| Doc Type | Select | reading-note / direction-note / supplementary |
+| Paper | Relation | → Papers DB row this document belongs to. This phase: exactly one paper (paperless direction notes deferred) |
+| Summary | Text | **one-paragraph abstract only** — the full body stays in Obsidian, never projected here |
+| Vault Link | URL | `obsidian://` (or link-service) backlink to the source note |
+| Sync Revision | Text | content hash for incremental updates |
+| Last Synced | Date | last machine update |
+
+## Note body: summary + backlink, not full text
+
+A related document's **full body is NOT projected into Notion.** Notion is the simplified,
+cross-device *frontend*; Obsidian + Zotero remain the backend and sole edit entry. The
+Related Docs row carries only a one-paragraph `Summary` and a `Vault Link` back to the
+Obsidian note. This keeps Notion light, avoids duplicating local content, and upholds
+`Upload no files` (INV5/NG6) trivially — there is no body to upload.
+
 ## Sync direction
 
 **One-way: local → Notion.** Local (Obsidian notes / Zotero annotations) is the source of
 truth; the machine only pushes. Notion is a derived projection — edits made in Notion do
-not flow back, and are overwritten inside the managed region on the next push if the
-source changed. This preserves the single-source-of-truth architecture (G2, G5).
+not flow back, and machine fields are overwritten on the next push if the source changed.
+This preserves the single-source-of-truth architecture (G2, G5).
 
-## Managed note body (markdown → Notion page blocks)
+## Orchestration (upsert order)
 
-A note's markdown body is rendered into **native Notion page blocks** (headings,
-paragraphs, tables) inside a **managed region** on the resource page — the block analogue
-of Obsidian's managed block. This is content projection, **not** a file upload, so
-`Upload no files` (INV5/NG6) still holds. Rules:
-- Bound the projected body with sentinel marker blocks; rewrite only between them.
-- Everything outside the region — and the human fields below — is never touched.
-- The region is machine-managed: re-render replaces it when `Sync Revision` changes.
+1. Upsert the **paper** into Papers DB by `Resource ID` → capture its `page_id`.
+2. For each related document, upsert into Related Docs DB by `Doc ID`, setting the
+   `Paper` relation to the paper's `page_id` from step 1.
+
+The relation must point at a real page id, so the paper upsert always precedes its
+documents. `upsert_page(..., key_property="Doc ID")` selects the Related-Docs key.
 
 ## Hierarchy (mirror the Zotero collection tree)
 
@@ -41,13 +66,13 @@ tree — the same tree `project-tree` mirrors into Obsidian folders.
 
 ## Human fields (sync must never touch)
 
-Summary, Priority, and any page content outside the managed note-body region. (Note: the
-projected note body is now machine-managed inside its region; human commentary belongs
-outside it or in Summary.)
+Priority and any page content the human adds. Machine writes are confined to the fields
+tabled above; everything else on either page is left alone.
 
 ## Upsert rules
 
-- Upsert by Resource ID; never create pages by title.
-- Write only machine-managed fields + the managed note-body region.
+- Papers DB: upsert by `Resource ID`. Related Docs DB: upsert by `Doc ID`.
+- Never create pages by title.
+- Write only the machine-managed fields listed above.
 - Skip the update when `Sync Revision` is unchanged.
-- Upload no files — note body goes in as page blocks, never as an attached file.
+- Upload no files — no body is projected; only a Summary + backlink.

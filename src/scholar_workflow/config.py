@@ -22,6 +22,24 @@ class NotionConfig(BaseModel):
     enabled: bool = False
     file_upload: bool = False
     preserve_human_content: bool = True
+    # Data-source model (breaking change 2025-09-03): rows live in a data source.
+    # database_id is kept only for reference/jump links; the API uses data_source_id.
+    # Two-DB model: Papers DB (keyed by Resource ID) + Related Docs DB (keyed by
+    # Doc ID, relation-linked back to a paper). database_id/data_source_id target
+    # Papers; related_docs_* target the companion DB. All optional until wired live.
+    database_id: str | None = None
+    data_source_id: str | None = None
+    related_docs_database_id: str | None = None
+    related_docs_data_source_id: str | None = None
+    api_version: str = "2026-03-11"
+
+
+NOTION_TOKEN_ENV = "SCHOLAR_WORKFLOW_NOTION_TOKEN"
+
+
+def notion_token() -> str | None:
+    """Read the Notion integration token from the environment (never from config/git)."""
+    return os.environ.get(NOTION_TOKEN_ENV)
 
 
 class LinkServiceConfig(BaseModel):

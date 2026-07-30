@@ -39,11 +39,15 @@ computation and never queries zotero-mcp itself (INV18).
    (`scholar-workflow serve-links`). If a PDF URL returns connection-refused, the service
    is down — start it; it is not a data error.
 
-### Notion management projection
-6. Upsert by stable Resource ID — never blindly create pages by title
-7. Write only machine-managed fields (see `references/notion-schema.md`); never overwrite human content
-8. Point links at the local-link service or a stable web entry; never hardcode absolute file:// paths
-9. Upload no files
+### Notion management projection (two-DB model)
+6. Upsert the **paper** into the Papers DB by stable Resource ID → capture its page_id;
+   then upsert each **related document** into the Related Docs DB by Doc ID, setting its
+   `Paper` relation to that page_id (see `references/notion-schema.md`). Never create by title
+7. Write only machine-managed fields; never overwrite human content. A related doc projects
+   a one-paragraph Summary + a Vault backlink only — the full note body stays in Obsidian
+8. Point links at a stable web entry (arXiv/DOI `Web Source`) or the Vault; never hardcode
+   absolute file:// paths, and leave the host-only loopback Local URL empty for Notion
+9. Upload no files — no note body is projected, only Summary + backlink
 
 ## Hierarchical layout (project-tree)
 - The tree mirrors the Zotero collection tree. A **hub** node (has child collections)
