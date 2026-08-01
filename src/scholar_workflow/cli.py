@@ -60,17 +60,15 @@ def discover(query: str | None) -> None:
 @main.command()
 @click.argument("inputs", nargs=-1, required=True)
 def apply(inputs: tuple[str, ...]) -> None:
-    """Download approved paper PDFs to the inbox.
+    """Download paper PDFs to the inbox.
 
     Resolve inputs into a deterministic all-`create` plan (no existence check) and
     download each arXiv PDF to `paper_inbox`. Dedup and existence are decided by the
-    host LLM via zotero-mcp before this runs; call only after the user approves the
-    import in-conversation. Never writes to Zotero — import into Zotero is done by
-    the host LLM via zotero-mcp's approved write tools."""
+    host LLM via zotero-mcp before this runs. Never writes to Zotero — import into
+    Zotero is done by the host LLM via zotero-mcp's write tools."""
     from scholar_workflow.resolver import resolve_many
     from scholar_workflow.state import StateStore
     from scholar_workflow.planning import generate_plan
-    from scholar_workflow.approvals import approve_plan
     from scholar_workflow.workflows.paper import run_paper_import
     from scholar_workflow.config import load_config
 
@@ -80,7 +78,7 @@ def apply(inputs: tuple[str, ...]) -> None:
     config = load_config()
     store = StateStore(_state_db_path())
     try:
-        plan = approve_plan(generate_plan(resources))
+        plan = generate_plan(resources)
         results = run_paper_import(plan, resources, config, store)
     finally:
         store.close()

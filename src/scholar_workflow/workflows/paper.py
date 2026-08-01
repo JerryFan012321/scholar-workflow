@@ -8,15 +8,13 @@ from __future__ import annotations
 import uuid
 from pathlib import Path
 from scholar_workflow.models import Resource, ActionPlan, TaskState
-from scholar_workflow.approvals import assert_executable
 from scholar_workflow.adapters.arxiv import download_pdf, sha256_file
 from scholar_workflow.state import StateStore
 
 
 def run_paper_import(plan: ActionPlan, resources: list[Resource],
                      config, store: StateStore, download=None) -> dict:
-    """Download approved papers into the inbox. `download` is injectable for tests."""
-    assert_executable(plan, resources)
+    """Download papers into the inbox. `download` is injectable for tests."""
     if download is None:
         download = download_pdf
     inbox = Path(config.paper_inbox)

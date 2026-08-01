@@ -3,6 +3,44 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.9.0] — 2026-08-01
+
+Subtraction batch: retire the dead approval chain left over from the pre-zotero-mcp
+pipeline, and cement the constraint-design philosophy that governs it.
+
+### Changed
+- AGENT.md gains a top-level **设计哲学(上位准则)** section governing all downstream rules
+  (skill / reference / INV / NG). A three-layer filter for any constraint: (1) *intrinsic
+  ability* the model already has (similarity judgement, summarizing, classification,
+  assembling JSON) — never write it; (2) *optimization scaffolding* that helps the agent
+  execute efficiently (orchestration hints, token/discovery tuning, process gates) — write
+  if useful but **ablate periodically, since it depreciates as models improve**; (3)
+  *business constraint* the user sets on outputs (format, feature requirements, dedup key,
+  storage, arXiv-only, safety) — write and **maintain stably, never depreciates**. The
+  "simplify / subtract" trend applies only to layer 2. Self-check: "is this the user's
+  requirement on the result (business), or my guidance on the agent's process (optimization)?"
+
+### Removed
+- **Approval chain (dead scaffolding).** Post zotero-mcp pivot the CLI generates,
+  "approves", and consumes a plan inside a single `apply()` call — nothing external
+  ever tampers with or ages the plan, so the tamper/expiry checks guarded a threat
+  model that no longer exists. Real destructive-op approval lives in the skill layer
+  (host LLM via zotero-mcp), one action at a time.
+  - Deleted `src/scholar_workflow/approvals.py` (`approve_plan` + `assert_executable`).
+  - `ActionPlan` slimmed: dropped `expires_at`, `input_digest`, `config_version`,
+    `approved_at`, and the `is_approved()` / `is_expired()` methods. It is now just
+    `plan_id` + `created_at` + `actions`.
+  - `planning.generate_plan` dropped the `config_version` param and `validate_plan` /
+    `_input_digest` / `PLAN_TTL_HOURS`; `paper.run_paper_import` no longer calls
+    `assert_executable`; `cli.apply` no longer wraps the plan in `approve_plan`.
+  - `TaskState` reduced 20 → 4 (`approved` / `downloaded` / `no_arxiv_pdf` /
+    `download_failed`) — the pipeline/dedup/sync/conflict states were never written
+    after the pivot.
+  - `jobs.input_digest` column dropped from the state DDL; `active_jobs` no longer
+    filters on terminal states that were never written (behavior-preserving).
+- **Exit code 4 (needs-approval) retired from the CLI contract.** No CLI path emitted
+  it after the pivot; approval is a skill-layer concern. Code 4 is reserved, not reused.
+
 ## [0.8.2] — 2026-08-01
 
 Phase 2 wrap-up: lock the Notion two-DB orchestration behind an executable test, guard

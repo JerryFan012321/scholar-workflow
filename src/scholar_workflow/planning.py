@@ -1,20 +1,9 @@
 """Action plan generation (always dry-run)."""
 from __future__ import annotations
-import hashlib
-import json
-from datetime import datetime, timedelta, timezone
 from scholar_workflow.models import ActionPlan, ActionItem, Resource, ResourceKind
 
 
-PLAN_TTL_HOURS = 24
-
-
-def _input_digest(resources: list[Resource]) -> str:
-    payload = json.dumps([r.model_dump(mode="json") for r in resources], sort_keys=True)
-    return "sha256:" + hashlib.sha256(payload.encode()).hexdigest()
-
-
-def generate_plan(resources: list[Resource], config_version: str = "0") -> ActionPlan:
+def generate_plan(resources: list[Resource]) -> ActionPlan:
     """Build an ActionPlan from resolved resources. Never writes externally.
 
     Deterministic and offline: every resource becomes a `create` action. Existence
@@ -36,21 +25,4 @@ def generate_plan(resources: list[Resource], config_version: str = "0") -> Actio
 
         actions.append(item)
 
-    return ActionPlan(
-        input_digest=_input_digest(resources),
-        config_version=config_version,
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=PLAN_TTL_HOURS),
-        actions=actions,
-    )
-
-
-def validate_plan(plan: ActionPlan, resources: list[Resource]) -> list[str]:
-    """Return list of validation errors; empty list means plan is executable."""
-    errors: list[str] = []
-    if plan.is_expired():
-        errors.append(f"Plan {plan.plan_id} has expired")
-    if not plan.is_approved():
-        errors.append(f"Plan {plan.plan_id} has not been approved")
-    if plan.input_digest != _input_digest(resources):
-        errors.append("Input digest mismatch — resource list changed since plan was generated")
-    return errors
+    return ActionPlan(actions=actions)

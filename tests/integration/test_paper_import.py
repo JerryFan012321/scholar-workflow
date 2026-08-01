@@ -1,6 +1,5 @@
 """Paper import workflow with an injected fake downloader (no network)."""
 from __future__ import annotations
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import pytest
 from scholar_workflow.models import Resource, ResourceKind, Identifiers, ActionPlan, ActionItem
@@ -21,8 +20,7 @@ def store(tmp_path):
 
 
 def _plan(*items):
-    return ActionPlan(input_digest="x", expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
-                      approved_at=datetime.now(timezone.utc), actions=list(items))
+    return ActionPlan(actions=list(items))
 
 
 def _res(rid, **ids):
@@ -43,7 +41,6 @@ def _fake_download(calls):
 def test_arxiv_downloads_to_inbox(store, tmp_path):
     res = _res("paper:arxiv:2401.01234", arxiv="2401.01234")
     plan = _plan(ActionItem(resource_id=res.resource_id, operation="create"))
-    plan.input_digest = _digest([res])
     calls: list = []
     out = run_paper_import(plan, [res], Cfg(tmp_path / "inbox"), store,
                            download=_fake_download(calls))
@@ -55,7 +52,6 @@ def test_arxiv_downloads_to_inbox(store, tmp_path):
 def test_no_arxiv_reports_no_pdf(store, tmp_path):
     res = _res("paper:doi:10.1/x", doi="10.1/x")
     plan = _plan(ActionItem(resource_id=res.resource_id, operation="create"))
-    plan.input_digest = _digest([res])
     calls: list = []
     out = run_paper_import(plan, [res], Cfg(tmp_path / "inbox"), store,
                            download=_fake_download(calls))
@@ -68,14 +64,8 @@ def test_skip_and_conflict_are_not_downloaded(store, tmp_path):
     b = _res("paper:arxiv:2401.00002", arxiv="2401.00002")
     plan = _plan(ActionItem(resource_id=a.resource_id, operation="skip"),
                  ActionItem(resource_id=b.resource_id, operation="conflict"))
-    plan.input_digest = _digest([a, b])
     calls: list = []
     out = run_paper_import(plan, [a, b], Cfg(tmp_path / "inbox"), store,
                            download=_fake_download(calls))
     assert calls == []
     assert out == {}
-
-
-def _digest(resources):
-    from scholar_workflow.planning import _input_digest
-    return _input_digest(resources)

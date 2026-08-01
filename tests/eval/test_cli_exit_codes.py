@@ -3,9 +3,7 @@
 After the zotero-mcp pivot, the only surviving exit-3 (dependency) trigger is
 `doctor` reporting a missing local config path — its meaning shifted from "Zotero
 unreachable" to "a required local path is missing". Existence/dedup/writes now run
-in the host LLM via zotero-mcp, so they have no CLI trigger path here. The exit-4
-(needs-approval) cases likewise have no CLI trigger — `apply` signs its own plan
-in-process — so that guard stays at the logic layer (approvals.assert_executable).
+in the host LLM via zotero-mcp, so they have no CLI trigger path here.
 """
 from __future__ import annotations
 import textwrap

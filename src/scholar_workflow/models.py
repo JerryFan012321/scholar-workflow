@@ -17,27 +17,13 @@ class ResourceKind(StrEnum):
 
 
 class TaskState(StrEnum):
-    RECEIVED = "received"
-    CLASSIFIED = "classified"
-    RESOLVED = "resolved"
-    DEDUPLICATED = "deduplicated"
-    PLANNED = "planned"
-    APPROVED = "approved"
-    DOWNLOADED = "downloaded"
-    ZOTERO_SYNCED = "zotero_synced"
-    OBSIDIAN_INDEXED = "obsidian_indexed"
-    NOTION_PROJECTED = "notion_projected"
-    COMPLETED = "completed"
-    # error states
-    AWAITING_APPROVAL = "awaiting_approval"
-    IDENTITY_CONFLICT = "identity_conflict"
-    CLASSIFICATION_CONFLICT = "classification_conflict"
+    """States the CLI download flow actually writes. The pre-zotero-mcp pipeline
+    states (classify/dedup/sync/index/project + approval/conflict) are gone — those
+    stages now live in the skill layer, not the CLI."""
+    APPROVED = "approved"        # job created, about to download
+    DOWNLOADED = "downloaded"    # PDF landed in the inbox, awaiting manual Zotero import
     NO_ARXIV_PDF = "no_arxiv_pdf"
     DOWNLOAD_FAILED = "download_failed"
-    ZOTERO_FAILED = "zotero_failed"
-    OBSIDIAN_FAILED = "obsidian_failed"
-    NOTION_FAILED = "notion_failed"
-    POLICY_DENIED = "policy_denied"
 
 
 class Identifiers(BaseModel):
@@ -91,16 +77,9 @@ class ActionItem(BaseModel):
 
 
 class ActionPlan(BaseModel):
+    """A deterministic "what to download / project" list. Not a signed, expiring,
+    tamper-checked plan — the CLI generates and consumes it in one call, and approval
+    of destructive actions lives in the skill layer (host LLM via zotero-mcp)."""
     plan_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    expires_at: datetime
-    input_digest: str
-    config_version: str | None = None
-    approved_at: datetime | None = None
     actions: list[ActionItem] = Field(default_factory=list)
-
-    def is_approved(self) -> bool:
-        return self.approved_at is not None
-
-    def is_expired(self) -> bool:
-        return datetime.now(timezone.utc) > self.expires_at

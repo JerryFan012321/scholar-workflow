@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS jobs (
     plan_id TEXT,
     resource_id TEXT NOT NULL,
     state TEXT NOT NULL,
-    input_digest TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     artifacts TEXT DEFAULT '{}'
@@ -51,11 +50,7 @@ class StateStore:
         return dict(zip(cols, row))
 
     def active_jobs(self) -> list[dict]:
-        terminal = (TaskState.COMPLETED.value, TaskState.POLICY_DENIED.value)
-        rows = self._db.execute(
-            f"SELECT * FROM jobs WHERE state NOT IN ({','.join('?'*len(terminal))})",
-            terminal
-        ).fetchall()
+        rows = self._db.execute("SELECT * FROM jobs").fetchall()
         cols = [d[0] for d in self._db.execute("SELECT * FROM jobs LIMIT 0").description]
         return [dict(zip(cols, r)) for r in rows]
 
