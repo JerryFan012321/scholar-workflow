@@ -73,7 +73,7 @@
 |---|---|---|
 | Phase 0 | 插件骨架、契约、evals 基线、开发规范 | ✅ 完成 |
 | Phase 1 | 论文发现 + 下载到收件箱 + 经 zotero-mcp 入库（find-resource / ingest-resource 真实可用；存在性/语义/写入经 zotero-mcp） | 🚧 进行中（resolver / 下载到 inbox 已落地；CLI 的 sync/locate/resolve/catalog 退场；存在性/写入迁移至 MCP；skill/reference/agent/evals 已按 zotero-mcp 重写并对齐；实战已完成 create/import/补元数据/加入分类闭环） |
-| Phase 2 | 投影同步（Obsidian 索引 + 本机 PDF 链接服务；Notion 押后） | 🚧 进行中（规格已落 `planning/phase2-sync-projections.md`；tracer-bullet T0 规格→T1 link-service→T2 obsidian 写入→T3 端到端；Notion 移出本轮，作后续 ticket） |
+| Phase 2 | 投影同步（Obsidian 索引 + 本机 PDF 链接服务 + Notion 双库投影） | 🚧 进行中（Obsidian 层级投影 + loopback PDF link-service + launchd 自启已落真机 vault；**Notion 双库(Papers + Related Docs)已 v0.8.1 实盘上线并固化进 skill 层**——机械层 `bin/notion-project.py`(唯一 Notion API 出口，CLI 零外部网络)+ 展示层 SKILL.md 组装专题页；已用 text2cad 8 篇端到端验证。剩：方向级笔记(无 Zotero item)的 Notion 表示，INV21 显式押后作后续 ticket） |
 | Phase 3 | 文献脉络树 | ⏳ 未开始 |
 | Phase 4 | 一致性审计 | ⏳ 未开始 |
 

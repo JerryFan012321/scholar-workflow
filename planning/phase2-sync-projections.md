@@ -2,6 +2,11 @@
 
 > 规划层文档(永久,不归档)。意图对照 `GOALS.md`(G2/G5/G6,INV4/INV17/INV18),
 > 变更史 `../CHANGELOG.md`。本轮 = Obsidian 索引 + 本机 PDF 链接服务;**Notion 押后**。
+>
+> **状态批注(2026-08-01,后加):** 本文以下内容是**立规格时的范围划定快照**,「Notion 押后」
+> 是当时的决策记录,保留不改写。实际进展已超出:Notion 双库(Papers + Related Docs)已于
+> **v0.8.1 实盘上线并固化进 skill 层**(机械层 `bin/notion-project.py` + 展示层 SKILL.md)。
+> 当前权威状态见 `GOALS.md` Phase 2 行 + INV17/INV19/INV21 + `../CHANGELOG.md` [0.8.1]。
 
 ## 目标(本轮)
 
