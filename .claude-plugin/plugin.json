@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "scholar-workflow",
-  "version": "0.10.0",
-  "description": "Plan-first scholarly resource management: import papers, archive technical documents, sync Obsidian indexes and Notion projections, build literature novelty trees.",
+  "version": "0.11.0",
+  "description": "Plan-first scholarly resource management: import papers, archive technical documents, sync Obsidian indexes and Notion projections, build literature novelty trees, scaffold a personal API-key and SSH-server env-records ledger.",
   "author": {
     "name": "Scholar Workflow contributors"
   },

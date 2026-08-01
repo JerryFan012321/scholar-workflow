@@ -3,6 +3,33 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.11.0] — 2026-08-02
+
+New **env-setup** skill: scaffold and maintain a personal env-records ledger for API
+keys and SSH servers, kept entirely outside the plugin repo. The plugin owns no private
+data — it reads one location from config (`env_records_root`) and lays down a uniform
+skeleton where templates are committed and real records stay gitignored and local.
+
+### Added
+- `env-setup` skill (SKILL.md + README.md + README.zh-CN.md) — user-invoked, no agent.
+  Scaffolds the env-records directory; register API keys / record servers into gitignored
+  real files. Servers carry a per-host environment inventory (conda envs, python/cuda,
+  key_packages, compat_notes, host cuda_driver, structured proxy) with large rebuild
+  recipes externalized to `setup/<alias>/<env>.sh`; adding a server is record-on-consent.
+- `src/scholar_workflow/workflows/env_setup.py` — `scaffold(root)`, idempotent: lays down
+  `.gitignore` / `README.md` / `*.example.yaml` templates / seeded real records / `setup/`
+  tree, and never overwrites an existing file (real records survive re-runs).
+- `env-init` CLI command — scaffolds under config `env_records_root` and runs a local
+  `git init` (never pushes).
+- `config.py` gains `env_records_root` (default `~/dev/env-records`).
+- `tests/unit/test_env_setup.py` (5) — skeleton, gitignore split, template YAML shape,
+  idempotent no-overwrite, setup/ dir.
+
+### Changed
+- AGENT.md plugin structure 6 → 7 skills; Agent→Skill map gains an "(no agent, user-invoked)"
+  row for env-setup.
+- `plugin.json` description extended with the env-records ledger capability.
+
 ## [0.10.0] — 2026-08-01
 
 Phase 3 start: replace the citation-graph literature model with a **novelty tree** per

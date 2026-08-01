@@ -9,6 +9,7 @@ from pydantic import BaseModel, field_validator
 
 DEFAULT_HOME = Path.home() / ".config" / "scholar-workflow"
 DEFAULT_PAPER_INBOX = Path.home() / "documents" / "0-inbox" / "paper-inbox"
+DEFAULT_ENV_RECORDS_ROOT = Path.home() / "dev" / "env-records"
 
 
 class ObsidianConfig(BaseModel):
@@ -63,12 +64,13 @@ class Config(BaseModel):
     papers_root: Path
     paper_inbox: Path = DEFAULT_PAPER_INBOX
     vault_root: Path
+    env_records_root: Path = DEFAULT_ENV_RECORDS_ROOT
     obsidian: ObsidianConfig = ObsidianConfig()
     notion: NotionConfig = NotionConfig()
     link_service: LinkServiceConfig = LinkServiceConfig()
     policy: PolicyConfig = PolicyConfig()
 
-    @field_validator("papers_root", "paper_inbox", "vault_root", mode="before")
+    @field_validator("papers_root", "paper_inbox", "vault_root", "env_records_root", mode="before")
     @classmethod
     def expand_path(cls, v: Any) -> Path:
         return Path(os.path.expandvars(str(v))).expanduser().resolve()

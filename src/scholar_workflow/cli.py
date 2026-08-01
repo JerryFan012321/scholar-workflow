@@ -241,6 +241,34 @@ def install_service(load: bool) -> None:
                           ensure_ascii=False))
 
 
+@main.command(name="env-init")
+@click.option("--git-init/--no-git-init", default=True,
+              help="Run `git init` in the records dir if not already a repo (default: yes). Never pushes.")
+def env_init(git_init: bool) -> None:
+    """Scaffold the personal env-records directory (path from config `env_records_root`).
+
+    Lays down a uniform skeleton — gitignored real records (servers.yaml / apis.yaml),
+    committed templates (*.example.yaml), a setup/ tree, README and .gitignore — then
+    optionally `git init` (local only, never pushed). Idempotent: existing files are
+    never overwritten, so real records survive re-runs. The plugin owns no private data;
+    the directory location is the only input, taken from config."""
+    import subprocess
+    from scholar_workflow.config import load_config
+    from scholar_workflow.workflows.env_setup import scaffold
+
+    cfg = load_config()
+    result = scaffold(cfg.env_records_root)
+    git_done = False
+    if git_init and not (result.root / ".git").exists():
+        subprocess.run(["git", "init"], cwd=str(result.root),
+                       capture_output=True, check=True)
+        git_done = True
+    click.echo(json.dumps(
+        {"root": str(result.root), "created": result.created,
+         "skipped": result.skipped, "git_init": git_done},
+        ensure_ascii=False, indent=2))
+
+
 @main.command()
 @click.argument("job_id")
 def resume(job_id: str) -> None:

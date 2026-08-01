@@ -1,9 +1,10 @@
 # HANDOFF — 从这里接着干
 
 > 交接文档,供下一个开发会话快速进入状态。与 `GOALS.md`(意图层,同目录)、`../CHANGELOG.md`(变更史)
-> 配合看。最后更新:2026-08-01(v0.8.2 Phase 2 收尾:Notion 双库编排层单测 + INV19/21 守护 eval +
-> discover 退场为 skill 层。上游:v0.8.1 Notion 双库实盘、v0.8.0 launchd 自启、v0.7.0 T4 polish、
-> v0.6.0 T4 层级索引;Phase 2 规格见 `phase2-sync-projections.md`)。
+> 配合看。最后更新:2026-08-02(v0.11.0 env-setup 新系统:个人 API-key + SSH-server env-records 台账,
+> 插件零私有数据、模板进 git、真实记录 gitignored。上游:v0.10.0 Phase 3 novelty tree 取代 citation-graph
+> + scope-locking grill、v0.9.0 审批链退场 + 约束设计哲学、v0.8.2 Phase 2 收尾;Phase 2 规格见
+> `phase2-sync-projections.md`)。
 
 ## 当前状态一句话
 
@@ -19,7 +20,12 @@ Phase 2 **进行中,Obsidian 投影 + PDF 链接服务 + Notion 双库投影三�
 - **本轮(v0.8.2)收尾**:双库编排层补了 `tests/unit/test_notion_project.py`(先论文后文档、relation
   从 page_id map 接、缺 token 退 3、空 payload no-op、引用未知 paper 退 2);INV19/21 落守护 eval;
   `discover` 退场为 skill 层指路。
-**76 passed,工作区干净(v0.8.2 已提交)。**
+**93 passed,工作区干净。**
+
+自 v0.8.2 后又落三批:
+- **v0.9.0**:退场遗留审批链(pre-zotero-mcp 时代的 apply/approval),AGENT.md 新增「设计哲学(上位准则)」——约束三层筛(内在能力不写 / 优化脚手架随能力贬值 / 业务规定稳定维护)。
+- **v0.10.0(Phase 3 起步)**:文献树从 citation-graph 换成彭思达 novelty tree(`里程碑任务→pipeline→论文` 三级、概念为内部节点、论文为叶、每概念记 novelty 锚点 + flat paper list);新 `literature-tree.schema.json` + `workflows/novelty_tree.py`(render_mermaid + plan/project)+ `project-literature-tree` CLI;build-literature-tree SKILL 加 scope-locking **grill**(四 gate:目的/边界/分辨率/时间窗 + 锚点归属规则);INV22 + outcomes 守护。
+- **v0.11.0**:新 **env-setup** skill(用户直呼、无 agent)——个人 API-key + SSH-server env-records 台账,插件零私有数据、模板进 git、真实记录 gitignored;已实盘建 `~/dev/env-records`、登记 Notion token。
 
 ## 立即待办(本会话遗留,下次优先)
 
@@ -94,8 +100,11 @@ launchd 自启 → Notion 双库)**已全部走通**。剩下的是收尾与拓�
 1. **方向级笔记 Notion 表示**(见「立即待办 1」):Notion 侧唯一未覆盖的结构,INV21 押后的 ticket。
 2. **`bin/notion-project.py` 单测**(见「立即待办 2」):补编排层的 MockTransport 测试。
 3. **铺其余 5 枝**(见「立即待办 4」):把 Obsidian + Notion 投影从 `科研项目` 扩到全分类树。
-4. **Phase 3**:文献脉络树(build-literature-tree skill)。(Phase 1 的 `discover` 已按
-   zotero-mcp 架构退场为 skill 层能力,非 CLI 待办——见「立即待办 3」。)
+4. **Phase 3 剩余**:novelty tree 模型 + grill + 渲染已落地(v0.10.0),剩真实主题端到端实盘
+   (拿一个方向走完 grill→建树→`project-literature-tree` 落 vault),以及押后的 challenge-insight
+   tree(schema 已留 `challenge_insight_tree` seam)。
+5. **env-records 拓展**(v0.11.0 后续,可选):当前是记录台账 + 脚手架;若要「一键重建环境」可加读
+   `setup/<alias>/<env>.sh` 并远程执行,或 `env-load` 式把 apis.yaml 注入子进程环境。均属可选增量。
 
 承重原则(Phase 2,仍适用):规划(LLM 经 MCP)与执行(CLI 写文件/起服务)分离,只经 JSON 通信,
 CLI 不碰 MCP、不发外部网络(INV18;Notion 推送走独立的 `bin/notion-project.py`,非 CLI);PDF 链接按
