@@ -48,8 +48,8 @@
 | INV16 | scholar-workflow 硬依赖 zotero-mcp 提供 Zotero 读/写/语义检索；doctor 必检其可达性；不可用则 fail-fast（退出码 3），目标层不设降级分支 | （待补） |
 | INV17 | 投影中指向论文 PDF 的链接**按投影目标分策略**:**Obsidian**(本机 app)指向 loopback link-service（`127.0.0.1`），按**附件 key** glob `~/Zotero/storage/<附件key>/*.pdf` 解析、inline 流式吐**原始** PDF；URL 只存不透明附件 key，绝不存绝对路径，PDF 仅本机点开。**Notion**(云文档、跨设备)**双链共存**:`Web Source`=arXiv abs / DOI web URL（任意设备/浏览器可开,他机回落用),`Local URL`=loopback link-service（本机浏览器打开 Notion 时秒开标注版 PDF,比绕 arXiv 网页快）。本机为主场景下 loopback 在本机 Notion 可用;跨机时用 Web Source。两条 URL 均只存不透明附件 key,不存绝对路径 | （待补） |
 | INV18 | sync-projections 的规划（宿主 LLM 经 zotero-mcp 取字段）与执行（CLI 写文件 / 起 link-service）分离，只经 JSON 消息通信；CLI 不碰 MCP、不读写 `zotero.sqlite`（link-service 只读文件系统） | （待补） |
-| INV19 | Notion 投影**单向 本地→Notion**（本地=真相源，机器只推、不回流）；Notion 是**简化跨设备前端**,相关文档只投影**一段话摘要 + 回 Obsidian 的 Vault 回跳链接**,**笔记正文永远留在 Obsidian**、不进 Notion——无正文可传,故 INV5「不上传文件」平凡成立;知识库层次经 `Category` + `Project` relation + 父子页面镜像 Zotero 分类树 | （待补,Notion ticket） |
-| INV21 | **Notion 双库模型**:**Papers 库**(每篇论文一行,upsert 键=Zotero 规范身份 `Resource ID`)+ **Related Docs 库**(每篇周边文档一行,upsert 键=vault 相对路径 `Doc ID`,经 `Paper` relation 指回论文)。编排顺序**先 upsert 论文拿 page_id、再 upsert 相关文档带 relation**。本阶段 relation 恰为一篇论文(无论文的方向笔记押后)。镜像 Obsidian 的「论文索引行(INV1)+ 相关资料枢纽(INV20)」两层结构 | （待补,Notion ticket） |
+| INV19 | Notion 投影**单向 本地→Notion**（本地=真相源，机器只推、不回流）；Notion 是**简化跨设备前端**,相关文档只投影**一段话摘要 + 回 Obsidian 的 Vault 回跳链接**,**笔记正文永远留在 Obsidian**、不进 Notion——无正文可传,故 INV5「不上传文件」平凡成立;知识库层次经 `Category` + `Project` relation + 父子页面镜像 Zotero 分类树 | safety: no-notion-writeback / no-notion-full-body |
+| INV21 | **Notion 双库模型**:**Papers 库**(每篇论文一行,upsert 键=Zotero 规范身份 `Resource ID`)+ **Related Docs 库**(每篇周边文档一行,upsert 键=vault 相对路径 `Doc ID`,经 `Paper` relation 指回论文)。编排顺序**先 upsert 论文拿 page_id、再 upsert 相关文档带 relation**。本阶段 relation 恰为一篇论文(无论文的方向笔记押后)。镜像 Obsidian 的「论文索引行(INV1)+ 相关资料枢纽(INV20)」两层结构 | outcomes: notion-two-db-relation-order |
 | INV20 | **论文相关资料文档(Obsidian 枢纽)**:每篇论文可按需在**索引表同目录**挂一个相关资料文档(`<论文名>论文相关资料.md`),聚合该论文的**周边资料位置链接**(阅读笔记/方向笔记/补充材料),**不重复论文元数据**(元数据属 Zotero+索引行)。索引表经**受管块之外**的「相关资料」小节链接到它——块外由 INV4 保护、重投影不覆盖,故无需给 10 列表格加列 | （待补） |
 
 ## 非目标（NG）

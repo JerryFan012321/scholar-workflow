@@ -60,6 +60,11 @@
       "id": "saga-resume",
       "description": "任一步骤失败后可以恢复且不重复副作用",
       "status": "pending"
+    },
+    {
+      "id": "notion-two-db-relation-order",
+      "description": "Notion 双库投影(INV21):先按 Resource ID upsert 论文拿 page_id、再按 Doc ID upsert 相关文档并从 page_id map 接 Paper relation；由 tests/unit/test_notion_project.py 守护",
+      "status": "pass"
     }
   ]
 }

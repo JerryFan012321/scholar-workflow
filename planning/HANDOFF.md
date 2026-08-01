@@ -1,8 +1,9 @@
 # HANDOFF — 从这里接着干
 
 > 交接文档,供下一个开发会话快速进入状态。与 `GOALS.md`(意图层,同目录)、`../CHANGELOG.md`(变更史)
-> 配合看。最后更新:2026-08-01(v0.8.1 Notion 双库实盘上线 + 固化进 skill 层。上游:v0.8.0 launchd 自启、
-> v0.7.0 T4 polish、v0.6.0 T4 层级索引;Phase 2 规格见 `phase2-sync-projections.md`)。
+> 配合看。最后更新:2026-08-01(v0.8.2 Phase 2 收尾:Notion 双库编排层单测 + INV19/21 守护 eval +
+> discover 退场为 skill 层。上游:v0.8.1 Notion 双库实盘、v0.8.0 launchd 自启、v0.7.0 T4 polish、
+> v0.6.0 T4 层级索引;Phase 2 规格见 `phase2-sync-projections.md`)。
 
 ## 当前状态一句话
 
@@ -15,20 +16,23 @@ Phase 2 **进行中,Obsidian 投影 + PDF 链接服务 + Notion 双库投影三�
 - **Notion 双库(v0.8.1,本轮)**:Papers DB + Related Docs DB(relation 连接),已实盘上线并固化进
   skill 层——机械层 `bin/notion-project.py`(唯一 Notion API 出口,CLI 零外部网络)+ 展示层 SKILL.md
   组装专题页(callout 卡片/彩色分档/mention/本地URL+arXiv 双链)。text2cad 8 篇端到端验证过。
-**71 passed,工作区干净(全部已提交,HEAD `5ed9aa0`)。**
+- **本轮(v0.8.2)收尾**:双库编排层补了 `tests/unit/test_notion_project.py`(先论文后文档、relation
+  从 page_id map 接、缺 token 退 3、空 payload no-op、引用未知 paper 退 2);INV19/21 落守护 eval;
+  `discover` 退场为 skill 层指路。
+**76 passed,工作区干净(v0.8.2 已提交)。**
 
 ## 立即待办(本会话遗留,下次优先)
 
 1. **方向级笔记的 Notion 表示**(INV21 显式押后):当前双库只覆盖「论文 + 挂在论文下的相关文档」。
    无 Zotero item 的方向级/学习笔记(如文献树、组会讲稿)怎么在 Notion 表示(独立条目?挂专题页?)
    尚未设计,是 Notion 侧的下一 ticket。
-2. **`bin/notion-project.py` 无自动化测试**:编排逻辑(先论文后文档、relation 从 map 查、缺 token 退 3)
-   目前只有手动冒烟 + 一次真实端到端,可补 MockTransport 单测(`NotionAdapter` 本身已有 5 个契约测试)。
-3. **`discover` / `audit` 仍是 stub**:CLI 里两个命令是 `NotImplementedError`。`discover`=论文发现/标识符解析
-   (Phase 1 收尾),`audit`=跨系统一致性(Phase 4)。
-4. **只落了 `科研项目` 一枝**:Obsidian/Notion 目前都只铺了 `科研项目 → 上汽标注 → text2cad`。其余枝
+2. **`audit` 仍是 stub**:CLI 的 `audit`(跨系统一致性,Phase 4)是 `NotImplementedError`。
+   **`discover` 已退场**:不再是待实装的 Phase 1 CLI 命令——发现/标识符解析需 zotero-mcp
+   (存在性/语义)+ web 元数据,CLI 子进程够不到 MCP,该能力归 `find-resource` skill(宿主 LLM)。
+   CLI `discover` 现只报 exit 2 + 指路该 skill,不做事。
+3. **只落了 `科研项目` 一枝**:Obsidian/Notion 目前都只铺了 `科研项目 → 上汽标注 → text2cad`。其余枝
    (New Things / 基本方法 / 机器学习方法 / 其他论文 / 数学和自然科学工具)未抓未铺。
-5. **旧扁平 `31-paper/index.md` 遗留**(vault 内,纯 tracer):若仍在,已被 `paper/` 层级取代,待删;
+4. **旧扁平 `31-paper/index.md` 遗留**(vault 内,纯 tracer):若仍在,已被 `paper/` 层级取代,待删;
    删除是不可逆动作,动手前与用户确认。
 
 ## 承重原则(动手前必读,勿违背)
@@ -90,8 +94,8 @@ launchd 自启 → Notion 双库)**已全部走通**。剩下的是收尾与拓�
 1. **方向级笔记 Notion 表示**(见「立即待办 1」):Notion 侧唯一未覆盖的结构,INV21 押后的 ticket。
 2. **`bin/notion-project.py` 单测**(见「立即待办 2」):补编排层的 MockTransport 测试。
 3. **铺其余 5 枝**(见「立即待办 4」):把 Obsidian + Notion 投影从 `科研项目` 扩到全分类树。
-4. **Phase 1 收尾 / Phase 3**:`discover` 实装(标识符解析);之后 Phase 3 文献脉络树
-   (build-literature-tree skill)。
+4. **Phase 3**:文献脉络树(build-literature-tree skill)。(Phase 1 的 `discover` 已按
+   zotero-mcp 架构退场为 skill 层能力,非 CLI 待办——见「立即待办 3」。)
 
 承重原则(Phase 2,仍适用):规划(LLM 经 MCP)与执行(CLI 写文件/起服务)分离,只经 JSON 通信,
 CLI 不碰 MCP、不发外部网络(INV18;Notion 推送走独立的 `bin/notion-project.py`,非 CLI);PDF 链接按

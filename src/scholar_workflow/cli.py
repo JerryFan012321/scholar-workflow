@@ -44,10 +44,17 @@ def doctor(as_json: bool) -> None:
 
 
 @main.command()
-@click.argument("query")
-def discover(query: str) -> None:
-    """Search and resolve paper identifiers."""
-    raise NotImplementedError
+@click.argument("query", required=False)
+def discover(query: str | None) -> None:
+    """Discovery is a skill-layer capability, not a CLI command.
+
+    Searching / resolving identifiers needs zotero-mcp (existence, semantic recall) and
+    web metadata, which the CLI subprocess cannot reach. The host LLM does this via the
+    `find-resource` skill. This command only signposts that; it performs no work."""
+    raise InputError(
+        "discovery is not a CLI operation — the CLI cannot reach zotero-mcp. "
+        "Ask in-conversation instead (e.g. 'find world model papers'); the host LLM "
+        "runs it via the find-resource skill.")
 
 
 @main.command()

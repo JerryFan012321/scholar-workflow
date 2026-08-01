@@ -3,6 +3,41 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.8.2] — 2026-08-01
+
+Phase 2 wrap-up: lock the Notion two-DB orchestration behind an executable test, guard
+INV19/INV21 in evals, and retire the `discover` CLI stub to the skill layer. No new
+feature — test/quality hardening plus one small behavior change.
+
+### Added
+- `tests/unit/test_notion_project.py` — orchestration-layer test for `bin/notion-project.py`
+  (the sole Notion API caller): papers upserted before related docs, `Paper` relation wired
+  from the captured page_id map, exit 3 on missing token, empty-payload no-op, exit 2 on a
+  doc referencing an unknown paper. Imports the hyphenated script by path with a fake
+  adapter/config (no network). 71 → 76 tests.
+- `evals/outcomes.json` `notion-two-db-relation-order` (status `pass`) — guards INV21,
+  pointing at the test above.
+- `evals/safety.json` `no-notion-writeback` + `no-notion-full-body` — guard INV19
+  (one-way local→Notion; summary + backlink only, no full body).
+
+### Changed
+- CLI `discover` retired to a signpost: it no longer raises `NotImplementedError` but exits
+  2 with a message pointing to the `find-resource` skill. Discovery needs zotero-mcp
+  (existence, semantic recall) + web metadata, which the CLI subprocess cannot reach; the
+  host LLM owns it via the skill. Routing eval already sent discovery queries there.
+- GOALS `INV19` guard `（待补，Notion ticket）` → `safety: no-notion-writeback / no-notion-full-body`;
+  `INV21` guard → `outcomes: notion-two-db-relation-order`.
+
+### Removed
+- Redundancy sweep. Dead contract schemas with zero live references: `contracts/`
+  `notion-projection.schema.json` (single-DB era, contradicts the live two-DB model now
+  authoritative in `references/notion-schema.md` + contract tests), `action-plan.schema.json`
+  (the pre-zotero-mcp plan/expire/digest mechanism, retired), `resource.schema.json`,
+  `index-entry.schema.json`. Kept `handoff.schema.json` (jsonschema-validated in tests) and
+  `literature-graph.schema.json` (Phase 3 output contract).
+- Stale dev log `log/2026-07-20.md` (documented `dedup.py` / `resources` table / `locate` —
+  all removed in the zotero-mcp pivot) and the empty `integrations/` directory.
+
 ## [0.8.1] — 2026-07-30
 
 Notion two-DB projection model, wired live against a real workspace. Related-materials

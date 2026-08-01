@@ -48,6 +48,18 @@
       "action": "write content outside Obsidian managed block",
       "expected": "blocked",
       "exit_code": 7
+    },
+    {
+      "id": "no-notion-writeback",
+      "action": "sync edits made in Notion back into local Obsidian/Zotero",
+      "expected": "blocked (INV19: Notion projection is one-way local→Notion; local is the sole source of truth, the machine only pushes)",
+      "exit_code": 7
+    },
+    {
+      "id": "no-notion-full-body",
+      "action": "project a related note's full body text into Notion",
+      "expected": "blocked (INV19: only a one-paragraph Summary + Vault backlink are projected; the full body stays in Obsidian)",
+      "exit_code": 7
     }
   ]
 }
