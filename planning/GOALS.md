@@ -51,6 +51,7 @@
 | INV19 | Notion 投影**单向 本地→Notion**（本地=真相源，机器只推、不回流）；Notion 是**简化跨设备前端**,相关文档只投影**一段话摘要 + 回 Obsidian 的 Vault 回跳链接**,**笔记正文永远留在 Obsidian**、不进 Notion——无正文可传,故 INV5「不上传文件」平凡成立;知识库层次经 `Category` + `Project` relation + 父子页面镜像 Zotero 分类树 | safety: no-notion-writeback / no-notion-full-body |
 | INV21 | **Notion 双库模型**:**Papers 库**(每篇论文一行,upsert 键=Zotero 规范身份 `Resource ID`)+ **Related Docs 库**(每篇周边文档一行,upsert 键=vault 相对路径 `Doc ID`,经 `Paper` relation 指回论文)。编排顺序**先 upsert 论文拿 page_id、再 upsert 相关文档带 relation**。本阶段 relation 恰为一篇论文(无论文的方向笔记押后)。镜像 Obsidian 的「论文索引行(INV1)+ 相关资料枢纽(INV20)」两层结构 | outcomes: notion-two-db-relation-order |
 | INV20 | **论文相关资料文档(Obsidian 枢纽)**:每篇论文可按需在**索引表同目录**挂一个相关资料文档(`<论文名>论文相关资料.md`),聚合该论文的**周边资料位置链接**(阅读笔记/方向笔记/补充材料),**不重复论文元数据**(元数据属 Zotero+索引行)。索引表经**受管块之外**的「相关资料」小节链接到它——块外由 INV4 保护、重投影不覆盖,故无需给 10 列表格加列 | （待补） |
+| INV22 | **文献树为 novelty tree**(彭思达 literature-tree 法):三级分类拓扑 `里程碑任务 → pipeline/representation → 论文(叶)`,内部节点是**抽象概念**、论文是**叶**(按 `resource_id` 引用);每个概念节点记 **novelty 锚点**=首个提出该 task/pipeline 的论文(1/2/3 类)。树旁**并存一份 flat 全集 paper list**(单一元数据账本,论文可在册但 `classified:false` 未分类)。本轮渲染目标限 **Obsidian 受管块 + 内联 Mermaid**(不产 PNG/draw.io/HTML/Notion),块外内容幂等存活(复用 INV4/INV18 机制)。配套 challenge-insight tree 留 schema seam、押后 | outcomes: novelty-tree-topology-and-paperlist |
 
 ## 非目标（NG）
 
@@ -64,7 +65,7 @@
 | NG4 | 直接写 Zotero SQLite | safety: no-sqlite-write |
 | NG5 | 未经批准对 Zotero 做破坏性写入（删除、覆盖冲突条目、合并身份）；或跳过存在性核验直接 create 造成重复 | safety: no-unapproved-destructive-zotero / no-create-without-existence-check |
 | NG6 | 把论文全文或技术文件上传到 Notion | safety: no-notion-file-upload |
-| NG7 | 无证据自动宣布"里程碑"或"突破性工作" | （待补） |
+| NG7 | 无证据自动宣布某论文是"突破性工作"（反浮夸）。注意与 INV22 的 novelty 锚点区分:锚点是"首个提出该 task/pipeline"的**可核实先后事实**、非价值判断,不受本条约束;本条禁的是给论文贴超出锚点定义的"突破"徽章 | （待补） |
 | NG8 | 第一阶段自动下载书籍/标准/数据集文件（先只做元数据和索引） | （待补） |
 
 ## 阶段状态（随开发更新）
@@ -74,7 +75,7 @@
 | Phase 0 | 插件骨架、契约、evals 基线、开发规范 | ✅ 完成 |
 | Phase 1 | 论文发现 + 下载到收件箱 + 经 zotero-mcp 入库（find-resource / ingest-resource 真实可用；存在性/语义/写入经 zotero-mcp） | 🚧 进行中（resolver / 下载到 inbox 已落地；CLI 的 sync/locate/resolve/catalog 退场；存在性/写入迁移至 MCP；skill/reference/agent/evals 已按 zotero-mcp 重写并对齐；实战已完成 create/import/补元数据/加入分类闭环） |
 | Phase 2 | 投影同步（Obsidian 索引 + 本机 PDF 链接服务 + Notion 双库投影） | 🚧 进行中（Obsidian 层级投影 + loopback PDF link-service + launchd 自启已落真机 vault；**Notion 双库(Papers + Related Docs)已 v0.8.1 实盘上线并固化进 skill 层**——机械层 `bin/notion-project.py`(唯一 Notion API 出口，CLI 零外部网络)+ 展示层 SKILL.md 组装专题页；已用 text2cad 8 篇端到端验证。剩：方向级笔记(无 Zotero item)的 Notion 表示，INV21 显式押后作后续 ticket） |
-| Phase 3 | 文献脉络树 | ⏳ 未开始 |
+| Phase 3 | 文献脉络树 | 🚧 进行中（novelty tree 模型 v0.10.0 落库：`literature-tree.schema.json`(paper_list + 三级概念树 + challenge-insight seam)、`workflows/novelty_tree.py`(render_mermaid + plan/project，复用 render_table/ObsidianAdapter)、`project-literature-tree` CLI(带 --dry-run)、SKILL/agent/docs 从 citation-graph 改写为 novelty tree、INV22 + outcomes 守护。剩：真实主题端到端实盘、challenge-insight tree 后续 ticket） |
 | Phase 4 | 一致性审计 | ⏳ 未开始 |
 
 ## 未来项（记录待办，暂不实现）
@@ -99,4 +100,5 @@
 - **INV17 修订（Notion 本地 URL 双链）**：Notion PDF 链接从「只用 Web Source、不用 loopback」改为「`Web Source`（arXiv/DOI，跨机）+ `Local URL`（loopback，本机秒开标注版）双链共存」。缘由：本机为主场景下 loopback 在本机 Notion 可用且更快，跨机回落 Web Source。已用 text2cad 8 篇实盘回填 `Local URL` 验证。
 - **版本 bump 规则放宽（AGENT.md）**：从「每次 skill change 都 bump」改为「按连贯能力批次 bump，0.x 期批次内迭代不单独 bump」。缘由：`0.6→0.7→0.8` 同日三连跳暴露了按 commit bump 的过细粒度。本轮 Notion 双库实盘定为 `0.8.1`（Phase 2 改进，非发布级 minor）。
 - **INV19 改写 + INV21 新增（Notion 双库）**：INV19 原「笔记正文渲染为 Notion 原生 page blocks（全文投影）」改为「只投影一段话摘要 + Vault 回跳，正文留 Obsidian」——Notion 定位为简化跨设备前端，不重复本地内容。INV21 确立双库模型（Papers 键 `Resource ID` + Related Docs 键 `Doc ID`，relation 连接，先论文后文档）。代码层：`adapters/notion.py` 的 `upsert_page` 增 `key_property` 参（默认 `Resource ID` 不变）、`config.py` 加 `related_docs_{database,data_source}_id`、契约测试 3→5、`notion-schema.md` 单库→双库。Notion 仍未接线上（无 CLI 命令、config 无 notion 块），属库层就绪，接线上/建真实库/换新 token 为后续 ticket。
+- **INV22 新增 + citation-graph 退场（Phase 3, v0.10.0）**：文献树模型由 Phase-0 随手搭的 citation-graph（论文↔论文有向图 + 6 种关系边 + evidence/confidence/review_status）替换为彭思达 literature-tree 法的 **novelty tree**（`task → pipeline → 论文` 三级、概念为内部节点、论文为叶、每概念记 novelty 锚点 + flat paper-list）。缘由：调研彭思达 GAMES003 Notion「literature tree」一手定义确认其树按 novelty 分层归类、非按引用连边；原 citation-graph 从未被 INV 背书、`workflows/lineage.py` 是空 stub，无沉没成本。代码层：`literature-graph.schema.json`→`literature-tree.schema.json`、新 `workflows/novelty_tree.py`（复用 `render_table`/`ObsidianAdapter`）、`project-literature-tree` CLI、删 `edge-evidence.md` + 死 stub、SKILL/agent/README 改写。NG7 澄清：novelty 锚点是可核实先后事实、不受反浮夸约束。challenge-insight tree 留 schema seam、押后作 F 系列 future 项。渲染限 Obsidian 受管块 + 内联 Mermaid（本轮不投 PNG/draw.io/HTML/Notion）。
 

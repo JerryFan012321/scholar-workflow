@@ -3,6 +3,54 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.10.0] — 2026-08-01
+
+Phase 3 start: replace the citation-graph literature model with a **novelty tree** per
+彭思达's GAMES003 literature-tree method. The tree is a 3-level classification
+(milestone task → pipeline/representation → paper leaf) whose internal nodes are abstract
+concepts, each recording its novelty anchor (the first paper that proposed it), plus a flat
+paper list. The old citation-graph was Phase-0 scaffolding — an unimported stub, no GOALS
+invariant, no eval pin — so this is a clean reshape, not a migration.
+
+### Added
+- `contracts/literature-tree.schema.json` — novelty-tree contract: `paper_list` (flat 全集
+  ledger with a `classified` flag) + a recursive `concept` tree (`kind` ∈ topic/task/pipeline,
+  `novelty_anchor`, optional `anchor_note`, paper-id leaves) + a reserved `challenge_insight_tree`
+  seam for the deferred companion tree.
+- `src/scholar_workflow/workflows/novelty_tree.py` — `render_mermaid` (inline flowchart of
+  task→pipeline→paper, ⭐-marked anchor nodes), `plan_novelty_tree` (pure planner), and
+  `project_novelty_tree` (apply via ObsidianAdapter). Reuses `projection.render_table` and the
+  managed-block machinery; the topic root note carries the Mermaid overview + the flat paper list.
+- `project-literature-tree` CLI command mirroring `project-tree` (stdin `{root, doc}` → adapter
+  → stats, with `--dry-run`).
+- Tests: `tests/contract/test_literature_tree_schema.py` (8) + `tests/unit/test_novelty_tree.py` (9).
+- GOALS **INV22** pinning the novelty-tree topology + paper-list-alongside requirement, guarded
+  by `evals/outcomes.json` `novelty-tree-topology-and-paperlist`.
+- `build-literature-tree` SKILL gains a **Grill** section — a scope-locking dialogue run before
+  Step 1 that fixes four gates coarse-to-fine (purpose / boundary / resolution / time window),
+  plus the anchor-ownership rule (anchor belongs to the highest layer that can explain it) and
+  the polysemy rule (pick the cut-axis before cutting a boundary). Only the external dials are
+  encoded; the task-vs-pipeline judgment stays an intrinsic ability per AGENT.md 上位准则.
+
+### Changed
+- `build-literature-tree` SKILL.md, README.md, README.zh-CN.md and `agents/lineage-agent.md`
+  rewritten from the citation-graph/edge-evidence model to the novelty tree. The new SKILL is
+  leaner: only external rules (topology, novelty anchor, paper-list, render target, arXiv-only
+  metadata) — classifying papers and picking the first-proposer are intrinsic abilities, left
+  unconstrained per AGENT.md 上位准则.
+- GOALS Phase 3 status ⏳未开始 → 🚧进行中; NG7 clarified (the novelty anchor is a verifiable
+  "which paper came first" fact, distinct from the anti-hype "no breakthrough badge" rule).
+- `plugin.json` description "literature lineage trees" → "literature novelty trees".
+
+### Removed
+- Citation-graph edge model: the `edges` array, the 6-value `relation` enum
+  (cites/follow-up/method-extension/representation-shift/benchmark-successor/contradicts),
+  and per-edge `evidence` / `confidence` / `review_status`.
+- `skills/build-literature-tree/references/edge-evidence.md` (deleted, not replaced — it taught
+  intrinsic classification abilities).
+- `src/scholar_workflow/workflows/lineage.py` — the dead Phase-5 `build_graph` stub (unimported).
+- `contracts/literature-graph.schema.json` (renamed to `literature-tree.schema.json`).
+
 ## [0.9.0] — 2026-08-01
 
 Subtraction batch: retire the dead approval chain left over from the pre-zotero-mcp

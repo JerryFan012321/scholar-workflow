@@ -65,6 +65,11 @@
       "id": "notion-two-db-relation-order",
       "description": "Notion 双库投影(INV21):先按 Resource ID upsert 论文拿 page_id、再按 Doc ID upsert 相关文档并从 page_id map 接 Paper relation；由 tests/unit/test_notion_project.py 守护",
       "status": "pass"
+    },
+    {
+      "id": "novelty-tree-topology-and-paperlist",
+      "description": "文献树为 novelty tree(INV22):三级拓扑 task→pipeline→论文,内部节点是概念、论文是叶,每概念记 novelty 锚点;树旁并存 flat 全集 paper list(论文可在册未分类)。渲染限 Obsidian 受管块 + 内联 Mermaid,块外内容幂等存活;由 tests/unit/test_novelty_tree.py + tests/contract/test_literature_tree_schema.py 守护",
+      "status": "pass"
     }
   ]
 }

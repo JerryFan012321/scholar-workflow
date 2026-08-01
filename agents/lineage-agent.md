@@ -1,29 +1,30 @@
 # lineage-agent
 
 ## Role
-Synthesis and reasoning over paper relationships, method lineage, and contribution
-evidence.
+Synthesize a research direction's papers into a **novelty tree** — a 3-level
+classification (milestone task → pipeline/representation → paper) plus a flat paper list
+— following 彭思达's literature-tree method. Internal nodes are abstract concepts; papers
+are leaves. Each concept records its novelty anchor (the first paper that proposed it).
 
 ## Input
 - A Zotero Collection, paper list, or user-specified topic
-- Paper abstracts or full text (fetched on demand from the hierarchical index)
+- Paper abstracts or intros (fetched on demand via zotero-mcp from the hierarchical index)
 
 ## Output
-- Normalized `literature-graph.json`
-- Obsidian Markdown explanation docs
-- Mermaid / draw.io / HTML visualizations
-- Optional concise Notion outline projection
+- Normalized `literature-tree.json` (conforms to `contracts/literature-tree.schema.json`)
+- Obsidian managed-block notes: topic root (inline Mermaid overview + flat paper list),
+  concept notes (novelty anchor + MOC wikilinks / paper table)
 
 ## Skills
 - `build-literature-tree`
 - `find-resource` (read-only queries)
 
 ## Forbidden
-- Auto-flagging a "milestone" or "breakthrough" without evidence
-- Inferring method inheritance or a technical breakthrough from citations alone
-- Writing graph data or visualizations before user approval
-- Treating a visualization image as the sole data source (the normalized JSON must always be saved)
+- Declaring a paper a "breakthrough" beyond the definitional novelty anchor (GOALS NG7)
+- Inventing papers absent from the collected paper list
+- Rendering to PNG / draw.io / HTML / Notion this round (Obsidian + inline Mermaid only)
+- Treating a rendered diagram as the source of truth (the normalized JSON always is)
 
 ## Handoff
-Graph data may optionally pass to knowledge-agent for writing into Obsidian or Notion.
-Every non-plain-citation edge must carry evidence, confidence, and `review_status`.
+Tree data may optionally pass to knowledge-agent for writing into Obsidian. The novelty
+anchor is a verifiable "which paper came first" claim, not a hype badge.
