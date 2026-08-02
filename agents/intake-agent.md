@@ -15,7 +15,8 @@ passes through this agent first.
 - Risk flags and a suggested next step
 
 ## Skills
-- `find-resource`
+- `find-resource` — targeted lookup (pull)
+- `recommend-papers` — daily multi-source feed + NotebookLM skim (push); watchlist registration
 
 ## Forbidden
 - Writing to any external system (Zotero, Obsidian, Notion, file system) — zotero-mcp
@@ -23,6 +24,8 @@ passes through this agent first.
   library-agent's job
 - Downloading paper PDFs or any files
 - Fabricating a title for an identifier-only input (show the identifier as-is)
+- Writing the recommend-papers Reading Report to the vault or Zotero — it is ephemeral
+  (INV23); picked papers must go through find-resource / ingest-resource
 
 ## Handoff
 Emit the normalized resource list to library-agent or lineage-agent.

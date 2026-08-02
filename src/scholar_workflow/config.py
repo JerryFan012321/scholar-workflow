@@ -59,6 +59,23 @@ class PolicyConfig(BaseModel):
     notion_file_upload: bool = False
 
 
+class RecommendConfig(BaseModel):
+    """recommend-papers preferences (feature-ai-reading). Two-layer: this global
+    layer lives in recommend.yml; a per-cwd project layer overlays keywords/watchlist.
+    Not credentials — session cookies/tokens stay in env vars / env-records."""
+    interests: list[str] = []
+    sources: dict[str, bool] = {
+        "s2_recommendations": True,
+        "scholar_inbox": True,
+        "s2_author": True,
+        "hf_daily": True,
+    }
+    daily_limit: int = 15
+    min_score: float = 0.0
+    notebooklm_classification: str = "auto_topic"
+    watchlist: list[str] = []  # S2 authorIds (semi-auto registered)
+
+
 class Config(BaseModel):
     version: int = 1
     papers_root: Path
@@ -84,3 +101,28 @@ def load_config(path: Path | None = None) -> Config:
     with cfg_path.open() as f:
         data = yaml.safe_load(f)
     return Config(**data)
+
+
+def load_recommend_config(cwd: Path | None = None) -> RecommendConfig:
+    """Load the two-layer recommend-papers config: global recommend.yml, overlaid by
+    projects/<cwd-name>.yml when present. Project keywords/watchlist are additive
+    (extend, not replace); other project keys override. Missing global returns defaults."""
+    home = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME))
+    data: dict[str, Any] = {}
+    global_path = home / "recommend.yml"
+    if global_path.exists():
+        with global_path.open() as f:
+            data = yaml.safe_load(f) or {}
+
+    proj_name = (cwd or Path.cwd()).name
+    proj_path = home / "projects" / f"{proj_name}.yml"
+    if proj_path.exists():
+        with proj_path.open() as f:
+            overlay = yaml.safe_load(f) or {}
+        for key, val in overlay.items():
+            if key in ("interests", "watchlist") and isinstance(val, list):
+                data[key] = list(dict.fromkeys([*data.get(key, []), *val]))
+            else:
+                data[key] = val
+
+    return RecommendConfig(**data)

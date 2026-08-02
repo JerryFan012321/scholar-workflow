@@ -52,6 +52,8 @@
 | INV21 | **Notion 双库模型**:**Papers 库**(每篇论文一行,upsert 键=Zotero 规范身份 `Resource ID`)+ **Related Docs 库**(每篇周边文档一行,upsert 键=vault 相对路径 `Doc ID`,经 `Paper` relation 指回论文)。编排顺序**先 upsert 论文拿 page_id、再 upsert 相关文档带 relation**。本阶段 relation 恰为一篇论文(无论文的方向笔记押后)。镜像 Obsidian 的「论文索引行(INV1)+ 相关资料枢纽(INV20)」两层结构 | outcomes: notion-two-db-relation-order |
 | INV20 | **论文相关资料文档(Obsidian 枢纽)**:每篇论文可按需在**索引表同目录**挂一个相关资料文档(`<论文名>论文相关资料.md`),聚合该论文的**周边资料位置链接**(阅读笔记/方向笔记/补充材料),**不重复论文元数据**(元数据属 Zotero+索引行)。索引表经**受管块之外**的「相关资料」小节链接到它——块外由 INV4 保护、重投影不覆盖,故无需给 10 列表格加列 | （待补） |
 | INV22 | **文献树为 novelty tree**(彭思达 literature-tree 法):三级分类拓扑 `里程碑任务 → pipeline/representation → 论文(叶)`,内部节点是**抽象概念**、论文是**叶**(按 `resource_id` 引用);每个概念节点记 **novelty 锚点**=首个提出该 task/pipeline 的论文(1/2/3 类)。树旁**并存一份 flat 全集 paper list**(单一元数据账本,论文可在册但 `classified:false` 未分类)。本轮渲染目标限 **Obsidian 受管块 + 内联 Mermaid**(不产 PNG/draw.io/HTML/Notion),块外内容幂等存活(复用 INV4/INV18 机制)。配套 challenge-insight tree 留 schema seam、押后 | outcomes: novelty-tree-topology-and-paperlist |
+| INV23 | **略读级(recommend-papers)临时性**:略读经外部服务(四推荐源 REST + NotebookLM)进行,四源(S2 Recommendations / Scholar Inbox / S2 author watchlist / HF Daily)按 arXiv id 合并去重,仅对用户细化后的 shortlist 走 NotebookLM 略读(省 token,不略读全池);产物为**临时 Reading Report,绝不落 vault、不改 Zotero**;看中的论文经 find/ingest 正式管线入库(判重两步核验)。CLI 不碰这些网络/MCP(承 INV18),聚合在 `bin/recommend-papers.py` | （待补） |
+| INV24 | **详细分析级(analyze-paper)源与落点**:详细分析只经 zotero-mcp `get_content` 读正文(承 INV10 不解析 PDF 本体),产物落 Obsidian 附属分析笔记(`<论文名>分析.md`),与人工批注笔记**分立**、`related` 互链;局部分析在同一笔记**受管块之外多小节追加**(承 INV4 保护),并挂到该论文相关资料枢纽(INV20) | （待补） |
 
 ## 非目标（NG）
 
@@ -77,6 +79,7 @@
 | Phase 2 | 投影同步（Obsidian 索引 + 本机 PDF 链接服务 + Notion 双库投影） | 🚧 进行中（Obsidian 层级投影 + loopback PDF link-service + launchd 自启已落真机 vault；**Notion 双库(Papers + Related Docs)已 v0.8.1 实盘上线并固化进 skill 层**——机械层 `bin/notion-project.py`(唯一 Notion API 出口，CLI 零外部网络)+ 展示层 SKILL.md 组装专题页；已用 text2cad 8 篇端到端验证。剩：方向级笔记(无 Zotero item)的 Notion 表示，INV21 显式押后作后续 ticket） |
 | Phase 3 | 文献脉络树 | 🚧 进行中（novelty tree 模型 v0.10.0 落库：`literature-tree.schema.json`(paper_list + 三级概念树 + challenge-insight seam)、`workflows/novelty_tree.py`(render_mermaid + plan/project，复用 render_table/ObsidianAdapter)、`project-literature-tree` CLI(带 --dry-run)、SKILL/agent/docs 从 citation-graph 改写为 novelty tree、INV22 + outcomes 守护。剩：真实主题端到端实盘、challenge-insight tree 后续 ticket） |
 | Phase 4 | 一致性审计 | ⏳ 未开始 |
+| Phase 5 | 两级 AI 阅读（略读推荐 + 详细分析） | 🚧 进行中（recommend-papers：四源聚合适配器 + HF Daily 单源贯通 + vendor Scholar Inbox 客户端 + 两层 recommend.yml + SKILL/README 已落地，INV23；analyze-paper：SKILL/README 已落地，INV24；build-literature-tree 加 NotebookLM 批读编排提示。剩：notebooklm-py 实盘略读闭环、watchlist 半自动登记子模式、doctor 探针 + 回落、B1/B2 端到端实跑） |
 
 ## 未来项（记录待办，暂不实现）
 
@@ -84,6 +87,8 @@
 |---|---|---|
 | F1 | 给文章标题加入重要程度批注 | 在展示/索引论文标题时附一个推荐重要程度的批注，辅助人工判断优先级。待 Zotero 元数据读取链路稳定后再设计。 |
 | F2 | ~~Zotero 官方本地写 API 落地后重启程序化写入~~ **已兑现** | 由 zotero-mcp（第三方 MCP）提供本地读写能力，程序化写入已重启：新增性写入直接执行，破坏性动作须批准（见 G4/G9/INV9/NG5）。原"直至官方提供本地写 API"的前提不再适用。 |
+| F3 | challenge-insight tree（挑战-洞见树） | 与 novelty tree 配套的第二棵树，schema 已留 `challenge_insight_tree` seam（Phase 3）。押后到独立 ticket 设计。 |
+| F4 | recommend-papers 略读闭环实盘 + watchlist 登记 + doctor 回落 | A3/A4：notebooklm-py 实盘略读、watchlist 半自动登记子模式（authorId 台账 + 项目层配置按 cwd 加载）、doctor 探针 + NotebookLM/Scholar Inbox 回落。tracer(A1) + 四源聚合(A2)已落地，闭环待实盘。 |
 
 ## 维护规则
 
@@ -101,4 +106,5 @@
 - **版本 bump 规则放宽（AGENT.md）**：从「每次 skill change 都 bump」改为「按连贯能力批次 bump，0.x 期批次内迭代不单独 bump」。缘由：`0.6→0.7→0.8` 同日三连跳暴露了按 commit bump 的过细粒度。本轮 Notion 双库实盘定为 `0.8.1`（Phase 2 改进，非发布级 minor）。
 - **INV19 改写 + INV21 新增（Notion 双库）**：INV19 原「笔记正文渲染为 Notion 原生 page blocks（全文投影）」改为「只投影一段话摘要 + Vault 回跳，正文留 Obsidian」——Notion 定位为简化跨设备前端，不重复本地内容。INV21 确立双库模型（Papers 键 `Resource ID` + Related Docs 键 `Doc ID`，relation 连接，先论文后文档）。代码层：`adapters/notion.py` 的 `upsert_page` 增 `key_property` 参（默认 `Resource ID` 不变）、`config.py` 加 `related_docs_{database,data_source}_id`、契约测试 3→5、`notion-schema.md` 单库→双库。Notion 仍未接线上（无 CLI 命令、config 无 notion 块），属库层就绪，接线上/建真实库/换新 token 为后续 ticket。
 - **INV22 新增 + citation-graph 退场（Phase 3, v0.10.0）**：文献树模型由 Phase-0 随手搭的 citation-graph（论文↔论文有向图 + 6 种关系边 + evidence/confidence/review_status）替换为彭思达 literature-tree 法的 **novelty tree**（`task → pipeline → 论文` 三级、概念为内部节点、论文为叶、每概念记 novelty 锚点 + flat paper-list）。缘由：调研彭思达 GAMES003 Notion「literature tree」一手定义确认其树按 novelty 分层归类、非按引用连边；原 citation-graph 从未被 INV 背书、`workflows/lineage.py` 是空 stub，无沉没成本。代码层：`literature-graph.schema.json`→`literature-tree.schema.json`、新 `workflows/novelty_tree.py`（复用 `render_table`/`ObsidianAdapter`）、`project-literature-tree` CLI、删 `edge-evidence.md` + 死 stub、SKILL/agent/README 改写。NG7 澄清：novelty 锚点是可核实先后事实、不受反浮夸约束。challenge-insight tree 留 schema seam、押后作 F 系列 future 项。渲染限 Obsidian 受管块 + 内联 Mermaid（本轮不投 PNG/draw.io/HTML/Notion）。
+- **INV23/INV24 新增 + 两级 AI 阅读（Phase 5, feature-ai-reading, v0.11.0）**：新增两个 skill——`recommend-papers`@intake（略读级）+ `analyze-paper`@knowledge（详细分析级）。略读级(INV23)四源聚合(S2 Recommendations / Scholar Inbox / S2 author watchlist / HF Daily)按 arXiv id 合并去重、仅 shortlist 走 NotebookLM 略读、产物临时不落 vault；详细分析级(INV24)经 zotero-mcp `get_content` 读正文落 Obsidian 附属笔记、与批注笔记分立 `related` 互链、局部分析块外多小节追加、挂 INV20 枢纽。代码层：新 `adapters/recommend_sources.py`（HF Daily + S2 recommendations/author + Scholar Inbox 规范化，四源 emit 统一候选、按 arxiv_id 合并）、`config.py` 加 `RecommendConfig` + `load_recommend_config`（两层 recommend.yml，interests/watchlist 追加）、`bin/recommend-papers.py`（唯一网络出口，CLI 零外部网络承 INV18）、vendor sjh `scholar_inbox` 客户端（api/auth/config，MIT 标归属 + THIRD_PARTY_LICENSES）。设计哲学：只编码外来规定（源/落点/格式/网络路径/依赖），不编码内在能力（读/摘/比较/归类）。build-literature-tree 加「批量读料优先经 NotebookLM」编排提示（优化约束、复用略读引擎）。skill 数 7→9（find/ingest/sync/build-tree/check/export/env-setup + recommend-papers + analyze-paper）。剩：略读闭环实盘、watchlist 登记、doctor 回落（记 F4）。
 

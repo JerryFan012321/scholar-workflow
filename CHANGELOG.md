@@ -3,6 +3,52 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.12.0] — 2026-08-02
+
+Phase 5 start: **two-tier AI paper reading** (feature-ai-reading). A skim tier for
+recommendation upstream and a detailed-analysis tier for persistent vault notes. Design
+philosophy: encode only external prescriptions (which source, where output lands, format,
+network path, dependencies) — never the model's intrinsic abilities (reading, summarizing,
+comparing, classifying).
+
+### Added
+- **`recommend-papers` skill** (@intake) — daily multi-source paper feed. Aggregates four
+  sources (Semantic Scholar Recommendations seeded by the Zotero library, Scholar Inbox
+  personalized digest, S2 author watchlist, HuggingFace Daily Papers), merges/dedups by
+  arXiv id, and skims a user-picked shortlist via NotebookLM into an ephemeral Reading
+  Report (INV23). SKILL.md + README + README.zh-CN + `references/recommend.example.yml`.
+- **`analyze-paper` skill** (@knowledge) — in-depth analysis of one ingested paper via
+  zotero-mcp `get_content`, written as a companion vault note outside managed blocks
+  (INV4), distinct from and `related`-linked to the annotations note, hung on the paper's
+  related-docs hub (INV20). Focused passes append sections (INV24). SKILL + both READMEs.
+- `src/scholar_workflow/adapters/recommend_sources.py` — normalized-candidate adapters:
+  `fetch_hf_daily`, `fetch_s2_recommendations` (Zotero seeds), `fetch_s2_author_papers`,
+  `normalize_scholar_inbox`, `merge_candidates` (dedup by arxiv_id, records all sources).
+  arXiv-only; per-source network paths (HF via proxy, S2 direct).
+- `bin/recommend-papers.py` — mechanical aggregator, the sole outbound-network entry; the
+  CLI stays network/MCP-free (INV18). Reads `recommend.yml` toggles, takes optional stdin
+  `{seed_arxiv_ids}` (host LLM gathers via zotero-mcp), emits `{candidates, count, skipped}`.
+- `config.py` — `RecommendConfig` + `load_recommend_config` (two-layer YAML: global
+  `recommend.yml` + per-cwd project overlay; interests/watchlist additive).
+- Vendored Scholar Inbox client `skills/recommend-papers/scripts/scholar_inbox/`
+  (api/auth/config, stdlib-only) with attribution headers + `THIRD_PARTY_LICENSES`
+  (MIT, Copyright (c) 2026 Jiahao Shao; upstream cli.py not vendored).
+- `tests/unit/test_recommend_sources.py` (6) — HF/S2/Scholar-Inbox normalization + merge.
+- GOALS: INV23 (skim ephemeral) + INV24 (detailed-analysis source/destination); Phase 5
+  row; future items F3 (challenge-insight tree) + F4 (skim closed-loop / watchlist / doctor).
+
+### Changed
+- `build-literature-tree` SKILL Step 2 gains a NotebookLM batch-read orchestration hint
+  (reuse the skim engine for large paper sets; classification/first-proposer stay the
+  model's; fall back to `get_content`).
+- `export-annotations` SKILL: forward-reference `paper-analyzer` → `analyze-paper`.
+- `intake-agent` gains `recommend-papers`; `knowledge-agent` gains `export-annotations` +
+  `analyze-paper`, with matching Forbidden entries (ephemeral report, no PDF-body parse,
+  no analysis/annotation merge).
+- AGENT.md plugin structure 7 → 9 skills; Agent→Skill map updated; bin list gains
+  `recommend-papers.py`.
+- `plugin.json` description extended with recommendation + analysis capabilities.
+
 ## [0.11.0] — 2026-08-02
 
 New **env-setup** skill: scaffold and maintain a personal env-records ledger for API

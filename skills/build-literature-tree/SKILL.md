@@ -53,6 +53,7 @@ user's feedback until they signal enough.
 
 1. Collect the paper set for the direction (a Zotero collection via zotero-mcp, a paper index, or a user list). This is the flat paper list.
 2. Read the papers; extract the direction's milestone **tasks** (the important problems). For each, mark the first paper that proposed it (novelty anchor).
+   - **When the set is large**, prefer batch-reading via NotebookLM (`notebooklm-py`, the same skim engine as recommend-papers) instead of pulling every full body — add the papers' arXiv URLs to a notebook and ask source-grounded questions (each paper's core contribution, which task it solves, who first proposed pipeline X). ≈500 tokens/question vs ≈50K to read a PDF. Reuse a same-topic notebook if recommend-papers already built one; else create a temporary one. Classification and first-proposer judgment stay yours — NotebookLM is only the read substrate. If it is unreachable, fall back to zotero-mcp `get_content` or shrink the batch.
 3. Group papers under their tasks; extract each task's representative **pipelines / representations**, and mark the first paper proposing each.
 4. Subdivide papers by pipeline. Papers not yet placed stay in the paper list with `classified: false`.
 5. Assemble the `literature-tree.schema.json` document and render it: pipe `{"root": "<vault dir>", "doc": {...}}` to `scholar-workflow project-literature-tree` (use `--dry-run` to preview file paths first).

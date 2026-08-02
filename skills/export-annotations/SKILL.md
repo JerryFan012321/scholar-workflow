@@ -1,6 +1,6 @@
 ---
 name: export-annotations
-description: Export one paper's Zotero annotations (highlights, notes, my comments) into a structured Obsidian markdown note. Strips the Translate plugin's machine translation, keeps only my highlights and comments, reorganized by argument logic. Triggers: 'export annotations', 'extract my highlights', 'turn my annotations into a note', '导出批注', '提取批注', '把论文批注整理成笔记', '整理高亮'. Not for full paper analysis (paper-analyzer) or paper discovery (find-resource).
+description: Export one paper's Zotero annotations (highlights, notes, my comments) into a structured Obsidian markdown note. Strips the Translate plugin's machine translation, keeps only my highlights and comments, reorganized by argument logic. Triggers: 'export annotations', 'extract my highlights', 'turn my annotations into a note', '导出批注', '提取批注', '把论文批注整理成笔记', '整理高亮'. Not for full paper analysis (analyze-paper) or paper discovery (find-resource).
 ---
 
 # export-annotations

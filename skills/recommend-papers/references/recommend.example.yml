@@ -1,0 +1,23 @@
+# recommend-papers global config — copy to ~/.config/scholar-workflow/recommend.yml
+# Per-project overlay: ~/.config/scholar-workflow/projects/<cwd-name>.yml
+# (project interests/watchlist are additive; other keys override). Not credentials —
+# session cookies / tokens live in env vars / env-records, never here.
+
+interests:
+  - world model
+  - vision-language-action
+  - vision-language navigation
+  - 3D reconstruction
+  - autonomous driving
+
+sources:            # toggle each of the four feeds
+  s2_recommendations: true   # Semantic Scholar, Zotero library as positive seeds
+  scholar_inbox: true        # trained personalized digest (needs login)
+  s2_author: true            # watchlist: registered authorIds
+  hf_daily: true             # HuggingFace Daily Papers (community upvotes)
+
+daily_limit: 15     # max candidates surfaced per run
+min_score: 0.0      # Scholar Inbox minimum relevance score
+notebooklm_classification: auto_topic   # auto_topic / method_type / single_notebook
+
+watchlist: []       # S2 authorIds, semi-auto registered (see SKILL registration mode)
