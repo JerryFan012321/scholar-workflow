@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+build/
+dist/
+*.egg-info/
+.DS_Store
+config.yml
+state.db*
+
+# Local dev settings (machine-specific permissions)
+.claude/settings.local.json
+
