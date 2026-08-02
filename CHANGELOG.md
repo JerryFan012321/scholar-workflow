@@ -36,6 +36,11 @@ comparing, classifying).
 - `tests/unit/test_recommend_sources.py` (6) — HF/S2/Scholar-Inbox normalization + merge.
 - GOALS: INV23 (skim ephemeral) + INV24 (detailed-analysis source/destination); Phase 5
   row; future items F3 (challenge-insight tree) + F4 (skim closed-loop / watchlist / doctor).
+- `.claude-plugin/marketplace.json` — single-repo distribution manifest (marketplace
+  `jerry-plugins`); plugin source is self-referential to the `release` branch
+  (`github`, repo `JerryFan012321/scholar-workflow`, `ref: release`). Users install via
+  `/plugin marketplace add JerryFan012321/scholar-workflow@release`. The manifest is a
+  build input on `main` and ships to `release` via `make-release.sh`.
 
 ### Changed
 - `build-literature-tree` SKILL Step 2 gains a NotebookLM batch-read orchestration hint
