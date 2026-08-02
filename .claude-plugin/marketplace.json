@@ -1,0 +1,17 @@
+{
+  "name": "jerry-plugins",
+  "owner": {
+    "name": "Jerry Fan"
+  },
+  "plugins": [
+    {
+      "name": "scholar-workflow",
+      "description": "Plan-first scholarly resource management: papers, technical docs, Obsidian/Notion projections, literature novelty trees, paper recommendations, and detailed analyses.",
+      "source": {
+        "source": "github",
+        "repo": "JerryFan012321/scholar-workflow",
+        "ref": "release"
+      }
+    }
+  ]
+}
