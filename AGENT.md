@@ -171,3 +171,22 @@ methodology (stable); `planning/` is the per-phase **"what to build / goals / ha
 - **Removed** — deleted features or skills
 
 Bump the version in `plugin.json` when releasing a coherent set of changes. Use semver: major (breaking), minor (new skill or feature), patch (fixes and improvements).
+
+## Release branch
+
+Two branches, disjoint by purpose:
+
+- **`main`** — the development branch. Everything lives here: runtime code **plus** the
+  development layer (`planning/`, `dev-guide/`, `tests/`, `evals/`, `AGENT.md`, `CLAUDE.md`).
+- **`release`** — an **orphan** branch (independent history) that ships to users. It
+  contains **only runtime files**: `.claude-plugin/`, `agents/`, `bin/`, `contracts/`,
+  `hooks/`, `references/`, `skills/`, `src/`, `scripts/guard-sqlite.sh`, `.gitignore`,
+  `CHANGELOG.md`, `README.md`, `README.zh-CN.md`, `pyproject.toml`. No dev docs, no tests,
+  no `AGENT.md`/`CLAUDE.md` (the latter references a private `@RTK.md`).
+
+**Never commit to `release` by hand.** Build it from `main` with `scripts/make-release.sh`
+(idempotent; each release commit records the source `main` SHA). Flow: land changes on
+`main` → run the script → review `release` → push `release`. Keep the runtime manifest in
+the script and the boundary in both READMEs' "Development" section in sync. Personal data
+(machine paths, proxy ports, real tokens/interests) must never reach runtime files, since
+those ship — audit before releasing.

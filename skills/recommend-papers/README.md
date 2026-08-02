@@ -61,8 +61,9 @@ gitignored, template-only.
 
 - **A source shows under `skipped`** — that source failed or is unconfigured (no seeds,
   empty watchlist, no Scholar Inbox session). The run still completes on the rest.
-- **HF Daily times out** — it needs the local proxy (`127.0.0.1:7890`); S2 needs a
-  direct connection. These paths are fixed in the adapters.
+- **HF Daily times out** — it goes through your system HTTP proxy (`httpx` `trust_env`,
+  i.e. `HTTP_PROXY`/`HTTPS_PROXY`), while S2 connects directly. These paths are fixed in
+  the adapters; if HF Daily can't reach the network, check your proxy env vars.
 - **NotebookLM unreachable** — fall back to metadata-only recommendations, or read via
   `analyze-paper` / `get_content` (slower, more tokens).
 

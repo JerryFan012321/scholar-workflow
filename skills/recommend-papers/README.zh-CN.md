@@ -53,7 +53,8 @@ vault。看中的论文走常规的 `find-resource` / `ingest-resource` 管线�
 
 - **某源出现在 `skipped`**——该源失败或未配置(无种子、watchlist 为空、Scholar Inbox
   无 session)。其余源照常完成。
-- **HF Daily 超时**——它需要本机代理(`127.0.0.1:7890`);S2 走直连。这些路径在适配器里固定。
+- **HF Daily 超时**——它走系统 HTTP 代理(`httpx` `trust_env`,即 `HTTP_PROXY`/`HTTPS_PROXY`
+  环境变量),S2 走直连。这些路径在适配器里固定;HF Daily 连不上时先查代理环境变量。
 - **NotebookLM 不可达**——回落到纯元数据推荐,或经 `analyze-paper` / `get_content` 阅读
   (更慢、更费 token)。
 
