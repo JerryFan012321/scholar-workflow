@@ -40,7 +40,7 @@ class ZoteroRefs(BaseModel):
 
 
 class FileInfo(BaseModel):
-    root: str  # "papers_root" | "vault_root"
+    root: str  # "zotero_storage" | "research_vault_root"
     relative_path: str | None = None
     sha256: str | None = None
     source: str | None = None  # "arxiv" | "user" | "web"

@@ -78,16 +78,15 @@ class RecommendConfig(BaseModel):
 
 class Config(BaseModel):
     version: int = 1
-    papers_root: Path
     paper_inbox: Path = DEFAULT_PAPER_INBOX
-    vault_root: Path
+    research_vault_root: Path
     env_records_root: Path = DEFAULT_ENV_RECORDS_ROOT
     obsidian: ObsidianConfig = ObsidianConfig()
     notion: NotionConfig = NotionConfig()
     link_service: LinkServiceConfig = LinkServiceConfig()
     policy: PolicyConfig = PolicyConfig()
 
-    @field_validator("papers_root", "paper_inbox", "vault_root", "env_records_root", mode="before")
+    @field_validator("paper_inbox", "research_vault_root", "env_records_root", mode="before")
     @classmethod
     def expand_path(cls, v: Any) -> Path:
         return Path(os.path.expandvars(str(v))).expanduser().resolve()

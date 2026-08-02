@@ -9,7 +9,7 @@ from scholar_workflow.models import Resource
 
 def archive_document(res: Resource, source_path: Path,
                      vault_root: Path, vault_rel: str) -> dict:
-    """Copy source file into Vault and write sidecar metadata. Never touches papers_root."""
+    """Copy source file into Vault and write sidecar metadata. Never touches Zotero storage."""
     dest = vault_root / vault_rel
     dest.parent.mkdir(parents=True, exist_ok=True)
 

@@ -19,9 +19,9 @@ even though it is a PDF — it never enters the paper flow.
 | Kind | Target dir | Zotero item? |
 |---|---|---|
 | `paper` | `paper_inbox` (then ingested via zotero-mcp) | Yes — create + import via zotero-mcp |
-| `technical_document` | `vault_root/32-documents/<category>` | No (optional bib entry) |
-| `snapshot` | `vault_root/32-documents/snapshots/` | No |
-| `drawio` / `image` | `vault_root/<project dir>` | No |
+| `technical_document` | `research_vault_root/32-documents/<category>` | No (optional bib entry) |
+| `snapshot` | `research_vault_root/32-documents/snapshots/` | No |
+| `drawio` / `image` | `research_vault_root/<project dir>` | No |
 | `dataset` | Metadata only in phase 1 | No |
 
 Which root is authoritative for each object is the shared `storage-policy.md`.

@@ -20,7 +20,7 @@ description: Analyze one already-ingested paper in depth and write the analysis 
    authoritative sources; get_content is the one text channel here.
 
 3. **Resolve the analysis note.** One paper → one analysis note (e.g.
-   `<paper-name>分析.md`) under `vault_root`, in the same folder as the paper's index
+   `<paper-name>分析.md`) under `research_vault_root`, in the same folder as the paper's index
    row / related-docs hub. Ask for the subfolder if not obvious.
 
 4. **Write or append.**

@@ -55,9 +55,8 @@ Claude 负责理解、分类与推荐;确定性 CLI(`src/scholar_workflow/`)负�
 
 3. **建配置** `~/.config/scholar-workflow/config.yml`:
    ```yaml
-   papers_root: ~/path/to/managed/paper/pdfs   # 必填
-   vault_root:  ~/path/to/obsidian/vault        # 必填
-   paper_inbox: ~/path/to/download/inbox        # 可选
+   research_vault_root: ~/path/to/obsidian/vault  # 必填
+   paper_inbox: ~/path/to/download/inbox          # 可选
    # notion: { enabled: true, ... }             # 可选,详见文档
    ```
    需要时用 `SCHOLAR_WORKFLOW_HOME` 覆盖配置目录位置。

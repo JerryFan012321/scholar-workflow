@@ -20,7 +20,7 @@ description: Export one paper's Zotero annotations (highlights, notes, my commen
    itemIDs — ask the user which one, then re-run with `--item <id>`. If a title has
    no PDF attachment, report it and stop.
 
-3. **Resolve the vault.** Notes land under `vault_root` (plugin userConfig). Ask the
+3. **Resolve the vault.** Notes land under `research_vault_root` (plugin userConfig). Ask the
    user for the target subfolder if it is not obvious from context.
 
 4. **Check for an existing note.** Search the target vault for a note on the same

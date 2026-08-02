@@ -3,6 +3,34 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.13.0] — 2026-08-02
+
+### Removed
+- **BREAKING (config schema):** dropped the `papers_root` userConfig key. It was a
+  pre-zotero-mcp relic — no live workflow read it; PDFs now flow `paper_inbox` →
+  zotero-mcp `write_item(import)` → Zotero storage (`~/Zotero/storage`, served by the
+  link-service via `link_service.storage_root`). Only `doctor.py` health-checked the
+  path and a never-wired `audit_papers_root` stub referenced it. Removed the field +
+  validator (`config.py`), the doctor check (`doctor.py`), the dead `audit_papers_root`
+  stub (`workflows/audit.py`), the plugin.json userConfig entry, both READMEs' config
+  examples, and the `papers_root` mentions in check-consistency / sync-projections docs
+  + `models.py` FileInfo.root comment. Existing `config.yml` files should delete the key.
+  GOALS: reworded INV2/INV3 to anchor on Zotero storage (`~/Zotero/storage`) +
+  `link_service.storage_root` instead of `papers_root` (intent unchanged); evals
+  `papers-root-remap` / `tech-doc-isolation` descriptions + routing assertion
+  `must_not_enter_papers_root` → `must_not_enter_zotero_paper_flow` follow suit.
+
+### Changed
+- **BREAKING (config schema):** renamed the userConfig key `vault_root` →
+  `research_vault_root`. The prefix disambiguates the plugin's research vault from any
+  other Obsidian vault a user may keep, and its plugin.json description now clarifies the
+  plugin only writes its own folders + managed blocks (the vault may hold unrelated
+  content). Existing `config.yml` files must rename the key or the CLI will fail to load.
+  Threaded through `config.py` (field + validator), `cli.py` (3 adapter builds),
+  `doctor.py` (health check), `models.py` (FileInfo.root doc), plugin.json userConfig,
+  both READMEs, `storage-policy.md`, and the export-annotations / ingest-resource /
+  analyze-paper skill docs. Internal function params stay the generic `vault_root`.
+
 ## [0.12.0] — 2026-08-02
 
 Phase 5 start: **two-tier AI paper reading** (feature-ai-reading). A skim tier for
