@@ -1,28 +1,22 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "scholar-workflow",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Plan-first scholarly resource management: import papers, archive technical documents, sync Obsidian indexes and Notion projections, build literature novelty trees, recommend daily papers from four sources with NotebookLM skim, write detailed paper analyses, scaffold a personal API-key and SSH-server env-records ledger.",
   "author": {
     "name": "Scholar Workflow contributors"
   },
   "userConfig": {
-    "papers_root": {
-      "type": "directory",
-      "title": "Paper PDF root",
-      "description": "The only allowed root for managed paper PDFs.",
-      "required": true
-    },
     "paper_inbox": {
       "type": "directory",
       "title": "Paper download inbox",
       "description": "Where downloaded PDFs land, awaiting manual import into Zotero.",
       "required": false
     },
-    "vault_root": {
+    "research_vault_root": {
       "type": "directory",
-      "title": "Obsidian vault root",
-      "description": "The root of the Obsidian knowledge vault.",
+      "title": "Research Obsidian vault root",
+      "description": "Root of the Obsidian vault (or a folder within it) where this plugin writes research projections. The plugin only touches its own folders and managed blocks; the vault may hold unrelated content.",
       "required": true
     },
     "notion_enabled": {

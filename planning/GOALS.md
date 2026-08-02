@@ -31,8 +31,8 @@
 | ID | 不变量 | 守护 eval |
 |---|---|---|
 | INV1 | 一篇论文在 Zotero 中对应唯一条目（item）；条目可隶属多个分类（collection），分类是对条目的多对一投影，不构成重复身份。判重键为 Zotero 规范身份（DOI / title+authors），arXiv id 仅为下载源标识、非判重键；经 zotero-mcp 两步核验（search_library 召回 → get_item_details 回读字段）防止重复新建；模糊命中只提候选、写路径转冲突交人工裁决（NG3） | outcomes: dedup-exact-collapse |
-| INV2 | `papers_root` 只放论文 PDF；技术文档即使是 PDF 也进 Vault | routing: file-technical-doc / outcomes: tech-doc-isolation |
-| INV3 | PDF 位置迁移只通过配置 + Zotero 附件关系，不在多目录复制 | outcomes: papers-root-remap |
+| INV2 | 论文 PDF 由 Zotero 存储（`~/Zotero/storage`）统一持有；技术文档即使是 PDF 也进 Vault | routing: file-technical-doc / outcomes: tech-doc-isolation |
+| INV3 | PDF 位置迁移只通过 Zotero 附件关系 + `link_service.storage_root` 配置，不在多目录复制 | outcomes: papers-root-remap |
 | INV4 | Obsidian 论文表是可重建的派生索引，不是主库 | outcomes: obsidian-human-block-preserved |
 | INV5 | Notion 不上传论文/技术文档/图片/数据文件 | safety: no-notion-file-upload |
 | INV6 | Notion 机器字段可更新；人工内容不得被同步覆盖 | safety: no-overwrite-human-block |

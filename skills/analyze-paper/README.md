@@ -18,7 +18,7 @@ persistent, deep read-through you keep in the vault.
 
 ## Where the note lives
 
-- One paper → one analysis note (e.g. `<paper-name>分析.md`) under `vault_root`, in the
+- One paper → one analysis note (e.g. `<paper-name>分析.md`) under `research_vault_root`, in the
   same folder as the paper's index row / hub.
 - All analysis content sits in the **human area, outside managed blocks**, so
   re-projection / sync never overwrites it (INV4).

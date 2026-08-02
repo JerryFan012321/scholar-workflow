@@ -106,7 +106,7 @@ def project_obsidian_cmd(input_file) -> None:
     cfg = load_config()
     index = payload.get("index") or "31-paper/index.md"
     heading = payload.get("heading") or "Papers"
-    adapter = ObsidianAdapter(Path(cfg.vault_root),
+    adapter = ObsidianAdapter(Path(cfg.research_vault_root),
                               cfg.obsidian.managed_block_start,
                               cfg.obsidian.managed_block_end)
     n = project_obsidian(entries, index, heading, adapter, cfg.link_service.port)
@@ -144,7 +144,7 @@ def project_tree_cmd(input_file, dry_run: bool) -> None:
              "papers": sum(p["papers"] for p in plan), "plan": plan},
             ensure_ascii=False, indent=2))
         return
-    adapter = ObsidianAdapter(Path(cfg.vault_root),
+    adapter = ObsidianAdapter(Path(cfg.research_vault_root),
                               cfg.obsidian.managed_block_start,
                               cfg.obsidian.managed_block_end)
     stats = project_tree(tree, root, adapter, cfg.link_service.port)
@@ -182,7 +182,7 @@ def project_literature_tree_cmd(input_file, dry_run: bool) -> None:
              "papers": sum(p["papers"] for p in plan), "plan": plan},
             ensure_ascii=False, indent=2))
         return
-    adapter = ObsidianAdapter(Path(cfg.vault_root),
+    adapter = ObsidianAdapter(Path(cfg.research_vault_root),
                               cfg.obsidian.managed_block_start,
                               cfg.obsidian.managed_block_end)
     stats = project_novelty_tree(doc, root, adapter, cfg.link_service.port)

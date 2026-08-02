@@ -9,7 +9,7 @@ Canonical rule for where every object lives. Applies to all skills and agents.
 | Paper bibliography, tags, attachment links | Zotero (read/write via zotero-mcp) | Zotero-managed |
 | Paper PDFs (after ingest) | Zotero storage | Zotero-managed |
 | Downloaded paper PDFs (awaiting ingest) | Inbox | `paper_inbox` |
-| Personal knowledge, notes, technical docs | Obsidian Vault | `vault_root` |
+| Personal knowledge, notes, technical docs | Obsidian Vault | `research_vault_root` |
 | Knowledge outline, projects, tasks | Notion | Notion cloud |
 | Plugin runtime state (mappings, cursors, jobs, audit) | State store | `SCHOLAR_WORKFLOW_HOME` |
 

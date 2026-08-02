@@ -60,9 +60,8 @@ knowledge notes and derived indexes; **Notion** holds an optional cross-device p
 
 3. **Create the config** at `~/.config/scholar-workflow/config.yml`:
    ```yaml
-   papers_root: ~/path/to/managed/paper/pdfs   # required
-   vault_root:  ~/path/to/obsidian/vault        # required
-   paper_inbox: ~/path/to/download/inbox        # optional
+   research_vault_root: ~/path/to/obsidian/vault  # required
+   paper_inbox: ~/path/to/download/inbox          # optional
    # notion: { enabled: true, ... }             # optional, see docs
    ```
    Override the config location with `SCHOLAR_WORKFLOW_HOME` if needed.

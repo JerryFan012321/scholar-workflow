@@ -19,7 +19,7 @@
       "input": "归档这个 CUDA 官方 PDF 到知识库",
       "expected_skill": "ingest-resource",
       "expected_kind": "technical_document",
-      "must_not_enter_papers_root": true
+      "must_not_enter_zotero_paper_flow": true
     },
     {
       "id": "locate-paper",

@@ -3,19 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 
-def audit_papers_root(papers_root: Path) -> list[dict]:
-    """Find PDFs in papers_root with no matching Zotero attachment."""
-    issues: list[dict] = []
-    for pdf in papers_root.rglob("*.pdf"):
-        issues.append({
-            "severity": "warning",
-            "type": "unverified_pdf",
-            "path": str(pdf.relative_to(papers_root)),
-            "message": "PDF exists but Zotero cross-check not yet implemented",
-        })
-    return issues
-
-
 def audit_obsidian_index(index_path: Path, vault_root: Path) -> list[dict]:
     """Check that index entries resolve to valid Zotero keys and PDF paths."""
     # Full implementation in Phase 6

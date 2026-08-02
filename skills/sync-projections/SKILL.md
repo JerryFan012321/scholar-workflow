@@ -86,7 +86,7 @@ never touches Notion (no outbound network from `scholar-workflow`); this script 
 - Rebuilding the managed block is an additive write; overwriting human content outside
   it is never done
 - The vault index directory is a plain `paper/` subtree (no numeric prefix); PDFs live
-  under `papers_root` and are reached only via link-service URLs, never copied into the vault
+  in Zotero storage and are reached only via link-service URLs, never copied into the vault
 - The Notion `Sync Revision` field drives incremental updates to avoid needless overwrites
 - `bin/notion-project.py` is the *only* component that calls the Notion API; the CLI makes
   no outbound network calls. The token is read from `SCHOLAR_WORKFLOW_NOTION_TOKEN` only —

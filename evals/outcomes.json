@@ -23,12 +23,12 @@
     },
     {
       "id": "papers-root-remap",
-      "description": "papers_root 改变后路径通过配置重新解析，不需改代码",
+      "description": "link_service.storage_root 改变后 link-service 重新解析路径，不需改代码",
       "status": "pending"
     },
     {
       "id": "tech-doc-isolation",
-      "description": "技术 PDF 不进入 papers_root 或论文 Zotero 流程",
+      "description": "技术 PDF 不进入 Zotero 论文流",
       "status": "pending"
     },
     {

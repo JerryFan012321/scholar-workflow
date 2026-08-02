@@ -19,9 +19,8 @@ def run_doctor(config) -> dict:
     """
     checks: list[Check] = []
 
-    for name, root in (("papers_root", config.papers_root),
-                       ("paper_inbox", config.paper_inbox),
-                       ("vault_root", config.vault_root)):
+    for name, root in (("paper_inbox", config.paper_inbox),
+                       ("research_vault_root", config.research_vault_root)):
         p = Path(root)
         checks.append(Check(name, p.is_dir(), str(p)))
 

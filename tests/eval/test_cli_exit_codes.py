@@ -11,20 +11,19 @@ from click.testing import CliRunner
 from scholar_workflow.cli import main
 
 
-def _write_config(home, papers_root):
+def _write_config(home, research_vault_root):
     (home / "config.yml").write_text(textwrap.dedent(f"""\
         version: 1
-        papers_root: {papers_root}
         paper_inbox: {home}/inbox
-        vault_root: {home}/vault
+        research_vault_root: {research_vault_root}
     """))
 
 
 def test_doctor_exits_3_when_local_path_missing(tmp_path):
     home = tmp_path / "home"
     home.mkdir()
-    (home / "vault").mkdir()
-    _write_config(home, papers_root=str(tmp_path / "does-not-exist"))
+    (home / "inbox").mkdir()
+    _write_config(home, research_vault_root=str(tmp_path / "does-not-exist"))
 
     result = CliRunner().invoke(main, ["doctor"], env={"SCHOLAR_WORKFLOW_HOME": str(home)})
 
@@ -34,7 +33,7 @@ def test_doctor_exits_3_when_local_path_missing(tmp_path):
 def test_apply_empty_inputs_is_input_error_exit_2(tmp_path):
     home = tmp_path / "home"
     home.mkdir()
-    _write_config(home, papers_root=str(home))
+    _write_config(home, research_vault_root=str(home))
 
     result = CliRunner().invoke(main, ["apply", ""], env={"SCHOLAR_WORKFLOW_HOME": str(home)})
 

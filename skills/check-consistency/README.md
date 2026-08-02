@@ -1,6 +1,6 @@
 # check-consistency
 
-Audit cross-system consistency across Zotero, `papers_root`, Obsidian indexes, and
+Audit cross-system consistency across Zotero, Obsidian indexes, and
 Notion projections. Detects orphaned PDFs, dead Zotero keys, stale index rows,
 broken local links, and duplicate Resource IDs.
 

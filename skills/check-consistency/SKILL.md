@@ -1,6 +1,6 @@
 ---
 name: check-consistency
-description: Audit cross-system consistency across Zotero, papers_root, Obsidian indexes, and Notion projections. Report drift, orphaned files, stale entries, and broken links. Read-only — never auto-fixes. Triggers: 'check consistency', 'audit library', 'find drift', 'check sync status', '检查库状态', '审计一致性', '有没有漂移'.
+description: Audit cross-system consistency across Zotero, Obsidian indexes, and Notion projections. Report drift, orphaned files, stale entries, and broken links. Read-only — never auto-fixes. Triggers: 'check consistency', 'audit library', 'find drift', 'check sync status', '检查库状态', '审计一致性', '有没有漂移'.
 ---
 
 # check-consistency
