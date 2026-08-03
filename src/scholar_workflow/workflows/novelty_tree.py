@@ -1,22 +1,24 @@
 """Novelty-tree projection (per 彭思达 GAMES003 literature tree).
 
 Renders a 3-level classification tree — 里程碑任务(task) → pipeline/representation
-→ 论文(leaf) — into a folder of Obsidian managed-block notes, plus an inline Mermaid
-overview and a flat 全集 paper list on the topic root note. Internal nodes are abstract
-concepts; papers are leaves referenced by resource_id and resolved against `paper_list`
-(the single metadata ledger). Each concept records its novelty anchor = the first paper
-that proposed that task/pipeline.
+→ 论文(leaf) — as ONE self-contained Obsidian note per tree: an inline Mermaid overview
+followed by nested task(##)/pipeline(###) sections, each carrying its novelty anchor, an
+optional 内容简介 (summary), and a 论文列表 subpaperlist. No H1 — the note filename is the
+title. The flat 全集 paper list lives in a separate 01-Paperlist.md ledger.
 
-Path layout matches hierarchy.py: a node with children is a hub → `<dir>/<name>/index.md`;
-a leaf → `<parent>/<name>.md`. Content outside the managed markers is never touched
-(INV4); the same input re-renders byte-identically. The tree JSON is assembled by the
-host LLM; the CLI owns all path/label computation so rendering is MCP-free (INV18).
+Internal nodes are abstract concepts; papers are leaves referenced by resource_id and
+resolved against `paper_list` (the single metadata ledger). Each concept records its
+novelty anchor = the first paper that proposed that task/pipeline. Multiple trees can
+coexist under one topic folder as numbered index files (02-…, 03-…), assigned by the
+skill; only the 01-Paperlist.md slot is fixed. Content outside the managed markers is
+never touched (INV4); the same input re-renders byte-identically. The tree JSON is
+assembled by the host LLM; the CLI owns all path/label computation so rendering is
+MCP-free (INV18).
 """
 from __future__ import annotations
 from pathlib import PurePosixPath
 
 from scholar_workflow.workflows.projection import render_table
-from scholar_workflow.workflows.hierarchy import _safe_name
 
 
 _ANCHOR_LABEL = {"topic": "novelty", "task": "task novelty", "pipeline": "pipeline novelty"}
@@ -105,70 +107,107 @@ def _anchor_line(node: dict, by_id: dict) -> str:
     return line
 
 
-def _moc_section(children: list[dict], child_dir: str) -> str:
-    """Wikilinks to child concept notes. A child with its own children is a hub at
-    `<dir>/<name>/index`; a leaf child is at `<dir>/<name>`."""
-    lines = []
-    for c in children:
-        cname = _safe_name(c["name"])
-        base = f"{child_dir}/{cname}"
-        target = f"{base}/index" if c.get("children") else base
-        lines.append(f"- [[{target}|{c['name']}]]")
-    return "\n".join(lines)
+# Concept kind -> markdown heading depth inside the single tree note. The topic root
+# emits no heading (the filename is the title); tasks are ##, pipelines are ###, and a
+# pipeline's inner sections (内容简介 / 论文列表) are ####.
+_KIND_DEPTH = {"task": 2, "pipeline": 3}
 
 
-def _node_body(node: dict, child_dir: str, by_id: dict, port: int,
-               is_root: bool, doc: dict) -> str:
-    parts: list[str] = []
-    if is_root:
-        parts.append(render_mermaid(doc))
+def _concept_sections(node: dict, by_id: dict, port: int, depth: int,
+                      out: list[str]) -> None:
+    """Append this concept's markdown block, then recurse into children. A concept emits:
+    its heading (## task / ### pipeline), its novelty-anchor line, an optional 内容简介
+    (summary), and — when it holds paper leaves — a 论文列表 subpaperlist table."""
+    kind = node.get("kind", "")
+    hashes = "#" * depth
+    if depth:
+        out.append(f"{hashes} {node['name']}")
     anchor = _anchor_line(node, by_id)
     if anchor:
-        parts.append(anchor)
-    if node.get("children"):
-        parts.append(_moc_section(node["children"], child_dir))
+        out.append(anchor)
+    summary = node.get("summary")
+    if summary:
+        out.append(f"{'#' * (depth + 1)} 内容简介")
+        out.append(summary.strip())
     papers = _resolve(node.get("papers") or [], by_id)
     if papers:
-        parts.append(render_table(papers, port))
-    if is_root:
-        parts.append("### 全集论文（paper list）")
-        parts.append(render_table(doc.get("paper_list", []), port))
+        out.append(f"{'#' * (depth + 1)} 论文列表")
+        out.append(render_table(papers, port, assets=True))
+    for child in node.get("children") or []:
+        _concept_sections(child, by_id, port, _KIND_DEPTH.get(child.get("kind", ""), depth + 1), out)
+
+
+def render_tree_note(doc: dict, port: int) -> str:
+    """One literature tree = one managed-block body: a Mermaid overview, the topic-root
+    novelty anchor, then nested task(##)/pipeline(###) sections each carrying an optional
+    内容简介 and a 论文列表 subpaperlist. No H1 — the note filename is the title. The tree
+    references paper_list entries by resource_id; the flat ledger lives in 01-Paperlist.md."""
+    by_id = _by_id(doc)
+    tree = doc.get("tree") or {}
+    parts: list[str] = [render_mermaid(doc)]
+    root_anchor = _anchor_line(tree, by_id)
+    if root_anchor:
+        parts.append(root_anchor)
+    root_summary = tree.get("summary")
+    if root_summary:
+        parts.append("## 内容简介")
+        parts.append(root_summary.strip())
+    for child in tree.get("children") or []:
+        _concept_sections(child, by_id, port, _KIND_DEPTH.get(child.get("kind", ""), 2), parts)
     return "\n\n".join(parts)
 
 
-def _walk(node: dict, parent_dir: str, by_id: dict, port: int,
-          is_root: bool, doc: dict, plan: list[dict]) -> None:
-    name = _safe_name(node["name"])
-    child_dir = f"{parent_dir}/{name}"
-    has_children = bool(node.get("children"))
-    file_path = f"{child_dir}/index.md" if has_children else f"{parent_dir}/{name}.md"
-    heading = node["name"] if has_children else f"{node['name']}相关论文"
-    plan.append({
-        "path": file_path,
-        "heading": heading,
-        "body": _node_body(node, child_dir, by_id, port, is_root, doc),
-        "papers": len(node.get("papers") or []),
-    })
-    for child in node.get("children") or []:
-        _walk(child, child_dir, by_id, port, False, doc, plan)
+def render_paperlist(doc: dict, port: int) -> str:
+    """Body of the flat 全集 paper-list ledger (01-Paperlist.md): the whole collected set
+    as one table (Assets column on), including papers with classified=false."""
+    return render_table(doc.get("paper_list", []), port, assets=True)
 
 
-def plan_novelty_tree(doc: dict, root: str, port: int) -> list[dict]:
-    """Pure planner (no filesystem): expand `doc` (literature-tree.schema.json) under
-    `root` (vault-relative) into an ordered list of {path, heading, body, papers}. The
-    topic root note carries the Mermaid overview and the flat paper list; each concept
-    note carries its novelty anchor + MOC / paper table. Used by dry-run and apply."""
-    by_id = _by_id(doc)
-    plan: list[dict] = []
+def _tree_paper_count(node: dict) -> int:
+    return len(node.get("papers") or []) + sum(
+        _tree_paper_count(c) for c in node.get("children") or [])
+
+
+def plan_novelty_tree(doc: dict, root: str, port: int, filename: str) -> list[dict]:
+    """Pure planner (no filesystem). Produce the writes for ONE tree note under `root`
+    (the topic folder, vault-relative). `filename` is the numbered index file the skill
+    assigns (e.g. '02-世界模型文献树.md'). Returns [{path, heading, body, papers}] — a
+    single entry; the flat paper list (01-Paperlist.md) is planned separately."""
     tree = doc.get("tree") or {}
-    _walk(tree, root.rstrip("/"), by_id, port, True, doc, plan)
-    return plan
+    return [{
+        "path": f"{root.rstrip('/')}/{filename}",
+        "heading": "",  # no H1 — filename is the title
+        "body": render_tree_note(doc, port),
+        "papers": _tree_paper_count(tree),
+    }]
 
 
-def project_novelty_tree(doc: dict, root: str, adapter, port: int) -> dict:
-    """Apply plan_novelty_tree() to the vault via the adapter. Returns {files, papers}."""
-    plan = plan_novelty_tree(doc, root, port)
+def plan_paperlist(doc: dict, root: str, port: int,
+                   filename: str = "01-Paperlist.md") -> list[dict]:
+    """Pure planner for the flat paper-list ledger. `filename` is fixed at 01-Paperlist.md
+    by convention (the CLI enforces the 01 slot)."""
+    return [{
+        "path": f"{root.rstrip('/')}/{filename}",
+        "heading": "",
+        "body": render_paperlist(doc, port),
+        "papers": len(doc.get("paper_list", [])),
+    }]
+
+
+def _apply(plan: list[dict], adapter) -> dict:
     for item in plan:
         adapter.ensure_managed_block(PurePosixPath(item["path"]), item["heading"])
         adapter.update_managed_block(PurePosixPath(item["path"]), item["body"])
     return {"files": len(plan), "papers": sum(p["papers"] for p in plan)}
+
+
+def project_novelty_tree(doc: dict, root: str, adapter, port: int,
+                         filename: str) -> dict:
+    """Write ONE tree note (filename) under root via the adapter. Returns {files, papers}."""
+    return _apply(plan_novelty_tree(doc, root, port, filename), adapter)
+
+
+def project_paperlist(doc: dict, root: str, adapter, port: int,
+                      filename: str = "01-Paperlist.md") -> dict:
+    """Write the flat 01-Paperlist.md ledger under root via the adapter."""
+    return _apply(plan_paperlist(doc, root, port, filename), adapter)

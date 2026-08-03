@@ -30,11 +30,13 @@ computation and never queries zotero-mcp itself (INV18).
 3. **Always `--dry-run` first** (project-tree). It prints every file it would write
    (path + heading + body) and touches nothing — review the plan, then re-run without
    the flag to apply. Applying is additive: new files + managed-block rewrites only.
-4. Each paper row is 10 columns: Title, Authors (`; `-joined), Year, Venue (keep it —
-   with Year it lets a later step look up the BibTeX citation), Importance (from
-   `prio:★★★`, empty when untagged), Zotero (`zotero://select/items/@<item-key>`), PDF
-   (link-service URL by attachment key — see `references/link-format.md`), arXiv, DOI,
-   Synced (ISO date from the input, not `now()` — keeps re-projection idempotent).
+4. Each paper row is 9 columns: Title, Authors (`; `-joined), Year, Venue (keep it —
+   with Year it lets a later step look up the BibTeX citation), Importance (three-tier
+   text `founding`/`milestone`/`representative` from `prio:★★★/★★/★`; the renderer appends
+   the star badge; empty when untagged), Zotero (`zotero://select/items/@<item-key>`), PDF
+   (link-service URL by attachment key — see `references/link-format.md`), arXiv, Synced
+   (ISO date from the input, not `now()` — keeps re-projection idempotent). DOI is retained
+   as a dedup identity field only (INV1), never a rendered column.
 5. PDF links only resolve while the loopback link service is running
    (`scholar-workflow serve-links`). If a PDF URL returns connection-refused, the service
    is down — start it; it is not a data error.
@@ -97,7 +99,7 @@ never touches Notion (no outbound network from `scholar-workflow`); this script 
 
 Load on demand.
 
-- `references/obsidian-index-format.md` — managed block, 10-column table, folder-mirror/MOC hierarchy
+- `references/obsidian-index-format.md` — managed block, 9-column table, folder-mirror/MOC hierarchy
 - `references/notion-schema.md` — two-DB schema, machine vs human fields, upsert order
 - `references/link-format.md` — local-link service URL format
 - `${CLAUDE_PLUGIN_ROOT}/bin/notion-project.py` — mechanical two-DB upsert; reads

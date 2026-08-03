@@ -16,15 +16,38 @@ def _cell(v: object) -> str:
     return str(v).replace("|", "\\|").replace("\n", " ").strip()
 
 
-HEADER = (
-    "| Title | Authors | Year | Venue | Importance | Zotero | PDF | arXiv | DOI | Synced |\n"
-    "|---|---|---:|---|---|---|---|---|---|---|"
-)
+# Importance star badges. Keyed by the three-tier text; the renderer appends the badge
+# so the column reads e.g. "milestone ★★". A value already carrying stars (or an unknown
+# tier) is passed through unchanged, keeping the cell idempotent.
+_IMPORTANCE_STARS = {"founding": "★★★", "milestone": "★★", "representative": "★"}
 
 
-def format_row(entry: dict, port: int) -> str:
-    """Render one entry as a 10-column row:
-    Title|Authors|Year|Venue|Importance|Zotero|PDF|arXiv|DOI|Synced."""
+def _importance_cell(value: object) -> str:
+    if value is None:
+        return ""
+    text = str(value).strip()
+    stars = _IMPORTANCE_STARS.get(text.lower())
+    return f"{text} {stars}" if stars else text
+
+
+def _base_header(assets: bool) -> str:
+    cols = ["Title", "Authors", "Year", "Venue", "Importance", "Zotero", "PDF", "arXiv"]
+    if assets:
+        cols.append("Assets")
+    cols.append("Synced")
+    aligns = ["---"] * len(cols)
+    aligns[2] = "---:"  # Year right-aligned
+    return "| " + " | ".join(cols) + " |\n|" + "|".join(aligns) + "|"
+
+
+HEADER = _base_header(assets=False)
+
+
+def format_row(entry: dict, port: int, assets: bool = False) -> str:
+    """Render one entry as a table row. Columns:
+    Title|Authors|Year|Venue|Importance|Zotero|PDF|arXiv|[Assets|]Synced.
+    DOI is intentionally not a column (kept only as a dedup identity field). The Assets
+    column (a wikilink to the paper's assets note) is emitted only when assets=True."""
     authors = entry.get("authors") or []
     authors = "; ".join(authors) if isinstance(authors, list) else authors
     attach = entry.get("attachment_key")
@@ -35,15 +58,20 @@ def format_row(entry: dict, port: int) -> str:
     arxiv_cell = f"[{_cell(arxiv)}](https://arxiv.org/abs/{arxiv})" if arxiv else ""
     cells = [
         _cell(entry.get("title")), _cell(authors), _cell(entry.get("year")),
-        _cell(entry.get("venue")), _cell(entry.get("importance")), zotero, pdf,
-        arxiv_cell, _cell(entry.get("doi")), _cell(entry.get("synced")),
+        _cell(entry.get("venue")), _importance_cell(entry.get("importance")),
+        zotero, pdf, arxiv_cell,
     ]
+    if assets:
+        note = entry.get("asset_note")
+        cells.append(f"[[{note}]]" if note else "")
+    cells.append(_cell(entry.get("synced")))
     return "| " + " | ".join(cells) + " |"
 
 
-def render_table(entries: list[dict], port: int) -> str:
-    """Full paper-table body (header + rows) for a managed block."""
-    return "\n".join([HEADER, *(format_row(e, port) for e in entries)])
+def render_table(entries: list[dict], port: int, assets: bool = False) -> str:
+    """Full paper-table body (header + rows) for a managed block. Set assets=True to add
+    an Assets column (used by the literature tree / paper list, not the Zotero mirror)."""
+    return "\n".join([_base_header(assets), *(format_row(e, port, assets) for e in entries)])
 
 
 def project_obsidian(entries: list[dict], index_path: Path, heading: str,

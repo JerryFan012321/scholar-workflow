@@ -153,40 +153,61 @@ def project_tree_cmd(input_file, dry_run: bool) -> None:
 
 @main.command(name="project-literature-tree")
 @click.option("--input", "input_file", type=click.File("r"), default="-",
-              help="JSON with {root, doc}; default stdin. doc conforms to literature-tree.schema.json.")
+              help="JSON with {root, filename, doc, paperlist_only?}; default stdin. doc conforms to literature-tree.schema.json.")
 @click.option("--dry-run", is_flag=True,
               help="Print the files that would be written (path/heading/body) as JSON; write nothing.")
 def project_literature_tree_cmd(input_file, dry_run: bool) -> None:
-    """Render a novelty tree (里程碑任务 → pipeline → 论文) as managed-block notes.
+    """Render a novelty tree (里程碑任务 → pipeline → 论文) as a single managed-block note,
+    or the flat 01-Paperlist.md ledger.
 
-    Input (assembled by the host LLM per contracts/literature-tree.schema.json): {"root":
-    "<vault-rel base dir>", "doc": {paper_list:[...], tree:{name, kind, ...}}}. The topic
-    root note carries an inline Mermaid overview + the flat 全集 paper list; each concept
-    note carries its novelty anchor + a MOC wikilink list / paper table. Content outside
-    markers is preserved; re-running the same input is idempotent (INV4/INV18/INV22)."""
+    Input (assembled by the host LLM per contracts/literature-tree.schema.json):
+      {"root": "<topic folder, vault-rel>", "filename": "02-<topic>文献树.md",
+       "doc": {paper_list:[...], tree:{name, kind, ...}}}
+    `root` defaults to the doc's `topic` (the topic folder name), else '35-literature-tree'.
+    One tree = one note: an inline Mermaid overview + nested task(##)/pipeline(###) sections,
+    each with its novelty anchor, optional 内容简介, and a 论文列表 subpaperlist. Pass
+    "paperlist_only": true to (re)write 01-Paperlist.md (the flat 全集 ledger) instead;
+    `filename` then defaults to 01-Paperlist.md. Content outside markers is preserved;
+    re-running the same input is idempotent (INV4/INV18/INV22)."""
     from pathlib import Path
     from scholar_workflow.config import load_config
     from scholar_workflow.adapters.obsidian import ObsidianAdapter
-    from scholar_workflow.workflows.novelty_tree import plan_novelty_tree, project_novelty_tree
+    from scholar_workflow.workflows.novelty_tree import (
+        plan_novelty_tree, project_novelty_tree, plan_paperlist, project_paperlist,
+    )
 
     payload = json.load(input_file)
     doc = payload.get("doc")
     if not doc or not (doc.get("tree") or {}).get("name"):
         raise InputError("input must contain a 'doc' with a non-empty 'tree.name'")
-    root = payload.get("root") or "35-literature-tree"
+    paperlist_only = bool(payload.get("paperlist_only"))
+    root = payload.get("root") or doc.get("topic") or "35-literature-tree"
     cfg = load_config()
+    port = cfg.link_service.port
+
+    if paperlist_only:
+        fname = payload.get("filename") or "01-Paperlist.md"
+        planner = lambda: plan_paperlist(doc, root, port, fname)
+        applier = lambda ad: project_paperlist(doc, root, ad, port, fname)
+    else:
+        fname = payload.get("filename")
+        if not fname:
+            raise InputError("a tree render needs 'filename' (e.g. '02-<topic>文献树.md')")
+        planner = lambda: plan_novelty_tree(doc, root, port, fname)
+        applier = lambda ad: project_novelty_tree(doc, root, ad, port, fname)
+
     if dry_run:
-        plan = plan_novelty_tree(doc, root, cfg.link_service.port)
+        plan = planner()
         click.echo(json.dumps(
-            {"root": root, "dry_run": True, "files": len(plan),
+            {"root": root, "filename": fname, "dry_run": True, "files": len(plan),
              "papers": sum(p["papers"] for p in plan), "plan": plan},
             ensure_ascii=False, indent=2))
         return
     adapter = ObsidianAdapter(Path(cfg.research_vault_root),
                               cfg.obsidian.managed_block_start,
                               cfg.obsidian.managed_block_end)
-    stats = project_novelty_tree(doc, root, adapter, cfg.link_service.port)
-    click.echo(json.dumps({"root": root, **stats}, ensure_ascii=False))
+    stats = applier(adapter)
+    click.echo(json.dumps({"root": root, "filename": fname, **stats}, ensure_ascii=False))
 
 
 @main.command(name="serve-links")

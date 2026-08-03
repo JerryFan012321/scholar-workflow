@@ -24,12 +24,13 @@
           "authors":        { "type": "array", "items": { "type": "string" } },
           "year":           { "type": ["integer", "null"] },
           "venue":          { "type": ["string", "null"] },
-          "importance":     { "type": ["string", "null"] },
+          "importance":     { "type": ["string", "null"], "description": "One of founding / milestone / representative; the renderer appends a star badge (★★★/★★/★)." },
           "zotero_key":     { "type": ["string", "null"] },
           "attachment_key": { "type": ["string", "null"] },
           "arxiv":          { "type": ["string", "null"] },
-          "doi":            { "type": ["string", "null"] },
+          "doi":            { "type": ["string", "null"], "description": "Retained as a dedup identity field; NOT rendered as a table column." },
           "synced":         { "type": ["string", "null"] },
+          "asset_note":     { "type": ["string", "null"], "description": "vault-relative path of this paper's assets note (paper_assets/<year>-<first-author>-<title>.md), authored by the skill. The paper list links to it in the Assets column." },
           "classified":     { "type": "boolean", "default": false }
         }
       }
@@ -50,6 +51,10 @@
       "properties": {
         "name": { "type": "string" },
         "kind": { "type": "string", "enum": ["topic", "task", "pipeline"] },
+        "summary": {
+          "type": ["string", "null"],
+          "description": "Optional prose intro for this concept, rendered under a '内容简介' subsection. Authored by the host LLM; lives in the JSON, so re-rendering the tree is idempotent (edit here, not in the markdown)."
+        },
         "novelty_anchor": {
           "type": ["string", "null"],
           "description": "resource_id of the FIRST paper that proposed this task/pipeline (1/2/3 类 novelty anchor). A verifiable priority fact, not a value judgment."

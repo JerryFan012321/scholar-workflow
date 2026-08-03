@@ -3,6 +3,44 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.15.0] — 2026-08-03
+
+### Changed
+- **Literature-tree rendering form, reshaped from real-vault practice** (Phase 3;
+  INV22 rendering clause expanded). A topic's whole output now lives in one folder named
+  for the topic (no `-literature-tree` wrapper). Index files carry a **library-code
+  prefix**: `01-Paperlist.md` is the fixed flat全集 ledger, and each tree/view is a
+  numbered self-contained note (`02-…文献树.md`, `03-…`; the skill assigns the number, the
+  CLI only fixes the 01 slot). **One tree = one note** — an inline Mermaid overview then
+  nested `##` task / `###` pipeline sections (each with its novelty anchor, an optional
+  `内容简介`, and a `论文列表` subpaperlist) — with **no H1** (the filename is the title).
+  Multiple trees may coexist; the ledger and each tree cross-link.
+- **Shared table renderer (`projection.py`) — DOI column dropped, Importance star-badged.**
+  DOI is retained only as a dedup identity field (INV1), never a rendered column;
+  Importance is three-tier text (`founding`/`milestone`/`representative`) to which the
+  renderer appends a `★★★/★★/★` badge. Because the renderer is shared, the **sync-projections
+  Zotero-mirror index also goes 10 → 9 columns** — this is intentional (both indexes stay
+  column-aligned). An Assets column is opt-in (`assets=True`), so only the literature-tree
+  paper list / subpaperlists show the paper-assets wikilink, not the Zotero mirror.
+- **Paper-assets back-link hub.** Each paper gets a companion note at
+  `paper_assets/<year>-<first-author>-<title>.md` inside the topic folder; one `#` heading
+  per resource type, and always a `# 相关文献树` heading holding back-links to the
+  pipeline section(s) where the paper sits (INV20 hub, literature-tree landing).
+- **`novelty_tree.py` rewritten** from a multi-file hierarchy to single-file section
+  rendering: `render_tree_note` (Mermaid + nested sections, no H1) + `render_paperlist`
+  (flat ledger) + `plan/project_novelty_tree` + `plan/project_paperlist`.
+  `ObsidianAdapter.ensure_managed_block` now accepts an empty heading (writes no H1 line).
+- **`project-literature-tree` CLI** takes `{root, filename, doc, paperlist_only?}`; `root`
+  defaults to the doc's topic; `paperlist_only` writes the fixed `01-Paperlist.md` ledger,
+  otherwise `filename` (required) names the tree note. `--dry-run` prints the plan.
+- **`build-literature-tree` SKILL/README/README.zh-CN + `lineage-agent`** rewritten to the
+  new layout (topic folder, library-code prefix, single self-contained note, paper_assets
+  back-links). `sync-projections` SKILL + `obsidian-index-format.md` updated to the 9-column
+  table (DOI removed, star-badged Importance).
+- **`literature-tree.schema.json`** gains `summary` on concepts (prose intro, stored in
+  JSON so re-render is idempotent) and `asset_note` on papers (path to the assets note);
+  `doi` documented as retained-for-dedup, not-rendered.
+
 ## [0.14.0] — 2026-08-03
 
 ### Added

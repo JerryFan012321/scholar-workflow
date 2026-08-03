@@ -12,8 +12,10 @@ are leaves. Each concept records its novelty anchor (the first paper that propos
 
 ## Output
 - Normalized `literature-tree.json` (conforms to `contracts/literature-tree.schema.json`)
-- Obsidian managed-block notes: topic root (inline Mermaid overview + flat paper list),
-  concept notes (novelty anchor + MOC wikilinks / paper table)
+- A topic folder (named for the topic) of Obsidian managed-block notes: `01-Paperlist.md`
+  (flat ledger), numbered tree notes (`02-…文献树.md`, each a single self-contained note:
+  inline Mermaid + nested ##task/###pipeline sections with novelty anchor / 内容简介 /
+  论文列表 subpaperlist), and `paper_assets/` companion notes with `# 相关文献树` back-links
 
 ## Skills
 - `build-literature-tree`
