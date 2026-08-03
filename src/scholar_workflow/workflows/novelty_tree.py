@@ -1,4 +1,4 @@
-"""Novelty-tree projection (per 彭思达 GAMES003 literature tree).
+"""Novelty-tree projection: a literature tree grouped by novelty.
 
 Renders a 3-level classification tree — 里程碑任务(task) → pipeline/representation
 → 论文(leaf) — as ONE self-contained Obsidian note per tree: an inline Mermaid overview

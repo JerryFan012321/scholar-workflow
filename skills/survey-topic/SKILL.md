@@ -8,8 +8,9 @@ description: Scope an open-ended research request, then route it through the oth
 The entry point for a broad "research X" request. A bare model, told "survey world
 models", starts summarizing before it knows how wide or deep to go. This skill fixes
 that: it **scopes** the request with a short grill, then **routes** the scoped request
-through the skills that already exist. It is a conductor, not a performer — it runs no
-retrieval, no dedup, no tree-building, and writes nothing itself.
+through the skills that already exist. It is a conductor, not a performer — it delegates
+all acquisition, dedup, and tree-building, and writes nothing itself. The one read it may
+do for itself is a quick throwaway sweep to scope the request (see Grill).
 
 ## Depth → skill map (the external prescription)
 
@@ -33,8 +34,8 @@ fix the plan unilaterally. The grill is done the moment the user agrees to a con
 "first X, then Y".
 
 You are scoping the request's depth (程度) and breadth (范围). Organize the depth question
-around the two legs of field-vision a researcher actually decides along (彭思达 GAMES003),
-which map onto the table above:
+around the two legs of field-vision a researcher actually decides along, which map onto
+the table above:
 
 - **Depth — field-vision**: a *technical-evolution* view (what the milestones are, how the
   technique evolved) or a *key-problem* view (the field's goal, what's solved, what's still
@@ -45,6 +46,11 @@ which map onto the table above:
 - **Breadth** — one specific problem / one direction / a whole field. Sets seed count and,
   if a tree follows, how wide it spreads.
 - **Time window** — founding classics / recent progress / ongoing tracking.
+
+**Cold-start orientation.** Arriving cold, you often can't fix depth/breadth blind. A quick
+**breadth-recon sweep** first — reading broadly, *including non-arXiv sources* (models with
+no paper, benchmark/project pages, lab blogs) — surfaces the landscape's shape so you can
+scope against it. It is throwaway: it feeds the grill, enters no library, leaves no file.
 
 If the topic word is polysemous (e.g. "world model" splits along function vs. domain), name
 the cut-axis and confirm it before scoping breadth. Once the user lands on "structure
@@ -62,9 +68,9 @@ re-lock resolution or boundary here (that's the tree's job; INV22).
 3. **Delegate, in order.** Hand each step to its skill, carrying the agreed scope as input:
    seed count, time window, which collection/topic to gather. One seeding move worth naming
    when mapping a landscape: start from a milestone/seed paper and **mine its introduction
-   and related-work section** for same-direction references (citation snowball, 彭思达
-   GAMES003's "确定 milestone paper → 查它前后论文") — feed those to `find-resource`, then on
-   to `build-literature-tree`.
+   and related-work section** for same-direction references (citation snowball — fix a
+   milestone paper, then trace the papers before and after it) — feed those to
+   `find-resource`, then on to `build-literature-tree`.
 4. **Report where each product landed** — candidate list, ingested items, tree notes,
    analysis notes — each owned by the skill that made it. This skill leaves no artifact.
 
@@ -81,6 +87,10 @@ re-lock resolution or boundary here (that's the tree's job; INV22).
 - **Leave no artifact.** The plan lives in the conversation. Every file/library product
   is written by the delegated skill, in its own home — this skill adds no new file type
   and no new state.
+- **Orientation reads; acquisition is delegated.** The cold-start sweep is read-only and
+  throwaway — it feeds the grill, enters no library, leaves no file. What gets acquired,
+  from which source, and where it lands is owned by `source-policy` and `ingest-resource`;
+  this skill neither restates nor overrides it.
 - **Additive, plan-first (security-policy).** Any writes happen inside a delegated skill
   under the standing approval model; destructive actions still gate there, per item.
 

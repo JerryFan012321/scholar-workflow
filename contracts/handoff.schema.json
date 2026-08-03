@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "handoff.schema.json",
-  "title": "AgentHandoff",
-  "description": "Minimal state passed between agents or saved at PreCompact",
+  "title": "PreCompactSnapshot",
+  "description": "Minimal active-job state saved at PreCompact so work survives context compaction. Named AgentHandoff historically; from_agent/to_agent are hardcoded to 'precompact' — agents do not hand off to each other.",
   "type": "object",
   "required": ["job_id", "from_agent", "to_agent", "last_success_state", "created_at"],
   "additionalProperties": false,

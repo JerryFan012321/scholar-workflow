@@ -1,6 +1,6 @@
 ---
 name: build-literature-tree
-description: Build a novelty tree for a research topic — a 3-level classification (milestone task → pipeline/representation → paper) plus a flat paper list, rendered as a self-contained Obsidian note with an inline Mermaid overview. Triggers: 'literature tree', 'novelty tree', 'paper lineage', 'research evolution', 'follow-up papers', '文献脉络', '文献树', '论文发展树', '里程碑任务', '研究方向发展树', '画出发展脉络', 'NeRF 到 3DGS'.
+description: Build a novelty tree for a research topic — a 3-level classification (milestone task → pipeline/representation → paper) plus a flat paper list, rendered as a self-contained Obsidian note with an inline Mermaid overview. Triggers 'literature tree', 'novelty tree', 'paper lineage', 'research evolution', 'follow-up papers', '文献脉络', '文献树', '论文发展树', '里程碑任务', '研究方向发展树', '画出发展脉络', 'NeRF 到 3DGS'.
 ---
 
 # build-literature-tree
@@ -10,8 +10,8 @@ description: Build a novelty tree for a research topic — a 3-level classificat
 
 ## Model
 
-Per 彭思达's literature-tree method, the tree is a 3-level classification whose internal
-nodes are **abstract concepts** and whose leaves are **papers**:
+The tree is a 3-level classification whose internal nodes are **abstract concepts** and
+whose leaves are **papers**:
 
 ```
 milestone task (the problem) → pipeline / representation (the method) → paper (leaf)

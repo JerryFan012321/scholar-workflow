@@ -1,6 +1,6 @@
 ---
 name: ingest-resource
-description: Import papers or archive technical documents into the local library via zotero-mcp. Handles existence check, PDF download, Zotero create/import, and collection filing. Triggers: 'import paper', 'add to Zotero', 'archive document', 'file this PDF', '导入论文', '加入 Zotero', '归档技术文档', '把这篇论文加入'.
+description: Import papers or archive technical documents into the local library via zotero-mcp. Handles existence check, PDF download, Zotero create/import, and collection filing. Triggers 'import paper', 'add to Zotero', 'archive document', 'file this PDF', '导入论文', '加入 Zotero', '归档技术文档', '把这篇论文加入'.
 ---
 
 # ingest-resource

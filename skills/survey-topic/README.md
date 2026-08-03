@@ -17,6 +17,11 @@ you** — proposing, letting you correct, confirming — across:
 - **Breadth** — one problem / one direction / a whole field
 - **Time window** — classics / recent / ongoing tracking
 
+Arriving cold, you often can't scope blind. The skill may first run a quick **breadth-recon
+sweep** — reading broadly, including non-arXiv sources (models with no paper, benchmark or
+project pages, lab blogs) — to surface the landscape's shape. That sweep is throwaway: it
+feeds the scoping conversation, enters no library, and leaves no file.
+
 Once you've agreed on a plan, it hands each step to the skill that owns it:
 `recommend-papers`, `find-resource`, `ingest-resource`, `build-literature-tree`, or
 `analyze-paper`. When mapping a landscape, one move it uses is the **citation snowball** —

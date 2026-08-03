@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "literature-tree.schema.json",
   "title": "LiteratureTree",
-  "description": "A novelty tree (per 彭思达 GAMES003): a 3-level classification 里程碑任务 → pipeline/representation → 论文(叶). Internal nodes are abstract concepts; papers are leaves referenced by resource_id. A flat paper_list is the single metadata ledger — the tree references its entries by id. The challenge_insight_tree seam is reserved for a later ticket.",
+  "description": "A novelty tree: a 3-level classification 里程碑任务 → pipeline/representation → 论文(叶). Internal nodes are abstract concepts; papers are leaves referenced by resource_id. A flat paper_list is the single metadata ledger — the tree references its entries by id. The challenge_insight_tree seam is reserved for a later ticket.",
   "type": "object",
   "required": ["paper_list", "tree", "generated_at"],
   "additionalProperties": false,

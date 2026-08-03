@@ -1,6 +1,6 @@
 # build-literature-tree
 
-按彭思达的 literature tree 方法，为某研究方向构建一棵 **novelty tree**。它是一棵三级分类树，
+为某研究方向构建一棵 **novelty tree**。它是一棵三级分类树，
 内部节点是抽象概念、叶子是论文：
 
 ```
