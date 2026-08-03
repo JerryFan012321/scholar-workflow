@@ -3,8 +3,8 @@
 ## 插件结构
 
 ```
-5 Agents: intake / library / knowledge / lineage / audit
-10 Skills: survey-topic / find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / analyze-paper / env-setup（无 agent，用户直呼）
+5 Agents: intake / lineage / knowledge / feed / audit（任务级自足单元，skill 可跨 agent 复用；不互相 handoff，跨 agent 串联由宿主 LLM 或 survey-topic 编排）
+10 Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / analyze-paper / env-setup（无 agent，用户直呼）
 确定性 CLI: src/scholar_workflow/ + bin/(scholar-workflow, zotero-annotations.py, recommend-papers.py)
 Zotero 经 zotero-mcp: 元数据/存在性/语义检索权威来源；读与写(create/import/元数据)均经 zotero-mcp 受控工具
 论文下载: CLI 落入 paper_inbox 收件箱，再经 zotero-mcp 入库
@@ -146,14 +146,20 @@ methodology (stable); `planning/` is the per-phase **"what to build / goals / ha
 
 ## Agent → Skill 映射
 
-| Agent | 可用 Skills |
-|---|---|
-| intake | survey-topic, find-resource, recommend-papers |
-| library | ingest-resource |
-| knowledge | sync-projections, export-annotations, analyze-paper |
-| lineage | build-literature-tree, find-resource（只读） |
-| audit | check-consistency |
-| （无 agent，用户直呼） | env-setup |
+Agent 按「会独立吃掉大量上下文的用户任务」切分，每个自足拥有完成该任务的全部 skill；
+skill 可跨 agent 复用（如 find/ingest 同时服务 intake 与 lineage），不归属单一 agent。
+Agent 之间不互相调用、不 handoff；跨 agent 的串联由宿主 LLM 直接编排，或由 survey-topic
+出计划后逐步委派。
+
+| Agent | 任务 | 可用 Skills |
+|---|---|---|
+| intake | 定向获取（找 + 入库） | find-resource, ingest-resource |
+| lineage | 方向级调研 + 建文献树 | find-resource, ingest-resource, build-literature-tree |
+| knowledge | 单篇知识投影（分析 / 批注 / 索引） | analyze-paper, export-annotations, sync-projections |
+| feed | 每日推荐流（略读 + watchlist） | recommend-papers |
+| audit | 跨系统一致性审计（只读） | check-consistency |
+| （宿主 LLM 顶层编排，不挂 agent） | 开放式调研的 scope + 委派 | survey-topic |
+| （无 agent，用户直呼） | 环境台账 | env-setup |
 
 ## CLI 退出码
 

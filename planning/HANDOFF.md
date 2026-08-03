@@ -1,9 +1,10 @@
 # HANDOFF — 从这里接着干
 
 > 交接文档,供下一个开发会话快速进入状态。与 `GOALS.md`(意图层,同目录)、`../CHANGELOG.md`(变更史)
-> 配合看。最后更新:2026-08-02(v0.11.0 env-setup 新系统:个人 API-key + SSH-server env-records 台账,
-> 插件零私有数据、模板进 git、真实记录 gitignored。上游:v0.10.0 Phase 3 novelty tree 取代 citation-graph
-> + scope-locking grill、v0.9.0 审批链退场 + 约束设计哲学、v0.8.2 Phase 2 收尾;Phase 2 规格见
+> 配合看。最后更新:2026-08-03(v0.15.1 survey-topic 补冷启动广度侦察 prose。上游同日:v0.15.0 文献树
+> 渲染形态重构、v0.14.0 survey-topic 编排入口新增、v0.13.1 vendored writing-great-skills + 描述精简、
+> v0.13.0 config schema 两处 BREAKING 改名/删键;v0.12.0 Phase 5 两级 AI 阅读 recommend-papers +
+> analyze-paper + marketplace.json;v0.11.0 env-setup;v0.10.0 Phase 3 novelty tree;Phase 2 规格见
 > `phase2-sync-projections.md`)。
 
 ## 当前状态一句话
@@ -20,25 +21,37 @@ Phase 2 **进行中,Obsidian 投影 + PDF 链接服务 + Notion 双库投影三�
 - **本轮(v0.8.2)收尾**:双库编排层补了 `tests/unit/test_notion_project.py`(先论文后文档、relation
   从 page_id map 接、缺 token 退 3、空 payload no-op、引用未知 paper 退 2);INV19/21 落守护 eval;
   `discover` 退场为 skill 层指路。
-**93 passed,工作区干净。**
+**103 passed,工作区干净。**
 
-自 v0.8.2 后又落三批:
+自 v0.8.2 后又落多批:
 - **v0.9.0**:退场遗留审批链(pre-zotero-mcp 时代的 apply/approval),AGENT.md 新增「设计哲学(上位准则)」——约束三层筛(内在能力不写 / 优化脚手架随能力贬值 / 业务规定稳定维护)。
 - **v0.10.0(Phase 3 起步)**:文献树从 citation-graph 换成彭思达 novelty tree(`里程碑任务→pipeline→论文` 三级、概念为内部节点、论文为叶、每概念记 novelty 锚点 + flat paper list);新 `literature-tree.schema.json` + `workflows/novelty_tree.py`(render_mermaid + plan/project)+ `project-literature-tree` CLI;build-literature-tree SKILL 加 scope-locking **grill**(四 gate:目的/边界/分辨率/时间窗 + 锚点归属规则);INV22 + outcomes 守护。
 - **v0.11.0**:新 **env-setup** skill(用户直呼、无 agent)——个人 API-key + SSH-server env-records 台账,插件零私有数据、模板进 git、真实记录 gitignored;已实盘建 `~/dev/env-records`、登记 Notion token。
+- **v0.12.0(Phase 5 起步,两级 AI 阅读)**:新 **recommend-papers**@intake(四源聚合 S2 推荐/Scholar Inbox/S2 author watchlist/HF Daily,按 arXiv id 去重,shortlist 走 NotebookLM 略读、产物临时 Reading Report,INV23)+ **analyze-paper**@knowledge(zotero-mcp `get_content` 读正文、落 vault 附属笔记、与批注笔记 `related` 互链,INV24)。新 `adapters/recommend_sources.py`、`bin/recommend-papers.py`(唯一外部网络出口,CLI 零网络承 INV18)、vendor sjh `scholar_inbox` 客户端(MIT 标归属)。新增 `.claude-plugin/marketplace.json`(单仓分发,指向 `release` 分支;`/plugin marketplace add JerryFan012321/scholar-workflow@release`)。skill 数 7→9。
+- **v0.13.0(两处 BREAKING config schema)**:① 删 `papers_root` userConfig(pre-zotero-mcp 遗物,PDF 现走 `paper_inbox`→`write_item import`→Zotero storage);② `vault_root`→`research_vault_root`(前缀消歧)。既有 `config.yml` 须删旧键/改名否则 CLI 加载失败。连带删 `audit_papers_root` 死 stub、doctor 检查、GOALS INV2/INV3 改锚 Zotero storage。
+- **v0.13.1**:vendored `dev-guide/writing-great-skills/`(Matt Pocock `mattpocock/skills`,MIT、逐字节 SHA-256 校验、`disable-model-invocation`、不进 release/runtime),成为通用 skill 写作单一真相源;dev-guide 对齐它;精简 analyze-paper + recommend-papers 两处 description(复述步骤机制→只留 identity+触发+消歧,路由不受影响)。
+- **v0.14.0**:新 **survey-topic**@intake 编排入口(skill 数 9→10)——补「宽泛调研开口无 skill 响应」缺口;grill 商定程度/范围/时间窗→提有序计划→委派下游;唯一编码的外来规定是 depth→skill 映射表,「怎么调研」不编码;吸收研究方法论(彭思达 GAMES003 两腿视野 + citation snowball),内在能力不拷入;不新增 INV,routing.json 两用例守护。
+- **v0.15.0(Phase 3 渲染重构)**:按真实 vault 实践重塑 novelty tree 落地形态——主题文件夹(无 `-literature-tree` 壳)、`01-Paperlist.md` 固定扁平账本、多树共存带图书馆编码前缀、一棵树=一个自包含笔记(内联 Mermaid + `##`任务/`###`pipeline + subpaperlist、无 H1)、`paper_assets/<年>-<作者>-<标题>.md` 相关资料笔记含 `# 相关文献树` 反链(INV20)。共享渲染器 `projection.py` 删 DOI 列、Importance 加星级徽章——**连带 sync-projections 的 Zotero 镜像也 10→9 列**(故意对齐)。`novelty_tree.py` 多文件→单文件分节重写。
+- **v0.15.1(本轮)**:survey-topic 补冷启动广度侦察 prose——真实调研暴露「冷启动没法盲 scope」缺口,加一次 web-inclusive、丢弃式的 breadth-recon sweep 喂 grill(身份句去「runs no retrieval」矛盾、Grill 段加 Cold-start orientation、Constraints 加 Orientation reads/acquisition delegated 把获取策略交回 source-policy 不复述 arXiv-only)。映射表不动、并行 fan-out 机制不编码(内在能力)、不新增 INV、routing.json 不加。获取策略经用户澄清=「arXiv 优先、无则仅元数据回落」(等同 NG1 现状,source-policy 不改)。README 双语 + CHANGELOG + GOALS 同步。
 
 ## 立即待办(本会话遗留,下次优先)
 
-1. **方向级笔记的 Notion 表示**(INV21 显式押后):当前双库只覆盖「论文 + 挂在论文下的相关文档」。
+1. **Phase 3 文献树真实主题端到端实盘**(v0.15.0 渲染形态刚重构,尚未拿真实方向跑通):走完
+   grill→建树→`project-literature-tree` 落 vault,验证新布局(主题文件夹、`01-Paperlist.md` 账本、
+   自包含树笔记 + Mermaid、`paper_assets/` 反链)在真实 Obsidian vault 里成立。**世界模型正是现成主题**
+   ——广度简报已成型、三条主线已选定(方法范式/自动驾驶/3D+导航),可直接当这次实盘的输入。
+2. **Phase 5 略读闭环实盘(F4)**:`recommend-papers` 四源聚合 + 两层 recommend.yml 已落地,但
+   **NotebookLM 略读闭环(notebooklm-py)未实盘**;watchlist 半自动登记子模式、doctor 探针 + 回落
+   (NotebookLM 挂→手动交接;Scholar Inbox 挂→降三源)也待做。依赖已批准(notebooklm-py + Scholar Inbox)。
+3. **方向级笔记的 Notion 表示**(INV21 显式押后):当前双库只覆盖「论文 + 挂在论文下的相关文档」。
    无 Zotero item 的方向级/学习笔记(如文献树、组会讲稿)怎么在 Notion 表示(独立条目?挂专题页?)
    尚未设计,是 Notion 侧的下一 ticket。
-2. **`audit` 仍是 stub**:CLI 的 `audit`(跨系统一致性,Phase 4)是 `NotImplementedError`。
-   **`discover` 已退场**:不再是待实装的 Phase 1 CLI 命令——发现/标识符解析需 zotero-mcp
-   (存在性/语义)+ web 元数据,CLI 子进程够不到 MCP,该能力归 `find-resource` skill(宿主 LLM)。
-   CLI `discover` 现只报 exit 2 + 指路该 skill,不做事。
-3. **只落了 `科研项目` 一枝**:Obsidian/Notion 目前都只铺了 `科研项目 → 上汽标注 → text2cad`。其余枝
+4. **`audit` 仍是 stub**:CLI 的 `audit`(跨系统一致性,Phase 4)是 `NotImplementedError`;Phase 4 未开始。
+   (注:`discover` 与 `papers_root` 均已退场——前者能力归 `find-resource` skill〔宿主 LLM,CLI 够不到 MCP〕、
+   CLI `discover` 只报 exit 2 指路;后者 v0.13.0 删除,PDF 走 `paper_inbox`→`write_item import`→Zotero storage。)
+5. **只落了 `科研项目` 一枝**:Obsidian/Notion 目前都只铺了 `科研项目 → 上汽标注 → text2cad`。其余枝
    (New Things / 基本方法 / 机器学习方法 / 其他论文 / 数学和自然科学工具)未抓未铺。
-4. **旧扁平 `31-paper/index.md` 遗留**(vault 内,纯 tracer):若仍在,已被 `paper/` 层级取代,待删;
+6. **旧扁平 `31-paper/index.md` 遗留**(vault 内,纯 tracer):若仍在,已被 `paper/` 层级取代,待删;
    删除是不可逆动作,动手前与用户确认。
 
 ## 承重原则(动手前必读,勿违背)

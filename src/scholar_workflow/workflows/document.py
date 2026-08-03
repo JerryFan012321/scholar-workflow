@@ -5,12 +5,13 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from scholar_workflow.models import Resource
+from scholar_workflow.adapters.obsidian import safe_vault_path
 
 
 def archive_document(res: Resource, source_path: Path,
                      vault_root: Path, vault_rel: str) -> dict:
     """Copy source file into Vault and write sidecar metadata. Never touches Zotero storage."""
-    dest = vault_root / vault_rel
+    dest = safe_vault_path(vault_root, vault_rel)
     dest.parent.mkdir(parents=True, exist_ok=True)
 
     sha = _sha256(source_path)

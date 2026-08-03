@@ -1,6 +1,6 @@
 ---
 name: sync-projections
-description: Rebuild Obsidian paper index tables and sync Notion management projections after ingestion or on demand. Triggers: 'update index', 'rebuild paper table', 'sync Notion', 'update knowledge index', '更新论文表', '同步 Notion', '重建索引'.
+description: Rebuild Obsidian paper index tables and sync Notion management projections after ingestion or on demand. Triggers 'update index', 'rebuild paper table', 'sync Notion', 'update knowledge index', '更新论文表', '同步 Notion', '重建索引'.
 ---
 
 # sync-projections

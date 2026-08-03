@@ -1,7 +1,30 @@
 """Obsidian adapter: managed block updates and index maintenance."""
 from __future__ import annotations
+import os
 import re
 from pathlib import Path
+
+
+class VaultPathError(ValueError):
+    """A vault-relative path escaped the vault root (absolute, `..`, or symlink)."""
+
+
+def safe_vault_path(vault_root: Path, rel: str | os.PathLike) -> Path:
+    """Resolve `rel` under `vault_root`, rejecting anything that escapes the root.
+
+    A projection is a rebuildable derived index confined to the vault; the payload
+    fields that name its files (`root` / `filename` / `index` / `vault_rel`) come from
+    stdin, so they are an untrusted system boundary. Reject absolute paths and any input
+    that resolves outside the vault root — covering both `..` traversal and symlink
+    escape — so no projection can ever write outside the vault."""
+    rel_p = Path(rel)
+    if rel_p.is_absolute():
+        raise VaultPathError(f"absolute path not allowed inside vault: {rel}")
+    root_real = Path(os.path.realpath(vault_root))
+    target = Path(os.path.realpath(root_real / rel_p))
+    if target != root_real and root_real not in target.parents:
+        raise VaultPathError(f"path escapes vault root: {rel}")
+    return target
 
 
 class ObsidianAdapter:
@@ -11,8 +34,7 @@ class ObsidianAdapter:
         self._end = managed_end
 
     def _resolve(self, index_path: Path) -> Path:
-        p = Path(index_path)
-        return p if p.is_absolute() else self._root / p
+        return safe_vault_path(self._root, index_path)
 
     def update_managed_block(self, index_path: Path, body: str) -> None:
         """Replace the inter-marker region with `body` verbatim; preserve everything

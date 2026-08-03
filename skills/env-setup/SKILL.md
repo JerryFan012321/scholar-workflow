@@ -1,6 +1,6 @@
 ---
 name: env-setup
-description: Scaffold and maintain a personal env-records directory that tracks API keys and SSH servers (with per-host conda/CUDA/proxy inventory). Templates are committed; real records stay gitignored and local. Triggers: 'env records', 'record a server', 'register an api key', 'set up env records', 'track this server', 'ssh server ledger', '环境记录', '登记服务器', '登记 api', '记录服务器环境', '初始化环境记录'.
+description: Scaffold and maintain a personal env-records directory that tracks API keys and SSH servers (with per-host conda/CUDA/proxy inventory). Templates are committed; real records stay gitignored and local. Triggers 'env records', 'record a server', 'register an api key', 'set up env records', 'track this server', 'ssh server ledger', '环境记录', '登记服务器', '登记 api', '记录服务器环境', '初始化环境记录'.
 ---
 
 # env-setup

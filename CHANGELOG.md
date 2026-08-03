@@ -3,6 +3,85 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.16.0] — 2026-08-03
+
+### Fixed
+- **7 skill frontmatters failed YAML parse (P0 release blocker).** `find-resource`,
+  `ingest-resource`, `sync-projections`, `build-literature-tree`, `check-consistency`,
+  `export-annotations`, and `env-setup` wrote `Triggers: '…'` in the `description` — the
+  `: ` made YAML read it as a mapping key inside a plain scalar and drop all frontmatter
+  at load time (silently killing auto-trigger). Changed to `Triggers '…'` (colon-free),
+  matching the three skills that already parsed. `claude plugin validate` now passes with
+  zero skill errors.
+- **Vault-path traversal was unguarded (P0 security).** Payload fields that name vault
+  files (`root` / `filename` / `index` / `vault_rel`) come from stdin — an untrusted
+  boundary — but `ObsidianAdapter._resolve` and `archive_document` joined them onto the
+  vault root with no check, so `../…`, an absolute path, or a symlink could write outside
+  the vault. Added `safe_vault_path()` + `VaultPathError` in `adapters/obsidian.py`
+  (rejects absolute paths and anything that `os.path.realpath`-resolves outside the root,
+  covering `..` traversal *and* symlink escape) and routed both write chokepoints through
+  it. Backs the `no-path-traversal` safety eval with real enforcement + 6 contract tests.
+
+### Changed
+- **Agent layer restructured from mechanical-verb split to task-level self-sufficient
+  units, and registered as real subagents.** The five `agents/*.md` had no YAML
+  frontmatter, so Claude Code never registered them as delegable subagents — they were
+  shadow docs. Worse, they were split by mechanical action (discover / ingest / project /
+  tree / audit), but real tasks span several actions, so each agent was a fragment that
+  couldn't carry a task on its own (e.g. lineage bolted on a "read-only" find-resource
+  because building a tree from a bare topic *needs* search). Re-cut agents around whole
+  user tasks, each owning every skill that task needs, skills reused across agents freely:
+  - **intake** (find + ingest) — targeted acquisition; absorbs the former **library**
+    (deleted) since ingest is rarely a task on its own.
+  - **lineage** (find + ingest + build-literature-tree) — was "build a tree" only; widened
+    to direction-level survey: discovery and ingest are part of building the tree.
+  - **feed** (recommend-papers) — new; the daily push feed, split out of intake.
+  - **knowledge** (analyze + export + sync-projections) — unchanged scope.
+  - **audit** (check-consistency) — unchanged scope.
+  All five now carry `name` + `description` frontmatter. Agents do **not** hand off to each
+  other; cross-agent chaining is orchestrated by the host LLM or by `survey-topic` (which
+  is a top-level orchestration skill, owned by no agent). `survey-topic` and
+  `recommend-papers` removed from intake's skill list accordingly.
+- **`handoff.schema.json` renamed in-place: `AgentHandoff` → `PreCompactSnapshot`.** It was
+  never agent-to-agent state — `from_agent`/`to_agent` are hardcoded to `"precompact"` and
+  its only producer is the PreCompact hook (`report --active --handoff`). Title/description
+  corrected to say so; the dead fields are left (harmless) and the contract test is
+  untouched.
+
+### Removed
+- **Dead `audit` CLI path.** `workflows/audit.py` (both functions returned `[]` / were
+  never called) and the `cli.py audit` command (`raise NotImplementedError`) deleted. The
+  CLI can't reach zotero-mcp, so cross-system audit lives in the check-consistency skill
+  (host LLM), never in the CLI — the stub only misled (it fooled a review into calling the
+  skill "unimplemented").
+- **Personal-name attribution scrubbed from all shipped runtime files.** The literature-tree
+  method's origin ("彭思达 / GAMES003") was copied verbatim into `agents/lineage-agent.md`,
+  `build-literature-tree` SKILL/README(.zh-CN), `survey-topic` SKILL (×3),
+  `literature-tree.schema.json`, and `novelty_tree.py` — a private reference with no
+  routing value that ships to users. Removed the attribution; the method itself is
+  unchanged. Provenance stays in the dev layer (CHANGELOG / planning), which does not ship.
+
+## [0.15.1] — 2026-08-03
+
+### Changed
+- **survey-topic — cold-start breadth-recon sweep named as a pre-scope move.** Real use
+  showed a gap: arriving cold, you often can't fix depth/breadth blind, so a quick
+  web-inclusive sweep (including non-arXiv sources — models with no paper, benchmark or
+  project pages, lab blogs) is what surfaces the landscape's shape *before* the grill can
+  scope against it. The Depth→skill map was left untouched (every row routes to a
+  downstream skill; the sweep routes nowhere — it is an inline scoping read), and the
+  parallel/fan-out *mechanics* were deliberately **not** encoded (intrinsic ability, per
+  AGENT.md design philosophy). Three prose edits only: the identity line no longer claims
+  "runs no retrieval" (it now delegates acquisition but may do one throwaway read for
+  itself), a **Cold-start orientation** note in the Grill section, and an
+  **Orientation reads; acquisition is delegated** constraint that defers the
+  what/where/from-which-source of acquisition to `source-policy` + `ingest-resource`
+  rather than restating arXiv-only (AGENT.md: never duplicate a top-level policy across
+  layers). Sweep persists nothing — throwaway like recommend-papers' Reading Report
+  (INV23). README/README.zh-CN updated; no new INV (optimization scaffold, not a business
+  rule); routing.json unchanged (breadth-recon is an internal mode, not a new route
+  target).
+
 ## [0.15.0] — 2026-08-03
 
 ### Changed

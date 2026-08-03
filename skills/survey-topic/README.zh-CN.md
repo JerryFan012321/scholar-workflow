@@ -14,6 +14,10 @@
 - **范围** —— 一个具体问题 / 一个方向 / 整个领域
 - **时间窗** —— 经典奠基 / 近期进展 / 持续追踪
 
+冷启动时往往没法盲目界定范围。这个 skill 可以先跑一次快速的**广度侦察(breadth-recon sweep)**
+——广泛地读,包括非 arXiv 来源(没有论文的模型、benchmark 或项目页、实验室博客)——把领域
+地形的轮廓先摸出来。这次侦察是丢弃式的:它喂给范围商定的对话,不进任何库、不落任何文件。
+
 达成一致后,它把每一步交给拥有它的 skill:`recommend-papers`、`find-resource`、
 `ingest-resource`、`build-literature-tree`、`analyze-paper`。铺地图时它会用一个手法——
 **引用滚雪球**:从一篇里程碑论文出发,挖它的 introduction 和 related work 里同方向的引用,

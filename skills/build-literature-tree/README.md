@@ -1,8 +1,7 @@
 # build-literature-tree
 
-Build a **novelty tree** for a research topic, following 彭思达's literature-tree method.
-The tree is a 3-level classification whose internal nodes are abstract concepts and whose
-leaves are papers:
+Build a **novelty tree** for a research topic. The tree is a 3-level classification whose
+internal nodes are abstract concepts and whose leaves are papers:
 
 ```
 milestone task (the problem) → pipeline / representation (the method) → paper (leaf)

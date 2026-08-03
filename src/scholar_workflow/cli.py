@@ -307,13 +307,6 @@ def resume(job_id: str) -> None:
 
 
 @main.command()
-@click.option("--scope", multiple=True)
-def audit(scope: tuple[str, ...]) -> None:
-    """Check cross-system consistency and report drift."""
-    raise NotImplementedError
-
-
-@main.command()
 @click.argument("job_id", required=False)
 @click.option("--format", "fmt", default="json", type=click.Choice(["json", "md", "csv"]))
 @click.option("--active", is_flag=True)
