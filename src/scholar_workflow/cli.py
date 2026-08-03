@@ -310,7 +310,7 @@ def resume(job_id: str) -> None:
 @click.argument("job_id", required=False)
 @click.option("--format", "fmt", default="json", type=click.Choice(["json", "md", "csv"]))
 @click.option("--active", is_flag=True)
-@click.option("--handoff", is_flag=True, help="Emit an AgentHandoff snapshot of active jobs (PreCompact).")
+@click.option("--handoff", is_flag=True, help="Emit a PreCompactSnapshot of active jobs (PreCompact hook).")
 def report(job_id: str | None, fmt: str, active: bool, handoff: bool) -> None:
     """Retrieve a job report, or list active jobs with --active (read-only)."""
     from scholar_workflow.state import StateStore
@@ -335,7 +335,7 @@ def report(job_id: str | None, fmt: str, active: bool, handoff: bool) -> None:
 
 
 def _handoff_snapshot(rows: list[dict]) -> dict:
-    """Build an AgentHandoff (contracts/handoff.schema.json) from active jobs."""
+    """Build a PreCompactSnapshot (contracts/handoff.schema.json) from active jobs."""
     from datetime import datetime, timezone
     return {
         "job_id": rows[0]["job_id"] if rows else "00000000-0000-0000-0000-000000000000",

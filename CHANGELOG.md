@@ -47,6 +47,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   its only producer is the PreCompact hook (`report --active --handoff`). Title/description
   corrected to say so; the dead fields are left (harmless) and the contract test is
   untouched.
+- **Post-restructure drift swept (second codex-review pass).** The agent re-cut left
+  stragglers that contradicted the new "agents don't hand off" rule (a true reflection of
+  Claude Code's architecture: subagents run isolated and return to the main thread; there
+  is no lateral agent-to-agent channel). Fixed: all five agents' `## Handoff` sections
+  became `## Boundary` (each states where the agent ends and that the host LLM orchestrates
+  what runs next); dropped `library-agent` references still in `knowledge-agent` and
+  `sync-projections`; `knowledge-agent` no longer claims it "writes only inside managed
+  blocks" (analyze/annotation notes are human-area content — the real rule is *don't
+  overwrite* human content, INV4); `cli.py` help/docstring `AgentHandoff` → `PreCompactSnapshot`
+  to finish the rename; refreshed the stale `planning/HANDOFF.md` header (v0.15.1 →
+  v0.16.0, dropped the "audit is a stub" todo). `identity.py` arXiv-first ordering was
+  reviewed and **kept as correct** — `resource_id` is an offline naming key; library dedup
+  is a separate DOI-first check via zotero-mcp.
 
 ### Removed
 - **Dead `audit` CLI path.** `workflows/audit.py` (both functions returned `[]` / were

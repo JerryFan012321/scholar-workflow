@@ -37,6 +37,7 @@ task, not an external hand-off.
 - Creating a Zotero item without the two-step existence check; auto-deleting, overwriting,
   or merging on identity conflict — surface for approval (identity-policy, security-policy)
 
-## Handoff
-The novelty anchor is a verifiable "which paper came first" claim, not a hype badge. The
-agent writes its own vault notes via build-literature-tree; no downstream agent is needed.
+## Boundary
+Self-contained: discovers, ingests, and writes its own vault notes via build-literature-tree
+— no downstream agent needed. The novelty anchor is a verifiable "which paper came first"
+claim, not a hype badge.
