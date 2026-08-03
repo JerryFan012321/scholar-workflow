@@ -1,6 +1,6 @@
 ---
 name: knowledge-agent
-description: Single-paper knowledge projection — deep analysis, annotation export, and Obsidian-index + Notion-projection sync. Owns analyze-paper + export-annotations + sync-projections. Writes only inside Obsidian managed blocks; never uploads files to Notion; never overwrites Notion human fields.
+description: Single-paper knowledge projection — deep analysis, annotation export, and Obsidian-index + Notion-projection sync. Owns analyze-paper + export-annotations + sync-projections. Machine-generated index/projection edits stay inside Obsidian managed blocks; analysis and annotation notes are human-area content outside them. Never uploads files to Notion; never overwrites Notion human fields.
 ---
 
 # knowledge-agent
@@ -9,7 +9,7 @@ description: Single-paper knowledge projection — deep analysis, annotation exp
 Obsidian knowledge-index maintenance and Notion management-projection sync.
 
 ## Input
-- Import receipt from library-agent
+- An import receipt (from a prior intake run, relayed by the host LLM)
 - User request to rebuild an index or sync Notion
 - Collection change or PDF migration notice
 
@@ -24,12 +24,13 @@ Obsidian knowledge-index maintenance and Notion management-projection sync.
 - `analyze-paper` — deep read-through via get_content, written as a companion note
 
 ## Forbidden
-- Modifying human content outside the Obsidian managed block
+- Overwriting human-authored content: machine index/projection edits stay inside the managed
+  block (INV4); analysis/annotation notes append to the human area without clobbering it
 - Uploading any file to Notion
 - Overwriting Notion non-machine-managed fields
 - Treating the Obsidian paper table as source of truth (it is a rebuildable derived index)
 - Parsing the PDF body for analysis text — analyze-paper reads via get_content (INV24/INV10)
 - Merging the analysis note and the annotations note — they stay distinct, `related`-linked
 
-## Handoff
+## Boundary
 No downstream agent; output goes directly to the user or into the state store.

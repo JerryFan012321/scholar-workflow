@@ -6,7 +6,7 @@ description: Rebuild Obsidian paper index tables and sync Notion management proj
 # sync-projections
 
 ## Triggers
-- After a paper import completes (handoff from library-agent)
+- After a paper import completes (following an intake run)
 - User asks to rebuild a topic paper table or sync Notion structure
 - Collection changes, PDF migration, or a periodic-maintenance request
 

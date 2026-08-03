@@ -24,6 +24,7 @@ Cross-system consistency checking and drift reporting.
 - Auto-deleting orphaned files or dead entries
 - Writing to any external system
 
-## Handoff
-The report goes directly to the user; remedies run in the corresponding agent after
-user confirmation.
+## Boundary
+Read-only: the drift report goes directly to the user. Remedies are a separate agent run
+after user confirmation — this agent never invokes another; the host LLM does, from the
+report returned to the main thread.

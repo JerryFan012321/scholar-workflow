@@ -13,6 +13,21 @@ How a resource is normalized, identified, and matched. Used by find-resource
   or title+authors, since the same work may carry an arXiv id, a conference DOI, and a
   publisher DOI at once.
 
+## `resource_id` vs dedup key — two different jobs
+
+`make_resource_id` prefers the arXiv id, then DOI. This is **not** in tension with DOI
+being the dedup key — the two keys serve different purposes:
+
+- **`resource_id`** is a deterministic, offline naming key for local files, cursors, and
+  state. arXiv-first because at download/inbox time the arXiv id is the identifier already
+  in hand and computable without a network call. It never drives the create/skip decision.
+- **Library dedup identity** is DOI (then title+authors), confirmed at the skill layer via
+  the two-step zotero-mcp existence check below. This is what prevents duplicate Zotero
+  items.
+
+So a paper may carry `paper:arxiv:…` as its local `resource_id` while still deduping by
+DOI in the library. The local naming key and the library identity key are independent.
+
 ## Metadata source priority
 
 Metadata (title / authors / year / venue) is authoritative from **zotero-mcp** for

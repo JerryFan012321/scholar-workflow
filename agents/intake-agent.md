@@ -32,6 +32,7 @@ collection filing) for papers and technical documents, via zotero-mcp.
 - Fabricating a title for an identifier-only input (show the identifier as-is)
 - Judging a record dirty by an empty `itemType` (read-layer artifact, not corruption)
 
-## Handoff
-After ingest completes, the import receipt can trigger index sync (knowledge-agent) or
-feed a novelty tree (lineage-agent). Handoff format follows `contracts/handoff.schema.json`.
+## Boundary
+Ends at the import receipt. Follow-on work (index sync, novelty tree) is a separate agent;
+agents do not hand off to each other — the host LLM decides what to invoke next from the
+receipt returned to the main thread.

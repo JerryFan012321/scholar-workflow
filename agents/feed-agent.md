@@ -30,6 +30,7 @@ intake-agent (pull, targeted) — this agent is the "what's new today" stream.
   (the token economy is the reason the tier exists)
 - Relaying non-arXiv PDFs — the merge/dedup key is arXiv id (source-policy)
 
-## Handoff
-Papers the user picks flow into intake-agent (find → ingest, with the two-step existence
-check). This agent never mutates the library itself.
+## Boundary
+Ends at the ephemeral report; never mutates the library itself. Ingesting a picked paper is
+a separate agent (intake, with the two-step existence check) — agents do not hand off to
+each other; the host LLM invokes intake from the report returned to the main thread.
