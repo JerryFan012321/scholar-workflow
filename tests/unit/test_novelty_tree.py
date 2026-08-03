@@ -1,12 +1,19 @@
-"""Unit tests for the novelty-tree projection (INV22; reuses INV4/INV18 machinery)."""
+"""Unit tests for the novelty-tree projection (INV22; reuses INV4/INV18 machinery).
+
+One tree = one self-contained note (Mermaid + nested ##task/###pipeline sections with
+内容简介 / 论文列表); the flat 全集 ledger is a separate 01-Paperlist.md.
+"""
 from __future__ import annotations
 from scholar_workflow.adapters.obsidian import ObsidianAdapter
 from scholar_workflow.workflows.novelty_tree import (
-    plan_novelty_tree, project_novelty_tree, render_mermaid,
+    plan_novelty_tree, project_novelty_tree, plan_paperlist, project_paperlist,
+    render_tree_note, render_paperlist, render_mermaid,
 )
 
 START, END = "<!-- s -->", "<!-- e -->"
 PORT = 23128
+ROOT = "世界模型 (World Models)"
+TREE_FILE = "02-世界模型文献树.md"
 
 
 def _paper(rid, title, classified, **extra):
@@ -14,9 +21,10 @@ def _paper(rid, title, classified, **extra):
 
 
 NERF = _paper("arxiv:2003.08934", "NeRF", True, attachment_key="S6LZUS6S",
-              authors=["B. Mildenhall"], year=2020, importance="★★★")
-MIP = _paper("arxiv:2103.13415", "Mip-NeRF", True, year=2021)  # non-anchor leaf
-GS = _paper("arxiv:2308.04079", "3D Gaussian Splatting", True, year=2023)
+              authors=["B. Mildenhall"], year=2020, importance="founding",
+              asset_note="paper_assets/2020-Mildenhall-NeRF.md")
+MIP = _paper("arxiv:2103.13415", "Mip-NeRF", True, year=2021, importance="representative")
+GS = _paper("arxiv:2308.04079", "3D Gaussian Splatting", True, year=2023, importance="milestone")
 UNCLASSIFIED = _paper("arxiv:2401.00001", "some collected follow-up", False)
 
 DOC = {
@@ -25,12 +33,15 @@ DOC = {
     "paper_list": [NERF, MIP, GS, UNCLASSIFIED],
     "tree": {
         "name": "novel view synthesis", "kind": "topic",
+        "summary": "Rendering novel views of a scene from posed images.",
+        "novelty_anchor": "arxiv:2003.08934",
         "children": [{
             "name": "photorealistic reconstruction", "kind": "task",
             "novelty_anchor": "arxiv:2003.08934",
             "anchor_note": "first continuous volumetric field",
             "children": [
                 {"name": "implicit neural field", "kind": "pipeline",
+                 "summary": "MLP-encoded radiance fields.",
                  "novelty_anchor": "arxiv:2003.08934",
                  "papers": ["arxiv:2003.08934", "arxiv:2103.13415"]},
                 {"name": "explicit gaussians", "kind": "pipeline",
@@ -45,66 +56,78 @@ def _adapter(tmp_path):
     return ObsidianAdapter(tmp_path, START, END)
 
 
+# --- planners are pure (no filesystem) ---
+
 def test_plan_is_pure(tmp_path):
-    plan_novelty_tree(DOC, "35-literature-tree", PORT)
+    plan_novelty_tree(DOC, ROOT, PORT, TREE_FILE)
+    plan_paperlist(DOC, ROOT, PORT)
     assert not list(tmp_path.iterdir())
 
 
-def test_path_mapping(tmp_path):
-    plan = plan_novelty_tree(DOC, "35-literature-tree", PORT)
-    paths = [p["path"] for p in plan]
-    assert paths == [
-        "35-literature-tree/novel view synthesis/index.md",
-        "35-literature-tree/novel view synthesis/photorealistic reconstruction/index.md",
-        "35-literature-tree/novel view synthesis/photorealistic reconstruction/implicit neural field.md",
-        "35-literature-tree/novel view synthesis/photorealistic reconstruction/explicit gaussians.md",
-    ]
+def test_tree_is_single_file(tmp_path):
+    plan = plan_novelty_tree(DOC, ROOT, PORT, TREE_FILE)
+    assert [p["path"] for p in plan] == [f"{ROOT}/{TREE_FILE}"]
+    assert plan[0]["heading"] == ""  # no H1 — filename is the title
+    assert plan[0]["papers"] == 3  # 2 in implicit field + 1 gaussian
 
 
-def test_root_body_has_mermaid_moc_and_paperlist(tmp_path):
-    project_novelty_tree(DOC, "35-literature-tree", _adapter(tmp_path), PORT)
-    root = (tmp_path / "35-literature-tree/novel view synthesis/index.md").read_text(encoding="utf-8")
-    assert "```mermaid" in root
-    # MOC wikilink to the task hub (task has children -> /index)
-    assert "- [[35-literature-tree/novel view synthesis/photorealistic reconstruction/index|photorealistic reconstruction]]" in root
-    # flat paper list section + header + the unclassified paper still listed
-    assert "全集论文" in root
-    assert "| Title | Authors |" in root
-    assert "some collected follow-up" in root
+def test_paperlist_is_01_ledger(tmp_path):
+    plan = plan_paperlist(DOC, ROOT, PORT)
+    assert plan[0]["path"] == f"{ROOT}/01-Paperlist.md"
+    assert plan[0]["papers"] == 4  # whole set incl. unclassified
 
 
-def test_pipeline_leaf_has_anchor_line_and_paper_row(tmp_path):
-    project_novelty_tree(DOC, "35-literature-tree", _adapter(tmp_path), PORT)
-    leaf = (tmp_path / "35-literature-tree/novel view synthesis/photorealistic reconstruction/implicit neural field.md").read_text(encoding="utf-8")
-    assert "首创 (pipeline novelty)" in leaf and "NeRF" in leaf
-    # render_table reuse: the PDF loopback link proves the shared row renderer ran
-    assert "http://127.0.0.1:23128/open/paper/S6LZUS6S" in leaf
+# --- tree note body ---
+
+def test_tree_note_sections_and_no_h1(tmp_path):
+    body = render_tree_note(DOC, PORT)
+    assert "```mermaid" in body
+    assert "## photorealistic reconstruction" in body  # task = ##
+    assert "### implicit neural field" in body  # pipeline = ###
+    assert "#### 内容简介" in body and "MLP-encoded radiance fields." in body
+    assert "#### 论文列表" in body
+    assert "首创 (task novelty)" in body and "first continuous volumetric field" in body
+    # topic-level summary rendered at ## depth, no repeated H1 title
+    assert "## 内容简介" in body
+    assert not body.lstrip().startswith("# ")
 
 
-def test_task_hub_has_anchor_and_moc(tmp_path):
-    project_novelty_tree(DOC, "35-literature-tree", _adapter(tmp_path), PORT)
-    task = (tmp_path / "35-literature-tree/novel view synthesis/photorealistic reconstruction/index.md").read_text(encoding="utf-8")
-    assert "首创 (task novelty)" in task
-    assert "first continuous volumetric field" in task  # anchor_note appended
-    assert "- [[35-literature-tree/novel view synthesis/photorealistic reconstruction/implicit neural field|implicit neural field]]" in task
+def test_tree_note_uses_assets_column_not_doi(tmp_path):
+    body = render_tree_note(DOC, PORT)
+    assert "| Assets |" in body  # subpaperlist carries Assets column
+    assert "[[paper_assets/2020-Mildenhall-NeRF.md]]" in body
+    assert "| DOI |" not in body
+    assert "http://127.0.0.1:23128/open/paper/S6LZUS6S" in body  # render_table reuse
 
 
-def test_idempotent_and_preserves_outside(tmp_path):
+# --- paper list ledger body ---
+
+def test_paperlist_body_has_all_and_stars(tmp_path):
+    body = render_paperlist(DOC, PORT)
+    assert "some collected follow-up" in body  # unclassified still listed
+    assert "founding ★★★" in body and "milestone ★★" in body
+    assert "| Assets |" in body and "| DOI |" not in body
+
+
+# --- apply: idempotent, preserves outside content ---
+
+def test_project_writes_and_is_idempotent(tmp_path):
     a = _adapter(tmp_path)
-    project_novelty_tree(DOC, "35-literature-tree", a, PORT)
-    leaf = tmp_path / "35-literature-tree/novel view synthesis/photorealistic reconstruction/explicit gaussians.md"
-    leaf.write_text(leaf.read_text(encoding="utf-8") + "\n## my notes\nkeep\n", encoding="utf-8")
-    first = leaf.read_text(encoding="utf-8")
-    project_novelty_tree(DOC, "35-literature-tree", a, PORT)
-    after = leaf.read_text(encoding="utf-8")
-    assert "keep" in after
-    assert after == first
+    project_paperlist(DOC, ROOT, a, PORT)
+    project_novelty_tree(DOC, ROOT, a, PORT, TREE_FILE)
+    tree = tmp_path / ROOT / TREE_FILE
+    tree.write_text(tree.read_text(encoding="utf-8") + "\n## my notes\nkeep\n", encoding="utf-8")
+    first = tree.read_text(encoding="utf-8")
+    project_novelty_tree(DOC, ROOT, a, PORT, TREE_FILE)
+    after = tree.read_text(encoding="utf-8")
+    assert "keep" in after and after == first
 
 
-def test_chinese_names_path_safe(tmp_path):
+def test_chinese_topic_path_safe(tmp_path):
     doc = {
         "generated_at": "2026-08-01T00:00:00Z",
         "paper_list": [NERF],
+        "topic": "三维重建",
         "tree": {
             "name": "三维重建", "kind": "topic",
             "children": [{
@@ -114,10 +137,12 @@ def test_chinese_names_path_safe(tmp_path):
             }],
         },
     }
-    stats = project_novelty_tree(doc, "35-literature-tree", _adapter(tmp_path), PORT)
-    assert stats["files"] == 3
-    assert (tmp_path / "35-literature-tree/三维重建/神经辐射场/隐式表示.md").exists()
+    stats = project_novelty_tree(doc, "三维重建", _adapter(tmp_path), PORT, "02-三维重建文献树.md")
+    assert stats["files"] == 1
+    assert (tmp_path / "三维重建/02-三维重建文献树.md").exists()
 
+
+# --- mermaid (unchanged renderer) ---
 
 def test_render_mermaid_structure_and_determinism():
     m = render_mermaid(DOC)
@@ -126,10 +151,8 @@ def test_render_mermaid_structure_and_determinism():
     assert "classDef anchor" in m
     assert ":::task" in m and ":::pipeline" in m and ":::paper" in m
     assert "⭐ NeRF" in m  # anchor paper marked
-    # membership edges only
-    assert "-->" in m
-    # deterministic
-    assert render_mermaid(DOC) == m
+    assert "-->" in m  # membership edges only
+    assert render_mermaid(DOC) == m  # deterministic
 
 
 def test_render_mermaid_escapes_labels():
@@ -142,5 +165,4 @@ def test_render_mermaid_escapes_labels():
     }
     m = render_mermaid(doc)
     assert 'quoted' in m
-    # the closing-quote hazard is neutralized (no raw " inside the label)
     assert '"⭐ Weird \'quoted\' [bracket] title"' in m

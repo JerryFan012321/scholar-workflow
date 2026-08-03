@@ -35,5 +35,8 @@ class ObsidianAdapter:
         if full_path.exists():
             return
         full_path.parent.mkdir(parents=True, exist_ok=True)
-        content = f"# {heading}\n\n{self._start}\n{self._end}\n"
+        # An empty heading means "no H1" — the filename is the title (avoids a body
+        # heading that just repeats the note name). Existing callers pass real headings.
+        head = f"# {heading}\n\n" if heading else ""
+        content = f"{head}{self._start}\n{self._end}\n"
         full_path.write_text(content, encoding="utf-8")

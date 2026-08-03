@@ -64,6 +64,16 @@ def test_minimal_doc_paperlist_only_empty_topic_tree():
     jsonschema.validate(doc, SCHEMA)
 
 
+def test_summary_and_asset_note_optional_fields():
+    """Concept-level summary (内容简介) and paper-level asset_note are optional additions."""
+    doc = json.loads(json.dumps(FULL))
+    doc["tree"]["children"][0]["summary"] = "This task frames scene reconstruction as a continuous field."
+    doc["tree"]["children"][0]["children"][0]["summary"] = "Implicit MLP-based radiance fields."
+    doc["paper_list"][0]["asset_note"] = "paper_assets/2020-Mildenhall-NeRF.md"
+    doc["paper_list"][0]["doi"] = "10.1145/xyz"
+    jsonschema.validate(doc, SCHEMA)
+
+
 def test_challenge_insight_seam_is_open():
     doc = dict(FULL, challenge_insight_tree={"challenges": ["aliasing"], "insights": ["mip"]})
     jsonschema.validate(doc, SCHEMA)

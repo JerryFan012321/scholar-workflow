@@ -7,9 +7,9 @@ from scholar_workflow.workflows.projection import format_row, project_obsidian
 START, END = "<!-- s -->", "<!-- e -->"
 ENTRY = {
     "title": "Text2CAD", "authors": ["A. One", "B. Two"], "year": 2024,
-    "venue": "NeurIPS", "importance": "★★★", "zotero_key": "8USWVHLD",
+    "venue": "NeurIPS", "importance": "milestone", "zotero_key": "8USWVHLD",
     "attachment_key": "S6LZUS6S", "arxiv": "2409.17106", "doi": "10.1/x",
-    "synced": "2026-07-26",
+    "synced": "2026-07-26", "asset_note": "paper_assets/2024-One-Text2CAD.md",
 }
 
 
@@ -19,11 +19,26 @@ def _adapter(tmp_path):
 
 def test_format_row_links_and_columns():
     row = format_row(ENTRY, port=23128)
-    assert row.count("|") == 11  # 10 cells -> 11 pipes
+    assert row.count("|") == 10  # 9 cells (DOI dropped) -> 10 pipes
     assert "http://127.0.0.1:23128/open/paper/S6LZUS6S" in row
     assert "zotero://select/items/@8USWVHLD" in row
     assert "A. One; B. Two" in row
-    assert "★★★" in row  # importance column
+    assert "milestone ★★" in row  # importance text + star badge
+    assert "10.1/x" not in row  # DOI is no longer a column
+
+
+def test_format_row_assets_column():
+    plain = format_row(ENTRY, port=1)
+    withassets = format_row(ENTRY, port=1, assets=True)
+    assert withassets.count("|") == plain.count("|") + 1  # one extra column
+    assert "[[paper_assets/2024-One-Text2CAD.md]]" in withassets
+    assert "[[paper_assets" not in plain  # not present without the flag
+
+
+def test_importance_badge_idempotent_and_passthrough():
+    # already-starred or unknown values pass through unchanged (no double badge)
+    assert "★★ ★★" not in format_row({**ENTRY, "importance": "milestone ★★"}, port=1)
+    assert format_row({"title": "x", "importance": "misc"}, port=1).count("misc") == 1
 
 
 def test_format_row_escapes_pipe():
