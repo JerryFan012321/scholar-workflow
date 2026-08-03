@@ -3,6 +3,20 @@
 How to write a new skill in this repo. This is a **development-time** doc — it is
 never loaded at skill runtime. Read it when creating or reviewing a skill.
 
+## Principles — single source of truth
+
+General skill-writing craft lives in **`writing-great-skills/`** (vendored verbatim
+from Matt Pocock, MIT — see its `SOURCE.md`). It is the canonical vocabulary and the
+one place those principles are defined: **predictability** (same process every run),
+**leading word**, **completion criterion**, **progressive disclosure**, and the failure
+modes — **no-op**, **negation**, **duplication**, **sediment**, **sprawl**. Read it
+before authoring; this doc does not restate it.
+
+This doc covers only what is **specific to this repo**: the directory layout, the
+bilingual trigger convention, the two-tier reference system, and the eval loop. When a
+craft question arises (how long a description should be, when to split a skill, whether
+a line is a no-op), consult `writing-great-skills/` — not a second copy here.
+
 ## Directory layout
 
 ```
@@ -21,8 +35,11 @@ only when it is specific to that one skill. (See AGENT.md 插件结构 / Skill A
 ## SKILL.md structure
 
 1. **Frontmatter** — `name` and `description`. The `description` is the routing
-   mechanism: pack it with concrete English + Chinese trigger phrases a user would
-   actually type. Vague descriptions cause mis-routing.
+   mechanism. Write it per `writing-great-skills/` (front-load the leading word, one
+   trigger per branch, cut identity the body already states). Repo-specific rule: give
+   triggers in **both English and Chinese** — the phrases a user would actually type —
+   since users work bilingually. Every word is permanent context load, so carry triggers
+   and disambiguation ("Not X"), not a restatement of the steps.
 2. **Triggers** — bullet list of when this skill fires.
 3. **Steps** — the procedure, numbered. Additive writes (download / create / import /
    metadata / add-to-collection) run directly once the user has given the ingest

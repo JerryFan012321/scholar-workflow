@@ -4,7 +4,7 @@
 
 ```
 5 Agents: intake / library / knowledge / lineage / audit
-9 Skills: find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / analyze-paper / env-setup（无 agent，用户直呼）
+10 Skills: survey-topic / find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / analyze-paper / env-setup（无 agent，用户直呼）
 确定性 CLI: src/scholar_workflow/ + bin/(scholar-workflow, zotero-annotations.py, recommend-papers.py)
 Zotero 经 zotero-mcp: 元数据/存在性/语义检索权威来源；读与写(create/import/元数据)均经 zotero-mcp 受控工具
 论文下载: CLI 落入 paper_inbox 收件箱，再经 zotero-mcp 入库
@@ -148,7 +148,7 @@ methodology (stable); `planning/` is the per-phase **"what to build / goals / ha
 
 | Agent | 可用 Skills |
 |---|---|
-| intake | find-resource, recommend-papers |
+| intake | survey-topic, find-resource, recommend-papers |
 | library | ingest-resource |
 | knowledge | sync-projections, export-annotations, analyze-paper |
 | lineage | build-literature-tree, find-resource（只读） |

@@ -33,6 +33,19 @@
       "expected_skill": "build-literature-tree"
     },
     {
+      "id": "survey-open-topic",
+      "input": "帮我调研一下世界模型",
+      "expected_skill": "survey-topic",
+      "must_not_write": true,
+      "comment": "宽泛开放式调研开口 → survey-topic 先界定范围再路由;不直接产出内容"
+    },
+    {
+      "id": "survey-not-for-tree-verb",
+      "input": "给我画一棵 3D 重建的文献树",
+      "expected_skill": "build-literature-tree",
+      "comment": "已点明要树 → 直达 build-literature-tree,不经 survey-topic 编排入口"
+    },
+    {
       "id": "check-consistency",
       "input": "检查一下我的库是否有漂移",
       "expected_skill": "check-consistency",

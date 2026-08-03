@@ -3,6 +3,61 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.14.0] — 2026-08-03
+
+### Added
+- **New skill `survey-topic`** (skill count 9 → 10) — the orchestration entry for an
+  open-ended "research X" request. A broad ask ("调研世界模型") previously triggered no
+  skill; all nine existing skills match specific mechanical verbs. `survey-topic` fills
+  that gap: it **grills** the request — converging on scope *with the user* (propose,
+  correct, confirm) across depth / breadth / time window — then proposes an ordered plan
+  and **routes** each step to the skill that owns it (recommend-papers /
+  find-resource / ingest-resource / build-literature-tree / analyze-paper). It is a
+  conductor — it runs no research, writes no file, and produces no artifact of its own.
+  A depth→skill map is the one external prescription it encodes; how to research is left
+  to the model (intrinsic ability, not encoded — AGENT.md design philosophy).
+  - `build-literature-tree` stays independent: "draw a tree" routes straight there;
+    survey-topic is only one upstream caller and hands off scope, letting the tree run
+    its own gates (INV22).
+  - **Research-methodology absorption** (sjh-skills + 彭思达 GAMES003 / learning_research /
+    Notion literature-tree). The grill's depth axis is reframed around a researcher's two
+    legs of field-vision (technical-evolution → build-literature-tree; key-problem →
+    recommend-papers) plus a stance dial (hypothesis-driven close read vs. cold-start wide
+    mapping); a named seeding move is added — the **citation snowball** (mine a milestone
+    paper's introduction + related-work for same-direction references, feed find-resource).
+    All four are external prescriptions only; the intrinsic research abilities they came
+    packaged with (causal-chain analysis, three-level paper reading, taxonomy tagging,
+    NotebookLM orchestration) were deliberately *not* copied in — they already live in
+    analyze-paper / build-literature-tree. No new INV (optimization scaffolding, guarded by
+    routing evals); description unchanged (avoids duplication + the Ask-First trigger gate).
+  - Wiring: `skills/survey-topic/{SKILL.md,README.md,README.zh-CN.md}`; added to
+    intake-agent skills + AGENT.md plugin structure / Agent→Skill map; both root READMEs
+    (skill table + usage example); two `evals/routing.json` cases (one positive open-ended
+    survey, one negative proving an explicit "tree" verb bypasses it).
+
+## [0.13.1] — 2026-08-03
+
+### Added
+- **`dev-guide/writing-great-skills/`** — vendored verbatim (byte-for-byte, SHA-256
+  verified) from Matt Pocock's `mattpocock/skills` (MIT): `SKILL.md`, `GLOSSARY.md`,
+  `agents/openai.yaml`, plus a `SOURCE.md` (provenance + no-in-place-edit policy) and
+  `THIRD_PARTY_LICENSES` (full MIT text). It is a development-time authoring reference —
+  `disable-model-invocation: true`, never shipped to `release`, never loaded at runtime.
+  Now the single source of truth for general skill-writing craft (predictability,
+  leading word, progressive disclosure, no-op / negation / duplication / sprawl).
+
+### Changed
+- **dev-guide aligned to writing-great-skills.** `skill-authoring.md` gains a
+  "Principles — single source of truth" section pointing at the vendored reference and
+  no longer restates description craft (kept only the repo-specific bilingual-trigger +
+  two-tier-reference conventions); the "pack it" wording that contradicted the
+  context-load principle is fixed. `skill-iteration.md` gains a "Diagnosing a skill"
+  step that runs a change against the vendored failure modes.
+- **Pruned two skill descriptions** (routing unaffected — every trigger phrase kept).
+  `analyze-paper` and `recommend-papers` descriptions restated their own step
+  mechanics (duplication + context load at the most expensive location); trimmed to
+  identity + triggers + "Not X" disambiguation per the writing-great-skills rule.
+
 ## [0.13.0] — 2026-08-02
 
 ### Removed

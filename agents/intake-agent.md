@@ -15,6 +15,7 @@ passes through this agent first.
 - Risk flags and a suggested next step
 
 ## Skills
+- `survey-topic` — scope an open-ended research request, then route it through the other skills (orchestration entry; writes nothing itself)
 - `find-resource` — targeted lookup (pull)
 - `recommend-papers` — daily multi-source feed + NotebookLM skim (push); watchlist registration
 

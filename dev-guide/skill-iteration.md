@@ -29,8 +29,17 @@ runtime.
 4. Record the change in `CHANGELOG.md` and bump `plugin.json` (minor = new
    capability, patch = fix/tuning).
 
+## Diagnosing a skill
+
+Run the change against `writing-great-skills/`'s failure modes: is a new line a
+**no-op** (the model already does it)? Did an edit add **duplication** of a top-level
+policy? Is a prohibition a **negation** that should be phrased positively (keep it only
+as a hard safety guardrail)? Has the file grown into **sprawl** that a reference pointer
+would cure? Sharpen a **completion criterion** before adding steps.
+
 ## Self-iteration by Claude
 
-When Claude improves a skill, it reads this guide plus `skill-authoring.md` first,
-then follows the same before/during/after checklist. Never skip the eval review —
-a description tweak that helps one routing case often breaks another.
+When Claude improves a skill, it reads this guide plus `skill-authoring.md` and
+`writing-great-skills/` first, then follows the same before/during/after checklist.
+Never skip the eval review — a description tweak that helps one routing case often
+breaks another.
