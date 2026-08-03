@@ -1,6 +1,6 @@
 ---
 name: analyze-paper
-description: Analyze one already-ingested paper in depth and write the analysis as a companion Obsidian note. Reads the paper body via zotero-mcp get_content (never parses the PDF). Supports whole-paper or focused/partial analysis; each focused pass appends a new section to the same analysis note. The note lives outside managed blocks (human area, INV4-protected), is kept distinct from the annotations note, cross-linked via frontmatter related, and hung on the paper's related-docs hub. Triggers 'analyze this paper', 'detailed analysis', 'read through this paper', 'explain this section', 'deep dive', 'analyze the method', '详细分析', '深入分析', '通读这篇论文', '解读这篇', '分析这一节', '局部分析'. Not paper discovery (find-resource), recommendation skim (recommend-papers), or annotation export (export-annotations).
+description: Analyze one already-ingested paper in depth and write the analysis as a companion Obsidian note. Supports whole-paper or focused/partial analysis. Triggers 'analyze this paper', 'detailed analysis', 'read through this paper', 'explain this section', 'deep dive', 'analyze the method', '详细分析', '深入分析', '通读这篇论文', '解读这篇', '分析这一节', '局部分析'. Not paper discovery (find-resource), recommendation skim (recommend-papers), or annotation export (export-annotations).
 ---
 
 # analyze-paper

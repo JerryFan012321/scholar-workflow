@@ -19,6 +19,7 @@ Claude 负责理解、分类与推荐;确定性 CLI(`src/scholar_workflow/`)负�
 
 | Skill | 用途 |
 |---|---|
+| survey-topic | 界定开放式"调研 X"请求的范围,再路由到其他 skill |
 | find-resource | 搜索论文、核验身份、定位已有资源 |
 | ingest-resource | 导入论文 / 归档技术文档 |
 | sync-projections | 重建 Obsidian 索引表 + 同步 Notion 投影 |
@@ -74,6 +75,7 @@ scholar-workflow`)。你的 `config.yml` 与凭证在仓库之外,更新不受�
 
 直接用自然语言跟 Claude Code 说,每个 skill 按意图触发,例如:
 
+- *"帮我调研一下世界模型这个方向"* → survey-topic →(推荐 / 查找 / 文献树…)
 - *"找 DreamerV3 这篇论文并导入"* → find-resource → ingest-resource
 - *"推荐今天世界模型方向的论文"* → recommend-papers
 - *"分析这篇论文的方法部分"* → analyze-paper

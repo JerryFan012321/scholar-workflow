@@ -1,6 +1,6 @@
 ---
 name: recommend-papers
-description: Daily paper recommendation feed — aggregates four sources (Semantic Scholar recommendations seeded by your Zotero library, Scholar Inbox personalized digest, S2 author watchlist, HuggingFace Daily Papers), merges/dedups by arXiv id, then skims a user-picked shortlist via NotebookLM to produce a cheap Reading Report. The report is ephemeral; picked papers flow into find-resource / ingest-resource. Also registers watchlist authorIds. Triggers 'recommend papers', 'daily papers', 'what should I read', 'paper feed', 'skim recommendations', 'watchlist', '推荐论文', '今日论文', '每日论文', '有什么新论文', '略读推荐', '关注这个作者', '登记研究者'. Not full paper analysis (analyze-paper) or targeted lookup (find-resource).
+description: Daily paper recommendation feed — aggregates multiple sources, skims a user-picked shortlist to produce a cheap ephemeral Reading Report, and registers watchlist authors. Picked papers flow into find-resource / ingest-resource. Triggers 'recommend papers', 'daily papers', 'what should I read', 'paper feed', 'skim recommendations', 'watchlist', '推荐论文', '今日论文', '每日论文', '有什么新论文', '略读推荐', '关注这个作者', '登记研究者'. Not full paper analysis (analyze-paper) or targeted lookup (find-resource).
 ---
 
 # recommend-papers

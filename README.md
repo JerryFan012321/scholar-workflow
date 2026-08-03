@@ -23,6 +23,7 @@ knowledge notes and derived indexes; **Notion** holds an optional cross-device p
 
 | Skill | Purpose |
 |---|---|
+| survey-topic | Scope an open-ended "research X" request, then route it through the other skills |
 | find-resource | Search for papers, verify identity, locate existing resources |
 | ingest-resource | Import papers / archive technical documents |
 | sync-projections | Rebuild Obsidian index tables + sync the Notion projection |
@@ -81,6 +82,7 @@ credentials live outside the repo and are unaffected by updates.
 
 Just talk to Claude Code in natural language — each skill triggers on intent, e.g.:
 
+- *"survey the field of world models"* → survey-topic → (recommend / find / tree …)
 - *"find the DreamerV3 paper and import it"* → find-resource → ingest-resource
 - *"recommend today's papers on world models"* → recommend-papers
 - *"analyze the method section of this paper"* → analyze-paper
