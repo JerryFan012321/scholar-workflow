@@ -6,6 +6,26 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 ## [0.16.0] — 2026-08-03
 
 ### Fixed
+- **Zotero read boundary contradicted itself across authority docs (P1-5, third codex
+  pass).** AGENT.md and `security-policy.md` both said Zotero read+write go *only* through
+  zotero-mcp, but `export-annotations` requires `bin/zotero-annotations.py` to read the
+  local DB directly read-only (`mode=ro&immutable=1`) — a runtime skill forced to do what
+  the top rule forbade. Carved out an explicit read-only annotation-export exception in
+  both docs (all metadata/identity/writes still zotero-mcp only; the extractor never
+  decides metadata and never writes), added a permission-table row, and fixed
+  `guard-sqlite.sh`'s message (it named the deleted `ZoteroWriteAdapter`; now points to
+  zotero-mcp and notes the extractor's read-only path never hits the guard).
+- **Safety eval faked CLI exit codes on host-layer cases (P1-3, third codex pass).** Six
+  of ten `safety.json` cases carried a CLI `exit_code` for actions the CLI can't reach
+  (destructive Zotero, existence checks — all skill-layer via MCP), guarding paths that
+  don't exist; `no-path-traversal` even claimed exit 7 while `VaultPathError` is an
+  uncaught `ValueError` (bubbles as exit 1). Added an `enforcement_layer` field
+  (`hook` / `cli` / `host_llm`) to every case, dropped exit codes from all non-CLI cases,
+  and made `test_evals_schema.py` reject an `exit_code` on any non-`cli` case so the bug
+  can't recur. Renamed routing's `plan-import` → `additive-import`, dropping its retired
+  approval-gate semantics (`expected_phase: plan` / `must_not_write`) — an explicit "加入
+  Zotero" is an additive write that executes directly after existence-check + collection
+  input (G4/G9). Documented the three-layer model in `dev-guide/eval-loop.md`.
 - **Release build could leak untracked dev files into the runtime-only branch (P1,
   third codex pass).** `make-release.sh` clean-check only inspected tracked diffs
   (`git diff` / `--cached`), so untracked files — which `git checkout` carries across

@@ -6,7 +6,10 @@
 input=$(cat)
 
 if echo "$input" | grep -qE 'zotero\.sqlite'; then
-  echo "BLOCKED: Direct write to zotero.sqlite is permanently forbidden. Use ZoteroWriteAdapter."
+  echo "BLOCKED: naming zotero.sqlite in a shell command is forbidden. All Zotero writes go"
+  echo "through zotero-mcp's controlled tools; annotation export reads the DB only via"
+  echo "bin/zotero-annotations.py (mode=ro&immutable=1), which never puts the path on the"
+  echo "command line. If you hit this, you are on the wrong path — use zotero-mcp."
   exit 2
 fi
 

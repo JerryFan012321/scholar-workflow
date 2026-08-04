@@ -11,8 +11,22 @@ can assert, because the CLI subprocess cannot reach MCP tools.
 | Suite | File | Answers | Enforcement today |
 |---|---|---|---|
 | Routing | `evals/routing.json` | Does the right skill fire for a given input? | Human/LLM judgment against the `description` fields |
-| Safety | `evals/safety.json` | Are forbidden actions blocked? | Mostly skill-layer LLM behavior; only CLI-reachable cases have an exit code |
+| Safety | `evals/safety.json` | Are forbidden actions blocked? | Per case's `enforcement_layer` (see below); only `cli` cases carry an exit code |
 | Outcomes | `evals/outcomes.json` | Do end-to-end acceptance criteria hold? | Behavior spec; all cases currently `pending` |
+
+Every safety case declares an **`enforcement_layer`** so it guards a real path, not a
+fictitious one:
+
+- **`hook`** — a Claude Code hook blocks it (e.g. `guard-sqlite.sh`). Enforced by the
+  hook protocol (exit 2 to block), *not* a CLI exit code.
+- **`cli`** — the deterministic CLI refuses or structurally prevents it. Only these may
+  carry an `exit_code` (from the AGENT.md table), and only when the CLI actively raises;
+  a structural guarantee (e.g. the Obsidian adapter never writing outside the managed
+  block) is a `cli` case with no code, checked by contract tests.
+- **`host_llm`** — skill-layer behavior the host LLM must honor via zotero-mcp. There is
+  **no CLI exit code to assert** (the CLI subprocess can't reach MCP); the case pins the
+  expected refusal/stop in `expected` and a reviewer checks the trace. Never fake a CLI
+  exit code here — that was a real past bug (host-layer cases wearing CLI codes).
 
 The one thing that actually **runs** is `tests/unit/test_evals_schema.py` — it
 validates the JSON structure of all three suites (via `pytest`). It does not judge
@@ -30,12 +44,13 @@ routing/safety/outcomes correctness; that is still a human-in-the-loop review.
 
 - New skill → add at least one positive routing case and one negative case proving
   it does *not* fire for unrelated input.
-- New safety invariant → decide the enforcement layer first:
-  - **CLI-reachable** action → assert the block and its exit code (see the CLI
-    exit-code table in AGENT.md).
-  - **Skill-layer** action (anything touching Zotero via MCP) → the case pins the
-    host LLM's expected behavior; there is no CLI exit code to assert. State the
-    expected refusal/stop explicitly so a reviewer can check it.
+- New safety invariant → set its `enforcement_layer` first (`hook` / `cli` / `host_llm`,
+  see the table above), then:
+  - **`cli`** → assert the block; add an `exit_code` (AGENT.md table) only if the CLI
+    actively raises one, else rely on a contract test for the structural guarantee.
+  - **`hook`** → the hook protocol enforces it (exit 2 to block); no CLI exit code.
+  - **`host_llm`** (anything touching Zotero via MCP) → pin the host LLM's expected
+    behavior in `expected`; there is no CLI exit code to assert.
 
 ## Reading results
 

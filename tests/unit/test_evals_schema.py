@@ -17,6 +17,10 @@ _EVALS = Path(__file__).resolve().parents[2] / "evals"
 # 4 is retired (approval gate removed; no CLI trigger path) and must not be reused.
 _EXIT_CODES = {0, 2, 3, 5, 6, 7, 8}
 _OUTCOME_STATUS = {"pending", "pass", "fail"}
+# Where a safety invariant is enforced. Only a 'cli' case can carry a CLI exit_code;
+# 'hook' uses the hook protocol and 'host_llm' is skill-layer behavior with no CLI code
+# to assert (guarding against the old bug of faking CLI exit codes on host-layer cases).
+_ENFORCEMENT_LAYERS = {"hook", "cli", "host_llm"}
 
 
 def _load(name):
@@ -87,4 +91,11 @@ def test_safety_required_fields(safety):
     for c in safety["cases"]:
         assert isinstance(c.get("action"), str) and c["action"]
         assert isinstance(c.get("expected"), str) and c["expected"]
-        assert c.get("exit_code") in _EXIT_CODES, f"bad exit_code in {c['id']}"
+        assert c.get("enforcement_layer") in _ENFORCEMENT_LAYERS, \
+            f"bad/missing enforcement_layer in {c['id']}"
+        # exit_code is optional and only meaningful for CLI-reachable cases; hook and
+        # host_llm cases must not carry one (that was the old false-CLI-code bug).
+        if "exit_code" in c:
+            assert c["enforcement_layer"] == "cli", \
+                f"exit_code on non-cli case {c['id']}"
+            assert c["exit_code"] in _EXIT_CODES, f"bad exit_code in {c['id']}"

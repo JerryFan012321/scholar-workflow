@@ -6,7 +6,7 @@
 5 Agents: intake / lineage / knowledge / feed / audit（任务级自足单元，skill 可跨 agent 复用；不互相 handoff，跨 agent 串联由宿主 LLM 或 survey-topic 编排）
 10 Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / analyze-paper / env-setup（无 agent，用户直呼）
 确定性 CLI: src/scholar_workflow/ + bin/(scholar-workflow, zotero-annotations.py, recommend-papers.py)
-Zotero 经 zotero-mcp: 元数据/存在性/语义检索权威来源；读与写(create/import/元数据)均经 zotero-mcp 受控工具
+Zotero 经 zotero-mcp: 元数据/存在性/语义检索/写入(create/import/元数据)均经 zotero-mcp 受控工具;唯一例外——批注导出允许 bin/zotero-annotations.py 以只读(mode=ro&immutable=1)直读本地 DB,绝不用于元数据判定或任何写入
 论文下载: CLI 落入 paper_inbox 收件箱，再经 zotero-mcp 入库
 ```
 

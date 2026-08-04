@@ -8,11 +8,10 @@
       "must_not_write": true
     },
     {
-      "id": "plan-import",
+      "id": "additive-import",
       "input": "把这些论文加入 Zotero：2401.01234, 2312.56789",
       "expected_skill": "ingest-resource",
-      "expected_phase": "plan",
-      "must_not_write": true
+      "comment": "明确的新增性入库请求 → ingest-resource 直接执行:先经 zotero-mcp 存在性核验、确认目标 collection,随后新增性写入直接继续,无审批门(G4/G9)"
     },
     {
       "id": "file-technical-doc",
