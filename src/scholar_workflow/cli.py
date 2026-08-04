@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import click
 
+from scholar_workflow import __version__
 from scholar_workflow.config import DEFAULT_HOME
 
 
@@ -20,7 +21,7 @@ def _state_db_path() -> Path:
 
 
 @click.group()
-@click.version_option()
+@click.version_option(version=__version__)
 def main() -> None:
     """Scholar Workflow — scholarly resource management CLI."""
 

@@ -6,6 +6,56 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 ## [0.16.0] — 2026-08-03
 
 ### Fixed
+- **Zotero read boundary contradicted itself across authority docs (P1-5, third codex
+  pass).** AGENT.md and `security-policy.md` both said Zotero read+write go *only* through
+  zotero-mcp, but `export-annotations` requires `bin/zotero-annotations.py` to read the
+  local DB directly read-only (`mode=ro&immutable=1`) — a runtime skill forced to do what
+  the top rule forbade. Carved out an explicit read-only annotation-export exception in
+  both docs (all metadata/identity/writes still zotero-mcp only; the extractor never
+  decides metadata and never writes), added a permission-table row, and fixed
+  `guard-sqlite.sh`'s message (it named the deleted `ZoteroWriteAdapter`; now points to
+  zotero-mcp and notes the extractor's read-only path never hits the guard).
+- **Safety eval faked CLI exit codes on host-layer cases (P1-3, third codex pass).** Six
+  of ten `safety.json` cases carried a CLI `exit_code` for actions the CLI can't reach
+  (destructive Zotero, existence checks — all skill-layer via MCP), guarding paths that
+  don't exist; `no-path-traversal` even claimed exit 7 while `VaultPathError` is an
+  uncaught `ValueError` (bubbles as exit 1). Added an `enforcement_layer` field
+  (`hook` / `cli` / `host_llm`) to every case, dropped exit codes from all non-CLI cases,
+  and made `test_evals_schema.py` reject an `exit_code` on any non-`cli` case so the bug
+  can't recur. Renamed routing's `plan-import` → `additive-import`, dropping its retired
+  approval-gate semantics (`expected_phase: plan` / `must_not_write`) — an explicit "加入
+  Zotero" is an additive write that executes directly after existence-check + collection
+  input (G4/G9). Documented the three-layer model in `dev-guide/eval-loop.md`.
+- **Release build could leak untracked dev files into the runtime-only branch (P1,
+  third codex pass).** `make-release.sh` clean-check only inspected tracked diffs
+  (`git diff` / `--cached`), so untracked files — which `git checkout` carries across
+  branches — slipped through, and the unbounded `git add -A` then swept them into the
+  release commit (any stray review note or scratch file would ship). Now the guard uses
+  `git status --porcelain --untracked-files=all` to reject *any* non-ignored dirt before
+  building, and staging is scoped to `git add -A -- "${RUNTIME_PATHS[@]}"` so only the
+  runtime manifest can ever be committed.
+- **Two comment drifts introduced by the earlier hygiene sweep (third codex pass).**
+  (1) `adapters/__init__.py` had been rewritten to call the adapters "network-free /
+  filesystem work" — false, since arXiv PDF fetch and Notion projections both reach the
+  network; corrected to state the actual split (arXiv fetch + Notion are network; Obsidian
+  blocks + local link service are filesystem-only; Zotero is never touched here).
+  (2) The sweep missed retired "manual import" language in `workflows/paper.py` (module
+  docstring + the no-PDF `reason` string) and `models.py` (`DOWNLOADED` comment); all now
+  describe the current model (CLI downloads to inbox; host LLM imports via zotero-mcp).
+- **Hygiene sweep from the self-review (`claude-review.md`).** Three low-risk drifts the
+  second codex pass missed or under-specified: (1) **version was three-tracked** —
+  `plugin.json` at `0.16.0` but `pyproject.toml` / `__init__.py` still `0.1.0`, and
+  `click.version_option()` (no arg) read the stale installed dist metadata, so
+  `--version` reported `0.1.0`. Synced both Python versions to `0.16.0` and bound
+  `version_option(version=__version__)` so the CLI reports the source constant, not
+  install-time metadata. (2) **`exit_code: 4` lingered in `evals/safety.json`** for
+  `no-unapproved-destructive-zotero`, but AGENT.md retired code 4 ("保留不复用"); changed
+  it to `7` (safety-refusal, matching sibling host-layer cases) and dropped `4` from the
+  `_EXIT_CODES` enum in `test_evals_schema.py` so the retirement is now test-guarded.
+  (3) **Stale retired-architecture comments** in `adapters/__init__.py`, `adapters/arxiv.py`,
+  and `resolver.py` still cited a nonexistent `adapters/zotero_local.py` "Zotero Local API"
+  and "manual import"; rewritten to the current zotero-mcp model (metadata/existence via
+  zotero-mcp at the skill layer; CLI downloads to inbox, host LLM imports).
 - **7 skill frontmatters failed YAML parse (P0 release blocker).** `find-resource`,
   `ingest-resource`, `sync-projections`, `build-literature-tree`, `check-consistency`,
   `export-annotations`, and `env-setup` wrote `Triggers: '…'` in the `description` — the

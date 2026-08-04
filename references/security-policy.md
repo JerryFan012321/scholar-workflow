@@ -13,6 +13,7 @@ item, merge identities. Overwriting human-authored content is never done.
 | Action | Rule |
 |---|---|
 | Read via zotero-mcp (search / metadata / semantic / content) | Allowed |
+| Read annotations via `zotero-annotations.py` (`mode=ro&immutable=1`) | Allowed — read-only, export only |
 | Read local index / state / files | Allowed |
 | Web fetch for metadata/identity (search, defuddle, MCP) | Allowed — read-only |
 | Download PDF from arXiv to `paper_inbox` | Allowed — additive |
@@ -40,9 +41,13 @@ item, merge identities. Overwriting human-authored content is never done.
 
 ## zotero-mcp boundary
 
-- zotero-mcp is the only channel for Zotero read, write, and semantic search. The
-  deterministic CLI is a separate subprocess and cannot reach it — Zotero logic lives
-  in the host LLM at the skill layer.
+- zotero-mcp is the only channel for Zotero **metadata, existence, semantic search, and
+  all writes**. The deterministic CLI is a separate subprocess and cannot reach it —
+  Zotero logic lives in the host LLM at the skill layer. The one exception is **annotation
+  export**: `bin/zotero-annotations.py` may read the local DB directly in read-only mode
+  (`mode=ro&immutable=1`) to pull highlights/comments. This read-only extractor is never
+  used for metadata/identity decisions and never writes — all writes still go through
+  zotero-mcp's controlled tools.
 - `write_item` is pure create (no dedup); run an existence check via zotero-mcp before
   any create to avoid duplicates (see `identity-policy.md`).
 - `itemType` reads back empty through zotero-mcp for every item and cannot be set via
