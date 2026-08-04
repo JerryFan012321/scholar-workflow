@@ -1,9 +1,10 @@
 """Contract: literature-tree.schema.json pins the novelty-tree structure.
 
-The tree is a 3-level classification (topic → task → pipeline) whose leaves are
-paper resource_id refs; a flat paper_list is the single metadata ledger. This test
-locks the topology, the paper-list-alongside requirement, the classified flag, and
-the deferred challenge_insight_tree seam.
+The tree is a variable-depth concept classification whose leaves are paper resource_id
+refs; a flat paper_list is the single metadata ledger. Two isomorphic tree types share
+one structure, keyed off node kind: a technical tree (topic → task → pipeline → module)
+and a challenge tree (topic → challenge → insight). This test locks the topology, the
+kind enum, the paper-list-alongside requirement, and the classified flag.
 """
 from __future__ import annotations
 import json
@@ -74,9 +75,42 @@ def test_summary_and_asset_note_optional_fields():
     jsonschema.validate(doc, SCHEMA)
 
 
-def test_challenge_insight_seam_is_open():
-    doc = dict(FULL, challenge_insight_tree={"challenges": ["aliasing"], "insights": ["mip"]})
+def test_module_level_validates():
+    """A technical tree may descend a 4th level: pipeline → module (类3/类4)."""
+    doc = json.loads(json.dumps(FULL))
+    doc["tree"]["children"][0]["children"][0]["children"] = [
+        {"name": "anti-aliasing", "kind": "module",
+         "novelty_anchor": "arxiv:2003.08934",
+         "papers": ["arxiv:2003.08934"]},
+    ]
     jsonschema.validate(doc, SCHEMA)
+
+
+def test_challenge_tree_reuses_concept_structure():
+    """The challenge tree is not a separate seam — it reuses tree+concept, keyed off the
+    challenge/insight kinds (topic → challenge → insight → paper)."""
+    doc = {
+        "generated_at": "2026-08-01T00:00:00Z",
+        "paper_list": [_paper("arxiv:2003.08934", "NeRF", True)],
+        "tree": {
+            "name": "world models", "kind": "topic",
+            "children": [{
+                "name": "long-horizon 3D consistency", "kind": "challenge",
+                "children": [{
+                    "name": "persistent scene memory", "kind": "insight",
+                    "novelty_anchor": "arxiv:2003.08934",
+                    "papers": ["arxiv:2003.08934"]},
+                ]},
+            ],
+        },
+    }
+    jsonschema.validate(doc, SCHEMA)
+
+
+def test_retired_seam_key_now_rejected():
+    """The old challenge_insight_tree seam is gone; it's now just an unknown top-level key."""
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(dict(FULL, challenge_insight_tree={"x": 1}), SCHEMA)
 
 
 @pytest.mark.parametrize("missing", ["paper_list", "tree", "generated_at"])

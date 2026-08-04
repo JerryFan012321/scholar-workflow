@@ -1,10 +1,12 @@
 """Novelty-tree projection: a literature tree grouped by novelty.
 
-Renders a 3-level classification tree — 里程碑任务(task) → pipeline/representation
-→ 论文(leaf) — as ONE self-contained Obsidian note per tree: an inline Mermaid overview
-followed by nested task(##)/pipeline(###) sections, each carrying its novelty anchor, an
-optional 内容简介 (summary), and a 论文列表 subpaperlist. No H1 — the note filename is the
-title. The flat 全集 paper list lives in a separate 01-Paperlist.md ledger.
+Renders a variable-depth concept tree as ONE self-contained Obsidian note per tree: an
+inline Mermaid overview followed by nested concept sections, each carrying its novelty
+anchor, an optional 内容简介 (summary), and a 论文列表 subpaperlist. No H1 — the note
+filename is the title. Two isomorphic tree types share this renderer, keyed off node kind:
+a technical tree is 里程碑任务(task, ##) → pipeline(###) → module(####, optional) → 论文;
+a challenge tree is challenge(##) → insight(###) → 论文. The flat 全集 paper list lives in
+a separate 01-Paperlist.md ledger.
 
 Internal nodes are abstract concepts; papers are leaves referenced by resource_id and
 resolved against `paper_list` (the single metadata ledger). Each concept records its
@@ -21,7 +23,11 @@ from pathlib import PurePosixPath
 from scholar_workflow.workflows.projection import render_table
 
 
-_ANCHOR_LABEL = {"topic": "novelty", "task": "task novelty", "pipeline": "pipeline novelty"}
+_ANCHOR_LABEL = {
+    "topic": "novelty",
+    "task": "task novelty", "pipeline": "pipeline novelty", "module": "module novelty",
+    "challenge": "challenge", "insight": "insight novelty",
+}
 
 
 def _by_id(doc: dict) -> dict:
@@ -39,19 +45,36 @@ def _mermaid_label(text: str) -> str:
     return text.replace("\n", " ").replace('"', "'").strip()
 
 
+_MERMAID_CLASSDEFS = (
+    "  classDef task fill:#e8eaf6,stroke:#3949ab,stroke-width:2px;",
+    "  classDef pipeline fill:#e0f2f1,stroke:#00897b;",
+    "  classDef module fill:#f3e5f5,stroke:#8e24aa;",
+    "  classDef challenge fill:#fce4ec,stroke:#c2185b,stroke-width:2px;",
+    "  classDef insight fill:#e8f5e9,stroke:#43a047;",
+    "  classDef paper fill:#ffffff,stroke:#bbbbbb;",
+    "  classDef anchor fill:#fff3e0,stroke:#e65100,stroke-width:3px;",
+)
+
+# Node shape per kind. Top-level branches (task / challenge) are stadiums `([...])`;
+# methods and ideas (pipeline / module / insight) are rectangles `[...]`. Papers are
+# always rectangles, styled by the paper / anchor class instead.
+_KIND_SHAPE = {
+    "task": ('(["', '"])'),
+    "challenge": ('(["', '"])'),
+    "pipeline": ('["', '"]'),
+    "module": ('["', '"]'),
+    "insight": ('["', '"]'),
+}
+
+
 def render_mermaid(doc: dict) -> str:
-    """A fenced ```mermaid flowchart of task → pipeline → paper. Membership edges only
-    (not technical relations). The novelty-anchor paper of each concept is marked with a
-    ⭐ prefix and the `anchor` class. Deterministic in tree order — re-runs are identical."""
+    """A fenced ```mermaid flowchart of the concept tree (topic → … → paper). Membership
+    edges only (not technical relations). Recurses to arbitrary concept depth, so a module
+    under a pipeline — or an insight under a challenge — is drawn, not dropped. The
+    novelty-anchor paper of each concept is marked with a ⭐ prefix and the `anchor` class.
+    Deterministic in tree order — re-runs are identical."""
     by_id = _by_id(doc)
-    lines = [
-        "```mermaid",
-        "flowchart TD",
-        "  classDef task fill:#e8eaf6,stroke:#3949ab,stroke-width:2px;",
-        "  classDef pipeline fill:#e0f2f1,stroke:#00897b;",
-        "  classDef paper fill:#ffffff,stroke:#bbbbbb;",
-        "  classDef anchor fill:#fff3e0,stroke:#e65100,stroke-width:3px;",
-    ]
+    lines = ["```mermaid", "flowchart TD", *_MERMAID_CLASSDEFS]
     counter = [0]
 
     def _node_id() -> str:
@@ -70,25 +93,26 @@ def render_mermaid(doc: dict) -> str:
             lines.append(f'  {pid}["{label}"]:::{"anchor" if is_anchor else "paper"}')
             lines.append(f"  {parent_id} --> {pid}")
 
-    def _emit_pipeline(node: dict, task_id: str) -> None:
+    def _emit_concept(node: dict, parent_id: str | None) -> None:
+        kind = node.get("kind", "")
+        open_, close_ = _KIND_SHAPE.get(kind, ('["', '"]'))
         nid = _node_id()
-        lines.append(f'  {nid}["{_mermaid_label(node["name"])}"]:::pipeline')
-        lines.append(f"  {task_id} --> {nid}")
-        _paper_nodes(node, nid)
-
-    def _emit_task(node: dict) -> None:
-        nid = _node_id()
-        lines.append(f'  {nid}(["{_mermaid_label(node["name"])}"]):::task')
+        lines.append(f'  {nid}{open_}{_mermaid_label(node["name"])}{close_}:::{kind or "pipeline"}')
+        if parent_id is not None:
+            lines.append(f"  {parent_id} --> {nid}")
         for child in node.get("children") or []:
-            _emit_pipeline(child, nid)
+            _emit_concept(child, nid)
         _paper_nodes(node, nid)
 
     tree = doc.get("tree") or {}
-    if tree.get("kind") == "task":
-        _emit_task(tree)
-    else:  # topic root → descend into its task children
+    # The topic root is not drawn (the note filename is the title); its branch children
+    # are edge-less roots. A doc whose root is already a branch (a bare task/challenge) is
+    # emitted directly as the root.
+    if tree.get("kind") == "topic":
         for child in tree.get("children") or []:
-            _emit_task(child)
+            _emit_concept(child, None)
+    else:
+        _emit_concept(tree, None)
     lines.append("```")
     return "\n".join(lines)
 
@@ -108,9 +132,11 @@ def _anchor_line(node: dict, by_id: dict) -> str:
 
 
 # Concept kind -> markdown heading depth inside the single tree note. The topic root
-# emits no heading (the filename is the title); tasks are ##, pipelines are ###, and a
-# pipeline's inner sections (内容简介 / 论文列表) are ####.
-_KIND_DEPTH = {"task": 2, "pipeline": 3}
+# emits no heading (the filename is the title). Both isomorphic trees share these depths:
+# task/challenge are ##, pipeline/insight are ###, module is ####; a node's inner sections
+# (内容简介 / 论文列表) sit one level deeper. Module bottoms out at #### + ##### inner,
+# one shy of markdown's h6 — so trees don't nest a module under a module.
+_KIND_DEPTH = {"task": 2, "challenge": 2, "pipeline": 3, "insight": 3, "module": 4}
 
 
 def _concept_sections(node: dict, by_id: dict, port: int, depth: int,

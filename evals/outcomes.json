@@ -68,8 +68,18 @@
     },
     {
       "id": "novelty-tree-topology-and-paperlist",
-      "description": "文献树为 novelty tree(INV22):三级拓扑 task→pipeline→论文,内部节点是概念、论文是叶,每概念记 novelty 锚点;树旁并存 flat 全集 paper list(论文可在册未分类)。渲染限 Obsidian 受管块 + 内联 Mermaid,块外内容幂等存活;由 tests/unit/test_novelty_tree.py + tests/contract/test_literature_tree_schema.py 守护",
+      "description": "文献树为 novelty tree(INV22):可变深度概念拓扑 topic→task→pipeline→module(可选)→论文,内部节点是概念、论文是叶,每概念记 novelty 锚点(task=类1/pipeline=类2/module=类3);类4=改进型论文作普通成员挂被改进节点、不入 schema。树旁并存 flat 全集 paper list(论文可在册未分类)。渲染限 Obsidian 受管块 + 内联 Mermaid,块外内容幂等存活;由 tests/unit/test_novelty_tree.py + tests/contract/test_literature_tree_schema.py 守护",
       "status": "pass"
+    },
+    {
+      "id": "module-level-and-challenge-tree",
+      "description": "module 第四层(类3/类4)在 Mermaid 与文本分节都渲染不被丢弃(#### + ##### 内节);挑战洞见树(challenge→insight→论文)与技术树同构、走同一渲染器(challenge=##、insight=###),一个 doc 一棵树、各自编号自含笔记。由 tests/unit/test_novelty_tree.py 的 module/challenge 用例守护",
+      "status": "pass"
+    },
+    {
+      "id": "paper-in-multiple-trees",
+      "description": "INV25 一文多树:同一 resource_id 可出现在同 topic 的技术树(02)与挑战树(03)、各自独立渲染不冲突;跨不同主题文件夹各有独立 paper_assets 附属笔记(内容随语境不同);01-Paperlist.md 按主题文件夹隔离(非全局单账本)。绝不加一个 resource_id 只归一节点/一树的唯一性检查",
+      "status": "pending"
     }
   ]
 }

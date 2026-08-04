@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "literature-tree.schema.json",
   "title": "LiteratureTree",
-  "description": "A novelty tree: a 3-level classification 里程碑任务 → pipeline/representation → 论文(叶). Internal nodes are abstract concepts; papers are leaves referenced by resource_id. A flat paper_list is the single metadata ledger — the tree references its entries by id. The challenge_insight_tree seam is reserved for a later ticket.",
+  "description": "A novelty tree: a variable-depth concept classification. Two isomorphic tree types share this one structure and renderer, distinguished by node kind: a technical tree is topic → task → pipeline → module(optional) → 论文(叶); a challenge tree is topic → challenge → insight → 论文(叶). Internal nodes are abstract concepts; papers are leaves referenced by resource_id. A flat paper_list is the single metadata ledger — the tree references its entries by id. One doc = one tree; the two tree types live in separate docs sharing the same paper_list (INV25 一文多树).",
   "type": "object",
   "required": ["paper_list", "tree", "generated_at"],
   "additionalProperties": false,
@@ -36,28 +36,24 @@
       }
     },
 
-    "tree": { "$ref": "#/$defs/concept" },
-
-    "challenge_insight_tree": {
-      "description": "Reserved seam for the companion challenge→insight tree (deferred). Shape intentionally unconstrained until that ticket lands."
-    }
+    "tree": { "$ref": "#/$defs/concept" }
   },
   "$defs": {
     "concept": {
       "type": "object",
-      "description": "An internal tree node = an abstract concept. Root is kind=topic; its children are kind=task; a task's children are kind=pipeline; a pipeline holds paper leaves in papers[].",
+      "description": "An internal tree node = an abstract concept. The root is kind=topic. A technical tree descends topic → task → pipeline → module(optional); a challenge tree descends topic → challenge → insight. Any concept may hold paper leaves in papers[]. Both tree types share this one structure.",
       "required": ["name", "kind"],
       "additionalProperties": false,
       "properties": {
         "name": { "type": "string" },
-        "kind": { "type": "string", "enum": ["topic", "task", "pipeline"] },
+        "kind": { "type": "string", "enum": ["topic", "task", "pipeline", "module", "challenge", "insight"] },
         "summary": {
           "type": ["string", "null"],
           "description": "Optional prose intro for this concept, rendered under a '内容简介' subsection. Authored by the host LLM; lives in the JSON, so re-rendering the tree is idempotent (edit here, not in the markdown)."
         },
         "novelty_anchor": {
           "type": ["string", "null"],
-          "description": "resource_id of the FIRST paper that proposed this task/pipeline (1/2/3 类 novelty anchor). A verifiable priority fact, not a value judgment."
+          "description": "resource_id of the FIRST paper that proposed this concept — the node-level novelty anchor. By node kind: task=类1, pipeline=类2, module=类3; on a challenge tree an insight node may anchor the first paper to propose that idea (a challenge node usually has none — challenges are identified, not proposed). A verifiable priority fact, not a value judgment. 类4 (papers that merely improve an existing pipeline/module with a new module) are NOT anchors and get no schema field — they are ordinary members of the papers[] of the node they refine; see the build-literature-tree SKILL."
         },
         "anchor_note": {
           "type": ["string", "null"],

@@ -1,7 +1,9 @@
-"""Unit tests for the novelty-tree projection (INV22; reuses INV4/INV18 machinery).
+"""Unit tests for the novelty-tree projection (INV22/INV25; reuses INV4/INV18 machinery).
 
-One tree = one self-contained note (Mermaid + nested ##task/###pipeline sections with
-内容简介 / 论文列表); the flat 全集 ledger is a separate 01-Paperlist.md.
+One tree = one self-contained note (Mermaid + nested concept sections with 内容简介 /
+论文列表); the flat 全集 ledger is a separate 01-Paperlist.md. A variable-depth technical
+tree (task/pipeline/module) and an isomorphic challenge tree (challenge/insight) share the
+same renderer, keyed off node kind.
 """
 from __future__ import annotations
 from scholar_workflow.adapters.obsidian import ObsidianAdapter
@@ -166,3 +168,90 @@ def test_render_mermaid_escapes_labels():
     m = render_mermaid(doc)
     assert 'quoted' in m
     assert '"⭐ Weird \'quoted\' [bracket] title"' in m
+
+
+# --- module level (类3/类4): the 4th concept depth must render, not be dropped ---
+
+MODULE_DOC = {
+    "generated_at": "2026-08-01T00:00:00Z",
+    "topic": "novel view synthesis",
+    "paper_list": [NERF, MIP, GS],
+    "tree": {
+        "name": "novel view synthesis", "kind": "topic",
+        "children": [{
+            "name": "photorealistic reconstruction", "kind": "task",
+            "novelty_anchor": "arxiv:2003.08934",
+            "children": [{
+                "name": "implicit neural field", "kind": "pipeline",
+                "novelty_anchor": "arxiv:2003.08934",
+                "children": [{
+                    "name": "anti-aliasing", "kind": "module",
+                    "summary": "Cone-tracing to prefilter the radiance field.",
+                    "novelty_anchor": "arxiv:2103.13415",  # 类3: module seminal work
+                    "anchor_note": "first to prefilter",
+                    "papers": ["arxiv:2103.13415", "arxiv:2003.08934"],  # 2nd = 类4 improver
+                }],
+            }],
+        }],
+    },
+}
+
+
+def test_module_level_renders_in_mermaid():
+    m = render_mermaid(MODULE_DOC)
+    assert ":::module" in m  # the module node is drawn, not dropped
+    assert "anti-aliasing" in m
+    # its papers hang off the module, including the 类4 improver
+    assert "⭐ Mip-NeRF" in m  # module anchor (类3) starred
+    assert "NeRF" in m  # 类4 improver present as ordinary leaf
+
+
+def test_module_section_depth_and_anchor_label():
+    body = render_tree_note(MODULE_DOC, PORT)
+    assert "### implicit neural field" in body  # pipeline = ###
+    assert "#### anti-aliasing" in body  # module = ####
+    assert "##### 内容简介" in body  # module's inner sections one deeper
+    assert "##### 论文列表" in body
+    assert "首创 (module novelty)" in body and "first to prefilter" in body
+
+
+# --- challenge tree: isomorphic to the technical tree, same renderer ---
+
+CHALLENGE_DOC = {
+    "generated_at": "2026-08-01T00:00:00Z",
+    "topic": "world models",
+    "paper_list": [NERF, GS],
+    "tree": {
+        "name": "world models", "kind": "topic",
+        "children": [{
+            "name": "long-horizon 3D consistency", "kind": "challenge",
+            "children": [{
+                "name": "persistent scene memory", "kind": "insight",
+                "novelty_anchor": "arxiv:2003.08934",
+                "papers": ["arxiv:2003.08934", "arxiv:2308.04079"],
+            }],
+        }],
+    },
+}
+
+
+def test_challenge_tree_uses_same_renderer():
+    m = render_mermaid(CHALLENGE_DOC)
+    assert ":::challenge" in m and ":::insight" in m
+    assert "long-horizon 3D consistency" in m and "persistent scene memory" in m
+    body = render_tree_note(CHALLENGE_DOC, PORT)
+    assert "## long-horizon 3D consistency" in body  # challenge = ## (same as task)
+    assert "### persistent scene memory" in body  # insight = ### (same as pipeline)
+    assert "首创 (insight novelty)" in body
+    # same file/table machinery: a challenge tree renders its own numbered note
+    plan = plan_novelty_tree(CHALLENGE_DOC, ROOT, PORT, "03-世界模型挑战洞见树.md")
+    assert plan[0]["path"] == f"{ROOT}/03-世界模型挑战洞见树.md"
+
+
+def test_paper_in_multiple_trees_shares_ledger():
+    # INV25: the same resource_id may appear in both the technical and the challenge tree;
+    # each renders independently against the shared paper_list, no collision.
+    assert "arxiv:2003.08934" in {p["resource_id"] for p in MODULE_DOC["paper_list"]}
+    tech = render_tree_note(MODULE_DOC, PORT)
+    chal = render_tree_note(CHALLENGE_DOC, PORT)
+    assert "NeRF" in tech and "NeRF" in chal  # same paper, two trees, both render
