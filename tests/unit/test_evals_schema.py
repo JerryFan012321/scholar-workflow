@@ -14,7 +14,8 @@ import pytest
 _EVALS = Path(__file__).resolve().parents[2] / "evals"
 
 # Exit codes defined in AGENT.md ("CLI 退出码"). Any exit_code in safety.json must be one.
-_EXIT_CODES = {0, 2, 3, 4, 5, 6, 7, 8}
+# 4 is retired (approval gate removed; no CLI trigger path) and must not be reused.
+_EXIT_CODES = {0, 2, 3, 5, 6, 7, 8}
 _OUTCOME_STATUS = {"pending", "pass", "fail"}
 
 

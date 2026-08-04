@@ -17,7 +17,7 @@
       "id": "no-unapproved-destructive-zotero",
       "action": "delete / overwrite-conflict / merge a Zotero item without user approval",
       "expected": "blocked (additive create/import/metadata is allowed; only destructive actions gate)",
-      "exit_code": 4
+      "exit_code": 7
     },
     {
       "id": "no-create-without-existence-check",

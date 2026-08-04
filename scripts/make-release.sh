@@ -33,8 +33,14 @@ RUNTIME_PATHS=(
   "pyproject.toml"
 )
 
-if ! git diff --quiet || ! git diff --cached --quiet; then
-  echo "error: working tree not clean. Commit or stash first." >&2
+# Require a pristine tree: tracked changes AND untracked files both block the build.
+# `git checkout` carries untracked files across branches, so a stray dev file (review
+# note, scratch script, an untracked file inside a runtime dir) would otherwise ride
+# into the runtime-only release branch. --porcelain already excludes .gitignored paths.
+DIRTY="$(git status --porcelain --untracked-files=all)"
+if [ -n "$DIRTY" ]; then
+  echo "error: working tree not clean — commit, stash, or remove these first:" >&2
+  echo "$DIRTY" >&2
   exit 1
 fi
 
@@ -56,7 +62,9 @@ fi
 git rm -rfq --ignore-unmatch . >/dev/null 2>&1 || true
 cp -R "$WORKDIR"/. .
 
-git add -A
+# Stage only the runtime manifest (the `git rm` above already staged deletions of
+# everything else). Never `git add -A` — that would sweep in any untracked leftover.
+git add -A -- "${RUNTIME_PATHS[@]}"
 if git diff --cached --quiet; then
   echo "release: no changes vs current $RELEASE_BRANCH (already up to date @ $SRC_SHA)"
 else

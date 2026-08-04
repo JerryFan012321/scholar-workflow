@@ -1,8 +1,9 @@
-"""Paper import workflow: download PDFs to the inbox for manual Zotero import.
+"""Paper import workflow: download arXiv PDFs into the inbox.
 
-Zotero has no local write API, so the automated workflow ends at "PDF in the
-inbox". The user imports into Zotero by hand; Zotero (and its storage) is the
-authoritative library. Each step is retryable with no auto-rollback (Saga).
+The CLI cannot reach zotero-mcp (separate subprocess), so its job ends at "PDF in
+the inbox"; the host LLM then imports it into Zotero via zotero-mcp (`write_item`
+import). Zotero (and its storage) is the authoritative library. Each step is
+retryable with no auto-rollback (Saga).
 """
 from __future__ import annotations
 import uuid
@@ -35,7 +36,7 @@ def run_paper_import(plan: ActionPlan, resources: list[Resource],
             store.upsert(job_id, res.resource_id, TaskState.NO_ARXIV_PDF)
             results[res.resource_id] = {
                 "status": "no_pdf",
-                "reason": "no arXiv PDF source; add to Zotero manually",
+                "reason": "no arXiv PDF source; import into Zotero via zotero-mcp",
             }
             continue
 

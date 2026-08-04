@@ -21,7 +21,7 @@ class TaskState(StrEnum):
     states (classify/dedup/sync/index/project + approval/conflict) are gone — those
     stages now live in the skill layer, not the CLI."""
     APPROVED = "approved"        # job created, about to download
-    DOWNLOADED = "downloaded"    # PDF landed in the inbox, awaiting manual Zotero import
+    DOWNLOADED = "downloaded"    # PDF landed in the inbox, awaiting zotero-mcp import
     NO_ARXIV_PDF = "no_arxiv_pdf"
     DOWNLOAD_FAILED = "download_failed"
 

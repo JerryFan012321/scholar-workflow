@@ -1,6 +1,10 @@
 """Adapters package.
 
-Zotero is a read-only authority in phase 1: metadata and existence come from the
-Zotero Local API (see adapters/zotero_local.py). There is no programmatic write
-backend — papers download to the inbox and are imported into Zotero manually.
+Metadata, existence, and semantic recall are authoritative from zotero-mcp, orchestrated
+by the host LLM at the skill layer — the CLI is a separate subprocess and cannot reach
+MCP (INV16/INV18). What these adapters do NOT touch is Zotero: import into the library
+happens via zotero-mcp (`write_item` import), driven by the host LLM, never here. Their
+own work spans both network and filesystem: arXiv PDF fetch (network) to the inbox and
+Notion projections (network) reach declared external services; Obsidian managed blocks
+and the local link service are filesystem-only.
 """

@@ -1,8 +1,9 @@
 """arXiv adapter: PDF download only.
 
-Metadata is no longer parsed from arXiv — the Zotero Local API is the authoritative
-metadata source (see adapters/zotero_local.py). This module only fetches the PDF
-so it can land in the paper inbox for manual Zotero import.
+Metadata is not parsed from arXiv — it is authoritative from zotero-mcp for library
+items, or fetched from an authoritative web source for new items (INV10), never from the
+PDF. This module only fetches the PDF so it can land in the paper inbox; the host LLM
+then imports it into Zotero via zotero-mcp (`write_item` import).
 """
 from __future__ import annotations
 import hashlib
