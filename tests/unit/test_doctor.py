@@ -1,7 +1,10 @@
 """Unit tests for runtime diagnostics (offline path checks + advisory HTTP-MCP probe)."""
 from __future__ import annotations
 import json
-from scholar_workflow.doctor import run_doctor, probe_http_mcp_endpoints
+from scholar_workflow.doctor import (
+    run_doctor, probe_http_mcp_endpoints,
+    _http_servers_from_manifest, _http_servers_from_claude_json,
+)
 
 
 class Cfg:
@@ -57,8 +60,53 @@ def test_probe_reports_unreachable_http_endpoint(tmp_path):
     advs = probe_http_mcp_endpoints(cj, str(tmp_path))
     assert len(advs) == 1
     a = advs[0]
-    assert a["name"] == "zotero-mcp" and a["ok"] is False
+    assert a["name"] == "zotero-mcp" and a["ok"] is False and a["scope"] == "project"
     assert "session start" in a["detail"].lower()
+
+
+def test_probe_reads_global_scope(tmp_path):
+    """A type:http server in the GLOBAL mcpServers is probed even with no project entry —
+    fixes the bug where a bundled/global server was silent because only project scope was read."""
+    p = tmp_path / ".claude.json"
+    p.write_text(json.dumps({
+        "mcpServers": {"zotero-mcp": {"type": "http", "url": "http://127.0.0.1:1/mcp"}},
+        "projects": {},
+    }), encoding="utf-8")
+    advs = probe_http_mcp_endpoints(str(p), str(tmp_path))
+    assert len(advs) == 1 and advs[0]["scope"] == "global" and advs[0]["ok"] is False
+
+
+def test_probe_reads_bundled_manifest(tmp_path):
+    """A type:http server declared in the plugin manifest is probed regardless of cwd/config —
+    this is what makes the post-bundling probe non-silent (point 4)."""
+    mani = tmp_path / "plugin.json"
+    mani.write_text(json.dumps({
+        "mcpServers": {"zotero-mcp": {"type": "http", "url": "http://127.0.0.1:1/mcp"}},
+    }), encoding="utf-8")
+    advs = probe_http_mcp_endpoints(str(tmp_path / "absent.json"), str(tmp_path),
+                                    manifest_path=str(mani))
+    assert len(advs) == 1 and advs[0]["scope"] == "plugin" and advs[0]["ok"] is False
+
+
+def test_project_scope_overrides_bundle(tmp_path):
+    """Same server name in both manifest and project scope → probed once, project scope wins."""
+    mani = tmp_path / "plugin.json"
+    mani.write_text(json.dumps({
+        "mcpServers": {"zotero-mcp": {"type": "http", "url": "http://127.0.0.1:1/mcp"}},
+    }), encoding="utf-8")
+    cj = _claude_json(tmp_path, {"zotero-mcp": {"type": "http", "url": "http://127.0.0.1:1/mcp"}})
+    advs = probe_http_mcp_endpoints(cj, str(tmp_path), manifest_path=str(mani))
+    assert len(advs) == 1 and advs[0]["scope"] == "project"
+
+
+def test_manifest_helper_ignores_non_http(tmp_path):
+    """_http_servers_from_manifest skips stdio entries and tolerates a missing file."""
+    assert _http_servers_from_manifest(str(tmp_path / "nope.json")) == {}
+    mani = tmp_path / "plugin.json"
+    mani.write_text(json.dumps({
+        "mcpServers": {"s": {"command": "uvx", "args": ["x"]}},
+    }), encoding="utf-8")
+    assert _http_servers_from_manifest(str(mani)) == {}
 
 
 def test_run_doctor_advisories_do_not_affect_ok(tmp_path, monkeypatch):

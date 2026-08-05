@@ -3,6 +3,40 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.19.0] — 2026-08-05
+
+### Added
+- **Plugin now bundles the zotero-mcp server (fixes the scope trap).** A real session in a
+  non-`scholar-workflow` directory couldn't reach zotero-mcp at all: it was registered only
+  under that one project's scope in `~/.claude.json`, so any session opened elsewhere loaded
+  no `mcp__zotero-mcp__*` tools — and "restart the session" didn't help (the cwd was still
+  out of scope). `.claude-plugin/plugin.json` now declares `mcpServers.zotero-mcp`
+  (`type:http`, `http://127.0.0.1:23120/mcp`), so the server auto-registers in **every**
+  session the plugin is enabled, regardless of cwd. This makes it plug-and-play on install
+  and removes per-project scope as a variable. (The endpoint is scope-independent and
+  curl-drivable over the raw MCP protocol — documented as a break-glass path.)
+
+### Changed
+- **doctor probe reads all three MCP sources, not just project scope.** After bundling, the
+  server lives in the plugin manifest, not `~/.claude.json` — the v0.18.0 probe (project
+  scope only) would have gone silent. `probe_http_mcp_endpoints` now merges **plugin-bundled
+  (manifest) + global + project** `type:http` servers (precedence project > global > plugin),
+  probes every declared endpoint's TCP/HTTP layer regardless of cwd, and tags each advisory
+  with its `scope`. The CLI prints the scope. Still advisory-only (never affects exit code).
+- **security-policy zotero-mcp boundary rewritten.** The wrong v0.18.0 "project config is
+  correct / restart the session for scope" guidance is replaced with the bundled reality:
+  scope is no longer a variable, so absent tools mean the **endpoint was down at session
+  start** (start Zotero + restart), with curl-23120 documented as a break-glass diagnostic.
+- **ingest-resource: auto-approval matrix made explicit (INV9/G4 applied to ingest).**
+  Additive-write branch points (metadata source, create/import/add-to-collection) run end to
+  end with no per-item re-prompt, noting assumptions in the receipt. The skill stops for a
+  human only on: the organizing direction (which collection / which literature tree — a human
+  preference, never auto-defaulted), same-work different-version adjudication (preprint vs
+  in-library published — never auto-skip/merge), NG3 identity conflict, and destructive
+  actions. Adds a "same-work, different version" existence-check outcome.
+- bump 0.18.0 → 0.19.0 (plugin.json, pyproject.toml, __init__.py). Tests 119 → 123
+  (+4 doctor: global scope / bundled manifest / project-over-bundle precedence / manifest helper).
+
 ## [0.18.0] — 2026-08-05
 
 ### Added

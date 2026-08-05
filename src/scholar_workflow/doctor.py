@@ -15,31 +15,64 @@ class Check:
     detail: str
 
 
-def probe_http_mcp_endpoints(claude_json_path: str, cwd: str,
-                             timeout: float = 3.0) -> list[dict]:
-    """Advisory-only probe of type:http MCP endpoints configured for this project.
-
-    Claude Code registers an HTTP-transport MCP server only at session start, by connecting
-    to its `url`; if the endpoint isn't listening then, the server is silently skipped for
-    the whole session and never re-attempted. So a dead endpoint here means "restart the
-    session after the endpoint is up", not "config is wrong". This checks the TCP/HTTP layer
-    only — NOT MCP semantics (whether tools are registered), which the CLI cannot see and
-    which stays a skill-layer check (INV16). Read-only; never raises; returns one advisory
-    dict per http server: {name, ok, detail}.
-    """
+def _http_servers_from_claude_json(claude_json_path: str, cwd: str) -> dict[str, dict]:
+    """Collect type:http MCP servers from ~/.claude.json — both the GLOBAL `mcpServers`
+    and this project's `projects[cwd].mcpServers`. Project scope overrides global on name
+    collision. Each value is tagged with its scope. Never raises."""
     try:
         data = json.loads(Path(claude_json_path).read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return []  # no config / unreadable — nothing to advise on
-    servers = (data.get("projects", {}).get(cwd, {}) or {}).get("mcpServers", {}) or {}
+        return {}
+    out: dict[str, dict] = {}
+    for scope, src in (("global", data.get("mcpServers", {}) or {}),
+                       ("project", (data.get("projects", {}).get(cwd, {}) or {})
+                        .get("mcpServers", {}) or {})):
+        for name, cfg in src.items():
+            if isinstance(cfg, dict) and cfg.get("type") == "http":
+                out[name] = {"url": cfg.get("url", ""), "scope": scope}
+    return out
+
+
+def _http_servers_from_manifest(manifest_path: str) -> dict[str, dict]:
+    """Collect type:http MCP servers bundled in the plugin manifest (.claude-plugin/
+    plugin.json `mcpServers`). These auto-register in every session the plugin is enabled,
+    regardless of cwd — so they must be probed even when absent from ~/.claude.json. Never
+    raises."""
+    try:
+        data = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    out: dict[str, dict] = {}
+    for name, cfg in (data.get("mcpServers", {}) or {}).items():
+        if isinstance(cfg, dict) and cfg.get("type") == "http":
+            out[name] = {"url": cfg.get("url", ""), "scope": "plugin"}
+    return out
+
+
+def probe_http_mcp_endpoints(claude_json_path: str, cwd: str,
+                             manifest_path: str | None = None,
+                             timeout: float = 3.0) -> list[dict]:
+    """Advisory-only probe of every type:http MCP endpoint that could serve this session:
+    plugin-bundled (manifest) + global + project-scope (~/.claude.json). Precedence on name
+    collision: project > global > plugin.
+
+    Claude Code contacts an HTTP-transport MCP server only at session start, by connecting to
+    its `url`; if the endpoint isn't listening then, the server is silently skipped for the
+    whole session and never re-attempted. So a dead endpoint means "start the endpoint, then
+    restart the session", not "config is wrong". This checks the TCP/HTTP layer only — NOT MCP
+    semantics (whether tools are registered), which the CLI cannot see and which stays a
+    skill-layer check (INV16). Read-only; never raises; returns one advisory dict per http
+    server: {name, ok, scope, detail}.
+    """
+    servers: dict[str, dict] = {}
+    if manifest_path:
+        servers.update(_http_servers_from_manifest(manifest_path))  # lowest precedence
+    servers.update(_http_servers_from_claude_json(claude_json_path, cwd))  # global then project
 
     advisories: list[dict] = []
-    for name, cfg in servers.items():
-        if not isinstance(cfg, dict) or cfg.get("type") != "http":
-            continue  # stdio servers are spawned by Claude Code itself — not our concern
-        url = cfg.get("url", "")
-        ok, detail = _reachable(url, timeout)
-        advisories.append({"name": name, "ok": ok, "detail": detail})
+    for name, entry in servers.items():
+        ok, detail = _reachable(entry["url"], timeout)
+        advisories.append({"name": name, "ok": ok, "scope": entry["scope"], "detail": detail})
     return advisories
 
 
@@ -76,8 +109,12 @@ def run_doctor(config) -> dict:
         p = Path(root)
         checks.append(Check(name, p.is_dir(), str(p)))
 
+    # Bundled manifest lives at repo-root/.claude-plugin/plugin.json (this file is
+    # src/scholar_workflow/doctor.py — two parents up to the repo root).
+    manifest = Path(__file__).resolve().parents[2] / ".claude-plugin" / "plugin.json"
     advisories = probe_http_mcp_endpoints(
-        str(Path(os.path.expanduser("~")) / ".claude.json"), os.getcwd())
+        str(Path(os.path.expanduser("~")) / ".claude.json"), os.getcwd(),
+        manifest_path=str(manifest))
 
     return {
         "ok": all(c.ok for c in checks),  # advisories deliberately excluded
