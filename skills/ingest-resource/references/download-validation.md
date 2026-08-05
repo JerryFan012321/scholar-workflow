@@ -7,8 +7,8 @@ mechanics of validating a download.
 ## Download flow
 
 1. Download the arXiv PDF directly into `paper_inbox`.
-2. Validate (below). On success the PDF stays in the inbox awaiting manual Zotero
-   import; on failure it is discarded.
+2. Validate (below). On success the PDF stays in the inbox until the host imports it into
+   Zotero via zotero-mcp (`write_item import`); on failure it is discarded.
 
 ## Validation checks
 

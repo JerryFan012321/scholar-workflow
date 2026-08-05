@@ -30,8 +30,9 @@ same-direction references to seed the search.
 
 ## What it does NOT do
 
-- It runs no research itself and writes no file — every product is made by the skill it
-  delegates to, in that skill's own home.
+- It produces no persistent research artifact and writes no file — every product is made
+  by the skill it delegates to, in that skill's own home. The one read it may do for
+  itself is the quick throwaway breadth-recon sweep above, purely to scope the request.
 - It does not replace `build-literature-tree`. "Draw a tree" still goes straight there;
   this skill only routes to the tree when a survey needs one, and lets the tree run its
   own scoping.

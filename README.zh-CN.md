@@ -8,12 +8,13 @@
 
 ## 架构
 
-Claude 负责理解、分类与推荐;确定性 CLI(`src/scholar_workflow/`)负责可测试、可恢复的
-文件操作,**从不发起网络调用、也不直接操作你的库**。**Zotero 是权威主库** —— 元数据、
-存在性核验、语义检索一律经 [zotero-mcp](https://github.com/54yyyu/zotero-mcp)。新增性
-写入(create / import / 元数据)经 zotero-mcp 的受控工具执行,破坏性动作需你批准。批准
-后的论文 PDF 下载到收件箱,由你导入。**Obsidian** 保存知识笔记与派生索引;**Notion** 保存
-可选的跨设备投影。
+Claude 负责理解、分类与推荐;确定性 CLI(`src/scholar_workflow/`)负责可测试的文件操作,
+**从不直接操作你的 Zotero 库**。其核心投影/状态命令不发网络请求;唯一的对外访问是受限且
+显式声明的——`apply` 从 arXiv 下载 PDF,独立的 `bin/notion-project.py` / `bin/recommend-papers.py`
+各自访问其声明的外部服务。**Zotero 是权威主库** —— 元数据、存在性核验、语义检索一律经
+[zotero-mcp](https://github.com/54yyyu/zotero-mcp)。新增性写入(create / import / 元数据)经
+zotero-mcp 的受控工具执行,破坏性动作需你批准。论文 PDF 下载到收件箱,再由宿主经 zotero-mcp
+(`write_item import`)入库。**Obsidian** 保存知识笔记与派生索引;**Notion** 保存可选的跨设备投影。
 
 ## Skills
 

@@ -1,16 +1,22 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "scholar-workflow",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "description": "Plan-first scholarly resource management: scope open-ended research requests and route them, import papers, archive technical documents, sync Obsidian indexes and Notion projections, build literature novelty trees, recommend daily papers from four sources with NotebookLM skim, write detailed paper analyses, scaffold a personal API-key and SSH-server env-records ledger.",
   "author": {
     "name": "Scholar Workflow contributors"
+  },
+  "mcpServers": {
+    "zotero-mcp": {
+      "type": "http",
+      "url": "http://127.0.0.1:23120/mcp"
+    }
   },
   "userConfig": {
     "paper_inbox": {
       "type": "directory",
       "title": "Paper download inbox",
-      "description": "Where downloaded PDFs land, awaiting manual import into Zotero.",
+      "description": "Where downloaded PDFs land before the host imports them into Zotero via zotero-mcp.",
       "required": false
     },
     "research_vault_root": {

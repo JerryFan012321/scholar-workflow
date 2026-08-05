@@ -43,7 +43,9 @@ def doctor(as_json: bool) -> None:
         for c in report["checks"]:
             click.echo(f"[{'ok' if c['ok'] else 'FAIL'}] {c['name']}: {c['detail']}")
         for a in report.get("advisories", []):
-            click.echo(f"[{'ok' if a['ok'] else 'warn'}] {a['name']} (mcp endpoint): {a['detail']}")
+            scope = a.get("scope", "?")
+            click.echo(f"[{'ok' if a['ok'] else 'warn'}] {a['name']} "
+                       f"(mcp endpoint, {scope}): {a['detail']}")
     if not report["ok"]:
         raise SystemExit(3)  # dependency not running (see AGENT.md exit codes)
 

@@ -54,17 +54,25 @@ item, merge identities. Overwriting human-authored content is never done.
   `write_metadata`. It is a read-layer artifact, not corruption — never judge a record
   dirty by an empty `itemType`.
 - Writes are controlled tool calls, never raw database access.
-- **When zotero-mcp tools are absent** (an existence/write step needs `search_library` /
-  `write_item` but no `mcp__zotero-mcp__*` tool exists): this is a connection problem, not
-  a config problem. The endpoint is HTTP-transport and registers **only at session start**;
-  if it wasn't listening then, it's silently skipped for the whole session and won't
-  re-attach. Do not edit `~/.claude.json` (the project-level config is correct; the global
-  `mcpServers` is meant to be empty). Instead: run `scholar-workflow doctor` (its advisory
-  probe reports whether the `type:http` endpoint answers) or check the endpoint directly
-  (`curl --noproxy 127.0.0.1 http://127.0.0.1:23120/mcp`). If the endpoint is down, tell the
-  user to start Zotero + its MCP plugin, then **restart the session** so the tools register.
-  Never fabricate existence results or fall back to create-without-check when the channel is
-  missing (INV12/INV16 — fail-fast, no downgrade).
+- **zotero-mcp is bundled by the plugin.** `.claude-plugin/plugin.json` declares it under
+  `mcpServers` (`zotero-mcp`, type `http`, `http://127.0.0.1:23120/mcp`), so it auto-registers
+  in **every** session the plugin is enabled — regardless of the working directory. There is
+  no per-project scope to get wrong; do **not** hand-edit `~/.claude.json` to "fix" a missing
+  server.
+- **When zotero-mcp tools are absent** (a step needs `search_library` / `write_item` but no
+  `mcp__zotero-mcp__*` tool exists): with bundling, scope is no longer a variable — this means
+  the **endpoint wasn't listening at session start**. HTTP-transport MCP is contacted only
+  once, at session start; if the endpoint is down then, the server is silently skipped for the
+  whole session and never re-attached. Diagnose: run `scholar-workflow doctor` (its advisory
+  probe reports whether the bundled `type:http` endpoint answers) or hit it directly
+  (`curl --noproxy 127.0.0.1 http://127.0.0.1:23120/mcp` — a bare GET may 405, which still
+  proves it's listening). If down, tell the user to start Zotero + its MCP plugin, then
+  **restart the session** so the tools register. As a **break-glass** fallback when a session
+  is already running and cannot be restarted, the endpoint is scope-independent and can be
+  driven over the raw MCP protocol via curl (`initialize` → `notifications/initialized` →
+  `tools/call`); prefer restarting to get native tools back. Never fabricate existence results
+  or fall back to create-without-check when the channel is missing (INV12/INV16 — fail-fast,
+  no downgrade).
 
 ## Loopback services
 

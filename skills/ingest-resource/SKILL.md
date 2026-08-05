@@ -26,7 +26,12 @@ authoritative web source — never parsed out of the PDF.
    - **conflict** — several items share the identity; stop that item, surface keys for
      human adjudication (NG3). Do not affect other items in the batch.
    - **none** — safe to create.
-3. Present the plan: which are new (create), present (skip), or conflicts.
+   - **same-work, different version** — the item's dedup key is `none` (different DOI/title,
+     e.g. an arXiv preprint vs an in-library published version of the same work), yet it is
+     plainly the same work. This is **not** an NG3 identity conflict, but it is a human call:
+     surface both to the user and let them decide (keep both / keep only the published / keep
+     only the preprint). Never auto-skip and never auto-merge.
+3. Present the plan: which are new (create), present (skip), same-work (adjudicate), or conflicts.
 
 ### Phase 2: Acquire metadata (read-only web fetch, no approval)
 4. For each `none` item, fetch metadata from an authoritative source: arXiv abs page
@@ -38,8 +43,13 @@ authoritative web source — never parsed out of the PDF.
    fill a non-essential field.
 
 ### Phase 3: Write into Zotero (additive, no per-action approval)
-6. Ask which collection the paper belongs to — the target collection is an input to the
-   write. The user may answer "leave in library root".
+6. Ask the human for the **organizing direction**, not just a folder name — this is a human
+   call, never auto-defaulted. Either ask which collection to file into, or, when organizing
+   by an existing literature tree, ask **which tree** to adopt as the structure. When invoked
+   from survey-topic the scope is already fixed upstream — inherit it, don't re-ask. (Filing
+   itself is safe: in Zotero one item may belong to several collections — a many-to-one
+   projection, not a duplicate identity, INV1 — so adding to a collection needs no gate; the
+   human call is the direction, not whether to file.)
 7. Download the arXiv PDF into `paper_inbox` (%PDF magic / size verified).
 8. Create the item and attach the PDF via zotero-mcp:
    - `write_item action=create` with the metadata, then `write_item action=import` to
@@ -55,9 +65,15 @@ authoritative web source — never parsed out of the PDF.
   skipping it duplicates (identity-policy, security-policy)
 - A `conflict` is never auto-written — stop that item, surface keys, leave the rest of
   the batch running (identity-policy)
-- Ingest is one authorized action, and a batch of N papers is one authorization:
-  existence check → download → create → import → add-to-collection runs end to end, no
-  per-item re-prompt; only delete / overwrite-conflict / merge gate (security-policy)
+- **Additive-write branch points do not interrupt with questions.** Metadata source
+  (arXiv batch vs per-item) and the additive create / import / add-to-collection themselves
+  run end to end — a batch of N papers is one authorization, no per-item re-prompt. Note the
+  assumptions made in the receipt for later pruning.
+- **Stop for a human only in these cases:** (1) the **organizing direction** — which
+  collection or which literature tree structure (Step 6), a preference the human owns;
+  (2) **same-work different-version** adjudication (Phase 1); (3) **NG3 identity conflict**
+  (dedup-key hit or fuzzy match); (4) **destructive / irreversible actions** — delete,
+  overwrite-conflict, merge-identity (security-policy). Nothing else gates.
 - All writes go through zotero-mcp; never write `zotero.sqlite` (security-policy)
 - arXiv is the only PDF source; if none, tag `no_arxiv_pdf`, don't fetch elsewhere (source-policy)
 - Downloaded PDFs land only in `paper_inbox`, tech docs only in the Vault; attachments
