@@ -37,6 +37,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 - bump 0.18.0 → 0.19.0 (plugin.json, pyproject.toml, __init__.py). Tests 119 → 123
   (+4 doctor: global scope / bundled manifest / project-over-bundle precedence / manifest helper).
 
+### Fixed
+- **Doc-truth convergence (codex-review Batch A).** A truth sweep closed drift between the
+  north star, runtime docs, and the manifest — including drift this same batch introduced:
+  - **INV16 rewritten to be name-reality consistent (P1-4).** It previously read "doctor
+    必检可达性…退出码 3" while `run_doctor` deliberately treats the HTTP-MCP endpoint as
+    advisory (never affects the exit code) — bridged only by a footnote that *reinterpreted*
+    the invariant. INV16's body now states the two real layers directly: doctor fail-fasts
+    (exit 3) on local hard deps (config paths) and probes the MCP endpoint advisory-only;
+    the skill layer fail-fasts when `mcp__zotero-mcp__*` tools are unregistered (INV12). The
+    footnote now records rationale, not a reinterpretation.
+  - **Stale phrasing removed (P1-5).** `README` no longer claims the CLI "never makes network
+    calls" (its `apply` fetches from arXiv; scoped/declared outbound access is spelled out);
+    manual-import framing dropped from `README`, `plugin.json`, and
+    `download-validation.md` (PDFs download to inbox, then the host imports via zotero-mcp);
+    `survey-topic` frontmatter/README no longer say "runs no research" while permitting a
+    throwaway breadth-recon sweep. Both language READMEs mirrored.
+
 ## [0.18.0] — 2026-08-05
 
 ### Added

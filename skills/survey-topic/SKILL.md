@@ -1,6 +1,6 @@
 ---
 name: survey-topic
-description: Scope an open-ended research request, then route it through the other skills. Grills breadth and depth first, proposes an ordered research plan, and delegates each step — it runs no research and produces no artifact of its own. Triggers 'survey a topic', 'research this area', 'get me up to speed on', 'what's the state of', 'help me understand the field', '调研', '了解一下这个方向', '入门这个领域', '这个方向的现状', '帮我梳理这个领域'. Not a targeted paper lookup (find-resource), a daily feed (recommend-papers), or tree-building on its own (build-literature-tree).
+description: Scope an open-ended research request, then route it through the other skills. Grills breadth and depth first, proposes an ordered research plan, and delegates each step — it produces no persistent research artifact of its own, though it may run one throwaway breadth-recon sweep to scope the field. Triggers 'survey a topic', 'research this area', 'get me up to speed on', 'what's the state of', 'help me understand the field', '调研', '了解一下这个方向', '入门这个领域', '这个方向的现状', '帮我梳理这个领域'. Not a targeted paper lookup (find-resource), a daily feed (recommend-papers), or tree-building on its own (build-literature-tree).
 ---
 
 # survey-topic

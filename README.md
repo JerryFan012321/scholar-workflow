@@ -11,13 +11,16 @@ handles understanding, recommendation, and judgment.
 ## Architecture
 
 Claude handles understanding, classification, and recommendation; a deterministic CLI
-(`src/scholar_workflow/`) performs testable, resumable file operations and never makes
-network calls or touches your library directly. **Zotero is the authoritative library**
-— metadata, existence checks, and semantic search all go through
-[zotero-mcp](https://github.com/54yyyu/zotero-mcp). Additive writes (create / import /
-metadata) run through zotero-mcp's controlled tools; destructive actions require your
-approval. Approved paper PDFs download into an inbox for you to import. **Obsidian** holds
-knowledge notes and derived indexes; **Notion** holds an optional cross-device projection.
+(`src/scholar_workflow/`) performs testable file operations and never touches your Zotero
+library directly. Its core projection/state commands make no network calls; the only
+outbound access is scoped and declared — `apply` fetches PDFs from arXiv, and the separate
+`bin/notion-project.py` / `bin/recommend-papers.py` reach their own declared services.
+**Zotero is the authoritative library** — metadata, existence checks, and semantic search
+all go through [zotero-mcp](https://github.com/54yyyu/zotero-mcp). Additive writes (create /
+import / metadata) run through zotero-mcp's controlled tools; destructive actions require
+your approval. Paper PDFs download into an inbox, then the host imports them into Zotero via
+zotero-mcp (`write_item import`). **Obsidian** holds knowledge notes and derived indexes;
+**Notion** holds an optional cross-device projection.
 
 ## Skills
 

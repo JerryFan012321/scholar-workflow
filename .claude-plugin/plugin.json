@@ -16,7 +16,7 @@
     "paper_inbox": {
       "type": "directory",
       "title": "Paper download inbox",
-      "description": "Where downloaded PDFs land, awaiting manual import into Zotero.",
+      "description": "Where downloaded PDFs land before the host imports them into Zotero via zotero-mcp.",
       "required": false
     },
     "research_vault_root": {
