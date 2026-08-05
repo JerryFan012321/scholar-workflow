@@ -3,6 +3,50 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.17.0] — 2026-08-04
+
+### Added
+- **build-literature-tree: module layer + four-class novelty (INV22 extension).** The
+  technical tree gained an optional 4th concept depth — `task → pipeline → module → paper`
+  — and the novelty model was generalized to four classes: 类1/2/3 are node-level *first
+  proposers* (task / pipeline / **module**), recorded via the existing `novelty_anchor`;
+  类4 is a paper-level *module-improvement of an existing pipeline*, a context-dependent
+  judgment that hangs as an ordinary member with **no anchor and no schema field** (a
+  field with no consumer is not encoded — design philosophy). `contracts/literature-tree.schema.json`
+  adds `module` to the `concept.kind` enum; SKILL/README document the four classes and the
+  module layer.
+- **Challenge tree landed as a first-class view (F3 fulfilled).** The challenge–insight
+  tree (`challenge → insight → paper`) is now a real rendered view, **isomorphic** to the
+  technical tree: same `concept` structure, same renderer, keyed off node `kind`
+  (`challenge` / `insight` added to the enum). One doc = one tree — the technical and
+  challenge trees of a topic are separate numbered notes (`02-…文献树`, `03-…挑战洞见树`)
+  over the shared flat paper list. The old `challenge_insight_tree` schema seam is retired
+  (no parallel heterogeneous structure).
+- **INV25 — one paper, many trees.** A paper (unique by `resource_id` / Zotero canonical
+  identity) may be referenced by any number of concept nodes and trees — same-topic
+  (technical 02 + challenge 03) or across topic folders. Trees only *reference*, never
+  copy; `paper_assets/…` companion notes fork per topic folder (content differs by
+  context); `01-Paperlist.md` is a per-topic-folder ledger, not a global one. No
+  one-node/one-tree uniqueness check is ever added.
+
+### Changed
+- **`render_mermaid` rewritten from hard-coded 3 levels to recursive N levels.** The old
+  `_emit_task` / `_emit_pipeline` never recursed into children, so a module (under a
+  pipeline) or an insight (under a challenge) was **silently dropped from the diagram**
+  while the text sections already recursed. A single recursive `_emit_concept` fixes the
+  drop; verified byte-identical for existing 3-level fixtures. `_KIND_DEPTH`
+  (task/challenge=2, pipeline/insight=3, module=4), `_ANCHOR_LABEL`, `_KIND_SHAPE`, and the
+  Mermaid `classDef` palette each gained `module` / `challenge` / `insight` rows.
+- **GOALS: INV22 rewritten; INV25 added; NG7 extended.** INV22 now describes the
+  variable-depth topology, the four-class novelty split, and challenge-tree isomorphism;
+  INV20 back-link pointer added; NG7's anchor carve-out extended to module first-proposers;
+  F3 marked landed; Phase 3 status appended with the v0.17.0 detail.
+- **evals:** `novelty-tree-topology-and-paperlist` updated for variable depth + four
+  classes; added `module-level-and-challenge-tree` (pass) and `paper-in-multiple-trees`
+  (pending, INV25). Contract + unit tests extended: module-depth validates, challenge tree
+  reuses the concept structure, the retired seam key is now rejected; `test_novelty_tree.py`
+  adds module-recursion, challenge-isomorphism, and multi-tree cases. Suite 109 → 115.
+
 ## [0.16.0] — 2026-08-03
 
 ### Fixed
