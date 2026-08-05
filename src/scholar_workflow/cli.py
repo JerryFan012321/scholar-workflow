@@ -29,8 +29,10 @@ def main() -> None:
 @main.command()
 @click.option("--json", "as_json", is_flag=True)
 def doctor(as_json: bool) -> None:
-    """Check runtime dependencies (config paths). Zotero-mcp reachability is a
-    skill-layer check (the CLI subprocess cannot reach MCP tools)."""
+    """Check runtime dependencies (config paths) + an advisory HTTP-MCP endpoint probe.
+    MCP tool-registration reachability stays a skill-layer check (the CLI subprocess cannot
+    reach MCP tools); the probe only checks whether the type:http endpoint's TCP/HTTP layer
+    answers, and never affects the exit code."""
     from scholar_workflow.config import load_config
     from scholar_workflow.doctor import run_doctor
 
@@ -40,6 +42,8 @@ def doctor(as_json: bool) -> None:
     else:
         for c in report["checks"]:
             click.echo(f"[{'ok' if c['ok'] else 'FAIL'}] {c['name']}: {c['detail']}")
+        for a in report.get("advisories", []):
+            click.echo(f"[{'ok' if a['ok'] else 'warn'}] {a['name']} (mcp endpoint): {a['detail']}")
     if not report["ok"]:
         raise SystemExit(3)  # dependency not running (see AGENT.md exit codes)
 

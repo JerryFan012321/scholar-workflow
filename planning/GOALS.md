@@ -100,7 +100,7 @@
 - 这是活文档，不归档。原始设计文档已移出仓库（`archived/scholar-workflow/project_references/`），仅作历史快照留存。
 - **zotero-mcp 转向的下游同步（✅ 已完成对齐）**：全部 4 个顶层 references（security / storage / identity / source）、全部 5 个 SKILL.md、全部 5 个 agents、`evals/safety.json`（`no-zotero-write` 删除 → `no-unapproved-destructive-zotero` + `no-create-without-existence-check`；`no-existence-on-unreachable` 语义迁至 MCP；删除守护已删机制的 `no-unapproved-apply` / `plan-invalidated-on-change`）均已按 zotero-mcp 新模型重写；代码层退场项（`adapters/zotero_local.py`、`workflows/sync.py`、`dedup`、CLI 的 `sync`/`locate`/`resolve`/`catalog`）已删除。
 - **审批原则变更（本轮）**：写入审批从"每次写入须批准"改为"新增性写入直接执行、仅破坏性动作须批准"（G4/G9/INV9/NG5），并同步至 `~/.claude/CLAUDE.md` 与 `references/security-policy.md`。
-- **INV16 doctor 分层脚注**：doctor 的 Python 探针只查本地路径；zotero-mcp 可达性由宿主 LLM 在 skill 层核验（CLI 子进程够不到 MCP）。字面"doctor 必检其可达性"应理解为分两层：CLI 查路径 + SKILL 查 MCP。
+- **INV16 doctor 分层脚注**：doctor 的 Python 探针查两样——本地路径 + `type:http` MCP 端点的 **TCP/HTTP 层可达性**（advisory、不影响退出码，因端点未就绪是高频暂态、非环境损坏）；但 **MCP 语义可达性（工具是否注册）** 仍由宿主 LLM 在 skill 层核验（CLI 子进程够不到 MCP 工具）。字面"doctor 必检其可达性"应理解为分三层：CLI 查路径 + CLI 探端点 TCP/HTTP 层 + SKILL 查 MCP 工具注册。缘由：HTTP-MCP 只在会话启动瞬间注册、端点未起则整会话静默无工具且不自愈；端点探针把"工具神秘消失"变成明确报错 + "重启会话"指引（v0.18.0，见 `security-policy.md` zotero-mcp boundary）。
 - **规划文档迁入 `planning/`（本轮）**：`GOALS.md`、`HANDOFF.md` 及 per-phase 规格从仓库根迁入永久、不归档的 `planning/`（区别于将被归档的 `dev-guide/`）。AGENT.md 文档边界表已加 planning 层。历史 CHANGELOG 行不追改。
 - **INV17/INV18（Phase 2）**：新增本机 loopback PDF link-service（附件-key glob storage、inline 流原始 PDF、URL 只存不透明 key）与 sync-projections 的规划/执行分离（LLM↔CLI 只经 JSON、CLI 不碰 MCP）。决策记录 DR-1 见 `planning/phase2-sync-projections.md`。
 - **INV20（Phase 2，曳光弹验证）**：论文相关资料文档（`<论文名>论文相关资料.md`）经受管块之外的小节挂到索引表，聚合周边资料链接、不重复元数据。已用 `上汽标注/text2cad.md` + `Text2CAD论文相关资料.md` 端到端验证：块外小节在重投影后存活（INV4 保护）。

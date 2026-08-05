@@ -3,6 +3,32 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.18.0] — 2026-08-05
+
+### Added
+- **doctor: advisory HTTP-MCP endpoint probe.** A real session hit the failure mode where
+  no `mcp__zotero-mcp__*` tool existed, and the on-the-spot diagnosis misfired — it read the
+  empty *global* `mcpServers` and concluded "not configured", when the config was correct at
+  the *project* level and used HTTP transport (`type:http`, `url:…:23120/mcp`). HTTP-MCP
+  registers only at session start by connecting to that URL; if the endpoint isn't listening
+  then, the server is silently skipped for the whole session and never re-attaches. `doctor`
+  now reads the project-level `type:http` MCP servers and probes each endpoint's TCP/HTTP
+  layer (`probe_http_mcp_endpoints`, stdlib `urllib`, proxy-bypassed, read-only). Results are
+  **advisory** — reported in a new `advisories` list and printed by the CLI, but deliberately
+  excluded from top-level `ok`/exit code, so a not-yet-open Zotero can't make SessionStart
+  exit 3. MCP *semantic* reachability (are tools registered?) stays a skill-layer check
+  (INV16) — the probe only answers "is the endpoint's TCP/HTTP layer up?".
+- **security-policy: "when zotero-mcp tools are absent" guidance.** The zotero-mcp boundary
+  section now tells the host LLM this is a connection (not config) problem: don't edit
+  `~/.claude.json`; run `doctor` or `curl` the endpoint; if down, start Zotero + its plugin
+  and **restart the session**; never fabricate existence results (INV12/INV16 fail-fast).
+
+### Changed
+- **GOALS INV16 doctor footnote → three layers.** Was "CLI checks paths + SKILL checks MCP";
+  now "CLI checks paths + CLI probes the endpoint's TCP/HTTP layer (advisory) + SKILL checks
+  MCP tool registration", with the HTTP-MCP session-start timing rationale.
+- bump 0.17.0 → 0.18.0 (plugin.json, pyproject.toml, __init__.py).
+
 ## [0.17.0] — 2026-08-04
 
 ### Added
