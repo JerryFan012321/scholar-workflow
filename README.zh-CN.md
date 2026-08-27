@@ -57,13 +57,17 @@ zotero-mcp 的受控工具执行,破坏性动作需你批准。论文 PDF 下载
    ```
    验证:`scholar-workflow --help`。
 
-3. **建配置** `~/.config/scholar-workflow/config.yml`:
-   ```yaml
-   research_vault_root: ~/path/to/obsidian/vault  # 必填
-   paper_inbox: ~/path/to/download/inbox          # 可选
-   # notion: { enabled: true, ... }             # 可选,详见文档
+3. **建配置。** 直接在对话中说「配置插件,我的知识库在 ~/path/to/vault」,`config-setup`
+   skill 会替你执行;或手动跑:
+   ```bash
+   scholar-workflow config init --research-vault-root ~/path/to/obsidian/vault
+   # 额外设置可内联 KEY=VALUE,如:
+   #   scholar-workflow config init --research-vault-root ~/vault notion.enabled=true
+   scholar-workflow config set paper_inbox ~/path/to/download/inbox   # 后续改单项
+   scholar-workflow config show                                       # 查看生效值
    ```
-   需要时用 `SCHOLAR_WORKFLOW_HOME` 覆盖配置目录位置。
+   这会写 `~/.config/scholar-workflow/config.yml`(只写你指定的键,非全倒默认值)、校验、
+   后续编辑时保留注释。需要时用 `SCHOLAR_WORKFLOW_HOME` 覆盖位置。
 
 4. **按需提供凭证**(见[环境要求](#环境要求))。token / cookie 存环境变量或各工具自己的
    登录态,**绝不进配置或 git**。如 Notion:`export SCHOLAR_WORKFLOW_NOTION_TOKEN=...`。
