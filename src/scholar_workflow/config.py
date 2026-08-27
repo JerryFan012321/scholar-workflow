@@ -1,10 +1,23 @@
 """Configuration loading and validation."""
 from __future__ import annotations
 from pathlib import Path
-from typing import Any
+from typing import Any, Union, get_args, get_origin
+import io
 import os
+import types
 import yaml
 from pydantic import BaseModel, field_validator
+from ruamel.yaml import YAML
+
+
+class ConfigNotFound(FileNotFoundError):
+    """config.yml is absent. Distinct so callers (doctor) can degrade gracefully
+    instead of crashing. Subclasses FileNotFoundError for backward compatibility."""
+
+
+class ConfigError(ValueError):
+    """User-facing config problem (unknown/secret key, bad value, init conflict).
+    CLI maps this to exit 2."""
 
 
 DEFAULT_HOME = Path.home() / ".config" / "scholar-workflow"
@@ -92,14 +105,146 @@ class Config(BaseModel):
         return Path(os.path.expandvars(str(v))).expanduser().resolve()
 
 
-def load_config(path: Path | None = None) -> Config:
+SECRET_KEY_MARKERS = ("token", "api_key", "cookie", "secret", "password")
+
+
+def config_path() -> Path:
+    """Resolve config.yml's path without requiring it to exist."""
     home = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME))
-    cfg_path = path or home / "config.yml"
+    return home / "config.yml"
+
+
+def load_config(path: Path | None = None) -> Config:
+    cfg_path = path or config_path()
     if not cfg_path.exists():
-        raise FileNotFoundError(f"Config not found: {cfg_path}")
+        raise ConfigNotFound(f"Config not found: {cfg_path}")
     with cfg_path.open() as f:
         data = yaml.safe_load(f)
     return Config(**data)
+
+
+def _unwrap_optional(annotation: Any) -> Any:
+    origin = get_origin(annotation)
+    if origin is Union or origin is getattr(types, "UnionType", ()):
+        args = [a for a in get_args(annotation) if a is not type(None)]
+        if len(args) == 1:
+            return args[0]
+    return annotation
+
+
+def _is_secret_key(key: str) -> bool:
+    return any(m in key.lower() for m in SECRET_KEY_MARKERS)
+
+
+def _resolve_field(key: str) -> Any:
+    """Resolve a dotted key against the Config schema, returning its annotation.
+    Raises ConfigError for unknown keys — the schema is never copied into a skill."""
+    parts = key.split(".")
+    model: Any = Config
+    annotation: Any = None
+    for i, part in enumerate(parts):
+        fields = getattr(model, "model_fields", {})
+        if part not in fields:
+            raise ConfigError(f"Unknown config key: {key!r}")
+        annotation = fields[part].annotation
+        if i < len(parts) - 1:
+            if not (isinstance(annotation, type) and issubclass(annotation, BaseModel)):
+                raise ConfigError(f"Unknown config key: {key!r}")
+            model = annotation
+    return annotation
+
+
+def _coerce(value: str, annotation: Any) -> Any:
+    ann = _unwrap_optional(annotation)
+    if ann is bool:
+        low = value.strip().lower()
+        if low == "true":
+            return True
+        if low == "false":
+            return False
+        raise ConfigError(f"Expected true or false, got {value!r}")
+    if ann is int:
+        try:
+            return int(value.strip())
+        except ValueError:
+            raise ConfigError(f"Expected an integer, got {value!r}") from None
+    return value  # str / Path — validators expand paths at load time
+
+
+def _secret_msg(key: str) -> str:
+    return (f"{key!r} looks like a secret and must never live in config.yml or git. "
+            f"Set it as an environment variable instead "
+            f"(e.g. {NOTION_TOKEN_ENV} for the Notion token).")
+
+
+def _set_nested(data: dict, key: str, value: Any) -> None:
+    parts = key.split(".")
+    node = data
+    for part in parts[:-1]:
+        if not isinstance(node.get(part), dict):
+            node[part] = {}
+        node = node[part]
+    node[parts[-1]] = value
+
+
+def _yaml() -> YAML:
+    y = YAML()
+    y.preserve_quotes = True
+    y.default_flow_style = False
+    return y
+
+
+def _atomic_write(cfg_path: Path, payload: bytes) -> None:
+    cfg_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = cfg_path.with_name(cfg_path.name + ".tmp")
+    tmp.write_bytes(payload)
+    os.replace(tmp, cfg_path)
+
+
+def init_config(research_vault_root: str, extra: dict[str, str] | None = None,
+                path: Path | None = None) -> Path:
+    """Write a minimal config.yml (version + vault + explicit extras only, never all
+    defaults). Idempotent: identical re-init is a no-op; a differing existing file is
+    an error (no --force). Validates the candidate before an atomic replace."""
+    cfg_path = path or config_path()
+    data: dict[str, Any] = {"version": 1, "research_vault_root": research_vault_root}
+    for k, raw in (extra or {}).items():
+        if _is_secret_key(k):
+            raise ConfigError(_secret_msg(k))
+        _set_nested(data, k, _coerce(raw, _resolve_field(k)))
+    Config(**data)  # validate; raises pydantic ValidationError on bad input
+    buf = io.BytesIO()
+    _yaml().dump(data, buf)
+    payload = buf.getvalue()
+    if cfg_path.exists():
+        if cfg_path.read_bytes() == payload:
+            return cfg_path
+        raise ConfigError(
+            f"Config already exists at {cfg_path} with different content; "
+            "edit it with `config set KEY VALUE` instead of re-initializing.")
+    _atomic_write(cfg_path, payload)
+    return cfg_path
+
+
+def set_config_value(key: str, value: str, path: Path | None = None) -> Any:
+    """Set one dotted key in config.yml, preserving comments/formatting (round-trip).
+    Rejects unknown and secret keys before touching the file; validates the full
+    candidate config before an atomic replace. Returns the coerced value."""
+    cfg_path = path or config_path()
+    if not cfg_path.exists():
+        raise ConfigNotFound(f"Config not found: {cfg_path}")
+    if _is_secret_key(key):
+        raise ConfigError(_secret_msg(key))
+    coerced = _coerce(value, _resolve_field(key))
+    y = _yaml()
+    with cfg_path.open() as f:
+        data = y.load(f) or {}
+    _set_nested(data, key, coerced)
+    Config(**data)  # validate full candidate
+    buf = io.BytesIO()
+    y.dump(data, buf)
+    _atomic_write(cfg_path, buf.getvalue())
+    return coerced
 
 
 def load_recommend_config(cwd: Path | None = None) -> RecommendConfig:

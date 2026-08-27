@@ -3,6 +3,79 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.20.0] — 2026-08-06
+
+### Added
+- **Two quality-assurance skills — `project-review` and `code-review`** (skills 10 → 12,
+  both user-invocable, no agent). External supervision to counter the long-work drift where
+  overall perspective and small details slip. Both are **generic and publishable** — they
+  hardcode no project's filenames and judge by the reviewed project's *own* stated rules.
+  - **`project-review`** — read-only strategic snapshot of a whole project. Config-first
+    (`.project-review.md`) with exact-path auto-discovery fallback (no `**/` globs);
+    reads the project's own principles (`AGENT(S).md` / `CLAUDE.md`) and reports five
+    dimensions (alignment, roadmap, bottlenecks & open ends, coverage gap, next steps),
+    skipping any dimension it has no data for. Cures the lost-big-picture problem.
+  - **`code-review`** — cross-model second opinion on a plan or diff via an external
+    reviewer (Codex). The pivotal step is a **high-context handoff built before the call**
+    (project identity, the change, decisions already made, constraints not to violate) —
+    directly answering the observation that a reviewer ignorant of the project gives
+    confident, wrong feedback. Codex runs read-only; Claude **reasons about** each point
+    against the project's own principles (accept real issues, skip false-positives that
+    misread deliberate choices), iterating up to 5 rounds on a VERDICT gate. Self-contained
+    `references/codex-protocol.md` (codex 0.144.6: `-C` root, stdin handoff, `--json`,
+    session resume, exit-code + `turn.completed` checks) with no personal ports or pinned
+    model strings.
+- **`config` CLI command group + `config-setup` skill** (skills 12 → 14). Closes the
+  onboarding gap: after install there was no in-conversation way to configure the plugin —
+  a user had to hand-author ~20-field YAML, and any library skill (even `doctor`) crashed
+  on a fresh install because `load_config()` raised on a missing file. New commands:
+  `config init --research-vault-root PATH [KEY=VALUE ...]` (minimal atomic write — only the
+  keys you name, never a full default dump; idempotent, refuses to clobber a differing
+  file, no `--force`), `config set KEY VALUE` (dotted keys resolved against the pydantic
+  schema, strict bool/int/path coercion, comments preserved via round-trip YAML),
+  `config get`, `config show [--raw]`, `config path`. Unknown keys and secret-looking keys
+  (token/cookie/api_key/secret/password) are refused before any write, pointing at the env
+  var. The `config-setup` skill stays thin: it carries only non-derivable facts (config.yml
+  is the single source, secrets via env, core-config-only scope, no-clobber) — mapping
+  natural language to a dotted key is left to the model (intrinsic ability, not re-encoded).
+- **`project-backlog` skill** — a project-specific work-queue manager over
+  `planning/BACKLOG.md` (add / update / query / report work items with stable IDs).
+- `ruamel.yaml` dependency — round-trip YAML so `config set` preserves hand-written comments.
+- `evals/routing.json`: positive cases for the new skills + negative disambiguation
+  (project-review vs code-review; code-review vs check-consistency; config first-run /
+  change / query). 10 → 17 routing cases.
+
+### Changed
+- **`load_config()` degrades gracefully when config.yml is absent.** It now raises a
+  dedicated `ConfigNotFound` (a `FileNotFoundError` subclass, so existing handlers still
+  work); business commands translate it to a clean exit-3 message pointing at `config init`
+  instead of a traceback, and `doctor` reports "not configured yet" rather than crashing.
+- Fixed a stale `plugin userConfig` reference in `export-annotations/SKILL.md` (now
+  `config.yml`), left over from the removed userConfig block.
+
+### Fixed
+- **Resume claims made honest.** The CLI does not resume across runs — `run_paper_import`
+  mints a fresh `job_id` each run and `download_pdf` overwrites the inbox file, so nothing
+  is skipped or continued. Dropped "resumable"/"可恢复" from both READMEs; corrected
+  `download-validation.md` (re-running `apply` re-downloads every non-skip item from
+  scratch); `resume` command docstring now says "Print a job's persisted state … Does not
+  resume execution"; `paper.py` module docstring drops the Saga/retryable framing.
+- **README gains a Status & limitations section** (both languages): what's battle-tested vs.
+  implemented-but-not-yet-run (literature-tree CLI render path, NotebookLM skim,
+  check-consistency), no cross-run resume, and library-safety rules living at the skill
+  layer rather than in code.
+
+### Removed
+- **Dead `userConfig` block in `plugin.json`.** Its three fields (`paper_inbox`,
+  `research_vault_root`, `notion_enabled`) were collected by the `/plugin` config UI but
+  read by nothing — the CLI and skills load everything from `~/.config/scholar-workflow/config.yml`
+  (via `SCHOLAR_WORKFLOW_HOME`), a fuller ~20-field schema. The stub duplicated three of
+  those keys, could not configure the plugin even if wired (Notion data-source ids,
+  link_service, policy all absent), marked `research_vault_root` `required` so the UI forced
+  a value it then discarded, and kept incurring breaking-change churn to stay "in sync." Removed
+  as misleading dead scaffolding; `config.yml` (documented in both READMEs) remains the single
+  configuration source.
+
 ## [0.19.0] — 2026-08-05
 
 ### Added

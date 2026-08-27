@@ -14,6 +14,23 @@ class InputError(click.ClickException):
     exit_code = 2
 
 
+class DependencyError(click.ClickException):
+    """A required dependency isn't ready — maps to exit code 3."""
+    exit_code = 3
+
+
+def _load_cfg():
+    """Load config for business commands, turning a missing config.yml into a clean
+    exit-3 message (run `config init`) instead of a traceback."""
+    from scholar_workflow.config import ConfigNotFound, load_config
+    try:
+        return load_config()
+    except ConfigNotFound:
+        raise DependencyError(
+            "scholar-workflow is not configured yet. Run "
+            "`scholar-workflow config init --research-vault-root PATH` first.") from None
+
+
 def _state_db_path() -> Path:
     home = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME))
     home.mkdir(parents=True, exist_ok=True)
@@ -33,10 +50,23 @@ def doctor(as_json: bool) -> None:
     MCP tool-registration reachability stays a skill-layer check (the CLI subprocess cannot
     reach MCP tools); the probe only checks whether the type:http endpoint's TCP/HTTP layer
     answers, and never affects the exit code."""
-    from scholar_workflow.config import load_config
+    from scholar_workflow.config import ConfigNotFound, config_path, load_config
     from scholar_workflow.doctor import run_doctor
 
-    report = run_doctor(load_config())
+    try:
+        cfg = load_config()
+    except ConfigNotFound:
+        detail = (f"no config.yml at {config_path()} — run "
+                  f"`scholar-workflow config init --research-vault-root PATH`")
+        report = {"ok": False, "configured": False,
+                  "checks": [{"name": "config", "ok": False, "detail": detail}]}
+        if as_json:
+            click.echo(json.dumps(report, ensure_ascii=False))
+        else:
+            click.echo(f"[FAIL] config: {detail}")
+        raise SystemExit(3)
+
+    report = run_doctor(cfg)
     if as_json:
         click.echo(json.dumps(report, ensure_ascii=False))
     else:
@@ -48,6 +78,94 @@ def doctor(as_json: bool) -> None:
                        f"(mcp endpoint, {scope}): {a['detail']}")
     if not report["ok"]:
         raise SystemExit(3)  # dependency not running (see AGENT.md exit codes)
+
+
+@main.group()
+def config() -> None:
+    """Inspect and edit config.yml (non-secret settings; secrets stay in env vars)."""
+
+
+@config.command(name="init")
+@click.option("--research-vault-root", "vault", required=True,
+              help="Absolute path to the Obsidian research vault (required).")
+@click.argument("extras", nargs=-1)
+def config_init(vault: str, extras: tuple[str, ...]) -> None:
+    """Create config.yml with the required vault + any KEY=VALUE extras (dotted keys ok).
+
+    Writes only version + the values you name — never a full dump of defaults. Idempotent:
+    an identical re-init is a no-op; a differing existing file is refused (edit with
+    `config set`)."""
+    from scholar_workflow.config import ConfigError, init_config
+
+    extra: dict[str, str] = {}
+    for pair in extras:
+        if "=" not in pair:
+            raise InputError(f"extras must be KEY=VALUE, got {pair!r}")
+        k, v = pair.split("=", 1)
+        extra[k.strip()] = v.strip()
+    try:
+        path = init_config(vault, extra)
+    except ConfigError as e:
+        raise InputError(str(e)) from None
+    except Exception as e:  # pydantic ValidationError -> clean exit 2
+        raise InputError(str(e)) from None
+    click.echo(json.dumps({"config": str(path)}, ensure_ascii=False))
+
+
+@config.command(name="set")
+@click.argument("key")
+@click.argument("value")
+def config_set(key: str, value: str) -> None:
+    """Set one dotted KEY (e.g. notion.enabled) to VALUE, preserving comments."""
+    from scholar_workflow.config import ConfigError, ConfigNotFound, set_config_value
+
+    try:
+        coerced = set_config_value(key, value)
+    except ConfigNotFound:
+        raise InputError(
+            "no config.yml yet — run "
+            "`scholar-workflow config init --research-vault-root PATH` first.") from None
+    except ConfigError as e:
+        raise InputError(str(e)) from None
+    except Exception as e:  # pydantic ValidationError -> clean exit 2
+        raise InputError(str(e)) from None
+    click.echo(json.dumps({key: coerced}, ensure_ascii=False, default=str))
+
+
+@config.command(name="show")
+@click.option("--raw", is_flag=True, help="Print the raw config.yml text as stored.")
+def config_show(raw: bool) -> None:
+    """Print the effective validated config (JSON), or --raw for the file as written."""
+    from scholar_workflow.config import config_path
+
+    if raw:
+        p = config_path()
+        if not p.exists():
+            raise DependencyError(f"no config.yml at {p} — run `config init` first.")
+        click.echo(p.read_text())
+        return
+    cfg = _load_cfg()
+    click.echo(cfg.model_dump_json(indent=2))
+
+
+@config.command(name="get")
+@click.argument("key")
+def config_get(key: str) -> None:
+    """Print the effective validated value of one dotted KEY."""
+    cfg = _load_cfg()
+    node: object = cfg
+    for part in key.split("."):
+        if not hasattr(node, part):
+            raise InputError(f"Unknown config key: {key!r}")
+        node = getattr(node, part)
+    click.echo(json.dumps(node, ensure_ascii=False, default=str))
+
+
+@config.command(name="path")
+def config_path_cmd() -> None:
+    """Print config.yml's path (whether or not it exists yet)."""
+    from scholar_workflow.config import config_path
+    click.echo(str(config_path()))
 
 
 @main.command()
@@ -77,12 +195,11 @@ def apply(inputs: tuple[str, ...]) -> None:
     from scholar_workflow.state import StateStore
     from scholar_workflow.planning import generate_plan
     from scholar_workflow.workflows.paper import run_paper_import
-    from scholar_workflow.config import load_config
 
     resources = resolve_many(list(inputs))
     if not resources:
         raise InputError("no resolvable inputs")
-    config = load_config()
+    config = _load_cfg()
     store = StateStore(_state_db_path())
     try:
         plan = generate_plan(resources)
@@ -104,13 +221,12 @@ def project_obsidian_cmd(input_file) -> None:
     arxiv, doi, synced}, ...]}. Content outside the managed markers is preserved;
     re-running the same input is idempotent (GOALS INV4/INV18)."""
     from pathlib import Path
-    from scholar_workflow.config import load_config
     from scholar_workflow.adapters.obsidian import ObsidianAdapter
     from scholar_workflow.workflows.projection import project_obsidian
 
     payload = json.load(input_file)
     entries = payload.get("entries", [])
-    cfg = load_config()
+    cfg = _load_cfg()
     index = payload.get("index") or "31-paper/index.md"
     heading = payload.get("heading") or "Papers"
     adapter = ObsidianAdapter(Path(cfg.research_vault_root),
@@ -134,7 +250,6 @@ def project_tree_cmd(input_file, dry_run: bool) -> None:
     plus a 10-column paper table (direct papers). Content outside markers is preserved;
     re-running the same input is idempotent (INV4/INV18)."""
     from pathlib import Path
-    from scholar_workflow.config import load_config
     from scholar_workflow.adapters.obsidian import ObsidianAdapter
     from scholar_workflow.workflows.hierarchy import plan_tree, project_tree
 
@@ -143,7 +258,7 @@ def project_tree_cmd(input_file, dry_run: bool) -> None:
     if not tree or not tree.get("name"):
         raise InputError("input must contain a non-empty 'tree' with a 'name'")
     root = payload.get("root") or "31-paper"
-    cfg = load_config()
+    cfg = _load_cfg()
     if dry_run:
         plan = plan_tree(tree, root, cfg.link_service.port)
         click.echo(json.dumps(
@@ -177,7 +292,6 @@ def project_literature_tree_cmd(input_file, dry_run: bool) -> None:
     `filename` then defaults to 01-Paperlist.md. Content outside markers is preserved;
     re-running the same input is idempotent (INV4/INV18/INV22)."""
     from pathlib import Path
-    from scholar_workflow.config import load_config
     from scholar_workflow.adapters.obsidian import ObsidianAdapter
     from scholar_workflow.workflows.novelty_tree import (
         plan_novelty_tree, project_novelty_tree, plan_paperlist, project_paperlist,
@@ -189,7 +303,7 @@ def project_literature_tree_cmd(input_file, dry_run: bool) -> None:
         raise InputError("input must contain a 'doc' with a non-empty 'tree.name'")
     paperlist_only = bool(payload.get("paperlist_only"))
     root = payload.get("root") or doc.get("topic") or "35-literature-tree"
-    cfg = load_config()
+    cfg = _load_cfg()
     port = cfg.link_service.port
 
     if paperlist_only:
@@ -225,10 +339,9 @@ def serve_links() -> None:
     storage folder, so projection links open in a local browser (GOALS INV17).
     Read-only filesystem access; never reaches MCP."""
     import threading as _t
-    from scholar_workflow.config import load_config
     from scholar_workflow.adapters.local_links import start_link_server
 
-    cfg = load_config()
+    cfg = _load_cfg()
     server = start_link_server(cfg.link_service.port, cfg.link_service.storage_root)
     host, port = server.server_address
     click.echo(f"link-service on http://{host}:{port}  (storage: "
@@ -281,10 +394,9 @@ def env_init(git_init: bool) -> None:
     never overwritten, so real records survive re-runs. The plugin owns no private data;
     the directory location is the only input, taken from config."""
     import subprocess
-    from scholar_workflow.config import load_config
     from scholar_workflow.workflows.env_setup import scaffold
 
-    cfg = load_config()
+    cfg = _load_cfg()
     result = scaffold(cfg.env_records_root)
     git_done = False
     if git_init and not (result.root / ".git").exists():
@@ -300,7 +412,7 @@ def env_init(git_init: bool) -> None:
 @main.command()
 @click.argument("job_id")
 def resume(job_id: str) -> None:
-    """Report a job's persisted state so it can be resumed (read-only)."""
+    """Print a job's persisted state (read-only). Does not resume execution."""
     from scholar_workflow.state import StateStore
 
     store = StateStore(_state_db_path())

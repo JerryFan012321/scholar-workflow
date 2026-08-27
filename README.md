@@ -3,7 +3,7 @@
 A Claude Code plugin for scholarly resource management. It discovers and imports
 papers, keeps Obsidian indexes and Notion projections in sync, builds literature
 novelty trees, recommends daily papers from four sources, and writes detailed paper
-analyses — with a deterministic CLI doing the testable, resumable work while Claude
+analyses — with a deterministic CLI doing the testable file work while Claude
 handles understanding, recommendation, and judgment.
 
 [中文文档](./README.zh-CN.md)
@@ -36,6 +36,8 @@ zotero-mcp (`write_item import`). **Obsidian** holds knowledge notes and derived
 | recommend-papers | Daily multi-source paper feed + NotebookLM skim → Reading Report |
 | analyze-paper | In-depth analysis of a paper, written as a companion vault note |
 | env-setup | Scaffold a personal API-key / SSH-server env-records ledger |
+| project-review | Read-only strategic snapshot of the whole project (auto-discovers its strategy docs) |
+| code-review | Cross-model second opinion on a plan or diff via an external reviewer (Codex) |
 
 ## Requirements
 
@@ -96,6 +98,21 @@ Just talk to Claude Code in natural language — each skill triggers on intent, 
 Each skill's own `README` (under `skills/<name>/`) documents its options and setup in
 detail. Recommendation reports are ephemeral; papers you keep flow into the normal
 find/ingest pipeline so nothing enters your library without the dedup check.
+
+## Status & limitations
+
+The plugin is in active `0.x` development. What's solid vs. still settling:
+
+- **Battle-tested end to end:** paper ingest (find → dedup-verify → import into Zotero) and
+  the Obsidian / Notion projections.
+- **Implemented but not yet exercised on a real end-to-end run:** the `build-literature-tree`
+  CLI render path (especially the fourth `module` level and the challenge-insight tree
+  written to the vault), the `recommend-papers` NotebookLM skim tier, and `check-consistency`.
+- **No cross-run resume:** re-running `apply` starts a fresh job and re-downloads every item;
+  it does not pick up where a prior run stopped.
+- **Library-safety rules live at the skill layer, not in code:** the dedup check before
+  create and the approval gate on destructive Zotero actions are followed by the host LLM per
+  the skill instructions — the CLI cannot reach zotero-mcp to enforce them.
 
 ## Development
 

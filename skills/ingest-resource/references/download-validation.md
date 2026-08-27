@@ -21,5 +21,5 @@ mechanics of validating a download.
 ## Failure handling
 
 - Any check fails → mark the item `download_failed`, keep the batch going.
-- The job is resumable: re-running `apply` on the same input retries only items not
-  already downloaded to the inbox, so it does not re-download completed ones.
+- Re-running `apply` starts a fresh job and re-downloads every non-skip/conflict item from
+  scratch (each run overwrites the inbox file); it does not skip items already in the inbox.

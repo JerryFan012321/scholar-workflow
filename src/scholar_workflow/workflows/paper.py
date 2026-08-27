@@ -2,8 +2,9 @@
 
 The CLI cannot reach zotero-mcp (separate subprocess), so its job ends at "PDF in
 the inbox"; the host LLM then imports it into Zotero via zotero-mcp (`write_item`
-import). Zotero (and its storage) is the authoritative library. Each step is
-retryable with no auto-rollback (Saga).
+import). Zotero (and its storage) is the authoritative library. Each run is a fresh
+job (no cross-run resume); a failed download is recorded in the state store and
+reported in the results, with no rollback.
 """
 from __future__ import annotations
 import uuid
