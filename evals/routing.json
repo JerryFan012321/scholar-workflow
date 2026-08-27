@@ -61,6 +61,50 @@
       "input": "帮我写一个 Python 排序函数",
       "expected_skill": null,
       "comment": "普通代码任务不得触发本插件任何 skill"
+    },
+    {
+      "id": "project-review-status",
+      "input": "帮我审视一下这个项目现在的整体进展",
+      "expected_skill": "project-review",
+      "must_not_write": true,
+      "comment": "开放式「项目现在什么状态/全景」→ project-review 只读战略快照"
+    },
+    {
+      "id": "code-review-cross-check",
+      "input": "让 codex 交叉审查一下这次改动再合并",
+      "expected_skill": "code-review",
+      "comment": "跨模型第二意见(plan/diff)→ code-review;调外部审查方只读、先建高上下文交接"
+    },
+    {
+      "id": "review-not-project-vs-code",
+      "input": "给我这个项目的战略全景,不是看代码",
+      "expected_skill": "project-review",
+      "comment": "负向消歧:整体方向 → project-review,不落到 diff 级的 code-review"
+    },
+    {
+      "id": "review-not-code-vs-consistency",
+      "input": "帮我 review 一下这个 diff 有没有 bug",
+      "expected_skill": "code-review",
+      "comment": "负向消歧:代码/diff 审查 → code-review,不与 check-consistency(跨系统数据一致性审计)混淆"
+    },
+    {
+      "id": "config-first-run",
+      "input": "我刚装好插件，怎么配置它？我的知识库在 ~/Documents/research",
+      "expected_skill": "config-setup",
+      "comment": "首次配置/初始化 → config-setup 引导 config init"
+    },
+    {
+      "id": "config-change-setting",
+      "input": "把 paper inbox 改成 ~/Downloads/inbox",
+      "expected_skill": "config-setup",
+      "comment": "修改已有配置项 → config-setup 执行 config set"
+    },
+    {
+      "id": "config-query",
+      "input": "我的配置文件在哪里，现在配的 vault 是什么",
+      "expected_skill": "config-setup",
+      "must_not_write": true,
+      "comment": "查询配置状态 → config-setup 只读 config path/get"
     }
   ]
 }

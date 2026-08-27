@@ -2,7 +2,7 @@
 
 面向 Claude Code 的学术资源管理插件。发现并导入论文、保持 Obsidian 索引与 Notion 投影
 同步、构建文献 novelty tree、从四个源推荐每日论文、撰写论文详细分析 —— 由确定性 CLI 承担
-可测试、可恢复的执行,Claude 负责理解、推荐与判断。
+可测试的文件操作,Claude 负责理解、推荐与判断。
 
 [English](./README.md)
 
@@ -30,6 +30,8 @@ zotero-mcp 的受控工具执行,破坏性动作需你批准。论文 PDF 下载
 | recommend-papers | 每日多源论文 feed + NotebookLM 略读 → 推荐清单 |
 | analyze-paper | 论文详细分析,写成 vault 附属笔记 |
 | env-setup | 搭建个人 API-key / SSH 服务器 env-records 台账 |
+| project-review | 对整个项目的只读战略快照(自动发现其战略文档) |
+| code-review | 经外部审查方(Codex)对计划或 diff 做跨模型第二意见 |
 
 ## 环境要求
 
@@ -86,6 +88,18 @@ scholar-workflow`)。你的 `config.yml` 与凭证在仓库之外,更新不受�
 
 各 skill 自己的 `README`(在 `skills/<名>/` 下)详述其选项与配置。推荐清单是临时的;你
 留下的论文走常规 find/ingest 管线,不经判重不入库。
+
+## 状态与已知限制
+
+插件仍处于 `0.x` 活跃开发期。哪些已稳、哪些仍在打磨:
+
+- **已端到端实盘:** 论文入库(查找 → 判重核验 → 导入 Zotero),以及 Obsidian / Notion 投影。
+- **已实现但尚未真实端到端跑通:** `build-literature-tree` 的 CLI 渲染路径(尤其第四层
+  `module` 和落盘到 vault 的挑战洞见树)、`recommend-papers` 的 NotebookLM 略读层、
+  `check-consistency`。
+- **不支持跨运行续跑:** 重跑 `apply` 是全新任务、会把每一项从头下载,不会接着上次的进度。
+- **库安全规则在 skill 层而非代码层:** create 前的判重、破坏性 Zotero 动作的审批,都由宿主
+  LLM 按 skill 指令遵守 —— CLI 够不到 zotero-mcp,无法在代码里强制。
 
 ## 开发
 
