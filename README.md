@@ -64,13 +64,19 @@ zotero-mcp (`write_item import`). **Obsidian** holds knowledge notes and derived
    ```
    Verify: `scholar-workflow --help`.
 
-3. **Create the config** at `~/.config/scholar-workflow/config.yml`:
-   ```yaml
-   research_vault_root: ~/path/to/obsidian/vault  # required
-   paper_inbox: ~/path/to/download/inbox          # optional
-   # notion: { enabled: true, ... }             # optional, see docs
+3. **Create the config.** Just ask in-conversation ("configure scholar-workflow, my
+   vault is ~/path/to/vault") and the `config-setup` skill runs it for you, or do it
+   directly:
+   ```bash
+   scholar-workflow config init --research-vault-root ~/path/to/obsidian/vault
+   # add optional settings inline as KEY=VALUE, e.g.:
+   #   scholar-workflow config init --research-vault-root ~/vault notion.enabled=true
+   scholar-workflow config set paper_inbox ~/path/to/download/inbox   # change one key later
+   scholar-workflow config show                                       # inspect effective values
    ```
-   Override the config location with `SCHOLAR_WORKFLOW_HOME` if needed.
+   This writes `~/.config/scholar-workflow/config.yml` (only the keys you name), validates
+   it, and preserves comments on later edits. Override the location with
+   `SCHOLAR_WORKFLOW_HOME` if needed.
 
 4. **Provide credentials** as needed (see [Requirements](#requirements)). Tokens/cookies
    live in environment variables or each tool's own login store — **never in config or
