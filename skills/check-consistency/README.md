@@ -1,7 +1,8 @@
 # check-consistency
 
 Audit cross-system consistency across Zotero, Obsidian indexes, and
-Notion projections. Detects orphaned PDFs, dead Zotero keys, stale index rows,
+Notion projections. Detects inbox-orphan PDFs (under `paper_inbox` only — never a
+reverse-scan of Zotero's own `storage/`), dead Zotero keys, stale index rows,
 broken local links, and duplicate Resource IDs.
 
 Read-only throughout: it reports drift with a severity tag and a suggested remedy,

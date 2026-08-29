@@ -20,7 +20,7 @@ Talk to Claude Code in natural language:
 - *"What needs my decision?"* → lists all `status:pending-decision` items
 - *"Mark WI-003 as done"* → moves it to Completed
 - *"WI-005 is blocked by user decision on the scope"* → updates status and blocker
-- *"Project status"* → full backlog overview (summary + categorized lists)
+- *"Backlog status"* / *"backlog overview"* → full backlog overview (summary + categorized lists). For whole-project strategic status, use `project-review` instead.
 - *"What's ready to work?"* → items with status `ready` and no blockers
 
 ## Schema

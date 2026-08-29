@@ -23,6 +23,7 @@ class ConfigError(ValueError):
 DEFAULT_HOME = Path.home() / ".config" / "scholar-workflow"
 DEFAULT_PAPER_INBOX = Path.home() / "documents" / "0-inbox" / "paper-inbox"
 DEFAULT_ENV_RECORDS_ROOT = Path.home() / "dev" / "env-records"
+DEFAULT_CODE_REPO_ROOT = Path.home() / "code" / "paper-repos"
 
 
 class ObsidianConfig(BaseModel):
@@ -94,12 +95,16 @@ class Config(BaseModel):
     paper_inbox: Path = DEFAULT_PAPER_INBOX
     research_vault_root: Path
     env_records_root: Path = DEFAULT_ENV_RECORDS_ROOT
+    # Where a paper's code repo is saved when the user asks to KEEP it (persist mode).
+    # Reading code is opt-in and ephemeral by default; this path only matters on persist.
+    code_repo_root: Path = DEFAULT_CODE_REPO_ROOT
     obsidian: ObsidianConfig = ObsidianConfig()
     notion: NotionConfig = NotionConfig()
     link_service: LinkServiceConfig = LinkServiceConfig()
     policy: PolicyConfig = PolicyConfig()
 
-    @field_validator("paper_inbox", "research_vault_root", "env_records_root", mode="before")
+    @field_validator("paper_inbox", "research_vault_root", "env_records_root",
+                     "code_repo_root", mode="before")
     @classmethod
     def expand_path(cls, v: Any) -> Path:
         return Path(os.path.expandvars(str(v))).expanduser().resolve()

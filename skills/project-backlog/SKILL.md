@@ -1,6 +1,6 @@
 ---
 name: project-backlog
-description: Manage the persistent work-item queue for this project — add, update, query, and report on pending work, decisions, blockers, and priorities. Use when the user asks 'what needs my decision', 'what's ready to work', 'add this to backlog', 'mark X as blocked', 'project status', 'what's pending', '待办是什么', '哪些等我决策', '把这个加入待办', '标记 X 被阻塞', '项目状态', '当前进度'. Not for ephemeral conversation tasks (use TaskCreate), not for strategic goals (those live in GOALS.md), not for shipped changes (those go in CHANGELOG.md).
+description: Manage the persistent work-item queue for this project — add, update, query, and report on pending work items, decisions, blockers, and priorities. Use when the user asks 'what needs my decision', 'what's ready to work', 'add this to backlog', 'mark X as blocked', 'backlog status', 'backlog overview', 'what's pending', '待办是什么', '哪些等我决策', '把这个加入待办', '标记 X 被阻塞', '待办概览', '待办状态', '还有什么要做'. For whole-project strategic status (「项目状态/整体进展」) use project-review instead. Not for ephemeral conversation tasks (use TaskCreate), not for strategic goals (those live in GOALS.md), not for shipped changes (those go in CHANGELOG.md).
 ---
 
 # project-backlog
@@ -16,7 +16,7 @@ Recognize the user's intent from the request:
 - **Add** — "add X to backlog", "记一下这个待办", "新增工作项 Y"
 - **Update status** — "mark X as done", "close WI-NNN", "X blocked by Y", "X 等我决策", "start WI-NNN"
 - **Query** — "what needs my decision", "what's ready to work", "show blocked items", "哪些等决策", "能做什么"
-- **Report** — "project status", "backlog overview", "项目状态", "当前待办概览"
+- **Report** — "backlog status", "backlog overview", "待办概览", "当前待办概览"
 
 If ambiguous, clarify with the user.
 

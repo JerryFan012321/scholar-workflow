@@ -9,6 +9,7 @@ dist/
 config.yml
 state.db*
 
-# Local dev settings (machine-specific permissions)
+# Local dev settings (machine-specific permissions) + transient session state
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
 

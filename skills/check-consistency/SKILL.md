@@ -22,8 +22,18 @@ description: Audit cross-system consistency across Zotero, Obsidian indexes, and
 5. **Obsidian check**: index-row Zotero keys resolve via zotero-mcp; PDF paths are valid
 6. **Notion check**: no duplicate Resource IDs; local-link URLs resolve
 7. **Hierarchical index check**: parent index descriptions match actual sub-directory contents
-8. Compile a drift report: orphaned PDFs, ghost attachments, absolute-path linked files, dead keys, stale index rows, broken links, duplicate identities
-9. Output a structured JSON report; optionally a Markdown summary
+8. **Inbox-orphan check**: enumerate PDFs under `paper_inbox` and flag any that no Zotero
+   item claims. **Claimed = its identity resolves to a Zotero item**: parse the paper
+   identity from the filename (the arXiv id, or a DOI) — inbox files land there named by
+   the CLI download step — and ask zotero-mcp whether an item with that identity exists
+   (the same identity keys as `identity-policy.md`; do not rely on the file path, since an
+   imported attachment no longer carries the inbox path). An inbox PDF whose identity
+   resolves to no item is a never-ingested orphan; one whose identity *does* resolve is an
+   ingested-but-uncleared copy. Scope is **paper_inbox only** (the plugin's own staging
+   area); never reverse-scan Zotero's `storage/` — a stray file there is Zotero's own
+   housekeeping, not drift this tool owns (Zotero is the sole authority).
+9. Compile a drift report: inbox-orphan PDFs, ghost attachments, absolute-path linked files, dead keys, stale index rows, broken links, duplicate identities
+10. Output a structured JSON report; optionally a Markdown summary
 
 ## Constraints
 - Read-only throughout — never fix or delete any discovered issue
