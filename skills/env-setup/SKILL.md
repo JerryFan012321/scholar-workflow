@@ -1,6 +1,6 @@
 ---
 name: env-setup
-description: Scaffold, maintain — AND consult — a personal env-records directory that tracks API keys and SSH servers (with per-host conda/CUDA/proxy inventory). Before connecting to one of the user's OWN recorded servers, uploading to it, or using a user-owned recorded API key, check this ledger FIRST for an existing host/key. NOT for uploading to Zotero or a managed service, and NOT for calling a public keyless API. Templates are committed; real records stay gitignored and local. Triggers 'env records', 'record a server', 'register an api key', 'set up env records', 'track this server', 'ssh server ledger', 'upload to my server', 'ssh into my server', 'connect to my server', 'use my api key', 'which of my servers', '环境记录', '登记服务器', '登记 api', '记录服务器环境', '初始化环境记录', '传到我的服务器', '上传到我的服务器', '连我的服务器', '登录我的服务器', '用我的 key', '我哪台服务器'.
+description: Scaffold, maintain — AND consult — a personal env-records directory that tracks API keys and SSH servers (with per-host conda/CUDA/proxy inventory). Before connecting to one of the user's OWN recorded servers, uploading to it, or using a user-owned recorded API key, check this ledger FIRST for an existing host/key. NOT for uploading to Zotero or a managed service, and NOT for calling a public keyless API. Templates are committed; real records stay gitignored and local. Triggers 'env records', 'record a server', 'register an api key', 'set up env records', 'track this server', 'ssh server ledger', 'find a server', 'list servers', 'look up a server', 'which servers do I have', 'what api keys are recorded', 'upload to my server', 'ssh into my server', 'connect to my server', 'use my api key', 'which of my servers', '环境记录', '登记服务器', '登记 api', '记录服务器环境', '初始化环境记录', '查找服务器', '查服务器', '有哪些服务器', '服务器列表', '有哪些 key', '查一下 key', '传到我的服务器', '上传到我的服务器', '连我的服务器', '登录我的服务器', '用我的 key', '我哪台服务器'.
 ---
 
 # env-setup
@@ -9,7 +9,15 @@ description: Scaffold, maintain — AND consult — a personal env-records direc
 - User wants to scaffold the personal env-records directory (first-time setup)
 - User wants to register a new API key or record a new SSH server
 - User wants to note a server's environment (conda envs, CUDA, proxy) after logging in
+- User wants to look up / list which servers or API keys are already recorded (read-only ledger query)
 - Before a task on one of **the user's own** hosts/keys (ssh in, upload to *their* server, an API call needing *their* recorded credential): consult the ledger first to resolve which host or key to use. Not for Zotero/managed-service uploads or public keyless APIs.
+
+**Trigger boundary** — two kinds of intent route here differently:
+- A **generic verb** (upload / connect / call an API) needs a *"my / recorded"* qualifier
+  to fire, so it never over-captures Zotero/managed-service uploads or public keyless APIs.
+- A **noun that directly names the ledger** (find/list/look-up + server/key) fires with no
+  qualifier — "server ledger" is unambiguous in this project, so a bare "find a server" is
+  a ledger query, not something to route elsewhere.
 
 ## Model
 

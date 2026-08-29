@@ -3,6 +3,18 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.21.1] — 2026-08-29
+
+### Fixed
+- **env-setup — ledger-query intents now route (regression from 0.21.0).** The 0.21.0
+  over-routing fix qualified every server/key trigger with "my", which also blocked
+  read-only ledger *queries* like "查找服务器" / "find a server" from firing. Added
+  query triggers (find/list/look-up + server/key, zh + en) with **no "my" qualifier**,
+  and documented the boundary: a *generic verb* (upload/connect/call) needs the "my/
+  recorded" qualifier to avoid over-capturing Zotero/public-API actions, but a *noun that
+  directly names the ledger* (find/list a server/key) is unambiguous and fires bare.
+  Routing regression case `env-query-find-server` added.
+
 ## [0.21.0] — 2026-08-29
 
 ### Added
