@@ -161,6 +161,12 @@
       "expected_skill": "project-review",
       "must_not_trigger": "project-backlog",
       "comment": "回归守护:裸「项目状态」→ project-review 战略快照,不得落到 project-backlog(WI-014 修复的碰撞点)"
+    },
+    {
+      "id": "env-query-find-server",
+      "input": "查找服务器",
+      "expected_skill": "env-setup",
+      "comment": "回归守护(v0.21.1):直指台账的名词查询(查/找/列 + 服务器/key)无需「我的」限定即触发 env-setup;泛化动词(upload/connect)才需限定防误吞"
     }
   ]
 }
