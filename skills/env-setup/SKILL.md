@@ -1,6 +1,6 @@
 ---
 name: env-setup
-description: Scaffold and maintain a personal env-records directory that tracks API keys and SSH servers (with per-host conda/CUDA/proxy inventory). Templates are committed; real records stay gitignored and local. Triggers 'env records', 'record a server', 'register an api key', 'set up env records', 'track this server', 'ssh server ledger', '环境记录', '登记服务器', '登记 api', '记录服务器环境', '初始化环境记录'.
+description: Scaffold, maintain — AND consult — a personal env-records directory that tracks API keys and SSH servers (with per-host conda/CUDA/proxy inventory). Before connecting to one of the user's OWN recorded servers, uploading to it, or using a user-owned recorded API key, check this ledger FIRST for an existing host/key. NOT for uploading to Zotero or a managed service, and NOT for calling a public keyless API. Templates are committed; real records stay gitignored and local. Triggers 'env records', 'record a server', 'register an api key', 'set up env records', 'track this server', 'ssh server ledger', 'upload to my server', 'ssh into my server', 'connect to my server', 'use my api key', 'which of my servers', '环境记录', '登记服务器', '登记 api', '记录服务器环境', '初始化环境记录', '传到我的服务器', '上传到我的服务器', '连我的服务器', '登录我的服务器', '用我的 key', '我哪台服务器'.
 ---
 
 # env-setup
@@ -9,6 +9,7 @@ description: Scaffold and maintain a personal env-records directory that tracks 
 - User wants to scaffold the personal env-records directory (first-time setup)
 - User wants to register a new API key or record a new SSH server
 - User wants to note a server's environment (conda envs, CUDA, proxy) after logging in
+- Before a task on one of **the user's own** hosts/keys (ssh in, upload to *their* server, an API call needing *their* recorded credential): consult the ledger first to resolve which host or key to use. Not for Zotero/managed-service uploads or public keyless APIs.
 
 ## Model
 
@@ -32,6 +33,14 @@ and **meta** (purpose/added/notes). An API entry records name/env_var/value/owne
 
 ## Steps
 
+0. **Consult before use.** When a task needs one of **the user's own** servers or API
+   keys — ssh into their host, upload/deploy to it, or an API call that needs a credential
+   they hold — read `servers.yaml` / `apis.yaml` under `env_records_root` FIRST and use the
+   recorded host / key / env if one matches. Only if nothing matches do you fall back to
+   asking the user — and then offer to record it (registration steps below). Never hardcode
+   a host or key the ledger already holds. This does **not** apply to uploading to Zotero or
+   a managed service, or to calling a public keyless API — those aren't ledger entries.
+
 1. **Scaffold** (first run): `scholar-workflow env-init`. It lays down the skeleton
    under `env_records_root`, seeds real record files from templates once, and runs a
    local `git init` (never pushes). Idempotent — existing files are never overwritten.
@@ -46,6 +55,10 @@ and **meta** (purpose/added/notes). An API entry records name/env_var/value/owne
    by `setup_script` — not inlined into the YAML.
 
 ## Constraints
+- **Ledger-first on use.** For a task on the user's own hosts/keys (ssh, upload to *their*
+  server, an API call needing *their* recorded credential), the recorded `env_records_root`
+  entries are the first place to look; do not ask the user for a host or key already on
+  file. Not triggered by Zotero/managed-service uploads or public keyless API calls.
 - The plugin never stores private data; the only input is `env_records_root` from config.
 - Templates (`*.example.yaml`) are committed; real records (`servers.yaml`, `apis.yaml`)
   are gitignored and never pushed. Do not `git add -f` a real record.

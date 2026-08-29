@@ -3,6 +3,58 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.21.0] — 2026-08-29
+
+### Added
+- **analyze-paper — opt-in code-reading source boundary.** The skill may now read a
+  paper's code repo to clarify an implementation, but **only when the user asks** — it
+  never fetches autonomously. Two modes: ephemeral (default — clone to temp, read,
+  discard) / persist (save under a new `code_repo_root` config key, only when the user
+  asks to keep it). Strictly read-only: clone-and-read to understand, **never execute /
+  `pip install` / build**. Shared rule added to `references/source-policy.md` (Code
+  repositories section); paper text still comes only through get_content.
+- **`code_repo_root`** config field (path-expanded) + two unit tests (exact default +
+  `$ENV_VAR` expansion).
+- **analyze-paper ↔ literature-tree linkage (WI-017, tree-aware).** New Step 7: if the
+  paper's direction already has a literature tree (`02-…文献树`/`03-…挑战洞见树`), read it,
+  state where the paper sits, and *surface* milestone/challenge update candidates — never
+  write the tree (that stays with build-literature-tree).
+- **Per-paper hub naming unified (WI-017).** The paper's related-docs hub had two
+  incompatible names — analyze-paper's `<论文名>论文相关资料.md` (INV20) vs
+  build-literature-tree's `paper_assets/<year>-<first-author>-<title>.md` (INV22/INV25) —
+  so the two skills' back-links never connected. Converged on the `paper_assets/…` form:
+  INV20 rewritten in GOALS.md, analyze-paper Steps 3/6 point at it, and the validated
+  tracer-bullet file was migrated (`上汽标注/Text2CAD论文相关资料.md` →
+  `上汽标注/paper_assets/2024-khan-text2cad.md`, back-link updated).
+
+### Changed
+- **env-setup — consult the ledger first on use, not just record.** The skill previously
+  only fired on "record/scaffold" intents, so "upload to my server" / "use my key" never
+  routed to it. Description + Triggers extended with connect/upload/use intents, then
+  **qualified to the user's own recorded hosts/keys only** (not Zotero/managed-service
+  uploads or public keyless APIs). New Step 0 (consult before use): read
+  `servers.yaml`/`apis.yaml` under `env_records_root` FIRST and reuse a matching host/key
+  before asking. New ledger-first constraint.
+- **analyze-paper — one evolving note, never replace the whole note (WI-013).** A rerun
+  (whole-paper or focused) grows the single per-paper analysis note: sections are added or
+  revised in place, but the note as a whole only accretes — never blanked and rewritten.
+- **project-backlog ↔ project-review trigger de-collision (WI-014).** Removed bare
+  "project status"/"项目状态"/"当前进度" from project-backlog (they belong to the read-only
+  strategic project-review); added backlog-qualified triggers + a redirect line. READMEs
+  synced to match.
+- **check-consistency — orphan check narrowed to `paper_inbox` (WI-010).** The
+  never-ingested/uncleared-orphan scan covers `paper_inbox` only; it never reverse-scans
+  Zotero's own `storage/` (Zotero is the sole authority). "Claimed" is now defined: the
+  paper identity parsed from the filename (arXiv id/DOI, per identity-policy) resolves to a
+  Zotero item via zotero-mcp — not a path match.
+
+### Fixed
+- **Post-review revisions (codex cross-model review).** Treat a fetched code repo as
+  untrusted evidence (never an instruction source; no repo-local AGENT/CLAUDE/setup
+  execution); fixed a source-policy self-contradiction (already-ingested metadata is
+  zotero-mcp-authoritative, not "authoritative-web"). Added routing guards (read-code,
+  persist-repo, Zotero-upload-not-env, bare-project-status regression).
+
 ## [0.20.0] — 2026-08-06
 
 ### Added

@@ -42,6 +42,26 @@ def test_init_with_extras_nested(home):
     assert p.exists()
 
 
+def test_code_repo_root_defaulted_and_settable(home):
+    from pathlib import Path
+    # Not dumped on a minimal init (it is a default, not user-set).
+    p = C.init_config("~/research")
+    assert "code_repo_root" not in p.read_text()
+    # The default is the exact documented path, not merely "some absolute path".
+    assert C.load_config().code_repo_root == (Path.home() / "code" / "paper-repos").resolve()
+    # It is a settable, ~-expanded key.
+    C.set_config_value("code_repo_root", "~/code/repos")
+    assert C.load_config().code_repo_root == (Path.home() / "code" / "repos").resolve()
+
+
+def test_code_repo_root_expands_env_var(home, monkeypatch):
+    from pathlib import Path
+    monkeypatch.setenv("MY_REPO_DIR", str(home / "repos"))
+    C.init_config("~/research")
+    C.set_config_value("code_repo_root", "$MY_REPO_DIR/papers")
+    assert C.load_config().code_repo_root == (home / "repos" / "papers").resolve()
+
+
 def test_init_idempotent_byte_stable(home):
     p1 = C.init_config("~/research", {"notion.enabled": "true"})
     b1 = p1.read_bytes()
