@@ -12,10 +12,15 @@ and SSH servers — kept entirely outside the plugin repo.
   cuda_driver, proxy), and meta. Rebuild recipes live in external `setup/<alias>/<env>.sh`.
 - **APIs** — name / env_var / value / owner / scope, one entry per key.
 
-- **Consult before use** — when a task touches one of *your own* recorded hosts or keys
-  (ssh in, upload to your server, an API call needing your recorded credential), the skill
-  reads the ledger FIRST and reuses a matching host/key before asking you. It does not fire
-  for uploading to Zotero / a managed service or calling a public keyless API.
+- **Query or consult** — ask what is recorded ("find a server", "which servers do I have",
+  or the recorded CUDA/proxy details of one) and it reads the ledger and answers, read-only:
+  if the records don't exist yet it says the ledger is uninitialized rather than scaffolding
+  on its own. And when a task touches one of *your own* recorded hosts or keys (ssh in,
+  upload to your server, an API call needing your recorded credential), it reads the ledger
+  FIRST and reuses a matching host/key before asking you. It does not fire for uploading to
+  Zotero / a managed service, calling a public keyless API, or enumerating inventory exposed
+  by another system (a cloud account, a Kubernetes cluster), even when that account or cluster
+  belongs to the user.
 
 The plugin owns no private data — the directory location is the only input. Templates
 are committed; real records stay gitignored and local. Adding a server is

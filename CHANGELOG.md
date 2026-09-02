@@ -3,6 +3,57 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.22.0] — 2026-09-02
+
+### Added
+- **Codex plugin packaging.** Added `.codex-plugin/plugin.json` so Codex installs the
+  existing `skills/` as one plugin, plus `.mcp.json` for the bundled `zotero-mcp` HTTP
+  server. Codex discovers the existing `hooks/hooks.json` automatically, so the Claude
+  and Codex packages share the same skills, hooks, MCP server name, and deterministic CLI.
+- **Cross-host manifest regression test.** The two host manifests must keep the same plugin
+  name and version, their Zotero MCP definitions must remain equivalent, and the release
+  builder must ship the Codex manifest and MCP companion file.
+
+### Changed
+- **Release packaging and host boundary.** The runtime-only `release` branch now includes
+  `.codex-plugin/` and `.mcp.json`; project goals and bilingual install documentation now
+  describe Claude Code and Codex as supported hosts.
+
+## [0.21.2] — 2026-08-31
+
+### Fixed
+- **env-setup — tighten the query-trigger boundary and define read-only behavior**
+  (cross-model review of 0.21.1, two rounds). Bare `list servers` / `look up a server` were
+  too broad — they read naturally as enumerating a cloud account, Kubernetes cluster, or
+  `~/.ssh/config`, which contradicts the skill's own managed-service exclusion; replaced with
+  `list recorded servers` / `list env-records servers` / `look up a recorded server`. The
+  trigger-boundary note no longer claims "server" unambiguously names this ledger (an
+  over-claim) and is now stated as a contract: the query phrases in the description route
+  bare, action intents need an ownership qualifier, and inventory exposed by another system
+  does not route here. That last exclusion is a **data-source** boundary, not an ownership
+  one — `which servers do I have in my AWS account` is the user's own inventory and still
+  must not fire, so the wording covers "even when that account or cluster belongs to the
+  user".
+- **env-setup — reading never mutates.** Step 0 now says an absent record file means "ledger
+  not initialized" and an empty one means "no matching records", and that neither authorizes
+  `env-init` or a write unless the user asks — closing a path where a read-only query could
+  have triggered scaffolding.
+- **env-setup — query covers recorded details, not just "which host".** The ledger records
+  per-host conda/CUDA/proxy inventory, so a query about one host's recorded details is now
+  in contract (no new trigger words: once routed here, picking which field to read needs no
+  instruction).
+- **env-setup — `Ledger-first` split into two independent cases**, so a task naming an
+  already-recorded host still requires the lookup; the Zotero/managed-service/public-keyless
+  exclusions now attach to the use-intent case only. READMEs synced.
+- **evals — negative routing cases now collide with the triggers that actually remain.**
+  Three `must_not_trigger: env-setup` cases (`env-not-managed-inventory-k8s` / `-aws` /
+  `-k8s-zh`) exercise the retained broad triggers `which servers do I have` / `find a server` /
+  `查找服务器` under explicit external-system context; the first draft tested
+  `list servers in this Kubernetes cluster`, a phrase this very release had already removed
+  from the description (27 → 30 cases). `must_not_trigger` is now schema-validated in
+  `tests/unit/test_evals_schema.py` — the named skill must exist on disk and must differ from
+  `expected_skill`, so a typo fails CI instead of silently disarming the guard.
+
 ## [0.21.1] — 2026-08-29
 
 ### Fixed

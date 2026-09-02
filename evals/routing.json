@@ -166,7 +166,28 @@
       "id": "env-query-find-server",
       "input": "查找服务器",
       "expected_skill": "env-setup",
-      "comment": "回归守护(v0.21.1):直指台账的名词查询(查/找/列 + 服务器/key)无需「我的」限定即触发 env-setup;泛化动词(upload/connect)才需限定防误吞"
+      "comment": "回归守护(v0.21.1):台账查询意图无需「我的」限定即触发 env-setup;description 里列出的查询短语即契约"
+    },
+    {
+      "id": "env-not-managed-inventory-k8s",
+      "input": "which servers do I have in my Kubernetes cluster",
+      "expected_skill": null,
+      "must_not_trigger": "env-setup",
+      "comment": "负向消歧:枚举由其他系统暴露的清单(K8s/云账号/ssh-config)不是本台账,即便带「我的」所有权限定也不得触发 env-setup —— 边界是数据来源而非归属;守护保留的裸触发词 which servers do I have"
+    },
+    {
+      "id": "env-not-managed-inventory-aws",
+      "input": "find a server in my AWS account",
+      "expected_skill": null,
+      "must_not_trigger": "env-setup",
+      "comment": "负向消歧:「find a server」是台账触发词,但上下文明确指向云账号这一外部清单来源 → 不得触发 env-setup"
+    },
+    {
+      "id": "env-not-managed-inventory-k8s-zh",
+      "input": "查找这个 K8s 集群里的服务器",
+      "expected_skill": null,
+      "must_not_trigger": "env-setup",
+      "comment": "负向消歧(中文):「查找服务器」裸词必须触发(见 env-query-find-server),但显式 K8s 集群上下文覆盖之 → 不得触发 env-setup"
     }
   ]
 }

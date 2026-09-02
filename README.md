@@ -1,16 +1,16 @@
 # scholar-workflow
 
-A Claude Code plugin for scholarly resource management. It discovers and imports
+A Claude Code and Codex plugin for scholarly resource management. It discovers and imports
 papers, keeps Obsidian indexes and Notion projections in sync, builds literature
 novelty trees, recommends daily papers from four sources, and writes detailed paper
-analyses — with a deterministic CLI doing the testable file work while Claude
+analyses — with a deterministic CLI doing the testable file work while the host LLM
 handles understanding, recommendation, and judgment.
 
 [中文文档](./README.zh-CN.md)
 
 ## Architecture
 
-Claude handles understanding, classification, and recommendation; a deterministic CLI
+The host LLM handles understanding, classification, and recommendation; a deterministic CLI
 (`src/scholar_workflow/`) performs testable file operations and never touches your Zotero
 library directly. Its core projection/state commands make no network calls; the only
 outbound access is scoped and declared — `apply` fetches PDFs from arXiv, and the separate
@@ -35,13 +35,13 @@ zotero-mcp (`write_item import`). **Obsidian** holds knowledge notes and derived
 | export-annotations | Turn a paper's Zotero annotations into a structured vault note |
 | recommend-papers | Daily multi-source paper feed + NotebookLM skim → Reading Report |
 | analyze-paper | In-depth analysis of a paper, written as a companion vault note |
-| env-setup | Scaffold a personal API-key / SSH-server env-records ledger |
+| env-setup | Scaffold — and consult — a personal API-key / SSH-server env-records ledger |
 | project-review | Read-only strategic snapshot of the whole project (auto-discovers its strategy docs) |
 | code-review | Cross-model second opinion on a plan or diff via an external reviewer (Codex) |
 
 ## Requirements
 
-- **Claude Code** (this is a plugin for it).
+- **Claude Code or Codex** (Codex CLI or the Codex app; the IDE extension does not load plugins).
 - **Python ≥ 3.11** — the deterministic CLI is a Python package.
 - **Zotero + [zotero-mcp](https://github.com/54yyyu/zotero-mcp)** — the authoritative
   library. The plugin hard-depends on it for read/write/semantic search; without it the
@@ -54,8 +54,21 @@ zotero-mcp (`write_item import`). **Obsidian** holds knowledge notes and derived
 
 ## Installation
 
-1. **Install the plugin.** Add this repository as a Claude Code plugin (via the plugin
-   marketplace, or point Claude Code at a local clone / the repo URL).
+1. **Install the plugin in your host.**
+
+   Claude Code:
+   ```text
+   /plugin marketplace add JerryFan012321/scholar-workflow@release
+   /plugin install scholar-workflow@jerry-plugins
+   ```
+
+   Codex CLI:
+   ```bash
+   codex plugin marketplace add JerryFan012321/scholar-workflow --ref release
+   codex plugin add scholar-workflow@jerry-plugins
+   ```
+   Start a new Claude Code or Codex session after installation so bundled skills, hooks,
+   and MCP tools are loaded.
 
 2. **Install the CLI** (provides the `scholar-workflow` command the skills call):
    ```bash
@@ -84,14 +97,16 @@ zotero-mcp (`write_item import`). **Obsidian** holds knowledge notes and derived
 
 ## Updating
 
-The plugin is versioned via `.claude-plugin/plugin.json` (see [CHANGELOG.md](./CHANGELOG.md)
-for what changed). Pull the latest `release` branch, then re-run `pip install -e .`
+The host manifests (`.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`) share one
+version (see [CHANGELOG.md](./CHANGELOG.md) for what changed). Refresh the marketplace or
+pull the latest `release` branch, then re-run `pip install -e .`
 (or `pipx upgrade scholar-workflow`) if the CLI version changed. Your `config.yml` and any
 credentials live outside the repo and are unaffected by updates.
 
 ## Usage
 
-Just talk to Claude Code in natural language — each skill triggers on intent, e.g.:
+Talk to Claude Code or Codex in natural language — each skill triggers on intent. In Codex,
+you can also invoke a skill explicitly with `$skill-name`, e.g.:
 
 - *"survey the field of world models"* → survey-topic → (recommend / find / tree …)
 - *"find the DreamerV3 paper and import it"* → find-resource → ingest-resource
@@ -122,6 +137,6 @@ The plugin is in active `0.x` development. What's solid vs. still settling:
 
 ## Development
 
-This is the `release` branch (runtime only). Development — conventions, planning docs,
+This is the `release` branch (runtime only), including both host manifests. Development — conventions, planning docs,
 tests, and evals — lives on the `main` branch. See its `AGENT.md` for contributor
 guidelines. Run tests there with `pytest tests/unit tests/contract`.

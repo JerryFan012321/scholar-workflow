@@ -5,6 +5,7 @@
 ```
 5 Agents: intake / lineage / knowledge / feed / audit（任务级自足单元，skill 可跨 agent 复用；不互相 handoff，跨 agent 串联由宿主 LLM 或 survey-topic 编排）
 14 Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / analyze-paper / env-setup / project-review / code-review / config-setup / project-backlog（后五者无 agent，用户直呼）
+2 Host manifests: .claude-plugin/plugin.json / .codex-plugin/plugin.json（同名、同版本；共享 skills/hooks，MCP 配置保持等价）
 确定性 CLI: src/scholar_workflow/ + bin/(scholar-workflow, zotero-annotations.py, recommend-papers.py)
 Zotero 经 zotero-mcp: 元数据/存在性/语义检索/写入(create/import/元数据)均经 zotero-mcp 受控工具;唯一例外——批注导出允许 bin/zotero-annotations.py 以只读(mode=ro&immutable=1)直读本地 DB,绝不用于元数据判定或任何写入
 论文下载: CLI 落入 paper_inbox 收件箱，再经 zotero-mcp 入库
@@ -119,7 +120,7 @@ methodology (stable); `planning/` is the per-phase **"what to build / goals / ha
 - Read `dev-guide/` (skill-authoring / skill-iteration / eval-loop) before authoring or iterating a skill
 - Read the existing SKILL.md / agent file before modifying
 - Update `CHANGELOG.md` before every commit — group entries under the skill name
-- Bump `.claude-plugin/plugin.json` version **per coherent capability batch, not per commit** — a user-perceivable feature batch is minor, fixes are patch. During the 0.x pre-release phase, iterations *within* one batch (multiple commits refining the same capability) share a version and don't each bump. This avoids same-day triple-jumps like 0.6→0.7→0.8.
+- Bump `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json` together **per coherent capability batch, not per commit** — a user-perceivable feature batch is minor, fixes are patch. During the 0.x pre-release phase, iterations *within* one batch (multiple commits refining the same capability) share a version and don't each bump. This avoids same-day triple-jumps like 0.6→0.7→0.8.
 - Update `planning/GOALS.md` when a goal, invariant, non-goal, or phase status changes — keep IDs stable, assign new IDs for new items
 - Update the Agent → Skill mapping table when adding or renaming a skill
 - Test skill triggering by reviewing the `description` field — it's the primary routing mechanism
@@ -188,7 +189,7 @@ Two branches, disjoint by purpose:
 - **`main`** — the development branch. Everything lives here: runtime code **plus** the
   development layer (`planning/`, `dev-guide/`, `tests/`, `evals/`, `AGENT.md`, `CLAUDE.md`).
 - **`release`** — an **orphan** branch (independent history) that ships to users. It
-  contains **only runtime files**: `.claude-plugin/`, `agents/`, `bin/`, `contracts/`,
+  contains **only runtime files**: `.claude-plugin/`, `.codex-plugin/`, `.mcp.json`, `agents/`, `bin/`, `contracts/`,
   `hooks/`, `references/`, `skills/`, `src/`, `scripts/guard-sqlite.sh`, `.gitignore`,
   `CHANGELOG.md`, `README.md`, `README.zh-CN.md`, `pyproject.toml`. No dev docs, no tests,
   no `AGENT.md`/`CLAUDE.md` (the latter references a private `@RTK.md`).

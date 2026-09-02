@@ -1,7 +1,8 @@
 # HANDOFF — 从这里接着干
 
 > 交接文档,供下一个开发会话快速进入状态。与 `GOALS.md`(意图层,同目录)、`../CHANGELOG.md`(变更史)
-> 配合看。最后更新:2026-08-05(v0.19.0 zotero-mcp 插件 bundling 修「作用域陷阱」+ doctor 三源探针
+> 配合看。最后更新:2026-09-02(v0.22.0 Claude Code/Codex 双宿主插件打包;上游 v0.21.2 env-setup 路由边界修复;
+> v0.19.0 zotero-mcp 插件 bundling 修「作用域陷阱」+ doctor 三源探针
 > + 入库自动批准矩阵;上游 v0.18.0 doctor 端点探针初版。同日更早 v0.17.0 文献树模型广义扩展——四类
 > novelty + module 层 + 挑战树落地 + INV25 一文多树。上游 2026-08-03:v0.16.0 agent 拓扑重构 + codex
 > 复审两轮整改。更早同批:v0.15.1
@@ -27,6 +28,10 @@ Phase 2 **进行中,Obsidian 投影 + PDF 链接服务 + Notion 双库投影三�
 **(v0.8.2 快照:103 passed。当前 v0.19.0:unit+contract 123 passed;`test_local_links` 的回环端口用例在受限沙箱内可能 setup-error、非断言失败。)**
 
 自 v0.8.2 后又落多批:
+- **v0.22.0(Claude Code/Codex 双宿主打包)**:新增 `.codex-plugin/plugin.json` 与 Codex `.mcp.json`,
+  直接复用现有 14 个 `skills/`、`hooks/hooks.json` 和 `zotero-mcp` server name;release allowlist 同步纳入
+  Codex runtime 文件。现有 `.claude-plugin/marketplace.json` 继续作为 Claude marketplace,同时供 Codex
+  的 legacy-compatible marketplace 发现路径使用。两个 host manifest 同名同版本,新增单测防止身份/MCP 漂移。
 - **v0.9.0**:退场遗留审批链(pre-zotero-mcp 时代的 apply/approval),AGENT.md 新增「设计哲学(上位准则)」——约束三层筛(内在能力不写 / 优化脚手架随能力贬值 / 业务规定稳定维护)。
 - **v0.10.0(Phase 3 起步)**:文献树从 citation-graph 换成彭思达 novelty tree(`里程碑任务→pipeline→论文` 三级、概念为内部节点、论文为叶、每概念记 novelty 锚点 + flat paper list);新 `literature-tree.schema.json` + `workflows/novelty_tree.py`(render_mermaid + plan/project)+ `project-literature-tree` CLI;build-literature-tree SKILL 加 scope-locking **grill**(四 gate:目的/边界/分辨率/时间窗 + 锚点归属规则);INV22 + outcomes 守护。
 - **v0.11.0**:新 **env-setup** skill(用户直呼、无 agent)——个人 API-key + SSH-server env-records 台账,插件零私有数据、模板进 git、真实记录 gitignored;已实盘建 `~/dev/env-records`、登记 Notion token。

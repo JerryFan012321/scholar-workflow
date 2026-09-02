@@ -75,6 +75,12 @@ def test_routing_skills_are_real(routing):
     for c in routing["cases"]:
         if c["expected_skill"] is not None:
             assert c["expected_skill"] in known, f"unknown skill: {c['expected_skill']}"
+        # A typo here would silently disarm the negative guard rather than fail.
+        if "must_not_trigger" in c:
+            assert c["must_not_trigger"] in known, \
+                f"unknown skill in must_not_trigger: {c['must_not_trigger']}"
+            assert c["must_not_trigger"] != c["expected_skill"], \
+                f"contradictory case {c['id']}: must_not_trigger == expected_skill"
 
 
 # ---- outcomes.json ----
