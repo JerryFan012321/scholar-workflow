@@ -1,0 +1,39 @@
+{
+  "name": "scholar-workflow",
+  "version": "0.22.0",
+  "description": "Plan-first scholarly resource management: scope research requests, manage papers through Zotero, maintain Obsidian and Notion projections, build literature trees, recommend papers, and write detailed analyses.",
+  "author": {
+    "name": "Scholar Workflow contributors",
+    "url": "https://github.com/JerryFan012321"
+  },
+  "homepage": "https://github.com/JerryFan012321/scholar-workflow",
+  "repository": "https://github.com/JerryFan012321/scholar-workflow",
+  "keywords": [
+    "research",
+    "papers",
+    "zotero",
+    "obsidian",
+    "notion",
+    "literature-review"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Scholar Workflow",
+    "shortDescription": "Research workflows across Zotero, Obsidian, and Notion",
+    "longDescription": "Discover, verify, import, organize, and analyze scholarly resources with Zotero as the authoritative library and Obsidian or Notion as controlled projections.",
+    "developerName": "Scholar Workflow contributors",
+    "category": "Education & Research",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/JerryFan012321/scholar-workflow",
+    "defaultPrompt": [
+      "Survey a research topic and build a literature map.",
+      "Find a paper, check my Zotero library, and import it safely.",
+      "Analyze a saved paper and update my research notes."
+    ]
+  }
+}
