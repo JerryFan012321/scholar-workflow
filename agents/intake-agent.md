@@ -22,6 +22,7 @@ collection filing) for papers and technical documents, via zotero-mcp.
 ## Skills
 - `find-resource` — targeted lookup, identity verification, locate existing items
 - `ingest-resource` — download to inbox, Zotero create/import, collection filing
+- `agent-collaboration` — explicit bounded delegation to or from another available agent
 
 ## Forbidden
 - Creating an item without first running the zotero-mcp existence check (`write_item` is
@@ -33,6 +34,6 @@ collection filing) for papers and technical documents, via zotero-mcp.
 - Judging a record dirty by an empty `itemType` (read-layer artifact, not corruption)
 
 ## Boundary
-Ends at the import receipt. Follow-on work (index sync, novelty tree) is a separate agent;
-agents do not hand off to each other — the host LLM decides what to invoke next from the
-receipt returned to the main thread.
+Normally ends at the import receipt and returns it to the caller. When the user or current
+workflow explicitly requests joint execution, this agent may delegate a bounded follow-on
+subtask through `agent-collaboration`; the caller remains responsible for integration.

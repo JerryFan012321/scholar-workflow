@@ -21,7 +21,7 @@
 | G5 | Zotero、Obsidian Vault、Notion 各司其职，不互相复制主数据 |
 | G6 | 大型目录采用分层索引：先读索引，再按需读实体文件 |
 | G7 | 插件由 Git 管理，功能必须有评测和回归测试 |
-| G8 | 支持 Claude Code 与 Codex 两个宿主，共用同一套 skills、hooks 与 zotero-mcp 能力。Zotero 的读/写/语义检索能力经 zotero-mcp（MCP server）提供，由宿主 LLM 调用；确定性 CLI 收缩为 arXiv 获取、收件箱、投影等与 Zotero 访问无关的工作流 |
+| G8 | 支持 Claude Code 与 Codex 两个宿主，共用同一套 skills、hooks 与 zotero-mcp 能力；宿主与 agent 可通过统一 handoff 协议双向协作，同一机制可扩展到其他真实可用的 agent。Zotero 的读/写/语义检索能力经 zotero-mcp（MCP server）提供，由宿主 LLM 调用；确定性 CLI 收缩为 arXiv 获取、收件箱、投影等与 Zotero 访问无关的工作流 |
 | G9 | Zotero（及其 PDF 存储）是唯一权威主库；元数据、存在性、语义检索经 zotero-mcp 获取。写入经 zotero-mcp 的受控工具完成；新增性写入直接执行，破坏性动作须批准 |
 
 ## 长期不变量（INV）
@@ -55,6 +55,8 @@
 | INV23 | **略读级(recommend-papers)临时性**:略读经外部服务(四推荐源 REST + NotebookLM)进行,四源(S2 Recommendations / Scholar Inbox / S2 author watchlist / HF Daily)按 arXiv id 合并去重,仅对用户细化后的 shortlist 走 NotebookLM 略读(省 token,不略读全池);产物为**临时 Reading Report,绝不落 vault、不改 Zotero**;看中的论文经 find/ingest 正式管线入库(判重两步核验)。CLI 不碰这些网络/MCP(承 INV18),聚合在 `bin/recommend-papers.py` | （待补） |
 | INV24 | **详细分析级(analyze-paper)源与落点**:详细分析只经 zotero-mcp `get_content` 读正文(承 INV10 不解析 PDF 本体),产物落 Obsidian 附属分析笔记(`<论文名>分析.md`),与人工批注笔记**分立**、`related` 互链;局部分析在同一笔记**受管块之外多小节追加**(承 INV4 保护),并挂到该论文相关资料枢纽(INV20) | （待补） |
 | INV25 | **论文↔文献树多对多,附属按主题分身**:同一篇论文(按 `resource_id`/Zotero 规范身份唯一)可被**任意多个概念节点、多棵树**引用——同 topic 内多树(`02-`/`03-`…含技术树+挑战树)、跨不同主题文件夹的树皆可;树节点只**引用**不复制,元数据全局唯一(承 INV10,不因复现而重复)。反链是复数关系:一篇论文的 `# 相关文献树` 小节可同时指向多棵树的多个位置。**附属笔记(`paper_assets/…`)按主题文件夹分身**:同一论文在不同 topic 下各有一份,内容随语境不同(反链指向各自 topic 的树、聚合各自周边资料);`01-Paperlist.md` 是**每个主题文件夹内**的账本,同一论文入多个主题各登记一行(按 topic 隔离,非全局单账本)。绝不加"一个 resource_id 只归一个节点/一棵树"的唯一性检查 | outcomes: paper-in-multiple-trees |
+| INV26 | **跨 agent 委派不扩权**:调用方与目标方地位对称,但目标 agent 的任务范围、工作目录和副作用权限只能等于或窄于用户已授予调用方的范围;破坏性动作、对外发布、凭据访问或任务扩张必须返回调用方走原有决策门禁。调用方负责检查实际产物、整合与最终验证 | safety: no-agent-permission-expansion |
+| INV27 | **项目初始化只增不覆且宿主中立**:`init-project` 以 `AGENTS.md` 为项目规则真源,固定使用本地标准目录名;先 plan 再 apply,已有文件、目录冲突与 symlink 不被静默覆盖。无 Git 管理时只执行 `git init`,不 stage/commit/push;默认不生成 Claude/Codex 自定义 agent 或 hook | safety: no-init-project-clobber / no-init-project-host-automation; outcomes: init-project-idempotent |
 
 ## 非目标（NG）
 
@@ -70,12 +72,13 @@
 | NG6 | 把论文全文或技术文件上传到 Notion | safety: no-notion-file-upload |
 | NG7 | 无证据自动宣布某论文是"突破性工作"（反浮夸）。注意与 INV22 的 novelty 锚点区分:锚点是"首个提出该 task/pipeline/module(类1/2/3)"的**可核实先后事实**、非价值判断,不受本条约束;本条禁的是给论文贴超出锚点定义的"突破"徽章 | （待补） |
 | NG8 | 第一阶段自动下载书籍/标准/数据集文件（先只做元数据和索引） | （待补） |
+| NG9 | `init-project` 默认或隐式安装项目级自定义 agent、自动格式化 hook 或审查/验证 agent | safety: no-init-project-host-automation |
 
 ## 阶段状态（随开发更新）
 
 | 阶段 | 目标 | 状态 |
 |---|---|---|
-| Phase 0 | 插件骨架、契约、evals 基线、开发规范 | ✅ 完成（v0.20.0 补 QA 工具链 project-review/code-review + 配置 UX config 命令组/config-setup + 工作队列 project-backlog，均为开发/运维设施，不动意图层） |
+| Phase 0 | 插件骨架、契约、evals 基线、开发规范 | ✅ 完成（v0.23.0:review 类 skills 退场,跨模型部分重构为双向 agent-collaboration,新增宿主中立 init-project；config-setup 与 project-backlog 保留） |
 | Phase 1 | 论文发现 + 下载到收件箱 + 经 zotero-mcp 入库（find-resource / ingest-resource 真实可用；存在性/语义/写入经 zotero-mcp） | 🚧 进行中（resolver / 下载到 inbox 已落地；CLI 的 sync/locate/resolve/catalog 退场；存在性/写入迁移至 MCP；skill/reference/agent/evals 已按 zotero-mcp 重写并对齐；实战已完成 create/import/补元数据/加入分类闭环） |
 | Phase 2 | 投影同步（Obsidian 索引 + 本机 PDF 链接服务 + Notion 双库投影） | 🚧 进行中（Obsidian 层级投影 + loopback PDF link-service + launchd 自启已落真机 vault；**Notion 双库(Papers + Related Docs)已 v0.8.1 实盘上线并固化进 skill 层**——机械层 `bin/notion-project.py`(唯一 Notion API 出口，CLI 零外部网络)+ 展示层 SKILL.md 组装专题页；已用 text2cad 8 篇端到端验证。剩：方向级笔记(无 Zotero item)的 Notion 表示，INV21 显式押后作后续 ticket） |
 | Phase 3 | 文献脉络树 | 🚧 进行中（novelty tree 模型 v0.10.0 落库；**v0.15.0 渲染形态重构**：一棵树=一个自包含笔记(内联 Mermaid + `##`任务/`###`pipeline 分节 + subpaperlist)、`01-Paperlist.md` 独立全集账本、图书馆编码前缀、多树共存、`paper_assets/` 相关资料笔记 `# 相关文献树` 反链(INV20)、无 H1;共享渲染器 `projection.py` 删 DOI 列 + 星级 Importance(连带 sync-projections 变 9 列)。schema:`literature-tree.schema.json`(paper_list + 三级概念树 + summary/asset_note + challenge-insight seam)、`workflows/novelty_tree.py`(render_mermaid + render_tree_note/render_paperlist + plan/project，复用 render_table/ObsidianAdapter)、`project-literature-tree` CLI(带 --dry-run + paperlist_only)、SKILL/agent/docs、INV22 + outcomes 守护。**v0.17.0 模型广义扩展**:novelty 三类→四类(task=1/pipeline=2/module=3 节点锚点、类4=改进型论文作普通成员不入 schema)、拓扑加**可选 module 第四层**(变深度)、**挑战洞见树(challenge→insight→论文)从 schema seam 升为正式落地**——与技术树同构、复用 `concept` 结构与同一渲染器(F3 兑现);`render_mermaid` 由硬编码三层重写为递归 N 层(修 module/insight 被图静默丢弃的 bug)、`_KIND_DEPTH`/`_ANCHOR_LABEL`/classDef 加 module/challenge/insight 表项;新增 INV25(一文多树+附属按主题分身)。实盘端到端已完成(世界模型 39 篇双树)。剩：真实主题更多端到端实盘） |

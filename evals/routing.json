@@ -63,34 +63,41 @@
       "comment": "普通代码任务不得触发本插件任何 skill"
     },
     {
-      "id": "project-review-status",
-      "input": "帮我审视一下这个项目现在的整体进展",
-      "expected_skill": "project-review",
-      "must_not_write": true,
-      "comment": "开放式「项目现在什么状态/全景」→ project-review 只读战略快照"
+      "id": "init-project-standard-skeleton",
+      "input": "初始化这个新项目，创建标准项目骨架并用 Git 管理",
+      "expected_skill": "init-project",
+      "comment": "项目级骨架初始化 → init-project；只创建宿主中立结构，不安装自定义 agent/hook"
     },
     {
-      "id": "code-review-cross-check",
-      "input": "让 codex 交叉审查一下这次改动再合并",
-      "expected_skill": "code-review",
-      "comment": "跨模型第二意见(plan/diff)→ code-review;调外部审查方只读、先建高上下文交接"
+      "id": "agent-collaboration-claude-to-codex",
+      "input": "让 Codex 和你一起完成这次重构,把测试子任务交给它",
+      "expected_skill": "agent-collaboration",
+      "comment": "显式指定 Codex 共同执行和子任务委派 → agent-collaboration;调用方最后整合"
     },
     {
-      "id": "review-not-project-vs-code",
-      "input": "给我这个项目的战略全景,不是看代码",
-      "expected_skill": "project-review",
-      "comment": "负向消歧:整体方向 → project-review,不落到 diff 级的 code-review"
+      "id": "agent-collaboration-codex-to-claude",
+      "input": "请调用 Claude Code 完成文档部分,你继续改代码,最后整合",
+      "expected_skill": "agent-collaboration",
+      "comment": "反向由当前宿主调用 Claude Code 执行边界明确的部分,验证双向而非 Claude→Codex 单向协议"
     },
     {
-      "id": "review-not-code-vs-consistency",
+      "id": "agent-collaboration-other-agent",
+      "input": "把数据抽取子任务交给另一个可用 agent,完成后整合结果",
+      "expected_skill": "agent-collaboration",
+      "comment": "目标未绑定 Claude/Codex;通过真实可用的 native tool 或已配置 adapter 执行通用 agent 协作"
+    },
+    {
+      "id": "review-no-plugin-skill",
       "input": "帮我 review 一下这个 diff 有没有 bug",
-      "expected_skill": "code-review",
-      "comment": "负向消歧:代码/diff 审查 → code-review,不与 check-consistency(跨系统数据一致性审计)混淆"
+      "expected_skill": null,
+      "must_not_trigger": "agent-collaboration",
+      "comment": "review 类 skill 已退场;只要第二意见而未要求共同执行,不得误触发 agent-collaboration"
     },
     {
       "id": "config-first-run",
       "input": "我刚装好插件，怎么配置它？我的知识库在 ~/Documents/research",
       "expected_skill": "config-setup",
+      "must_not_trigger": "init-project",
       "comment": "首次配置/初始化 → config-setup 引导 config init"
     },
     {
@@ -131,10 +138,10 @@
       "comment": "使用/连接意图 → env-setup 先查 env_records_root 台账定位主机,而非直接问用户(ledger-first)"
     },
     {
-      "id": "backlog-not-project-review",
+      "id": "backlog-not-agent-collaboration",
       "input": "把这个加入待办，标记为等我决策",
       "expected_skill": "project-backlog",
-      "comment": "负向消歧:待办队列增改 → project-backlog;泛「项目状态/整体进展」才归 project-review"
+      "comment": "待办队列增改 → project-backlog;不是跨 agent 协作或其他项目能力"
     },
     {
       "id": "analyze-paper-read-code",
@@ -156,11 +163,11 @@
       "comment": "负向消歧:上传到 Zotero/托管服务不是自有主机台账动作 → 不得触发 env-setup(ledger-first 只管用户自有 host/key)"
     },
     {
-      "id": "review-bare-project-status",
+      "id": "project-status-no-plugin-skill",
       "input": "项目现在什么状态",
-      "expected_skill": "project-review",
+      "expected_skill": null,
       "must_not_trigger": "project-backlog",
-      "comment": "回归守护:裸「项目状态」→ project-review 战略快照,不得落到 project-backlog(WI-014 修复的碰撞点)"
+      "comment": "review 类 skill 已退场;裸项目状态不应被 project-backlog 吞掉"
     },
     {
       "id": "env-query-find-server",

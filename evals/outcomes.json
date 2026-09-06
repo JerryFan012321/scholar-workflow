@@ -80,6 +80,11 @@
       "id": "paper-in-multiple-trees",
       "description": "INV25 一文多树:同一 resource_id 可出现在同 topic 的技术树(02)与挑战树(03)、各自独立渲染不冲突;跨不同主题文件夹各有独立 paper_assets 附属笔记(内容随语境不同);01-Paperlist.md 按主题文件夹隔离(非全局单账本)。绝不加一个 resource_id 只归一节点/一树的唯一性检查",
       "status": "pending"
+    },
+    {
+      "id": "init-project-idempotent",
+      "description": "INV27 项目初始化：plan 零写入，apply 只补缺并确保 Git 管理；重跑逐字节不变，已有 AGENTS.md/.gitignore 保留，冲突或 symlink 在写前拒绝，且不生成自定义 agent/hook、不 stage/commit/push。由 tests/unit/test_init_project.py 守护",
+      "status": "pass"
     }
   ]
 }

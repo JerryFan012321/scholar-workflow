@@ -1,7 +1,9 @@
 # HANDOFF — 从这里接着干
 
 > 交接文档,供下一个开发会话快速进入状态。与 `GOALS.md`(意图层,同目录)、`../CHANGELOG.md`(变更史)
-> 配合看。最后更新:2026-09-02(v0.22.0 Claude Code/Codex 双宿主插件打包;上游 v0.21.2 env-setup 路由边界修复;
+> 配合看。最后更新:2026-09-06(v0.23.0 review skills 退场 + 双向 agent-collaboration
+> + 宿主中立 init-project;上游 v0.22.0
+> Claude Code/Codex 双宿主插件打包;上游 v0.21.2 env-setup 路由边界修复;
 > v0.19.0 zotero-mcp 插件 bundling 修「作用域陷阱」+ doctor 三源探针
 > + 入库自动批准矩阵;上游 v0.18.0 doctor 端点探针初版。同日更早 v0.17.0 文献树模型广义扩展——四类
 > novelty + module 层 + 挑战树落地 + INV25 一文多树。上游 2026-08-03:v0.16.0 agent 拓扑重构 + codex
@@ -28,6 +30,16 @@ Phase 2 **进行中,Obsidian 投影 + PDF 链接服务 + Notion 双库投影三�
 **(v0.8.2 快照:103 passed。当前 v0.19.0:unit+contract 123 passed;`test_local_links` 的回环端口用例在受限沙箱内可能 setup-error、非断言失败。)**
 
 自 v0.8.2 后又落多批:
+- **v0.23.0(宿主中立项目初始化)**:新增 `init-project`,以 `AGENTS.md` 为真源,创建固定的
+  Git 管理研究项目骨架(含 dataset metadata/raw 分层、完整 experiment bundle 约定和
+  `src/pipeline`)。确定性脚本先 plan 后 apply,遇已有规则拓扑、目录或 symlink 冲突先停,
+  只补缺且不 stage/commit/push。按用户 4A-H0 决策,不生成任何 Claude/Codex 自定义 agent
+  或 hook。与同批 review skills 退场和 `agent-collaboration` 重构合并计算后,skill 总数保持 14。
+- **v0.23.0(review skills 退场 + 双向 agent 协作)**:删除 `project-review` / `code-review`,保留其中
+  高上下文 handoff、最小权限、结构化完成核验与调用方整合的有效部分,重构为宿主无关的
+  `agent-collaboration`。Claude Code、Codex 或其他真实可用 agent 均可作为调用方/目标方;优先宿主
+  原生 agent tool,跨宿主按需加载 Claude/Codex CLI protocol。五个领域 agent 默认仍自足,但显式
+  协作时不再受固定单向 handoff 限制。新增 INV26 + safety/routing eval。
 - **v0.22.0(Claude Code/Codex 双宿主打包)**:新增 `.codex-plugin/plugin.json` 与 Codex `.mcp.json`,
   直接复用现有 14 个 `skills/`、`hooks/hooks.json` 和 `zotero-mcp` server name;release allowlist 同步纳入
   Codex runtime 文件。现有 `.claude-plugin/marketplace.json` 继续作为 Claude marketplace,同时供 Codex

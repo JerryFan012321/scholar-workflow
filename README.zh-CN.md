@@ -2,7 +2,8 @@
 
 面向 Claude Code 与 Codex 的学术资源管理插件。发现并导入论文、保持 Obsidian 索引与 Notion 投影
 同步、构建文献 novelty tree、从四个源推荐每日论文、撰写论文详细分析 —— 由确定性 CLI 承担
-可测试的文件操作,宿主 LLM 负责理解、推荐与判断。
+可测试的文件操作,宿主 LLM 负责理解、推荐与判断。插件还可初始化由 Git 管理的研究项目骨架,
+并在多个 agent 运行时之间协调边界清楚的任务。
 
 [English](./README.md)
 
@@ -30,13 +31,16 @@ zotero-mcp 的受控工具执行,破坏性动作需你批准。论文 PDF 下载
 | recommend-papers | 每日多源论文 feed + NotebookLM 略读 → 推荐清单 |
 | analyze-paper | 论文详细分析,写成 vault 附属笔记 |
 | env-setup | 搭建并查阅个人 API-key / SSH 服务器 env-records 台账 |
-| project-review | 对整个项目的只读战略快照(自动发现其战略文档) |
-| code-review | 经外部审查方(Codex)对计划或 diff 做跨模型第二意见 |
+| agent-collaboration | 在 Claude Code、Codex 或其他可用 agent 之间双向协调边界清楚的任务 |
+| init-project | 初始化宿主中立、由 Git 管理且不带自定义 agent/hook 的研究项目骨架 |
+| config-setup | 初始化、查询和更新插件配置 |
+| project-backlog | 维护本仓库的持久化工作项队列 |
 
 ## 环境要求
 
 - **Claude Code 或 Codex**(Codex CLI / Codex app;IDE extension 不加载插件)。
 - **Python ≥ 3.11** —— 确定性 CLI 是一个 Python 包。
+- **Git** —— `init-project` 创建或核验项目骨架时需要。
 - **Zotero + [zotero-mcp](https://github.com/54yyyu/zotero-mcp)** —— 权威主库。插件硬
   依赖它做读/写/语义检索;缺失时涉库 skill 会 fail-fast。
 - **按功能可选:**
@@ -44,6 +48,8 @@ zotero-mcp 的受控工具执行,破坏性动作需你批准。论文 PDF 下载
   - `notebooklm-py` + Google 登录 —— 仅 `recommend-papers` 略读级 + 文献树 NotebookLM
     批读需要。
   - Scholar Inbox 账号 —— 仅该推荐源需要。
+  - 目标 agent 的 CLI 与既有登录态 —— 仅 `agent-collaboration` 跨宿主运行时调用时需要;
+    使用宿主原生 agent 工具时不需要。
 
 ## 安装
 
@@ -103,6 +109,8 @@ scholar-workflow`)。你的 `config.yml` 与凭证在仓库之外,更新不受�
 - *"画一棵从 NeRF 到 3DGS 的文献树"* → build-literature-tree
 - *"导出我对这篇论文的批注"* → export-annotations
 - *"同步 Obsidian 索引和 Notion"* → sync-projections
+- *"让 Claude Code 和 Codex 分工完成这次迁移并整合"* → agent-collaboration
+- *"用标准骨架初始化这个项目"* → init-project
 
 各 skill 自己的 `README`(在 `skills/<名>/` 下)详述其选项与配置。推荐清单是临时的;你
 留下的论文走常规 find/ingest 管线,不经判重不入库。

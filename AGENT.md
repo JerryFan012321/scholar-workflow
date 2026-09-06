@@ -3,8 +3,8 @@
 ## 插件结构
 
 ```
-5 Agents: intake / lineage / knowledge / feed / audit（任务级自足单元，skill 可跨 agent 复用；不互相 handoff，跨 agent 串联由宿主 LLM 或 survey-topic 编排）
-14 Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / analyze-paper / env-setup / project-review / code-review / config-setup / project-backlog（后五者无 agent，用户直呼）
+5 Agents: intake / lineage / knowledge / feed / audit（任务级自足单元，skill 可跨 agent 复用；无固定单向 handoff，显式跨 agent 协作由宿主 LLM 或 agent-collaboration 编排）
+14 Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / analyze-paper / env-setup / agent-collaboration / init-project / config-setup / project-backlog（agent-collaboration 为所有宿主/agent 共享；其余四者用户直呼）
 2 Host manifests: .claude-plugin/plugin.json / .codex-plugin/plugin.json（同名、同版本；共享 skills/hooks，MCP 配置保持等价）
 确定性 CLI: src/scholar_workflow/ + bin/(scholar-workflow, zotero-annotations.py, recommend-papers.py)
 Zotero 经 zotero-mcp: 元数据/存在性/语义检索/写入(create/import/元数据)均经 zotero-mcp 受控工具;唯一例外——批注导出允许 bin/zotero-annotations.py 以只读(mode=ro&immutable=1)直读本地 DB,绝不用于元数据判定或任何写入
@@ -149,8 +149,9 @@ methodology (stable); `planning/` is the per-phase **"what to build / goals / ha
 
 Agent 按「会独立吃掉大量上下文的用户任务」切分，每个自足拥有完成该任务的全部 skill；
 skill 可跨 agent 复用（如 find/ingest 同时服务 intake 与 lineage），不归属单一 agent。
-Agent 之间不互相调用、不 handoff；跨 agent 的串联由宿主 LLM 直接编排，或由 survey-topic
-出计划后逐步委派。
+Agent 之间没有固定 handoff 图。默认完成自己的任务并把结果交回调用方；当用户或既定工作流
+明确要求多 agent 协作时，任一宿主/agent 都可通过 agent-collaboration 双向委派边界清楚的
+子任务，由调用方统一整合与验证。
 
 | Agent | 任务 | 可用 Skills |
 |---|---|---|
@@ -160,8 +161,9 @@ Agent 之间不互相调用、不 handoff；跨 agent 的串联由宿主 LLM 直
 | feed | 每日推荐流（略读 + watchlist） | recommend-papers |
 | audit | 跨系统一致性审计（只读） | check-consistency |
 | （宿主 LLM 顶层编排，不挂 agent） | 开放式调研的 scope + 委派 | survey-topic |
+| （所有宿主与 agent 共享） | 跨 agent 双向协作、任务委派与接力 | agent-collaboration |
 | （无 agent，用户直呼） | 环境台账 | env-setup |
-| （无 agent，用户直呼） | 质量保证（自审 + 跨模型审查） | project-review, code-review |
+| （无 agent，用户直呼） | 宿主中立的 Git 项目骨架初始化 | init-project |
 | （无 agent，用户直呼） | 插件配置（config.yml 读写 + 初始化） | config-setup |
 | （无 agent，用户直呼） | 项目工作队列（planning/BACKLOG.md） | project-backlog |
 

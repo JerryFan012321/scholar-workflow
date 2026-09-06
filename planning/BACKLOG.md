@@ -11,24 +11,6 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 
 ## Active Items
 
-### WI-001: Apply codex 6-point revision to new QA skills
-- **Status**: pending-decision
-- **Priority**: p1
-- **Type**: code-change
-- **Context**: Dogfooded code-review skill on v0.20.0 uncommitted batch (two new QA skills + resume-claims fixes + README Status section). Codex returned VERDICT: REVISE with 7 findings. Digested against project's three-tier philosophy: accepted 5 (untracked-files detection, resume verification discipline, diff credential scan, config bullet-parsing ambiguity, principles gather-all-root-files), partially accepted 1 (cleanup events-log + optional trap; skipped umask as over-defensive), skipped 1 (chunk-coverage tracking judged as optimization scaffold for rare edge case). Changes limited to skills/code-review/ and skills/project-review/ only.
-- **Blocker**: user-decision
-- **Next action**: User decides (a) which of the 6 fixes to apply, (b) whether to include optional trap and @-import hint.
-- **Related**: v0.20.0, code-review skill, AGENT.md three-tier philosophy
-
-### WI-002: Commit v0.20.0 batch
-- **Status**: blocked
-- **Priority**: p1
-- **Type**: code-change
-- **Context**: Two new QA skills (project-review + code-review), resume-claims honesty fixes across 5 files, README Status & limitations section, routing.json +4 cases (10→14), version bumps to 0.20.0, CHANGELOG [0.20.0] entry already written. All code exists uncommitted in main branch. Blocked on WI-001 decision: commit as-is or after applying codex fixes.
-- **Blocker**: WI-001
-- **Next action**: Once WI-001 resolves, stage all changes and commit with message referencing CHANGELOG [0.20.0].
-- **Related**: v0.20.0
-
 ### WI-003: Complete P1-3 eval closure
 - **Status**: in-progress
 - **Priority**: p1
@@ -37,15 +19,6 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Blocker**: none (routing done; outcome promotion needs real runs)
 - **Next action**: When battle-testing (WI-007) exercises a pending outcome end-to-end, add its guarding test and promote that outcome to pass. Do not bulk-promote without evidence.
 - **Related**: P1-3 (codex-review.md), GOALS.md eval guard (G7), WI-007
-
-### WI-004: Release v0.20.0 to release branch
-- **Status**: blocked
-- **Priority**: p1
-- **Type**: release
-- **Context**: After v0.20.0 is committed to main, it must be built into the orphan release branch via scripts/make-release.sh. Release branch ships to users (runtime files only, no dev-guide/planning/tests). Last sync was 0.19.0 (2026-08-05). User must explicitly approve before pushing release branch.
-- **Blocker**: WI-002
-- **Next action**: Run scripts/make-release.sh from clean main, review release commit, get user approval, push release branch.
-- **Related**: v0.20.0, release process (AGENT.md)
 
 ### WI-005: Decide env-setup scope and static-password model
 - **Status**: pending-decision
@@ -87,10 +60,10 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Status**: pending-decision
 - **Priority**: p2
 - **Type**: code-change
-- **Context**: When project-backlog was first built (this session), the user asked for three more capabilities not yet implemented: (1) a complete, readable conversation-level ProjectStatus presentation (git state, version, dependency-chain tables); (2) surfacing all discovered issues, especially opinions from other agents (codex reviews) and doc sources; (3) document-sync reminders (CHANGELOG / GOALS / AGENT.md kept in step). These were captured as requirements but the skill currently only does the work-queue (add/update/query/report).
+- **Context**: When project-backlog was first built, the user asked for three more capabilities not yet implemented: (1) a complete, readable conversation-level ProjectStatus presentation (git state, version, dependency-chain tables); (2) surfacing actionable findings produced by other agents or project documents; (3) document-sync reminders (CHANGELOG / GOALS / AGENT.md kept in step). The skill currently only manages the work queue. Cross-agent execution now belongs to agent-collaboration; this item only decides what durable findings project-backlog should record.
 - **Blocker**: user-decision (scope of the enhancement)
-- **Next action**: User confirms which of the three capabilities to fold into project-backlog vs. project-review; then implement.
-- **Related**: project-backlog skill, project-review skill
+- **Next action**: User confirms which of the three capabilities belong in project-backlog; then implement without recreating a review skill.
+- **Related**: project-backlog skill, agent-collaboration skill
 
 ### WI-010: check-consistency "orphaned PDF" scope — narrow to paper_inbox, not Zotero storage
 - **Status**: done (v0.21.0, 2026-08-29) — Step 8 rewritten to a paper_inbox-only inbox-orphan check; "claimed" defined as arXiv-id/DOI filename identity resolving via zotero-mcp (identity-policy), not a path match; mirrored in consistency-invariants.md. Never reverse-scans Zotero storage/.
@@ -185,4 +158,29 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 
 ## Completed
 
-(none yet)
+### WI-001: Apply codex 6-point revision to new QA skills
+- **Status**: done (superseded 2026-09-06 by v0.23.0 removal of the review-class skills)
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: The proposed revisions targeted project-review and code-review. Both skills were later removed; their reusable handoff and cross-agent execution ideas moved into agent-collaboration.
+- **Blocker**: none
+- **Next action**: none
+- **Related**: v0.20.0, v0.23.0, agent-collaboration skill
+
+### WI-004: Release v0.20.0 to release branch
+- **Status**: done (v0.20.0)
+- **Priority**: p1
+- **Type**: release
+- **Context**: The v0.20.0 runtime snapshot was built and released; later releases have superseded it.
+- **Blocker**: none
+- **Next action**: none
+- **Related**: v0.20.0, release process (AGENT.md)
+
+### WI-002: Commit v0.20.0 batch
+- **Status**: done (v0.20.0)
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: The v0.20.0 batch was committed and subsequently released.
+- **Blocker**: none
+- **Next action**: none
+- **Related**: v0.20.0

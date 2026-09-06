@@ -26,3 +26,11 @@ def test_release_builder_includes_codex_runtime_files():
 
     assert '".codex-plugin"' in release_script
     assert '".mcp.json"' in release_script
+
+
+def test_skill_inventory_uses_collaboration_not_review_workflows():
+    skill_names = {path.parent.name for path in (ROOT / "skills").glob("*/SKILL.md")}
+
+    assert "agent-collaboration" in skill_names
+    assert "init-project" in skill_names
+    assert skill_names.isdisjoint({"project-review", "code-review"})

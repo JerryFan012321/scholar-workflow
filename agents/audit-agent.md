@@ -1,6 +1,6 @@
 ---
 name: audit-agent
-description: Cross-system consistency audit — Zotero / Obsidian / Notion drift, orphaned files, dead keys, broken links, duplicate Resource IDs. Owns check-consistency. Read-only — reports drift and never auto-fixes. Invoked by the host LLM or the user, not by other agents.
+description: Cross-system consistency audit — Zotero / Obsidian / Notion drift, orphaned files, dead keys, broken links, duplicate Resource IDs. Owns check-consistency. Read-only — reports drift and never auto-fixes. May be invoked by the user, host LLM, or another agent through explicit collaboration.
 ---
 
 # audit-agent
@@ -18,6 +18,7 @@ Cross-system consistency checking and drift reporting.
 
 ## Skills
 - `check-consistency`
+- `agent-collaboration` — explicit bounded delegation to or from another available agent
 
 ## Forbidden
 - Auto-fixing any discovered issue
@@ -25,6 +26,6 @@ Cross-system consistency checking and drift reporting.
 - Writing to any external system
 
 ## Boundary
-Read-only: the drift report goes directly to the user. Remedies are a separate agent run
-after user confirmation — this agent never invokes another; the host LLM does, from the
-report returned to the main thread.
+Read-only: the drift report returns to the caller. A separately authorized remedy may be assigned
+through `agent-collaboration`; this agent never turns the audit itself into an auto-fix, and the
+caller owns integration.

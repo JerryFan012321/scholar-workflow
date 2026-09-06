@@ -3,6 +3,47 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.23.0] — 2026-09-06
+
+### Removed
+- **Review-class skills retired.** Removed `project-review` and `code-review`, including
+  their runtime READMEs and discovery/reviewer protocols. Plain project or code review
+  requests no longer route through this plugin.
+
+### Added
+- **Host-neutral project initialization.** Added `init-project` to create the fixed
+  Git-managed research-project skeleton, with `AGENTS.md` as the canonical instruction
+  source and thin `CLAUDE.md` / `AGENT.md` compatibility entry points. The local standard
+  names win over parallel `plans/reports/scripts-data` layouts; experiment bundles remain
+  authoritative and registries are indexes only.
+- **Deterministic project preflight.** Added a stdlib-only `plan/apply` helper plus unit,
+  routing, safety, and outcome coverage. It rejects structural and instruction-topology
+  conflicts before writing, preserves existing files, initializes Git without staging or
+  committing, and never creates custom agents or hooks.
+- **Bidirectional agent collaboration.** Added `agent-collaboration` for explicitly requested
+  joint execution, bounded delegation, and task continuation between Claude Code, Codex, or
+  another genuinely available agent. Caller and target are symmetric; one caller integrates
+  and verifies the shared result.
+- **Target-specific protocols behind progressive disclosure.** Added a shared handoff contract
+  plus on-demand Codex CLI and Claude Code CLI references. Native agent tools remain preferred;
+  other agents require a verified adapter rather than guessed commands.
+- **Delegation safety invariant.** Added INV26 and `no-agent-permission-expansion`: a target
+  receives the same or narrower scope and permissions, while destructive, external, credential,
+  or expanded actions return to the caller's existing decision gate.
+
+### Changed
+- **Skill inventory refreshed, with 14 total.** The two retired review skills are replaced by
+  `agent-collaboration` and `init-project`. Project initialization is a direct user-invoked
+  capability shared by Claude Code and Codex and remains separate from plugin configuration
+  (`config-setup`) and the personal environment ledger (`env-setup`).
+- **Agent topology has no fixed one-way handoff.** All five domain agents may participate in
+  explicit collaboration while remaining self-contained by default. Routing evals now cover
+  Claude→Codex, Codex→Claude, generic-agent delegation, and the non-trigger boundary for
+  review-only requests.
+- **Backlog routing no longer redirects to removed review skills.** Current skill tables,
+  bilingual documentation, project goals, and agent boundaries now describe the shared
+  collaboration capability.
+
 ## [0.22.0] — 2026-09-02
 
 ### Added
