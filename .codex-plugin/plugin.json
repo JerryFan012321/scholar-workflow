@@ -1,7 +1,7 @@
 {
   "name": "scholar-workflow",
-  "version": "0.22.0",
-  "description": "Plan-first scholarly resource management: scope research requests, manage papers through Zotero, maintain Obsidian and Notion projections, build literature trees, recommend papers, and write detailed analyses.",
+  "version": "0.23.0",
+  "description": "Plan-first scholarly resource management: scope research requests, manage papers through Zotero, maintain Obsidian and Notion projections, build literature trees, analyze papers, coordinate agents, and initialize Git-managed project skeletons.",
   "author": {
     "name": "Scholar Workflow contributors",
     "url": "https://github.com/JerryFan012321"
@@ -20,8 +20,8 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Scholar Workflow",
-    "shortDescription": "Research workflows across Zotero, Obsidian, and Notion",
-    "longDescription": "Discover, verify, import, organize, and analyze scholarly resources with Zotero as the authoritative library and Obsidian or Notion as controlled projections.",
+    "shortDescription": "Research resources, project setup, and agent workflows",
+    "longDescription": "Discover, verify, import, organize, and analyze scholarly resources; initialize Git-managed research projects; and coordinate bounded work across agent runtimes.",
     "developerName": "Scholar Workflow contributors",
     "category": "Education & Research",
     "capabilities": [
@@ -33,7 +33,8 @@
     "defaultPrompt": [
       "Survey a research topic and build a literature map.",
       "Find a paper, check my Zotero library, and import it safely.",
-      "Analyze a saved paper and update my research notes."
+      "Analyze a saved paper and update my research notes.",
+      "Initialize a new project with the standard Git-managed skeleton."
     ]
   }
 }

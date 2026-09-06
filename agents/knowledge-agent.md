@@ -22,6 +22,7 @@ Obsidian knowledge-index maintenance and Notion management-projection sync.
 - `sync-projections`
 - `export-annotations` — turn a paper's Zotero annotations into a vault note
 - `analyze-paper` — deep read-through via get_content, written as a companion note
+- `agent-collaboration` — explicit bounded delegation to or from another available agent
 
 ## Forbidden
 - Overwriting human-authored content: machine index/projection edits stay inside the managed
@@ -33,4 +34,5 @@ Obsidian knowledge-index maintenance and Notion management-projection sync.
 - Merging the analysis note and the annotations note — they stay distinct, `related`-linked
 
 ## Boundary
-No downstream agent; output goes directly to the user or into the state store.
+Output normally returns directly to the caller or state store. Explicit multi-agent work may
+use `agent-collaboration` for a bounded subtask; the caller owns integration and validation.

@@ -3,8 +3,9 @@
 A Claude Code and Codex plugin for scholarly resource management. It discovers and imports
 papers, keeps Obsidian indexes and Notion projections in sync, builds literature
 novelty trees, recommends daily papers from four sources, and writes detailed paper
-analyses — with a deterministic CLI doing the testable file work while the host LLM
-handles understanding, recommendation, and judgment.
+analyses. It also initializes Git-managed research-project skeletons and coordinates
+bounded work across agent runtimes, with deterministic scripts doing testable file work
+while the host LLM handles understanding, recommendation, and judgment.
 
 [中文文档](./README.zh-CN.md)
 
@@ -36,13 +37,16 @@ zotero-mcp (`write_item import`). **Obsidian** holds knowledge notes and derived
 | recommend-papers | Daily multi-source paper feed + NotebookLM skim → Reading Report |
 | analyze-paper | In-depth analysis of a paper, written as a companion vault note |
 | env-setup | Scaffold — and consult — a personal API-key / SSH-server env-records ledger |
-| project-review | Read-only strategic snapshot of the whole project (auto-discovers its strategy docs) |
-| code-review | Cross-model second opinion on a plan or diff via an external reviewer (Codex) |
+| agent-collaboration | Coordinate bounded work bidirectionally between Claude Code, Codex, or another available agent |
+| init-project | Initialize a host-neutral, Git-managed research project skeleton without custom agents or hooks |
+| config-setup | Initialize, query, and update the plugin configuration |
+| project-backlog | Maintain the repository's persistent work-item queue |
 
 ## Requirements
 
 - **Claude Code or Codex** (Codex CLI or the Codex app; the IDE extension does not load plugins).
 - **Python ≥ 3.11** — the deterministic CLI is a Python package.
+- **Git** — required when `init-project` creates or verifies a project skeleton.
 - **Zotero + [zotero-mcp](https://github.com/54yyyu/zotero-mcp)** — the authoritative
   library. The plugin hard-depends on it for read/write/semantic search; without it the
   library-facing skills fail fast.
@@ -51,6 +55,8 @@ zotero-mcp (`write_item import`). **Obsidian** holds knowledge notes and derived
   - `notebooklm-py` + a Google login — only for the `recommend-papers` skim tier and
     NotebookLM-assisted literature-tree batch reading.
   - A Scholar Inbox account — only for that one recommendation source.
+  - A target agent's CLI and existing login — only when `agent-collaboration` crosses
+    host runtimes instead of using a native agent tool.
 
 ## Installation
 
@@ -115,6 +121,8 @@ you can also invoke a skill explicitly with `$skill-name`, e.g.:
 - *"build a literature tree from NeRF to 3DGS"* → build-literature-tree
 - *"export my annotations on this paper"* → export-annotations
 - *"sync the Obsidian index and Notion"* → sync-projections
+- *"have Claude Code and Codex split this migration and integrate it"* → agent-collaboration
+- *"initialize this project with the standard skeleton"* → init-project
 
 Each skill's own `README` (under `skills/<name>/`) documents its options and setup in
 detail. Recommendation reports are ephemeral; papers you keep flow into the normal

@@ -33,6 +33,7 @@ task, not an external hand-off.
 - `find-resource` — discover and locate the direction's papers
 - `ingest-resource` — file newly found papers into the library as the tree needs them
 - `build-literature-tree` — synthesize the collected set into the novelty tree
+- `agent-collaboration` — explicit bounded delegation to or from another available agent
 
 ## Forbidden
 - Declaring a paper a "breakthrough" beyond the definitional novelty anchor (GOALS NG7)
@@ -43,6 +44,7 @@ task, not an external hand-off.
   or merging on identity conflict — surface for approval (identity-policy, security-policy)
 
 ## Boundary
-Self-contained: discovers, ingests, and writes its own vault notes via build-literature-tree
-— no downstream agent needed. The novelty anchor is a verifiable "which paper came first"
-claim, not a hype badge.
+Self-contained by default: discovers, ingests, and writes its own vault notes via
+build-literature-tree. Explicit multi-agent work may use `agent-collaboration` for a bounded
+subtask, but the caller owns integration. The novelty anchor is a verifiable "which paper came
+first" claim, not a hype badge.

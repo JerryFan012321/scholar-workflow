@@ -14,13 +14,13 @@ Every work item gets a stable ID (`WI-NNN`), a status (ready/pending-decision/bl
 
 ## Usage
 
-Talk to Claude Code in natural language:
+Talk to Claude Code or Codex in natural language:
 
-- *"Add a work item: apply codex's 6 revisions to the new QA skills"* → new item with context
+- *"Add a work item: add checksum validation to imported documents"* → new item with context
 - *"What needs my decision?"* → lists all `status:pending-decision` items
 - *"Mark WI-003 as done"* → moves it to Completed
 - *"WI-005 is blocked by user decision on the scope"* → updates status and blocker
-- *"Backlog status"* / *"backlog overview"* → full backlog overview (summary + categorized lists). For whole-project strategic status, use `project-review` instead.
+- *"Backlog status"* / *"backlog overview"* → full backlog overview (summary + categorized lists)
 - *"What's ready to work?"* → items with status `ready` and no blockers
 
 ## Schema
@@ -49,12 +49,12 @@ Each work item has:
 ## Example work item
 
 ```markdown
-### WI-007: Apply codex 6-point revision to QA skills
-- **Status**: pending-decision
+### WI-020: Add checksum validation to imported documents
+- **Status**: ready
 - **Priority**: p1
 - **Type**: code-change
-- **Context**: Dogfooded code-review on v0.20.0 batch. Codex returned VERDICT: REVISE with 7 findings. Digested to 6 actionable (skipped #7 as over-engineering per project philosophy). Changes limited to two new skills (code-review, project-review) in skills/ directory.
-- **Blocker**: user-decision
-- **Next action**: User decides which of the 6 to apply, and whether to include optional trap + @-import hints.
-- **Related**: v0.20.0, code-review skill
+- **Context**: Imported technical documents need a stable content-integrity check before the index records them.
+- **Blocker**: none
+- **Next action**: Define the checksum field, implement it in the ingest path, and add a contract test.
+- **Related**: ingest-resource skill
 ```

@@ -14,13 +14,13 @@
 
 ## 使用
 
-用自然语言跟 Claude Code 说:
+用自然语言跟 Claude Code 或 Codex 说:
 
-- *"加个待办:把 codex 的 6 条修订应用到新 QA skill"* → 新建工作项并附上下文
+- *"加个待办:给导入文档增加 checksum 校验"* → 新建工作项并附上下文
 - *"哪些需要我决策?"* → 列出所有 `status:pending-decision` 的项
 - *"把 WI-003 标记为完成"* → 移到 Completed
 - *"WI-005 被阻塞,等我决定作用域"* → 更新状态和阻塞原因
-- *"待办概览"* / *"待办状态"* → 完整待办概览(汇总 + 分类列表)。要看整个项目的战略全景,请用 `project-review`。
+- *"待办概览"* / *"待办状态"* → 完整待办概览(汇总 + 分类列表)
 - *"现在能做什么?"* → 状态为 `ready` 且无阻塞的项
 
 ## Schema
@@ -49,12 +49,12 @@
 ## 示例工作项
 
 ```markdown
-### WI-007: 应用 codex 6 条修订到 QA skills
-- **Status**: pending-decision
+### WI-020: 给导入文档增加 checksum 校验
+- **Status**: ready
 - **Priority**: p1
 - **Type**: code-change
-- **Context**: 在 v0.20.0 批次上自审(dogfood code-review)。Codex 返回 VERDICT: REVISE 共 7 条。消化为 6 条可执行(#7 按项目哲学判为过度工程跳过)。改动限于 skills/ 下两个新 skill(code-review、project-review)。
-- **Blocker**: user-decision
-- **Next action**: 用户决定 6 条中应用哪些,以及可选的 trap + @-import 提示要不要。
-- **Related**: v0.20.0, code-review skill
+- **Context**: 技术文档写入索引前需要稳定的内容完整性校验。
+- **Blocker**: none
+- **Next action**: 定义 checksum 字段、接入 ingest 路径并增加契约测试。
+- **Related**: ingest-resource skill
 ```

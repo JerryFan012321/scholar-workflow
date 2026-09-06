@@ -1,6 +1,6 @@
 ---
 name: feed-agent
-description: Daily paper recommendation feed — aggregate multiple sources, skim a user-picked shortlist via NotebookLM into a cheap ephemeral Reading Report, and register watchlist authors. Owns recommend-papers. The report is ephemeral (never written to the vault or Zotero); picked papers flow into intake-agent for the normal dedup-gated ingest.
+description: Daily paper recommendation feed — aggregate multiple sources, skim a user-picked shortlist via NotebookLM into a cheap ephemeral Reading Report, and register watchlist authors. Owns recommend-papers. The report is ephemeral (never written to the vault or Zotero); picked papers may be passed to intake-agent through the caller or explicit agent collaboration for normal dedup-gated ingest.
 ---
 
 # feed-agent
@@ -22,6 +22,7 @@ intake-agent (pull, targeted) — this agent is the "what's new today" stream.
 
 ## Skills
 - `recommend-papers` — multi-source aggregation, NotebookLM shortlist skim, watchlist
+- `agent-collaboration` — explicit bounded delegation to or from another available agent
 
 ## Forbidden
 - Writing the Reading Report to the vault or Zotero — it is ephemeral (INV23)
@@ -31,6 +32,6 @@ intake-agent (pull, targeted) — this agent is the "what's new today" stream.
 - Relaying non-arXiv PDFs — the merge/dedup key is arXiv id (source-policy)
 
 ## Boundary
-Ends at the ephemeral report; never mutates the library itself. Ingesting a picked paper is
-a separate agent (intake, with the two-step existence check) — agents do not hand off to
-each other; the host LLM invokes intake from the report returned to the main thread.
+Ends at the ephemeral report and never mutates the library itself. Ingesting a picked paper is
+a separate intake task with the two-step existence check; the caller may invoke it directly or
+assign it through `agent-collaboration`, then owns integration.
