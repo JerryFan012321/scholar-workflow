@@ -1,78 +1,53 @@
 ---
 name: recommend-papers
-description: Daily paper recommendation feed — aggregates multiple sources, skims a user-picked shortlist to produce a cheap ephemeral Reading Report, and registers watchlist authors. Picked papers flow into find-resource / ingest-resource. Triggers 'recommend papers', 'daily papers', 'what should I read', 'paper feed', 'skim recommendations', 'watchlist', '推荐论文', '今日论文', '每日论文', '有什么新论文', '略读推荐', '关注这个作者', '登记研究者'. Not full paper analysis (analyze-paper) or targeted lookup (find-resource).
+description: Produce an ephemeral daily paper feed from configured sources, skim only a selected shortlist, or maintain an author watchlist. Use for 'recommend papers', 'daily papers', 'what should I read', 'watch this author', '推荐论文', '今日论文', '关注这个作者'. Not for targeted lookup or full paper analysis.
 ---
 
 # recommend-papers
 
-## Triggers
-- User wants a daily/periodic feed of new papers worth reading
-- User asks what to read, or to skim recommendations to decide what to ingest
-- User wants to register a researcher/lab to watch (watchlist sub-mode)
+## Feed
 
-## Steps (skim funnel)
+1. Collect representative arXiv IDs from the Zotero library with
+   `scholar-workflow zotero search`; use them as Semantic Scholar positive seeds.
+2. Run the configured source aggregator:
+   `echo '{"seed_arxiv_ids":[...]}' | python3 ${CLAUDE_PLUGIN_ROOT}/bin/recommend-papers.py`.
+   It returns `{candidates,count,skipped}`; source failures remain in `skipped` and do
+   not discard successful sources.
+3. Select a shortlist from the metadata result. Do not skim the whole candidate pool.
+4. Skim only the shortlist with NotebookLM using arXiv URLs. Reuse a same-topic notebook
+   when available. If NotebookLM is unavailable, use Zotero indexed full text for a
+   smaller shortlist or return metadata-only recommendations.
+5. Return an ephemeral Markdown Reading Report: title, one-line grounded description,
+   why relevant, source, and arXiv link. Never write the report to Zotero or the Vault.
+6. Send user-selected papers to `find-resource` / `ingest-resource`; this skill never
+   ingests directly.
 
-1. **Gather Zotero seeds (for S2 recommendations).** S2 recommendations use the
-   user's own library as positive seeds (G2: library is the taste profile). Collect
-   the arXiv ids of recent/representative library items via zotero-mcp, and pass them
-   on stdin — the mechanical layer never touches MCP itself (INV18).
+## Watchlist
 
-2. **Fetch + merge all enabled sources.** Run the aggregator:
-   `echo '{"seed_arxiv_ids": [...]}' | python3 ${CLAUDE_PLUGIN_ROOT}/bin/recommend-papers.py`.
-   It reads `recommend.yml` toggles, calls each enabled source, merges/dedups by
-   arXiv id, and prints `{candidates, count, skipped}` — **metadata only, no skim**
-   (title/authors/source/score/abstract snippet). A source that errors lands in
-   `skipped`; the run still completes on the rest.
+Resolve a named researcher to a stable Semantic Scholar `authorId`, disambiguating when
+necessary, then add it to the global or project `watchlist` in `recommend.yml`.
 
-3. **Refine to a shortlist (step ②).** Filter the all-options list against the user's
-   `interests` (and per-project keywords), let the user pick, or filter by source.
-   Interest matching, ranking, and picking are your own judgment — not encoded here.
+## Configuration
 
-4. **Skim ONLY the shortlist via NotebookLM (step ③).** For each shortlisted paper,
-   add its arXiv URL to a NotebookLM notebook (`notebooklm-py`) and ask source-grounded
-   questions (core contribution, method, results). ≈500 tokens/question vs ≈50K to read
-   the PDF — that economy is the whole point, so never skim the full pool, only the
-   shortlist. Reuse a same-topic notebook if one already exists; else create one.
+- global: `~/.config/scholar-workflow/recommend.yml`;
+- project overlay: `~/.config/scholar-workflow/projects/<cwd-name>.yml`;
+- schema/example: `references/recommend.example.yml`.
 
-5. **Emit the Reading Report (step ④), then hand off.** Produce a short markdown list
-   (title + one-line grounded description + why-relevant) for the user to decide from.
-   The report is **ephemeral — never written to the vault or Zotero** (INV23). Papers
-   the user wants flow into `find-resource` / `ingest-resource` (two-step dedup there).
-
-## Watchlist registration (sub-mode)
-- User gives a researcher name (+ affiliation / notable paper). Resolve to a stable S2
-  `authorId` (disambiguate common names — e.g. "He Wang" has thousands of matches).
-  Store the id in the `watchlist` of `recommend.yml` (global) or the project overlay.
-- This is a mode of this skill, not a separate skill. authorId ledgers are personal
-  registered data: gitignored, template-only (env-records style).
-
-## Config (two layers, YAML)
-- Global `~/.config/scholar-workflow/recommend.yml` — interests, source toggles,
-  daily_limit, min_score, notebooklm_classification, global watchlist.
-- Project `~/.config/scholar-workflow/projects/<cwd-name>.yml` — auto-loaded by cwd
-  name; interests/watchlist are additive (extend), other keys override.
-- Template: `references/recommend.example.yml`. Not credentials — session cookies /
-  tokens live in env vars / the vendored client's session store, never in these files.
+Project interests and watchlist extend global values; other project keys override them.
+Credentials and session state never belong in these YAML files.
 
 ## Constraints
-- **Skim output is ephemeral (INV23).** The Reading Report is a decision aid; it does
-  not enter the vault or Zotero. Only ingestion (via find/ingest) mutates the library.
-- **NotebookLM skims the shortlist only**, never the full candidate pool — the token
-  economy is the reason the tier exists.
-- **arXiv-only candidates.** Merge/dedup key is arXiv id; sources without an arXiv id
-  for a paper drop it (matches the vault's arXiv-only reality, INV10 / source-policy).
-- **Network paths differ per source** and are fixed in the adapters: HF Daily needs the
-  proxy; S2 goes direct; Scholar Inbox uses its vendored session. Don't override them.
-- **External deps, login state.** `notebooklm-py` and Scholar Inbox both store real
-  login state — prefer a throwaway Google account for NotebookLM. If NotebookLM is
-  unreachable, fall back to metadata-only recommendations or `get_content`; if Scholar
-  Inbox has no session, that source is skipped and the run degrades to three sources.
-- **Never auto-ingest.** Picked papers go through the normal find/ingest pipeline so
-  the two-step dedup gate runs; this skill never writes to Zotero directly.
+
+- Candidates require an arXiv ID and deduplicate by base arXiv ID.
+- Use the network behavior implemented by each adapter; do not override per-source proxy
+  routing.
+- Missing Scholar Inbox login skips that source. NotebookLM and Scholar Inbox login
+  state must remain outside config and Git; prefer a separate NotebookLM account.
+- Never auto-ingest. The normal identity and source gates run after user selection.
 
 ## References
-Load on demand.
-- `${CLAUDE_PLUGIN_ROOT}/references/source-policy.md` — arXiv-only PDF source, authoritative metadata
-- `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md` — credential handling, no tokens in config/git
-- `references/recommend.example.yml` — config template (global + project layers)
-- `scripts/THIRD_PARTY_LICENSES` — vendored Scholar Inbox client attribution (MIT, Jiahao Shao)
+
+- `${CLAUDE_PLUGIN_ROOT}/references/source-policy.md`
+- `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md`
+- `references/recommend.example.yml`
+- `scripts/THIRD_PARTY_LICENSES`

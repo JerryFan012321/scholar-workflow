@@ -9,6 +9,11 @@
   "properties": {
     "generated_at": { "type": "string", "format": "date-time" },
     "schema_version": { "type": "string" },
+    "topic_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$",
+      "description": "Stable Hub topic identity. New payloads should provide it; the projector has a deterministic fallback only for legacy inputs."
+    },
     "topic": { "type": "string" },
 
     "paper_list": {

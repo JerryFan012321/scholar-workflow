@@ -4,11 +4,11 @@ How to resolve an existing resource to a local path (locate mode).
 
 ## Papers
 
-1. Resolve the Zotero item key via zotero-mcp: `search_library` by DOI / title+authors,
-   confirmed with `get_item_details` (or from a `semantic_search` hit confirmed the same
-   way). See `identity-policy.md` for the two-step check.
-2. Read the item's attachment relations from `get_item_details` — that path is the
-   authority for an imported PDF, queried live (there is no local cache).
+1. Resolve the Zotero item key with `scholar-workflow zotero search` by DOI or
+   title+authors, then confirm it with `scholar-workflow zotero get <key> --children`.
+   See `identity-policy.md` for the exact check.
+2. Read the item's child attachment record from the `get --children` result. Its key is
+   the stable input for the local-link service; data is queried live with no local cache.
 3. A paper that has been downloaded but not yet ingested has only its `paper_inbox`
    path; it is not in Zotero yet, so the existence check returns `none`.
 
@@ -21,9 +21,9 @@ How to resolve an existing resource to a local path (locate mode).
 
 Return the resolved path and do not copy the file:
 
-- For imported papers, the path from Zotero attachment relations (via zotero-mcp).
+- For imported papers, the child attachment key and its local-link URL.
 - For technical documents, the Vault-relative path — see shared
   `references/storage-policy.md` for which root holds what.
 
-If a resource is not found via zotero-mcp or the state mapping, report it as missing
+If a resource is not found via the Local API or the state mapping, report it as missing
 rather than guessing a path.

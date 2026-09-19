@@ -15,11 +15,15 @@ coexist under one topic folder as numbered index files (02-…, 03-…), assigne
 skill; only the 01-Paperlist.md slot is fixed. Content outside the managed markers is
 never touched (INV4); the same input re-renders byte-identically. The tree JSON is
 assembled by the host LLM; the CLI owns all path/label computation so rendering is
-MCP-free (INV18).
+independent of the Zotero transport (INV18).
 """
 from __future__ import annotations
+import hashlib
+import re
+import unicodedata
 from pathlib import PurePosixPath
 
+from scholar_workflow.hub.obsidian_contract import managed_frontmatter
 from scholar_workflow.workflows.projection import render_table
 
 
@@ -28,6 +32,54 @@ _ANCHOR_LABEL = {
     "task": "task novelty", "pipeline": "pipeline novelty", "module": "module novelty",
     "challenge": "challenge", "insight": "insight novelty",
 }
+
+
+_TOPIC_ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
+
+
+def _topic_id(doc: dict, root: str) -> str:
+    """Resolve the Hub topic identity from structured input, never note prose.
+
+    New callers should provide ``topic_id``.  The deterministic slug/hash fallback
+    exists only for older literature-tree payloads during migration.
+    """
+    explicit = doc.get("topic_id")
+    if explicit is not None:
+        value = str(explicit).strip()
+        if not _TOPIC_ID_RE.fullmatch(value):
+            raise ValueError("topic_id must be a lowercase Hub identifier")
+        return value
+    source = str(doc.get("topic") or root).strip()
+    ascii_text = unicodedata.normalize("NFKD", source).encode("ascii", "ignore").decode()
+    slug = re.sub(r"[^a-z0-9]+", "-", ascii_text.lower()).strip("-")
+    if slug:
+        return slug
+    digest = hashlib.sha256(source.encode("utf-8")).hexdigest()[:12]
+    return f"topic-{digest}"
+
+
+def _tree_kind(doc: dict) -> str:
+    tree = doc.get("tree") or {}
+    kinds = {tree.get("kind")}
+    kinds.update(child.get("kind") for child in tree.get("children") or [])
+    return "challenge" if "challenge" in kinds or "insight" in kinds else "technical"
+
+
+def _frontmatter(
+    *, doc: dict, root: str, kind: str, catalog_id: str, body: str,
+    tree_kind: str | None = None,
+) -> dict:
+    optional = {
+        "sw_topic_id": _topic_id(doc, root),
+    }
+    if tree_kind is not None:
+        optional["sw_tree_kind"] = tree_kind
+    return managed_frontmatter(
+        kind=kind,
+        catalog_id=catalog_id,
+        body=body,
+        optional=optional,
+    )
 
 
 def _by_id(doc: dict) -> dict:
@@ -200,11 +252,25 @@ def plan_novelty_tree(doc: dict, root: str, port: int, filename: str) -> list[di
     assigns (e.g. '02-世界模型文献树.md'). Returns [{path, heading, body, papers}] — a
     single entry; the flat paper list (01-Paperlist.md) is planned separately."""
     tree = doc.get("tree") or {}
+    body = render_tree_note(doc, port)
+    topic_id = _topic_id(doc, root)
+    ascii_filename = unicodedata.normalize("NFKD", filename).encode("ascii", "ignore").decode()
+    filename_slug = re.sub(r"[^a-z0-9]+", "-", ascii_filename.lower()).strip("-")
+    filename_digest = hashlib.sha256(filename.encode("utf-8")).hexdigest()[:10]
+    filename_id = f"{filename_slug or 'tree'}-{filename_digest}"
     return [{
         "path": f"{root.rstrip('/')}/{filename}",
         "heading": "",  # no H1 — filename is the title
-        "body": render_tree_note(doc, port),
+        "body": body,
         "papers": _tree_paper_count(tree),
+        "frontmatter": _frontmatter(
+            doc=doc,
+            root=root,
+            kind="literature-tree",
+            catalog_id=f"topic:{topic_id}:tree:{filename_id}",
+            body=body,
+            tree_kind=_tree_kind(doc),
+        ),
     }]
 
 
@@ -212,17 +278,29 @@ def plan_paperlist(doc: dict, root: str, port: int,
                    filename: str = "01-Paperlist.md") -> list[dict]:
     """Pure planner for the flat paper-list ledger. `filename` is fixed at 01-Paperlist.md
     by convention (the CLI enforces the 01 slot)."""
+    body = render_paperlist(doc, port)
+    topic_id = _topic_id(doc, root)
     return [{
         "path": f"{root.rstrip('/')}/{filename}",
         "heading": "",
-        "body": render_paperlist(doc, port),
+        "body": body,
         "papers": len(doc.get("paper_list", [])),
+        "frontmatter": _frontmatter(
+            doc=doc,
+            root=root,
+            kind="paper-list",
+            catalog_id=f"topic:{topic_id}:paper-list",
+            body=body,
+        ),
     }]
 
 
 def _apply(plan: list[dict], adapter) -> dict:
     for item in plan:
         adapter.ensure_managed_block(PurePosixPath(item["path"]), item["heading"])
+        adapter.update_managed_frontmatter(
+            PurePosixPath(item["path"]), item["frontmatter"]
+        )
         adapter.update_managed_block(PurePosixPath(item["path"]), item["body"])
     return {"files": len(plan), "papers": sum(p["papers"] for p in plan)}
 

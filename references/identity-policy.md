@@ -1,83 +1,57 @@
 # Identity Policy (shared)
 
-How a resource is normalized, identified, and matched. Used by find-resource
-(discovery + recall) and ingest-resource (existence check before create).
+How a resource is normalized, identified, and matched. Used by find-resource and
+ingest-resource.
 
 ## Identifier normalization
 
 - **DOI**: lowercase; strip `doi:` and `https://doi.org/` prefixes. Primary dedup key.
 - **Title + authors**: Unicode NFC + lowercase + collapse whitespace. Secondary dedup
   key when no DOI is available.
-- **arXiv**: `2401.01234`, `...v1`, `...v2` all map to the same paper. arXiv id is a
-  **download-source label**, not a canonical identity — a paper's identity is its DOI
-  or title+authors, since the same work may carry an arXiv id, a conference DOI, and a
-  publisher DOI at once.
+- **arXiv**: version suffixes map to the same base id. It is a download-source label,
+  not canonical identity; one work may have arXiv, conference, and publisher identifiers.
 
-## `resource_id` vs dedup key — two different jobs
+## `resource_id` vs library identity
 
-`make_resource_id` prefers the arXiv id, then DOI. This is **not** in tension with DOI
-being the dedup key — the two keys serve different purposes:
-
-- **`resource_id`** is a deterministic, offline naming key for local files, cursors, and
-  state. arXiv-first because at download/inbox time the arXiv id is the identifier already
-  in hand and computable without a network call. It never drives the create/skip decision.
-- **Library dedup identity** is DOI (then title+authors), confirmed at the skill layer via
-  the two-step zotero-mcp existence check below. This is what prevents duplicate Zotero
-  items.
-
-So a paper may carry `paper:arxiv:…` as its local `resource_id` while still deduping by
-DOI in the library. The local naming key and the library identity key are independent.
+`make_resource_id` prefers arXiv, then DOI, because it is an offline naming key for
+local files and state. It never decides create/skip. Library identity is DOI, then
+title+authors, verified live through the Zotero Local API.
 
 ## Metadata source priority
 
-Metadata (title / authors / year / venue) is authoritative from **zotero-mcp** for
-items already in the library. For new items, fetch metadata from an authoritative web
-source (arXiv abs page, CVF/DBLP/publisher) — never parse it out of the PDF. When a
-published version exists, its venue overrides the arXiv "preprint" label.
+Metadata for an existing item is authoritative from the Zotero Local API. For a new
+item, fetch metadata from an authoritative web source — arXiv abs, CVF, DBLP, or the
+publisher — and never parse it from the PDF. Prefer a published venue over an arXiv
+"preprint" label. Leave unavailable secondary fields empty rather than fabricating.
 
-1. zotero-mcp query (authoritative metadata + existence for library items)
-2. DOI / arXiv identifier confirmation
-3. Authoritative web source for new items (arXiv abs, CVF, DBLP, publisher)
-4. User-provided (tag the source)
+## Existence check
 
-If a secondary field (volume, pages) cannot be found from an authoritative source,
-state that honestly and leave it empty — never fabricate, and never hammer an
-unreachable site to fill a non-essential field.
+Before every create, query the local library and confirm fields:
 
-## Existence check — two-step, via zotero-mcp
+1. DOI present → `scholar-workflow zotero search "<doi>" --fulltext`, then compare
+   normalized DOI values.
+2. No DOI → `scholar-workflow zotero search "<title>"`, then compare normalized title
+   and ordered creators.
+3. When a candidate needs fuller inspection, run
+   `scholar-workflow zotero get <item-key> --children`.
 
-`write_item` is pure create with no dedup, so an existence check MUST run before every
-create. Zotero's own dedup is detect-then-manual-merge, not a write-time block. The
-check is orchestrated by the host LLM at the skill layer (the CLI cannot reach
-zotero-mcp), in two steps:
-
-1. **Recall** — `search_library` (and/or `semantic_search`) by DOI, then by
-   title+authors.
-2. **Confirm** — `get_item_details` on each recalled key, comparing DOI / title /
-   authors to the target. A recall hit is a candidate, not a decision; the field-level
-   read-back confirms it.
+`scholar-workflow zotero ingest` repeats the exact check immediately before its write,
+so a skill-layer candidate list cannot bypass the final guard.
 
 Outcomes:
 
-- One confirmed match → **exact** (already in the library; do not re-create).
-- Multiple items with the same identity → **conflict**: stop and surface the item keys
-  for human adjudication. Never auto-merge (NG3).
-- No confirmed match → **none** (safe to create).
+- One confirmed match → **exact**; reuse it and do not create.
+- Multiple exact matches → **conflict**; exit 5 and surface keys for human adjudication.
+- No exact match → **none**; safe to create.
+- An obvious same work with a different version/identity → surface it for a human choice;
+  never auto-skip or merge.
 
-Different arXiv versions of one paper share the same base id and resolve to the same
-identity — they never create separate items.
+Different arXiv versions share one base id and never create separate items.
 
-## Reading items back — itemType caveat
+## Fuzzy and topic recall
 
-`itemType` reads back as an empty string through zotero-mcp for **every** item; this
-is a read-layer artifact, not a corrupted record. Do not diagnose a record as dirty
-from an empty `itemType`, and do not try to set it via `write_metadata` (it is
-rejected as not a valid data field). Judge record health by the substantive fields
-(title, creators, DOI, attachments on disk).
-
-## Semantic recall — fuzzy, host-LLM
-
-Fuzzy/semantic matching is delegated to zotero-mcp's `semantic_search`; this project
-builds no embeddings or vector index of its own (INV14). A semantic hit is only a
-candidate — confirm identity with the two-step check above before treating it as the
-same paper. Confirming or merging identity stays with the human.
+The Local API provides quick search, including indexed full text, but no native semantic
+or vector endpoint. Use `scholar-workflow zotero search "<topic>" --fulltext` to recall
+candidates, then let the current host model rank titles, abstracts, and relevant text.
+This project stores no embedding index. Fuzzy similarity is only a candidate signal;
+the exact identity check above controls writes.

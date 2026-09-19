@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Scholar Workflow</title>
+    <link rel="stylesheet" href="/hub/assets/hub.css">
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">SW</span>
+          <div><strong>Scholar Workflow</strong><small>本地研究中枢</small></div>
+        </div>
+        <nav aria-label="研究主题">
+          <button class="nav-item active" type="button" data-view="all">全部资料</button>
+          <div id="topic-nav"></div>
+        </nav>
+        <div class="status"><span class="status-dot"></span><span>仅本机</span></div>
+      </aside>
+      <main>
+        <header class="topbar">
+          <div>
+            <h1 id="view-title">全部资料</h1>
+          </div>
+          <div class="topbar-tools">
+            <div class="workspace-target">
+              <label for="workspace-select">cmux 查看位置</label>
+              <select id="workspace-select" aria-describedby="cmux-status" disabled>
+                <option value="">正在读取工作区…</option>
+              </select>
+              <small id="cmux-status" role="status" aria-live="polite"></small>
+            </div>
+            <div id="hub-actions" class="hub-actions" aria-label="工作区操作"></div>
+            <label class="search">
+              <span>⌕</span>
+              <input id="search" type="search" placeholder="搜索标题、作者或标识符" autocomplete="off">
+            </label>
+          </div>
+        </header>
+        <section class="summary" aria-label="资料概况">
+          <div><strong id="paper-count">0</strong><span>论文与资源</span></div>
+          <div><strong id="topic-count">0</strong><span>研究主题</span></div>
+          <div><strong id="artifact-count">0</strong><span>可读文档</span></div>
+          <p id="revision">正在载入…</p>
+        </section>
+        <section class="content">
+          <div class="section-heading"><h2>资料</h2><span id="result-count"></span></div>
+          <div id="resource-grid" class="resource-grid" aria-live="polite"></div>
+          <div id="empty" class="empty" hidden>
+            <div class="empty-icon">⌁</div>
+            <h2>这里还没有可显示的资料</h2>
+            <p>Hub 只读取受 HubCatalog 管理的索引；你的 Markdown 正文仍由 Obsidian 保存并保持可读。</p>
+          </div>
+          <div class="section-heading document-heading"><h2>可读文档</h2><span id="document-count"></span></div>
+          <div id="artifact-list" class="artifact-list" aria-live="polite"></div>
+        </section>
+      </main>
+    </div>
+    <dialog id="preview-dialog" class="preview-dialog" aria-labelledby="preview-title" aria-describedby="preview-path">
+      <div class="preview-header">
+        <div class="preview-heading">
+          <h2 id="preview-title"></h2>
+          <p id="preview-path" class="preview-path"></p>
+        </div>
+        <div class="preview-actions" aria-label="文档操作">
+          <button id="preview-edit" class="preview-action" type="button">编辑</button>
+          <button id="preview-save" class="preview-action primary" type="button" hidden>保存</button>
+          <button id="preview-cancel" class="preview-action" type="button" hidden>取消</button>
+          <button id="preview-close" class="close-button" type="button" aria-label="关闭文档">×</button>
+        </div>
+      </div>
+      <p id="preview-status" class="preview-status" role="status" aria-live="polite"></p>
+      <div class="preview-body">
+        <div id="preview-content" class="markdown-view" tabindex="0"></div>
+        <div id="preview-editor-layout" class="editor-layout" hidden>
+          <textarea id="preview-editor" aria-label="编辑文档内容" spellcheck="true"></textarea>
+          <section class="live-preview" aria-label="Markdown 实时预览">
+            <p class="live-preview-label">实时预览</p>
+            <div id="preview-live-content" class="markdown-view"></div>
+          </section>
+        </div>
+      </div>
+      <div class="preview-footer">
+        <details class="attachment-slot">
+          <summary>附件 <span id="attachment-count">0</span></summary>
+          <div class="attachment-body">
+            <div id="attachment-list" class="attachment-list" aria-live="polite"></div>
+            <div class="attachment-toolbar">
+              <label id="attachment-upload-label" class="attachment-upload">
+                添加附件
+                <input id="attachment-upload" type="file" multiple>
+              </label>
+              <span>附件保存在 Vault；同名文件不会被覆盖</span>
+            </div>
+            <p id="attachment-status" class="attachment-status" role="status" aria-live="polite"></p>
+          </div>
+        </details>
+      </div>
+    </dialog>
+    <script src="/hub/assets/hub.js" defer></script>
+  </body>
+</html>

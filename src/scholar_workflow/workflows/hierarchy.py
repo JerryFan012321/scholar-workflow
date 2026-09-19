@@ -4,13 +4,17 @@ so its folder and its own note never appear as same-named siblings; a leaf node 
 to `<parent>/<name>.md`. A node's single managed block holds a MOC wikilink section (when
 it has child collections) followed by a 10-column paper table (when it has direct papers).
 
-The tree JSON is produced by the host LLM via zotero-mcp; the CLI owns all path
-computation so rendering is deterministic and MCP-free (INV18). Content outside the
+The tree JSON is produced from Zotero Local API data; the renderer owns all path
+computation so rendering is deterministic (INV18). Content outside the
 managed markers is never touched (INV4).
 """
 from __future__ import annotations
 from pathlib import PurePosixPath
 
+from scholar_workflow.hub.obsidian_contract import (
+    artifact_id_from_path,
+    managed_frontmatter,
+)
 from scholar_workflow.workflows.projection import render_table
 
 
@@ -57,11 +61,29 @@ def _walk(node: dict, parent_dir: str, port: int, plan: list[dict]) -> None:
     file_path = f"{child_dir}/index.md" if _has_children(node) else f"{parent_dir}/{name}.md"
     # Leaf (paper table) heading gets a "相关论文" suffix; hub (MOC) keeps the bare name.
     heading = node["name"] if _has_children(node) else f"{node['name']}相关论文"
+    body = _node_body(node, child_dir, port)
+    collection_key = str(node.get("collection_key") or "").strip()
+    catalog_id = (
+        f"zotero-collection:{collection_key}:index"
+        if collection_key
+        else artifact_id_from_path("collection-index", file_path)
+    )
+    kind = "collection-index" if _has_children(node) else "paper-list"
+    optional = (
+        {"sw_topic_id": f"zotero-collection:{collection_key.lower()}"}
+        if collection_key else {}
+    )
     plan.append({
         "path": file_path,
         "heading": heading,
-        "body": _node_body(node, child_dir, port),
+        "body": body,
         "papers": len(node.get("papers") or []),
+        "frontmatter": managed_frontmatter(
+            kind=kind,
+            catalog_id=catalog_id,
+            body=body,
+            optional=optional,
+        ),
     })
     for child in node.get("children") or []:
         _walk(child, child_dir, port, plan)
@@ -82,5 +104,8 @@ def project_tree(tree: dict, root: str, adapter, port: int) -> dict:
     plan = plan_tree(tree, root, port)
     for item in plan:
         adapter.ensure_managed_block(PurePosixPath(item["path"]), item["heading"])
+        adapter.update_managed_frontmatter(
+            PurePosixPath(item["path"]), item["frontmatter"]
+        )
         adapter.update_managed_block(PurePosixPath(item["path"]), item["body"])
     return {"files": len(plan), "papers": sum(p["papers"] for p in plan)}

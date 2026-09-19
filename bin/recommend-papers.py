@@ -10,7 +10,7 @@ recommend_sources adapters. Emits only metadata (cheap); NotebookLM skimming of 
 refined shortlist is orchestrated separately by the SKILL via notebooklm-py.
 
 Optional stdin JSON supplies context the CLI can't (it never touches MCP): the host LLM
-gathers it via zotero-mcp / config and pipes it in:
+gathers it via `scholar-workflow zotero search` / config and pipes it in:
   {"seed_arxiv_ids": ["2501.00001", ...]}   # Zotero-library seeds for S2 recommendations
 Network paths differ per source: HF Daily needs the proxy; S2 goes direct (trust_env
 handled in the adapters); Scholar Inbox uses the vendored client's own session.

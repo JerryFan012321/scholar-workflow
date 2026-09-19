@@ -3,6 +3,162 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.27.0] — 2026-09-19
+
+### Added
+- **cmux-first Hub workspace control.** The Hub now discovers live cmux workspaces through a
+  process-local registry, marks the workspace containing the current Hub browser instance, and
+  lets a person route registered PDF, Markdown/Canvas, and Notion views to that workspace or an
+  explicitly selected alternative.
+- **Native editor and agent actions.** Resource cards can open their Zotero item for editing,
+  Vault artifacts can open in Obsidian, and a confirmed global action creates a blank native
+  Codex agent-session in the selected cmux workspace.
+- **Explicit cmux entry point.** `scholar-workflow open-hub` health-checks an already-running Hub
+  and opens a uniquely tagged Hub browser surface in the caller's current cmux workspace. It does
+  not start the service or fall back to another browser. The health handshake requires a
+  `cmux-workspace-actions-v1` marker and tells the user to restart a stale pre-0.27 Hub.
+
+### Changed
+- **Runtime roles are explicit.** cmux is the default viewing shell; the Hub remains the
+  stateless navigation, preview, and opaque-action broker; Obsidian and Zotero remain the native
+  editors. cmux workspace/surface state is runtime-only and never enters `HubCatalog`.
+- **Hub startup gates Codex.** `serve-hub` exposes the Codex button only when launched from a real
+  cmux terminal and uses that server process's resolved startup directory as the trusted working
+  directory. A background or LaunchAgent-style server keeps Hub reading/editing but does not
+  expose the Codex action.
+- **Marketplace metadata is current.** The published entry now carries Codex installation and
+  authentication policy, category, display metadata, and a Hub/cmux-aware summary.
+
+### Security
+- **Opaque workspace boundary.** Browser APIs expose only process-local workspace/action IDs and
+  safe labels. Strict POST schemas reject raw workspace UUIDs, URLs, paths, shell strings, and
+  workspace fields on non-cmux actions; server-side registries resolve every target. Workspace
+  labels/errors redact raw IDs, and cmux/Obsidian/Zotero child processes receive an allowlisted
+  environment rather than the Hub's complete credential-bearing environment.
+- **Blank-session-only Codex control.** The cmux command is fixed argv with `shell=False` and has
+  no browser-supplied prompt, command, model, permission, sandbox, or working directory. The Hub
+  never injects keystrokes into an existing terminal and strips cmux external-open rerouting.
+
+## [0.26.0] — 2026-09-18
+
+### Added
+- **Unified local research Hub.** `serve-hub` now serves a responsive, loopback-only Web UI,
+  searchable resources and topics, streamed Zotero PDFs with HEAD/Range support, and safe
+  live previews of catalog-registered Markdown/Canvas files. The historical `serve-links`
+  command and `/open/paper/<attachment-key>` URLs remain compatible on the same listener.
+- **Canonical HubCatalog.** Added strict Pydantic and checked-in JSON Schema contracts for
+  resources, topics, and readable artifacts, plus stable semantic revisions, atomic snapshot
+  storage, structured literature-tree projection, and one-resource-to-many-topics merging.
+- **Standard JSON Canvas registration.** Analysis Canvas files keep the JSON Canvas 1.0
+  `nodes`/`edges` shape and are registered separately in the human-checkable Vault
+  `.scholar-workflow/artifacts.yml`; invalid or missing declarations fail closed instead of
+  exposing a stale snapshot path.
+- **Opaque editor actions.** Catalogued Vault documents can be opened in Obsidian; Notion
+  page IDs returned by the existing projection are stored as ID-only links and opened through
+  `cmux open <url> --focus true`. URLs and paths remain server-side.
+- **Explicit Vault editor.** The reading-first document dialog can switch to a manual editor
+  for an existing catalogued Markdown/Canvas file. Saves use raw-file revisions, reject stale
+  writes, atomically replace the file, validate Canvas JSON, and keep Hub-owned `sw_*` identity
+  fields immutable; there is no autosave.
+- **Vault assets.** Images, data, and supplements can be added from a collapsed document panel.
+  Their bytes stay under the Vault, relationships live in the human-checkable
+  `.scholar-workflow/assets.yml`, same-name uploads get a suffix instead of overwriting, and
+  the catalog reports missing, unsafe, or changed files as diagnostics. Zotero PDFs remain a
+  separate read-only attachment class in the Hub.
+
+### Changed
+- **Obsidian now follows the Hub contract.** Generic indexes, collection mirrors, Paperlists,
+  and literature-tree notes receive an allowlisted `sw_*` frontmatter identity layer. Existing Markdown tables, Mermaid
+  trees, human YAML, comments, prose, and content outside managed blocks remain readable and
+  are preserved; the Hub never infers structure from free-form note text.
+- **Projection output updates the Hub snapshot.** `project-literature-tree` records its
+  structured relationships in `${SCHOLAR_WORKFLOW_HOME}/hub/catalog.json`; Notion projection
+  records only resource/page IDs in `projection-links.json`.
+- **Reading-first UI.** The document surface now keeps editing and attachments secondary,
+  uses explicit save/cancel controls, warns before discarding dirty text, exposes external
+  edit conflicts, supports Cmd/Ctrl+S, renders a safe Markdown subset, and provides a
+  responsive live preview beside the editor.
+- **Live action refresh.** A long-running Hub rebuilds its opaque action registry when the
+  catalog revision changes, so newly registered Obsidian artifacts and projected Notion page
+  IDs become available without restarting the service.
+
+### Security
+- **Loopback action boundary.** The Hub validates Host and Origin, issues a process-local CSRF
+  token, requires an allowed Origin even when a caller has the CSRF token, rejects CORS and
+  non-empty action bodies, uses opaque action IDs, confines Vault/PDF
+  paths to configured roots, renders preview text without HTML injection, and never silently
+  falls back from cmux to another browser.
+- **Bounded Vault writes.** Document and asset writes require same-origin requests plus the
+  process CSRF token, resolve only registered opaque IDs, reject symlinks and path escape, and
+  never accept a destination directory. Unsafe asset media types are download-only; the first
+  asset API deliberately has no replace, move, or delete operation.
+
+## [0.25.0] — 2026-09-18
+
+### Added
+- **Structured paper-analysis notes.** `analyze-paper` now loads a dedicated note-format
+  contract when writing: conclusion snapshot, problem/motivation, method pipeline,
+  experiments, and limitations. Challenge, contribution, module, comparison, and ablation
+  fields carry paper-local evidence anchors; author-stated limitations remain distinct from
+  analysis inferences. Each detailed note is paired with an editable Obsidian JSON Canvas
+  using the reference tree's Abstract/Introduction/Method/Experiments/Limitation branches.
+  Repeated challenges, contributions, and modules expand dynamically; focused passes update
+  only their matching subtree while preserving Canvas layout and user-added nodes.
+
+## [0.24.0] — 2026-09-06
+
+### Added
+- **Official Zotero Local API transport.** Added a loopback-only Zotero 10+ adapter for
+  library search, item/collection reads, indexed full text, additive item updates, and
+  Zotero's three-phase imported-file upload flow.
+- **Host-neutral Zotero CLI.** Added `scholar-workflow zotero` commands for probe,
+  authorization, search, item/full-text/collection reads, versioned metadata updates, and
+  guarded ingestion. Exact
+  DOI or normalized title+creators matching is repeated immediately before create;
+  conflicts exit 5 and partial attachment completion exits 6.
+- **Local write-key protection.** Write access is requested through
+  `/api/local/authorize`; remembered keys are stored in macOS Keychain and never printed.
+  The adapter disables proxies/redirects and rejects non-loopback API and upload URLs.
+
+### Changed
+- **Library recall without a vector service.** Topic recall now uses Zotero's full-field
+  and indexed-full-text quicksearch followed by ranking in the current host model. The
+  Local API has no native semantic/vector endpoint, and the project still stores no local
+  embedding index.
+- **Doctor and all library-facing skills migrated.** Runtime skills, agents, shared
+  policies, evals, goals, handoff notes, and bilingual documentation now call the Local
+  API CLI. Zotero can be started and retried during an existing agent session.
+- **All 14 runtime skills pruned for current models.** SKILL bodies now concentrate on
+  routing, exact commands, artifact/schema contracts, environment facts, and safety or
+  permission boundaries. Generic research/analysis/ranking/writing instruction and
+  duplicated policy prose were removed. The inventory remains at 14 because adjacent
+  skills still differ by artifact or read/write boundary; `survey-topic` is now a thin,
+  no-artifact router rather than a research-method prompt.
+
+### Fixed
+- **Recoverable Local API PDF ingestion.** Re-running the same ingest payload now attaches
+  a missing PDF to an exact existing item or resumes an incomplete stored attachment instead
+  of silently stopping at parent-item deduplication. Existing complete PDFs are reused, and
+  ambiguous incomplete attachments stop with exit 5 rather than choosing arbitrarily.
+- **Zotero 10.0.2 write compatibility.** Item and imported-file attachment creation no
+  longer depend on the optional Web API `/items/new` template endpoint, which the tested
+  Local API build returns as 404. Both writes submit valid partial item JSON directly.
+- **Local API transport conformance.** Initial probing now negotiates the reported API
+  version, numeric `{\"exists\": 1}` upload responses short-circuit correctly, rejected keys
+  are cleared only on 401, and disabled/forbidden 403 responses retain their distinct meaning.
+  Hashing and upload bodies stream from disk, with Zotero's documented under-4-GiB limit
+  replacing the former 50-MiB application cap. Exact ingest checks scan the complete local
+  result set instead of truncating at 100 candidates, invalid PDFs fail before any write,
+  while direct partial-item writes preserve compatibility with Local API builds that omit
+  the schema-template route.
+- **Codex loopback diagnosis.** Local API connection errors now distinguish an unavailable
+  Zotero process from a sandboxed host that still needs localhost/network permission, avoiding
+  false "Zotero is disabled" reports when port 23119 is already listening.
+
+### Removed
+- **Bundled Zotero MCP dependency.** Removed `zotero-mcp` from the Claude and Codex
+  manifests, deleted `.mcp.json`, and removed it from the runtime release allowlist.
+
 ## [0.23.0] — 2026-09-06
 
 ### Removed

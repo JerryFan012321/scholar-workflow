@@ -1,7 +1,7 @@
 {
   "name": "scholar-workflow",
-  "version": "0.23.0",
-  "description": "Plan-first scholarly resource management: scope research requests, manage papers through Zotero, maintain Obsidian and Notion projections, build literature trees, analyze papers, coordinate agents, and initialize Git-managed project skeletons.",
+  "version": "0.27.0",
+  "description": "Plan-first scholarly resource management with a local research Hub: manage papers through Zotero, maintain readable Obsidian and Notion projections, build literature trees, analyze papers, coordinate agents, and initialize Git-managed project skeletons.",
   "author": {
     "name": "Scholar Workflow contributors",
     "url": "https://github.com/JerryFan012321"
@@ -17,11 +17,10 @@
     "literature-review"
   ],
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Scholar Workflow",
-    "shortDescription": "Research resources, project setup, and agent workflows",
-    "longDescription": "Discover, verify, import, organize, and analyze scholarly resources; initialize Git-managed research projects; and coordinate bounded work across agent runtimes.",
+    "shortDescription": "Local research Hub, resources, and workflows",
+    "longDescription": "Browse a local research Hub; discover, verify, import, organize, and analyze scholarly resources; initialize Git-managed research projects; and coordinate bounded work across agent runtimes.",
     "developerName": "Scholar Workflow contributors",
     "category": "Education & Research",
     "capabilities": [

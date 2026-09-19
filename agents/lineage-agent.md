@@ -19,7 +19,7 @@ task, not an external hand-off.
 
 ## Input
 - A user-specified topic, a Zotero Collection, or a paper list
-- Paper abstracts or intros (fetched on demand via zotero-mcp from the hierarchical index)
+- Paper abstracts or indexed text (fetched on demand through the Zotero Local API CLI)
 
 ## Output
 - Normalized `literature-tree.json` (conforms to `contracts/literature-tree.schema.json`)

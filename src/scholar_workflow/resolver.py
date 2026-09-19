@@ -1,8 +1,7 @@
 """Input resolution: raw user input -> normalized Resource objects.
 
-Offline classification/normalization only. Title/authors/year come from zotero-mcp
-downstream (the authoritative metadata source, queried by the host LLM at the skill
-layer), so this module stays a pure, network-free, unit-testable normalizer.
+Offline classification/normalization only. Title/authors/year come from Zotero Local API
+downstream, so this module stays a pure, network-free, unit-testable normalizer.
 """
 from __future__ import annotations
 import csv
