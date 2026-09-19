@@ -83,6 +83,9 @@ Markdown 正文，Hub 只增加薄的 `sw_*` frontmatter。
 
 1. **在宿主中安装插件。**
 
+   release 同时提供 Codex 原生 marketplace 元数据与 Claude 兼容 marketplace 入口；
+   两者安装的是同一个插件根目录与同一版本。
+
    Claude Code:
    ```text
    /plugin marketplace add JerryFan012321/scholar-workflow@release
@@ -169,5 +172,6 @@ scholar-workflow`)。你的 `config.yml` 与凭证在仓库之外,更新不受�
 
 ## 开发
 
-这是 `release` 分支(仅运行时,包含两个宿主 manifest)。开发内容 —— 规范、规划文档、测试、评估 —— 在 `main`
-分支,贡献指南见其 `AGENT.md`。测试在那边跑:`pytest tests/unit tests/contract`。
+这是 `release` 分支(仅运行时,包含 Codex 原生 marketplace、Claude 兼容 marketplace 与两个宿主
+manifest)。开发内容 —— 规范、规划文档、测试、评估 —— 在 `main` 分支,贡献指南见其
+`AGENT.md`。测试在那边跑:`pytest tests/unit tests/contract`。
