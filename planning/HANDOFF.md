@@ -1,7 +1,8 @@
 # HANDOFF — 从这里接着干
 
 > 交接文档,供下一个开发会话快速进入状态。与 `GOALS.md`(意图层,同目录)、`../CHANGELOG.md`(变更史)
-> 配合看。最后更新:2026-09-19(v0.27.0 cmux-first Hub 完成;v0.26.0 本地研究 Hub MVP;
+> 配合看。最后更新:2026-09-19(v0.27.1 已发布并安装到 Codex;v0.27.0 cmux-first Hub 完成;
+> v0.26.0 本地研究 Hub MVP;
 > 此前 14 个运行期 skill 简化完成;
 > 上游 2026-09-06:v0.24.0 Zotero MCP → 官方 Local API;
 > v0.23.0 review skills 退场 + 双向 agent-collaboration
@@ -15,6 +16,23 @@
 > v0.13.1 vendored writing-great-skills + 描述精简、v0.13.0 config schema 两处 BREAKING 改名/删键;
 > v0.12.0 Phase 5 两级 AI 阅读 recommend-papers + analyze-paper + marketplace.json;v0.11.0 env-setup;
 > v0.10.0 Phase 3 novelty tree;Phase 2 规格见 `phase2-sync-projections.md`)。
+
+## 2026-09-19 发布与 Codex 安装（v0.27.1，已完成）
+
+- `0.27.0` 首次发布后，`codex plugin marketplace add` 能注册仓库，但旧 Claude marketplace 的
+  `source: "github"` 会被 Codex 跳过，因而 `plugin add` 报找不到 `scholar-workflow`。
+- 按 OpenAI 当前 marketplace 契约新增 `.agents/plugins/marketplace.json`：仓库根插件使用
+  Git-backed `source: "url"` + `ref: "release"`；原 `.claude-plugin/marketplace.json` 保留给
+  Claude Code。release allowlist 已加入 `.agents/`，两端仍安装同一插件根和版本。
+- 实装验证所用的 runtime 修复提交为
+  `main=945f465a1c96f89bba9612278b70c054add54604`，对应 release snapshot 为
+  `ec9d83eb65d43b2831a6ac62477970b3b0e03429`；后续交接/Changelog 记录不改变插件 payload。
+- 已在当前 Codex 用户环境真实安装并验证：`scholar-workflow@jerry-plugins` 状态为
+  `installed, enabled`，版本 `0.27.1`；安装缓存包含 14 个 skills 与 `hooks/hooks.json`。
+  pipx CLI 同步为 `scholar-workflow 0.27.1`。新 skill/hook 需在新 Codex thread 中加载；
+  hooks 仍服从 Codex 自己的人工 trust 审查。
+- 完整测试基线为 **355 passed**；插件 validator、release 白名单、两个 marketplace 契约、
+  CLI/manifest 版本一致性均通过。
 
 ## 2026-09-19 cmux-first Hub（v0.27.0，本批已完成）
 
@@ -58,8 +76,7 @@
   停止旧进程，再从真实配置的 cmux terminal 用当前 `serve-hub` 重启；新版 `open-hub` 会拒绝缺少
   capability marker 的旧服务并明确提示重启。
 - `node --check`、`compileall`、eval JSON、Codex 插件校验、双宿主 manifest 版本一致性与
-  `git diff --check` 均已通过；CLI 报告 `0.27.0`。工作树仍含此前多批未提交改动，不得
-  reset/checkout 或将全部 diff 归为本批。
+  `git diff --check` 均已通过；本批运行时随后由上方 `0.27.1` 发布/安装修复正式交付。
 
 ## 2026-09-18 本地研究 Hub（v0.26.0，本批已完成）
 
@@ -191,9 +208,9 @@ Vault 附件与阅读优先 UI。工作树仍包含用户此前的多批未提�
 ## 当前状态一句话
 
 Phase 2 **仍在进行中，但 Obsidian / Zotero / Notion / Hub / cmux 的当前职责和入口已在
-v0.27.0 收敛**：Zotero 是论文/PDF/正式批注权威，Obsidian 是人类可读知识正文与 Canvas 权威，
+v0.27.1 收敛并发布**：Zotero 是论文/PDF/正式批注权威，Obsidian 是人类可读知识正文与 Canvas 权威，
 Notion 是单向简化投影，Hub 是无独立知识正文的 catalog/预览/显式编辑/action broker，cmux 是默认
-查看 shell。当前 unit+contract 基线为 **348 passed**，workspace 打开与空白 Codex session 已真实
+查看 shell。当前完整测试基线为 **355 passed**，workspace 打开与空白 Codex session 已真实
 cmux E2E；旧 Vault 显式迁移、Zotero 全库分页 assembler 和无 Zotero item 的方向笔记 Notion 表示
 仍是 Phase 2 剩余项。更早版本的阶段快照仅作为下方历史决策记录，不代表当前运行形态。
 
@@ -216,8 +233,9 @@ cmux E2E；旧 Vault 显式迁移、Zotero 全库分页 assembler 和无 Zotero 
   协作时不再受固定单向 handoff 限制。新增 INV26 + safety/routing eval。
 - **v0.22.0(Claude Code/Codex 双宿主打包)**:新增 `.codex-plugin/plugin.json` 与 Codex `.mcp.json`,
   直接复用现有 14 个 `skills/`、`hooks/hooks.json` 和 `zotero-mcp` server name;release allowlist 同步纳入
-  Codex runtime 文件。现有 `.claude-plugin/marketplace.json` 继续作为 Claude marketplace,同时供 Codex
-  的 legacy-compatible marketplace 发现路径使用。两个 host manifest 同名同版本,新增单测防止身份/MCP 漂移。
+  Codex runtime 文件。`.claude-plugin/marketplace.json` 继续作为 Claude marketplace；从 v0.27.1 起，
+  Codex 由 `.agents/plugins/marketplace.json` 的原生 Git-backed entry 安装。两个 host manifest 同名同版本,
+  单测防止身份与 marketplace 漂移。
 - **v0.9.0**:退场遗留审批链(pre-zotero-mcp 时代的 apply/approval),AGENT.md 新增「设计哲学(上位准则)」——约束三层筛(内在能力不写 / 优化脚手架随能力贬值 / 业务规定稳定维护)。
 - **v0.10.0(Phase 3 起步)**:文献树从 citation-graph 换成彭思达 novelty tree(`里程碑任务→pipeline→论文` 三级、概念为内部节点、论文为叶、每概念记 novelty 锚点 + flat paper list);新 `literature-tree.schema.json` + `workflows/novelty_tree.py`(render_mermaid + plan/project)+ `project-literature-tree` CLI;build-literature-tree SKILL 加 scope-locking **grill**(四 gate:目的/边界/分辨率/时间窗 + 锚点归属规则);INV22 + outcomes 守护。
 - **v0.11.0**:新 **env-setup** skill(用户直呼、无 agent)——个人 API-key + SSH-server env-records 台账,插件零私有数据、模板进 git、真实记录 gitignored;已实盘建 `~/dev/env-records`、登记 Notion token。

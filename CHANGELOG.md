@@ -9,7 +9,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 - **Codex Git marketplace installation.** Added the native
   `.agents/plugins/marketplace.json` entry with the supported Git-backed `source: "url"`
   shape for a plugin at the repository root. The Claude-compatible marketplace remains
-  unchanged, and the release builder now ships both marketplace entry points.
+  unchanged, and the release builder now ships both marketplace entry points. A live Codex
+  install confirmed version `0.27.1`, all 14 skills, and the bundled hooks file.
 
 ## [0.27.0] — 2026-09-19
 
