@@ -1,128 +1,48 @@
 ---
 name: project-backlog
-description: Manage the persistent work-item queue for this project — add, update, query, and report on pending work items, decisions, blockers, and priorities. Use when the user asks 'what needs my decision', 'what's ready to work', 'add this to backlog', 'mark X as blocked', 'backlog status', 'backlog overview', 'what's pending', '待办是什么', '哪些等我决策', '把这个加入待办', '标记 X 被阻塞', '待办概览', '待办状态', '还有什么要做'. Not for whole-project strategic status, ephemeral conversation tasks, strategic goals, or shipped changes.
+description: Manage this repository's persistent work queue in planning/BACKLOG.md. Use only for explicit backlog/to-do/decision-queue requests such as 'add this to backlog', 'what needs my decision', 'mark WI-003 blocked', '待办概览', '加入待办'. Not for general project status, strategic goals, or conversation-only tasks.
 ---
 
 # project-backlog
 
-Maintains the persistent work queue at `planning/BACKLOG.md` — the single source of truth for pending work items, their status, decision dependencies, and blockers. Solves the problem where project state scatters across CHANGELOG (what shipped), git (what's staged), GOALS.md (long-term intent), scratch files (ad-hoc notes), and conversation history (decisions made but not recorded).
+`planning/BACKLOG.md` is the sole work-item store.
 
-This is a **project-specific** skill that operates on *this* repository's backlog file. It is not a generic task tracker.
+## Operations
 
-## Step 1: Determine operation
+1. Read the complete file before every operation. If absent, initialize headings
+   `# Project Backlog`, `## Schema`, `## Active Items`, and `## Completed`.
+2. **Add:** mint the next stable `WI-NNN` and append it under Active Items.
+3. **Update:** locate by exact ID (or unambiguous title), update fields, and move a
+   completed item to the top of Completed.
+4. **Query:** filter existing items and print a concise `ID — title — status — blocker`
+   list. “Needs decision” means `pending-decision`; “ready” means status `ready` and
+   no blocker.
+5. **Report:** print counts plus pending-decision, ready, blocked, and in-progress groups.
+   Do not create another report file unless asked.
+6. After a mutation, write `planning/BACKLOG.md` once and report the change.
 
-Recognize the user's intent from the request:
-
-- **Add** — "add X to backlog", "记一下这个待办", "新增工作项 Y"
-- **Update status** — "mark X as done", "close WI-NNN", "X blocked by Y", "X 等我决策", "start WI-NNN"
-- **Query** — "what needs my decision", "what's ready to work", "show blocked items", "哪些等决策", "能做什么"
-- **Report** — "backlog status", "backlog overview", "待办概览", "当前待办概览"
-
-If ambiguous, clarify with the user.
-
-## Step 2: Read the backlog file
-
-Read `planning/BACKLOG.md`. If it does not exist, initialize it with the schema header:
-
-```markdown
-# Project Backlog
-
-Work items for scholar-workflow. Single source of truth for pending work, decisions, and blockers.
-
-## Schema
-
-- **ID**: `WI-NNN` (auto-increment from 001)
-- **Status**: ready | pending-decision | blocked | in-progress | done | deferred
-- **Priority**: p0 (urgent) | p1 (high) | p2 (medium) | p3 (low)
-- **Type**: code-change | eval | decision | planning | documentation | refactor
-
-## Active Items
-
-[Work items with status != done go here]
-
-## Completed
-
-[Done items, most recent first]
-```
-
-## Step 3: Execute the operation
-
-### Add
-
-Mint a new work-item ID (increment from the last used `WI-NNN`). Capture:
-
-- **Title** — one-line summary
-- **Type** — code-change / eval / decision / planning / documentation / refactor
-- **Status** — start with `ready` or `pending-decision` depending on whether user input is needed
-- **Priority** — p0 / p1 / p2 / p3 (default p2 if not stated)
-- **Context** — 2–4 lines: why this matters, what led to it, what it affects
-- **Blocker** — if status is `blocked`, name what it waits on (another WI-ID, external dependency, or user decision)
-- **Next action** — what moves this forward
-
-Write the item under `## Active Items` in this format:
+## Item format
 
 ```markdown
-### WI-NNN: [Title]
+### WI-NNN: Title
 - **Status**: ready
-- **Priority**: p1
+- **Priority**: p2
 - **Type**: code-change
-- **Context**: [2–4 lines of why/what/affect]
-- **Blocker**: (none | WI-MMM | user-decision | external-dependency)
-- **Next action**: [What moves this forward]
-- **Related**: [Optional: goal IDs from GOALS.md, phase names, external refs]
+- **Context**: Why it matters and what it affects.
+- **Blocker**: none
+- **Next action**: Observable next step.
+- **Related**: Optional goal IDs or references.
 ```
 
-### Update status
+Allowed values:
 
-Locate the work item by ID or title. Update the `Status` field and, if applicable, the `Blocker` or `Next action` fields. When marking `done`, move the entire item block from `## Active Items` to `## Completed` (prepend so most recent is first).
-
-### Query
-
-Filter items by the query criteria:
-
-- `status:pending-decision` → "what needs my decision"
-- `status:ready AND blocker:(none)` → "what's ready to work"
-- `status:blocked` → "what's blocked"
-- `priority:p0 OR priority:p1` → "high-priority items"
-
-Print the matching items to the terminal in a concise list (ID, title, status, blocker if any).
-
-### Report
-
-Generate a structured overview:
-
-```
-================================================
-  PROJECT BACKLOG — scholar-workflow | YYYY-MM-DD
-================================================
-
-## Summary
-- Active: N items (M ready, K pending-decision, J blocked)
-- Completed: C items
-
-## Needs decision (pending-decision)
-[List WI-NNN: title]
-
-## Ready to work (ready, not blocked)
-[List WI-NNN: title]
-
-## Blocked
-[List WI-NNN: title — blocked by X]
-
-## In progress
-[List WI-NNN: title]
-```
-
-Print to terminal. Do not write a new file unless explicitly asked.
-
-## Step 4: Confirm and write
-
-After adding or updating items, write the modified `planning/BACKLOG.md` back. Report what changed in one sentence.
+- status: `ready | pending-decision | blocked | in-progress | done | deferred`;
+- priority: `p0 | p1 | p2 | p3` (default `p2`);
+- type: `code-change | eval | decision | planning | documentation | refactor`.
 
 ## Constraints
 
-- **Single file, single source of truth.** All work items live in `planning/BACKLOG.md`. Do not duplicate state into TaskCreate, memory, or scratch files.
-- **IDs are stable.** Once assigned, a `WI-NNN` ID never changes. Completed items keep their IDs.
-- **Atomic updates.** Read the full file, modify in memory, write once. Never partially edit.
-- **No external dependencies.** This skill reads and writes one file. It does not call other skills, does not query git, does not parse CHANGELOG. It trusts the user to tell it what to record.
-- **Project-specific.** This skill is for *this* repository's backlog. It hardcodes the path `planning/BACKLOG.md` and the schema above.
+- IDs never change or get reused.
+- Read the full file, modify in memory, and write once.
+- Do not duplicate backlog state into memory, scratch files, or another task system.
+- This skill does not inspect Git or CHANGELOG and calls no other skill.

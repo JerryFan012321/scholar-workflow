@@ -1,138 +1,71 @@
 ---
 name: build-literature-tree
-description: Build a novelty tree for a research topic — a variable-depth concept classification (milestone task → pipeline/representation → optional module → paper) plus a flat paper list, rendered as a self-contained Obsidian note with an inline Mermaid overview. Also builds the isomorphic challenge tree (challenge → insight → paper). Triggers 'literature tree', 'novelty tree', 'paper lineage', 'research evolution', 'follow-up papers', '文献脉络', '文献树', '论文发展树', '里程碑任务', '研究方向发展树', '技术路线树', '挑战洞见树', '画出发展脉络', 'NeRF 到 3DGS'.
+description: Build an Obsidian literature tree and flat paper ledger for a research topic. Supports technical trees (task → pipeline → optional module → paper) and challenge trees (challenge → insight → paper). Use for 'literature tree', 'novelty tree', 'paper lineage', '文献树', '文献脉络', '技术路线树', '挑战洞见树', '画出发展脉络'.
 ---
 
 # build-literature-tree
 
-## Triggers
-- User asks to organize a research direction's papers into a development tree, milestone/task map, or novelty structure
+## Output contract
 
-## Model
+- **Technical tree:** `task → pipeline/representation → module (optional) → paper`.
+- **Challenge tree:** `challenge → insight → paper`.
+- Internal nodes are concepts; paper leaves reference `resource_id`.
+- `novelty_anchor` stores the first paper proposing a task, pipeline, module, or
+  insight. A paper that only improves an existing module is an ordinary paper leaf and
+  has no anchor field.
+- One document contains one tree. Technical and challenge trees are separate notes that
+  may share papers and always use the same topic-local flat ledger.
 
-A literature tree is a **variable-depth** classification whose internal nodes are
-**abstract concepts** and whose leaves are **papers**. Two isomorphic tree types share one
-`concept` structure and one renderer, keyed off each node's `kind`:
+## Vault format
 
-- **Technical tree** — `milestone task (the problem) → pipeline / representation (the
-  method) → module (an optional 4th layer) → paper (leaf)`. The module layer is optional;
-  descend into it only when a pipeline has sub-methods worth their own novelty anchor.
-- **Challenge tree** — `challenge (an open difficulty) → insight (the key idea that
-  addresses it) → paper (leaf)`. Same shape as the technical tree, one level of concept
-  above the leaves plus an optional deeper split.
+Inside `<topic>/`:
 
-**One doc = one tree.** The technical tree and the challenge tree of the same topic are
-separate numbered notes (`02-…文献树`, `03-…挑战洞见树`) that **share the same flat paper
-list** — a paper may be a leaf in both.
+- `01-Paperlist.md` — fixed flat metadata ledger;
+- `02-<topic>文献树.md`, `03-<topic>挑战洞见树.md`, ... — one numbered tree/view per
+  note, in creation order;
+- `paper_assets/<year>-<first-author-surname>-<title>.md` — companion note per paper,
+  including `# 相关文献树` back-links to every tree section that contains it.
 
-### Four classes of novelty
-
-Node-level novelty (classes 1/2/3) is recorded on the concept via `novelty_anchor` = the
-first paper that proposed that concept. Paper-level novelty (class 4) is **not** a schema
-field — it is a judgment you make when placing a paper, and the paper simply hangs as an
-ordinary member under the node it refines:
-
-- **类1 — task seminal**: first paper to frame a milestone task → the task node's anchor.
-- **类2 — pipeline seminal**: first paper proposing a pipeline / representation → the
-  pipeline node's anchor.
-- **类3 — module seminal**: first paper proposing a reusable module → the module node's
-  anchor.
-- **类4 — module-improvement**: a paper that uses a module to improve an *existing*
-  pipeline. This is context-dependent, not a "first". It carries **no anchor and no
-  field** — list it as an ordinary paper under the pipeline/module it improves.
-
-Alongside every tree sits a flat **paper list**: the full collected set (the single
-metadata ledger). A paper may be in the list but not yet classified into any tree
-(`classified: false`).
-
-## Vault layout (external prescription)
-
-Everything for one topic lives in a single topic folder named for the topic itself (e.g.
-`世界模型 (World Models)/`) — no `-literature-tree` wrapper folder. Inside it, index files
-carry a **library-code prefix**:
-
-- `01-Paperlist.md` — **fixed**: the flat 全集 ledger (the one metadata table). Always 01.
-- `02-<topic>文献树.md`, `03-<topic>任务梳理.md`, … — each *index file* (anything carrying
-  a Mermaid/table view) gets the next number, in creation order. You assign these; the CLI
-  only fixes the 01 slot. Multiple trees / views can coexist as 02, 03, 04…
-- `paper_assets/` — one companion note per paper (see below). Not numbered.
-
-One tree renders as **one self-contained note**: an inline Mermaid overview, then nested
-concept sections, each with its novelty anchor, an optional `内容简介`, and a `论文列表`
-subpaperlist. Heading depth follows node kind — both isomorphic trees share it: task /
-challenge are `##`, pipeline / insight are `###`, module is `####` (its inner sections one
-deeper). The note has **no H1** — the filename is the title, so never repeat the title as a
-body heading. The flat ledger (`01-Paperlist.md`) and each tree link to each other; the
-tree's subpaperlists are subsets of the ledger.
-
-## Paper assets notes (external prescription)
-
-Each paper gets a companion note at `paper_assets/<year>-<first-author-surname>-<title>.md`
-inside the topic folder. You create these; the `01-Paperlist.md` Assets column links to
-them via each paper's `asset_note` field. Organize the note by resource type, one `#`
-heading per type — and **always include a `# 相关文献树` heading** holding back-links to the
-tree note(s) and the specific pipeline section(s) where this paper is classified. This is
-the tree's back-link mechanism (INV20 相关资料枢纽): the paper list points out to assets,
-and each asset points back to its place(s) in the tree(s).
-
-## Grill — lock scope before building
-
-Both the domain boundary and the granularity are scalable: the same topic renders as a
-~10-node skeleton or a 200-node full spectrum. The tree cannot converge until these dials
-are locked. Before Step 1, run a short dialogue to fix four gates coarse-to-fine; Gate 0
-sets the defaults for the rest.
-
-- **Gate 0 · Purpose & view** — what is the tree for, and which view?
-  - onboarding → wide, shallow, anchors only
-  - find a gap → deep, recent, weight the unsolved
-  - related work → medium, weight representative works + lineage
-  - baselines / SOTA → narrow, weight reproducible + current best
-  - **View**: a **technical tree** (task → pipeline → module) traces *how methods evolved*;
-    a **challenge tree** (challenge → insight) traces *what problems drove them*. They are
-    complementary — offer both when the topic is method-rich *and* problem-driven; each
-    renders as its own numbered note over the shared paper list.
-- **Gate 1 · Boundary** — one milestone task (narrow) / one pipeline family (medium) /
-  a whole problem domain (wide). If the domain word is polysemous (e.g. "world model"
-  splits along orthogonal function vs. domain axes), pick the cut-axis first, then cut
-  the boundary.
-- **Gate 2 · Resolution** — skeleton (anchors + 1-2 main pipelines, ~10 nodes) / trunk
-  (3-5 representative papers per pipeline) / full spectrum.
-- **Gate 3 · Time window** — founding classics / a specific era (e.g. deep-learning era,
-  2018+) / frontier only. The novelty anchor is window-relative: "first to propose" means
-  first within the chosen window.
-
-Anchor ownership: a founding paper may fit several layers. Rule — an anchor belongs to the
-highest layer that can explain it (a word-origin paper anchors the topic root, not a branch).
-
-Lock the gates, sketch the coarsest skeleton first, then add detail layer-by-layer on the
-user's feedback until they signal enough.
+A tree note has no H1. It contains an inline Mermaid overview followed by concept
+sections: task/challenge `##`, pipeline/insight `###`, module `####`, with each
+node's anchor, optional summary, and paper subset. The ledger and trees cross-link.
 
 ## Steps
 
-1. Collect the paper set for the direction (a Zotero collection via zotero-mcp, a paper index, or a user list). This is the flat paper list.
-2. Read the papers; extract the direction's milestone **tasks** (the important problems). For each, mark the first paper that proposed it (novelty anchor).
-   - **When the set is large**, prefer batch-reading via NotebookLM (`notebooklm-py`, the same skim engine as recommend-papers) instead of pulling every full body — add the papers' arXiv URLs to a notebook and ask source-grounded questions (each paper's core contribution, which task it solves, who first proposed pipeline X). ≈500 tokens/question vs ≈50K to read a PDF. Reuse a same-topic notebook if recommend-papers already built one; else create a temporary one. Classification and first-proposer judgment stay yours — NotebookLM is only the read substrate. If it is unreachable, fall back to zotero-mcp `get_content` or shrink the batch.
-3. Group papers under their tasks; extract each task's representative **pipelines / representations**, and mark the first paper proposing each (类2 anchor).
-4. Subdivide papers by pipeline. When a pipeline has sub-methods worth their own priority, descend one more level into **modules**: mark each module's first proposer (类3 anchor). A paper that merely *uses* a module to improve an existing pipeline is **类4** — hang it as an ordinary member under that pipeline/module, no anchor. Papers not yet placed stay in the paper list with `classified: false`. Optionally write each concept's `summary` (内容简介) and each paper's `asset_note` path into the document.
-   - **Challenge tree (optional second view)**: to build the isomorphic challenge tree, instead extract the direction's open **challenges** (the hard problems), and under each the **insights** (key ideas that address it), marking the first paper to voice each insight (insight anchor). Same `concept`/`kind` structure, same renderer — it renders as its own numbered note (`03-…挑战洞见树.md`) over the same paper list.
-5. Assemble the `literature-tree.schema.json` document and render it (use `--dry-run` to preview first):
-   - **Ledger**: pipe `{"root": "<topic folder>", "paperlist_only": true, "doc": {...}}` to `scholar-workflow project-literature-tree` → writes `01-Paperlist.md`.
-   - **Tree**: pipe `{"root": "<topic folder>", "filename": "02-<topic>文献树.md", "doc": {...}}` → writes that one tree note. Use `03-…`, `04-…` for further trees/views. `root` defaults to the doc's `topic` if omitted.
-6. Create each paper's `paper_assets/<year>-<first-author>-<title>.md` companion note, including its `# 相关文献树` back-links to the pipeline section(s) where it sits.
+1. Resolve the topic folder, tree view, paper set, time window, and requested resolution.
+   Ask only for unspecified choices that materially change the output.
+2. Collect papers from a Zotero collection
+   (`scholar-workflow zotero collection-items`), an existing paper index, or the user's
+   list. Zotero/authoritative sources supply metadata. For a large set, NotebookLM may
+   be used as a read substrate; otherwise use Zotero indexed full text. The resulting
+   concept placement and anchors go into the schema below.
+3. Assemble a document conforming to
+   `contracts/literature-tree.schema.json`. Keep unplaced papers in the ledger with
+   `classified: false`.
+4. Preview and render:
+   - ledger: pipe
+     `{"root":"<topic>","paperlist_only":true,"doc":{...}}` to
+     `scholar-workflow project-literature-tree`;
+   - tree: pipe
+     `{"root":"<topic>","filename":"02-<topic>文献树.md","doc":{...}}` to the same
+     command, using `03-`, `04-`, ... for additional views.
+   Use `--dry-run` before each write.
+5. Create/update the paper companion notes and their tree back-links without replacing
+   unrelated human content.
 
 ## Constraints
-- Tree topology is variable-depth: technical `task → pipeline → module(optional) → paper`, challenge `challenge → insight → paper`. Internal nodes are concepts (`kind`), papers are leaves referenced by `resource_id`. The two trees are isomorphic — one `concept` structure, one renderer.
-- Each concept records its novelty anchor = the first paper that proposed that task/pipeline/module/insight (a verifiable priority fact, not a value judgment — see GOALS NG7). Class-4 module-improvement papers carry no anchor — they are ordinary members of the node they refine.
-- Always carry the flat paper list alongside the tree; a paper may be listed but unclassified. The ledger (`01-Paperlist.md`) is separate from every tree; trees reference it by `resource_id`. A paper may appear in multiple trees (technical + challenge, or across topics) — the ledger is per-topic-folder and never enforces a one-node/one-tree uniqueness check (INV25).
-- Topic folder is named for the topic (no wrapper folder); index files use the library-code prefix (`01-Paperlist.md` fixed; trees/views are `02-`, `03-`… in order). One tree = one note, no H1.
-- Render target this round: Obsidian managed block + inline Mermaid only. No PNG / draw.io / HTML / Notion.
-- Paper metadata comes from Zotero / authoritative web sources, never parsed from the PDF body (GOALS G3/INV10). DOI is retained as a dedup identity field but is not a rendered column.
-- Each paper's companion `paper_assets/…` note carries a `# 相关文献树` back-link to its tree location(s) (INV20).
-- Output conforms to `contracts/literature-tree.schema.json`.
+
+- Preserve the topology, filename, heading, anchor, and backlink contracts above.
+- `01-Paperlist.md` is per topic. A `resource_id` may appear in multiple nodes,
+  trees, or topic folders; do not impose one-node/one-tree uniqueness (INV25).
+- Render only Obsidian managed blocks and inline Mermaid; no PNG, draw.io, HTML, or
+  Notion output in this skill.
+- Metadata never comes from PDF body text. DOI remains an identity field and is not a
+  rendered column.
+- Writes are limited to managed blocks and new companion-note content; never overwrite
+  human-authored content outside managed blocks.
 
 ## References
 
-Load on demand.
-
-- `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md` — where the tree JSON and vault notes live
-- `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md` — additive managed-block writes are the normal path; only destructive actions gate
+- `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`
+- `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md`

@@ -7,8 +7,8 @@
 14 Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / analyze-paper / env-setup / agent-collaboration / init-project / config-setup / project-backlog（agent-collaboration 为所有宿主/agent 共享；其余四者用户直呼）
 2 Host manifests: .claude-plugin/plugin.json / .codex-plugin/plugin.json（同名、同版本；共享 skills/hooks，MCP 配置保持等价）
 确定性 CLI: src/scholar_workflow/ + bin/(scholar-workflow, zotero-annotations.py, recommend-papers.py)
-Zotero 经 zotero-mcp: 元数据/存在性/语义检索/写入(create/import/元数据)均经 zotero-mcp 受控工具;唯一例外——批注导出允许 bin/zotero-annotations.py 以只读(mode=ro&immutable=1)直读本地 DB,绝不用于元数据判定或任何写入
-论文下载: CLI 落入 paper_inbox 收件箱，再经 zotero-mcp 入库
+Zotero 经官方 Local API: 元数据/存在性/索引全文/写入(create/import/元数据)均经 `scholar-workflow zotero` 命令;主题召回用 Local API 全字段/全文 quicksearch 后由宿主模型排序,不自建向量库;唯一例外——批注导出允许 bin/zotero-annotations.py 以只读(mode=ro&immutable=1)直读本地 DB,绝不用于元数据判定或任何写入
+论文下载: CLI 落入 paper_inbox 收件箱，再经 Zotero Local API 入库
 ```
 
 ## 设计哲学(上位准则)
@@ -61,7 +61,10 @@ skills/<name>/
 └── references/       # Skill-specific operational docs, loaded on demand
 ```
 
-SKILL.md 的 `description` 字段是 Claude 判断是否触发该 skill 的主要机制，触发词准确性直接影响路由质量。运行期安全约束写在各 SKILL.md 的 Constraints 小节，不放本文。
+SKILL.md 的 `description` 字段是宿主判断是否触发该 skill 的主要机制，触发词准确性直接影响路由质量。
+正文只保留项目特定的路由、精确工具调用、产物格式、环境事实与安全/权限边界；通用的研究、分析、
+分类、排序、总结和写作方法不写进运行期 skill。运行期安全约束写在各 SKILL.md 的 Constraints
+小节，不放本文。
 
 ### References: two tiers
 
@@ -133,7 +136,7 @@ methodology (stable); `planning/` is the per-phase **"what to build / goals / ha
 - Renaming a skill or agent directory (breaks existing references)
 - Removing a skill from the plugin
 - Changing the `description` field format or triggering strategy
-- Adding any destructive Zotero operation (delete, overwrite-conflict, merge) to a skill/agent — additive writes via zotero-mcp are the normal path and need no gate
+- Adding any destructive Zotero operation (delete, overwrite-conflict, merge) to a skill/agent — additive writes via Local API are the normal path and need no gate
 - Modifying hook interception rules
 - Adding external dependencies to a skill's `scripts/`
 
@@ -191,7 +194,7 @@ Two branches, disjoint by purpose:
 - **`main`** — the development branch. Everything lives here: runtime code **plus** the
   development layer (`planning/`, `dev-guide/`, `tests/`, `evals/`, `AGENT.md`, `CLAUDE.md`).
 - **`release`** — an **orphan** branch (independent history) that ships to users. It
-  contains **only runtime files**: `.claude-plugin/`, `.codex-plugin/`, `.mcp.json`, `agents/`, `bin/`, `contracts/`,
+contains **only runtime files**: `.claude-plugin/`, `.codex-plugin/`, `agents/`, `bin/`, `contracts/`,
   `hooks/`, `references/`, `skills/`, `src/`, `scripts/guard-sqlite.sh`, `.gitignore`,
   `CHANGELOG.md`, `README.md`, `README.zh-CN.md`, `pyproject.toml`. No dev docs, no tests,
   no `AGENT.md`/`CLAUDE.md` (the latter references a private `@RTK.md`).

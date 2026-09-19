@@ -1,7 +1,7 @@
-"""macOS launchd auto-start for the loopback link service.
+"""macOS launchd auto-start for the loopback research Hub.
 
-The link service (`serve-links`) must stay running for Obsidian/Notion PDF links to
-resolve. Rather than relying on a manually launched foreground process, we install a
+The compatibility command (`serve-links`) now starts both the Hub and PDF routes. It must
+stay running for the Web UI and projected links to resolve. Rather than relying on a
 per-user LaunchAgent that starts it at login and restarts it if it dies (KeepAlive).
 
 `render_plist` is pure (string in → string out) so it is unit-testable without touching
@@ -20,7 +20,8 @@ def plist_path() -> Path:
 
 def render_plist(executable: str, log_dir: str, home_env: str | None = None) -> str:
     """Render the LaunchAgent plist. `executable` is the absolute path to the
-    scholar-workflow entry point; it is run with the `serve-links` subcommand.
+    scholar-workflow entry point; it uses the compatible `serve-links` subcommand, which
+    now serves both `/hub/` and `/open/paper/*`.
     `home_env` (SCHOLAR_WORKFLOW_HOME) is injected only when set, so launchd's clean
     environment still finds a non-default config."""
     env_block = ""

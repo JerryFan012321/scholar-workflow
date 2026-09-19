@@ -1,56 +1,41 @@
 ---
 name: init-project
-description: Initialize a Git-managed project with the standard host-neutral directory skeleton and project instructions. Use for 'init project', 'bootstrap this project', 'create the project skeleton', '初始化项目', '创建项目骨架', or '初始化项目结构'. Not for configuring scholar-workflow itself or the personal env-records ledger.
+description: Initialize or retrofit a Git-managed project with the standard host-neutral directory skeleton and instruction topology. Use for 'init project', 'bootstrap project', 'create project skeleton', '初始化项目', '创建项目骨架'. Not for configuring scholar-workflow or env-records.
 ---
 
 # init-project
 
-Create the standard project structure without installing custom agents or hooks. `AGENTS.md`
-is the instruction source; `CLAUDE.md` and `AGENT.md` are compatibility entry points.
-
-## Triggers
-
-- Initialize or retrofit a project with the standard directory skeleton.
-- Establish project-level instructions and Git management for a new project.
+`AGENTS.md` is canonical. `CLAUDE.md` imports it and `AGENT.md` is a compatibility
+pointer.
 
 ## Steps
 
-1. **Resolve the target.** Identify the intended project root, inspect hidden entries, and
-   read any existing `AGENTS.md`, `AGENT.md`, `CLAUDE.md`, and `.gitignore`. Read
-   `references/skeleton-manifest.md` for the exact layout.
-2. **Preflight.** Run this skill's `scripts/init_project.py plan TARGET`. Present every
-   reported structural or instruction-topology conflict. The initialization request already
-   authorizes missing directories, baseline files, and `git init`; only an existing-content
-   conflict needs a decision.
-3. **Resolve conflicts.** Preserve existing files by default. For each conflicting instruction
-   file, propose the exact migration or merge needed to make `AGENTS.md` canonical and wait for
-   approval before editing it. Never replace a directory, file, or symlink to make room.
-4. **Apply.** Run `scripts/init_project.py apply TARGET`. It creates only missing paths,
-   initializes Git only when the target is not already managed by a repository, and never
-   stages or commits.
-5. **Fill project-specific context.** If the baseline `AGENTS.md` was created, inspect the
-   project and draft only the unresolved overview, commands, extra boundaries, and artifact
-   policy. Follow `references/project-instructions.md` and confirm the processed rules with the
-   user before replacing its markers. Existing project instructions use the same confirmation
-   gate.
-6. **Verify.** Re-run `plan`, inspect `git status --short`, and report created, preserved,
-   unresolved, and Git-management state. Completion means every standard path exists or is an
-   explicitly accepted exception, no existing content changed without approval, and Git has no
-   staged changes from initialization.
+1. Resolve the target root, inspect hidden entries, and read existing `AGENTS.md`,
+   `AGENT.md`, `CLAUDE.md`, and `.gitignore`.
+2. Read `references/skeleton-manifest.md`, then run
+   `scripts/init_project.py plan TARGET`.
+3. Present every reported file/directory/symlink or instruction-topology conflict.
+   Missing standard paths and `git init` are authorized by the initialization request;
+   existing-content conflicts require a decision.
+4. Preserve existing content by default. Apply an approved instruction migration using
+   `references/project-instructions.md`; never replace a collision to make room.
+5. Run `scripts/init_project.py apply TARGET`. It creates only missing paths and
+   initializes Git only when no enclosing repository already manages the target.
+6. If a baseline `AGENTS.md` was created, inspect the project and propose content for
+   its unresolved markers. Replace markers only after user confirmation.
+7. Re-run `plan` and inspect `git status --short`. Report created, preserved,
+   conflicted/unresolved, and Git state.
 
 ## Constraints
 
-- The local standard skeleton wins over alternate `plan/plans`, `report/reports`, or
-  `scripts/data` layouts. Do not create duplicate directory systems.
-- `experiments/<id>/` is the experiment source of truth; optional registries are indexes only.
-- Never copy `.DS_Store` or scaffold credentials, custom agents, or hooks.
-- The script is additive and idempotent. It never deletes, overwrites, stages, commits, or
-  pushes.
+- Use exactly the local skeleton; do not create parallel `plan/plans`,
+  `report/reports`, or `scripts/data` layouts.
+- `experiments/<id>/` is the run source of truth; registries are indexes only.
+- Never scaffold credentials, custom agents, hooks, or `.DS_Store`.
+- The initializer never deletes, overwrites, stages, commits, or pushes.
 
 ## References
 
-Load only the reference needed for the current phase.
-
-- `references/skeleton-manifest.md` — exact paths and generated baseline files
-- `references/project-instructions.md` — canonical instruction topology and merge/fill rules
-- `references/research-layout.md` — dataset, experiment, environment, and source-code roles
+- `references/skeleton-manifest.md`
+- `references/project-instructions.md`
+- `references/research-layout.md`

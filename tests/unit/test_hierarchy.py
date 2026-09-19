@@ -63,10 +63,16 @@ def test_plan_tree_is_pure_and_matches_apply(tmp_path):
         "paper/科研项目/上汽标注/text2cad.md",
     ]
     assert sum(p["papers"] for p in plan) == 1
+    assert plan[0]["frontmatter"]["sw_kind"] == "collection-index"
+    assert plan[-1]["frontmatter"]["sw_kind"] == "paper-list"
+    assert plan[-1]["frontmatter"]["sw_catalog_id"] == (
+        "zotero-collection:XYCCNXRW:index"
+    )
     # the leaf plan body is exactly what apply writes into the managed block
     project_tree(TREE, "paper", _adapter(tmp_path), 23128)
     leaf = (tmp_path / "paper/科研项目/上汽标注/text2cad.md").read_text(encoding="utf-8")
     assert plan[-1]["body"] in leaf
+    assert "sw_kind: paper-list" in leaf
 
 
 def test_idempotent_and_preserves_outside(tmp_path):

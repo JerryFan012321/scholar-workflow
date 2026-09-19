@@ -19,7 +19,6 @@ RELEASE_BRANCH="release"
 RUNTIME_PATHS=(
   ".claude-plugin"
   ".codex-plugin"
-  ".mcp.json"
   "agents"
   "bin"
   "contracts"

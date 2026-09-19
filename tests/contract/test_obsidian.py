@@ -6,6 +6,7 @@ inter-marker region verbatim and (b) never touches content outside the markers (
 """
 from __future__ import annotations
 import pytest
+import yaml
 from scholar_workflow.adapters.obsidian import ObsidianAdapter, safe_vault_path, VaultPathError
 
 START, END = "<!-- scholar-workflow:start -->", "<!-- scholar-workflow:end -->"
@@ -109,3 +110,131 @@ def test_archive_document_rejects_escape(tmp_path):
     vault.mkdir()
     with pytest.raises(VaultPathError):
         archive_document(res, src, vault, "../../loot.pdf")
+
+
+# --- Hub-governed managed frontmatter ---
+
+def _frontmatter(text: str) -> tuple[dict, str]:
+    assert text.startswith("---\n")
+    raw, body = text[4:].split("\n---\n", 1)
+    return yaml.safe_load(raw), body
+
+
+def test_update_managed_frontmatter_creates_frontmatter(tmp_path):
+    note = tmp_path / "paper.md"
+    body = "# Human heading\n\nHuman notes stay here.\n"
+    note.write_text(body, encoding="utf-8")
+
+    _adapter(tmp_path).update_managed_frontmatter(
+        "paper.md",
+        {
+            "sw_schema": 1,
+            "sw_kind": "paper_hub",
+            "sw_catalog_id": "zotero-item:ABCD1234:topic:world-models",
+        },
+    )
+
+    data, actual_body = _frontmatter(note.read_text(encoding="utf-8"))
+    assert data == {
+        "sw_schema": 1,
+        "sw_kind": "paper_hub",
+        "sw_catalog_id": "zotero-item:ABCD1234:topic:world-models",
+    }
+    assert actual_body == body
+
+
+def test_update_managed_frontmatter_preserves_human_fields_and_body(tmp_path):
+    note = tmp_path / "paper.md"
+    body = "# Human heading\n\nFree-form body with --- inside a sentence.\n"
+    note.write_text(
+        "---\n"
+        'title: "Human title" # chosen by human\n'
+        "aliases:\n"
+        "  - Friendly name\n"
+        "human_nested:\n"
+        "  keep: true\n"
+        "sw_schema: 0\n"
+        "sw_resource_id: old-id\n"
+        "---\n"
+        + body,
+        encoding="utf-8",
+    )
+
+    _adapter(tmp_path).update_managed_frontmatter(
+        "paper.md",
+        {
+            "sw_schema": 1,
+            "sw_resource_id": "zotero-item:ABCD1234",
+            "sw_attachment_key": "EFGH5678",
+        },
+    )
+
+    data, actual_body = _frontmatter(note.read_text(encoding="utf-8"))
+    assert 'title: "Human title" # chosen by human' in note.read_text(encoding="utf-8")
+    assert data["title"] == "Human title"
+    assert data["aliases"] == ["Friendly name"]
+    assert data["human_nested"] == {"keep": True}
+    assert data["sw_schema"] == 1
+    assert data["sw_resource_id"] == "zotero-item:ABCD1234"
+    assert data["sw_attachment_key"] == "EFGH5678"
+    assert actual_body == body
+
+
+def test_update_managed_frontmatter_is_idempotent(tmp_path):
+    note = tmp_path / "paper.md"
+    note.write_text("---\ntitle: Human title\n---\nBody\n", encoding="utf-8")
+    values = {
+        "sw_schema": 1,
+        "sw_kind": "paper_analysis",
+        "sw_catalog_id": "analysis:ABCD1234",
+        "sw_topic_id": "topic:world-models",
+        "sw_resource_id": "zotero-item:ABCD1234",
+        "sw_zotero_item_key": "ABCD1234",
+        "sw_attachment_key": "EFGH5678",
+        "sw_parent_id": "paper-hub:ABCD1234",
+        "sw_revision": 2,
+        "sw_tree_kind": "technical_lineage",
+    }
+
+    adapter = _adapter(tmp_path)
+    adapter.update_managed_frontmatter("paper.md", values)
+    first = note.read_bytes()
+    adapter.update_managed_frontmatter("paper.md", values)
+
+    assert note.read_bytes() == first
+
+
+@pytest.mark.parametrize("field", ["title", "sw_unknown"])
+def test_update_managed_frontmatter_rejects_unknown_field_before_write(tmp_path, field):
+    note = tmp_path / "paper.md"
+    original = "---\ntitle: Human title\n---\nBody\n"
+    note.write_text(original, encoding="utf-8")
+
+    with pytest.raises(ValueError, match="managed frontmatter field"):
+        _adapter(tmp_path).update_managed_frontmatter("paper.md", {field: "overwrite"})
+
+    assert note.read_text(encoding="utf-8") == original
+
+
+@pytest.mark.parametrize("path", ["/tmp/outside.md", "../outside.md"])
+def test_update_managed_frontmatter_rejects_path_escape_before_write(tmp_path, path):
+    with pytest.raises(VaultPathError):
+        _adapter(tmp_path).update_managed_frontmatter(path, {"sw_schema": 1})
+
+
+def test_update_managed_frontmatter_rejects_symlink_escape_before_write(tmp_path):
+    vault = tmp_path / "vault"
+    vault.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    note = outside / "paper.md"
+    original = "Human body\n"
+    note.write_text(original, encoding="utf-8")
+    (vault / "link").symlink_to(outside)
+
+    with pytest.raises(VaultPathError):
+        _adapter(vault).update_managed_frontmatter(
+            "link/paper.md", {"sw_schema": 1}
+        )
+
+    assert note.read_text(encoding="utf-8") == original

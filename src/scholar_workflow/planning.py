@@ -7,7 +7,7 @@ def generate_plan(resources: list[Resource]) -> ActionPlan:
     """Build an ActionPlan from resolved resources. Never writes externally.
 
     Deterministic and offline: every resource becomes a `create` action. Existence
-    and dedup are decided by the host LLM via zotero-mcp before this runs, so the CLI
+    and dedup are decided through the Local API before this runs, so the download
     plan carries no Zotero-derived operation.
     """
     actions: list[ActionItem] = []

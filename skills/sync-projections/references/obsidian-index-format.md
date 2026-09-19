@@ -57,9 +57,9 @@ paper/
       text2cad.md            <- leaf: # text2cad相关论文 + 9-column paper table
 ```
 
-The rebuild source is Zotero via zotero-mcp — the existing files are never source of
-truth. The host LLM walks `get_collections(recursive)` + `get_collection_items` into the
-tree JSON; the CLI owns all path computation (deterministic, MCP-free — INV18).
+The rebuild source is Zotero Local API — existing files are never source of truth. The
+host walks `zotero collections` + `zotero collection-items` into the tree JSON; the
+renderer owns all path computation (INV18).
 
 The `# heading` line is written only when a file is first created; re-running rewrites the
 managed block but not the heading. Renames / heading-rule changes need a manual heading fix.

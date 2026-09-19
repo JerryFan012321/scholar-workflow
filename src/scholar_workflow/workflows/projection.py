@@ -1,12 +1,17 @@
 """Obsidian projection: render Zotero-sourced entries into a managed-block index.
 
-Entries are produced by the host LLM via zotero-mcp and handed to the CLI as JSON
-(GOALS INV18 — planner/executor split, CLI never reaches MCP). The PDF column points
+Entries are produced from Zotero Local API data and handed to the renderer as JSON
+(GOALS INV18 — planner/executor split). The PDF column points
 at the loopback link-service by attachment key (INV17). `format_row` is pure —
 deterministic in its input — so re-running the same entries is idempotent.
 """
 from __future__ import annotations
 from pathlib import Path
+
+from scholar_workflow.hub.obsidian_contract import (
+    artifact_id_from_path,
+    managed_frontmatter,
+)
 
 
 def _cell(v: object) -> str:
@@ -80,6 +85,16 @@ def project_obsidian(entries: list[dict], index_path: Path, heading: str,
 
     Content outside the managed markers is never touched (INV4). Returns row count.
     """
-    adapter.ensure_managed_block(Path(index_path), heading)
-    adapter.update_managed_block(Path(index_path), render_table(entries, port))
+    path = Path(index_path)
+    body = render_table(entries, port)
+    adapter.ensure_managed_block(path, heading)
+    adapter.update_managed_frontmatter(
+        path,
+        managed_frontmatter(
+            kind="paper-list",
+            catalog_id=artifact_id_from_path("paper-list", path.as_posix()),
+            body=body,
+        ),
+    )
+    adapter.update_managed_block(path, body)
     return len(entries)

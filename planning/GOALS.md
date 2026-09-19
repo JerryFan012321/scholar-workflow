@@ -16,13 +16,14 @@
 |---|---|
 | G1 | 管理论文、书籍、技术文档及相关数据；第一阶段优先论文与技术文档 |
 | G2 | 每个对象只有一个主存储位置，其他系统只保存索引、投影或管理信息 |
-| G3 | 论文 PDF 的自动获取源头只能是 arXiv；下载后落入收件箱，再经 zotero-mcp 入库，其他来源仅用于身份与元数据核验 |
-| G4 | 论文入库经 zotero-mcp 写入完成。新增性写入（下载、create、import、补元数据、加入分类）在用户已下达入库指令时直接执行，不逐一二次批准；仅破坏性/不可逆动作（删除、覆盖冲突条目、合并身份）须逐条批准 |
+| G3 | 论文 PDF 的自动获取源头只能是 arXiv；下载后落入收件箱，再经 Zotero Local API 入库，其他来源仅用于身份与元数据核验 |
+| G4 | 论文入库经 Zotero Local API 写入完成。新增性写入（下载、create、import、补元数据、加入分类）在用户已下达入库指令时直接执行，不逐一二次批准；仅破坏性/不可逆动作（删除、覆盖冲突条目、合并身份）须逐条批准 |
 | G5 | Zotero、Obsidian Vault、Notion 各司其职，不互相复制主数据 |
 | G6 | 大型目录采用分层索引：先读索引，再按需读实体文件 |
 | G7 | 插件由 Git 管理，功能必须有评测和回归测试 |
-| G8 | 支持 Claude Code 与 Codex 两个宿主，共用同一套 skills、hooks 与 zotero-mcp 能力；宿主与 agent 可通过统一 handoff 协议双向协作，同一机制可扩展到其他真实可用的 agent。Zotero 的读/写/语义检索能力经 zotero-mcp（MCP server）提供，由宿主 LLM 调用；确定性 CLI 收缩为 arXiv 获取、收件箱、投影等与 Zotero 访问无关的工作流 |
-| G9 | Zotero（及其 PDF 存储）是唯一权威主库；元数据、存在性、语义检索经 zotero-mcp 获取。写入经 zotero-mcp 的受控工具完成；新增性写入直接执行，破坏性动作须批准 |
+| G8 | 支持 Claude Code 与 Codex 两个宿主，共用同一套 skills、hooks 与宿主中立 CLI；宿主与 agent 可通过统一 handoff 协议双向协作，同一机制可扩展到其他真实可用的 agent。Zotero 的读/写/索引全文能力经官方 Local API 提供，不依赖某一宿主的 MCP 注册 |
+| G9 | Zotero（及其 PDF 存储）是唯一权威主库；元数据、存在性与索引全文经 Local API 获取。主题召回由 Local API quicksearch + 宿主模型排序完成；新增性写入直接执行，破坏性动作须批准 |
+| G10 | scholar-workflow 提供宿主中立、简洁美观的本机 Hub，作为人类浏览、预览、显式编辑和跳转研究资源的统一入口；Hub 不取代各权威存储或原生编辑器，阅读是默认界面，编辑与附件操作按需展开 |
 
 ## 长期不变量（INV）
 
@@ -30,7 +31,7 @@
 
 | ID | 不变量 | 守护 eval |
 |---|---|---|
-| INV1 | 一篇论文在 Zotero 中对应唯一条目（item）；条目可隶属多个分类（collection），分类是对条目的多对一投影，不构成重复身份。判重键为 Zotero 规范身份（DOI / title+authors），arXiv id 仅为下载源标识、非判重键；经 zotero-mcp 两步核验（search_library 召回 → get_item_details 回读字段）防止重复新建；模糊命中只提候选、写路径转冲突交人工裁决（NG3） | outcomes: dedup-exact-collapse |
+| INV1 | 一篇论文在 Zotero 中对应唯一条目（item）；条目可隶属多个分类（collection），分类是对条目的多对一投影，不构成重复身份。判重键为 Zotero 规范身份（DOI / title+authors），arXiv id 仅为下载源标识、非判重键；Local API 搜索召回后回读字段确认，且 `zotero ingest` 在写前重复精确核验；模糊命中只提候选、写路径转冲突交人工裁决（NG3） | outcomes: dedup-exact-collapse |
 | INV2 | 论文 PDF 由 Zotero 存储（`~/Zotero/storage`）统一持有；技术文档即使是 PDF 也进 Vault | routing: file-technical-doc / outcomes: tech-doc-isolation |
 | INV3 | PDF 位置迁移只通过 Zotero 附件关系 + `link_service.storage_root` 配置，不在多目录复制 | outcomes: papers-root-remap |
 | INV4 | Obsidian 论文表是可重建的派生索引，不是主库 | outcomes: obsidian-human-block-preserved |
@@ -38,25 +39,29 @@
 | INV6 | Notion 机器字段可更新；人工内容不得被同步覆盖 | safety: no-overwrite-human-block |
 | INV7 | 状态库只存映射/游标/任务状态/审计，不存知识正文 | （待补） |
 | INV8 | 外部程序不得直接写 `zotero.sqlite` | safety: no-sqlite-write |
-| INV9 | 对 Zotero 的写入只经 zotero-mcp 的受控工具，绝不直接写 sqlite。新增性写入（create/import/补元数据/加入分类/下载）在用户已下达指令时直接执行；破坏性动作（删除、覆盖冲突、合并身份）须逐条批准 | safety: no-unapproved-destructive-zotero |
-| INV10 | 库内条目元数据以 zotero-mcp 查询为权威；新增条目的元数据取自权威网源（arXiv abs / CVF / DBLP / 出版社），绝不从 PDF 解析；有正式发表版本时会议名覆盖 arXiv 预印本名头 | （待补） |
-| INV11 | 下载的论文 PDF 只落入 `paper_inbox`，入库前不复制到多目录；入库经 zotero-mcp（`write_item` import）完成，由 Zotero 迁入其存储 | （待补） |
-| INV12 | 存在性与元数据以 zotero-mcp 查询为权威、实时获取；zotero-mcp 不可达时 fail-fast（退出码 3），绝不因"查不到"判为新建 | safety: no-existence-on-unreachable |
-| INV13 | ~~本地 `resources` 缓存是 Zotero 的派生只读镜像~~ **已废止（deprecated）**：取消本地缓存镜像，存在性/元数据/语义检索一律实时委托 zotero-mcp。ID 保留不复用 | — |
-| INV14 | 模糊/语义召回委托 zotero-mcp 的 `semantic_search`；不再在本项目内自建或自禁 embedding/向量索引 | （待补） |
-| INV15 | 离线解析器对标识符输入不造占位标题（`title` 为 null）；显示用真名由展示层可选补齐（EXACT 经 zotero-mcp 取名、NONE 用对话/抓取），绝不作为判定输入。契约自描述，能力缺失时降级为显示 identifier | resolver: title-null-for-identifier |
-| INV16 | scholar-workflow 硬依赖 zotero-mcp 提供 Zotero 读/写/语义检索。可达性分两层守护、名实一致：**① doctor** 对本地硬依赖(配置路径)fail-fast(退出码 3);对 zotero-mcp 的 `type:http` 端点仅做 **advisory 探测**(报告 TCP/HTTP 层是否应答,不计入退出码——端点未就绪是高频暂态、非环境损坏)。**② skill 层**:任何需要 Zotero 的 skill 执行前必须确认宿主拥有 `mcp__zotero-mcp__*` 工具;未注册则**在 skill 层 fail-fast**,绝不把"无结果"解释为"库内不存在"(承 INV12)。目标层不设降级分支 | （待补） |
+| INV9 | 对 Zotero 的写入只经官方 Local API，绝不直接写 sqlite。新增性写入（create/import/补元数据/加入分类/下载）在用户已下达指令时直接执行；破坏性动作（删除、覆盖冲突、合并身份）须逐条批准 | safety: no-unapproved-destructive-zotero |
+| INV10 | 库内条目元数据以 Zotero Local API 查询为权威；新增条目的元数据取自权威网源（arXiv abs / CVF / DBLP / 出版社），绝不从 PDF 解析；有正式发表版本时会议名覆盖 arXiv 预印本名头 | （待补） |
+| INV11 | 下载的论文 PDF 只落入 `paper_inbox`，入库前不复制到多目录；入库经 Zotero Local API 三阶段上传完成，由 Zotero 管理其存储 | （待补） |
+| INV12 | 存在性与元数据以 Zotero Local API 查询为权威、实时获取；Local API 不可达时 fail-fast（退出码 3），绝不因"查不到"判为新建 | safety: no-existence-on-unreachable |
+| INV13 | ~~本地 `resources` 缓存是 Zotero 的派生只读镜像~~ **已废止（deprecated）**：取消本地缓存镜像，存在性/元数据/索引全文一律实时委托 Zotero Local API。ID 保留不复用 | — |
+| INV14 | 主题/模糊召回使用 Local API 全字段/索引全文 quicksearch 产生候选，再由当前宿主模型排序；不在本项目自建 embedding/向量索引。候选不得替代 INV1 精确身份确认 | （待补） |
+| INV15 | 离线解析器对标识符输入不造占位标题（`title` 为 null）；显示用真名由展示层可选补齐（EXACT 经 Local API 取名、NONE 用对话/抓取），绝不作为判定输入。契约自描述，能力缺失时降级为显示 identifier | resolver: title-null-for-identifier |
+| INV16 | scholar-workflow 硬依赖 Zotero 10+ Local API 提供 Zotero 读/写/索引全文。doctor 对配置路径 fail-fast，对 Local API 只做 advisory；每个 Zotero 命令自身不可达时退出 3，绝不把失败解释为无结果。Local API 可在 Zotero 启动后立即重试，不依赖宿主工具注册或重启 agent 会话。写密钥经 `/api/local/authorize` 获取，只存 macOS Keychain，绝不输出或进入配置/git | （待补） |
 | INV17 | 投影中指向论文 PDF 的链接**按投影目标分策略**:**Obsidian**(本机 app)指向 loopback link-service（`127.0.0.1`），按**附件 key** glob `~/Zotero/storage/<附件key>/*.pdf` 解析、inline 流式吐**原始** PDF；URL 只存不透明附件 key，绝不存绝对路径，PDF 仅本机点开。**Notion**(云文档、跨设备)**双链共存**:`Web Source`=arXiv abs / DOI web URL（任意设备/浏览器可开,他机回落用),`Local URL`=loopback link-service（本机浏览器打开 Notion 时秒开标注版 PDF,比绕 arXiv 网页快）。本机为主场景下 loopback 在本机 Notion 可用;跨机时用 Web Source。两条 URL 均只存不透明附件 key,不存绝对路径 | （待补） |
-| INV18 | sync-projections 的规划（宿主 LLM 经 zotero-mcp 取字段）与执行（CLI 写文件 / 起 link-service）分离，只经 JSON 消息通信；CLI 不碰 MCP、不读写 `zotero.sqlite`（link-service 只读文件系统） | （待补） |
+| INV18 | sync-projections 的取数（CLI 经 Local API 读字段）与渲染（CLI 写文件 / 起 link-service）分离，只经 JSON 消息通信；任何组件都不读写 `zotero.sqlite`（批注只读例外见 INV8），link-service 只读文件系统 | （待补） |
 | INV19 | Notion 投影**单向 本地→Notion**（本地=真相源，机器只推、不回流）；Notion 是**简化跨设备前端**,相关文档只投影**一段话摘要 + 回 Obsidian 的 Vault 回跳链接**,**笔记正文永远留在 Obsidian**、不进 Notion——无正文可传,故 INV5「不上传文件」平凡成立;知识库层次经 `Category` + `Project` relation + 父子页面镜像 Zotero 分类树 | safety: no-notion-writeback / no-notion-full-body |
 | INV21 | **Notion 双库模型**:**Papers 库**(每篇论文一行,upsert 键=Zotero 规范身份 `Resource ID`)+ **Related Docs 库**(每篇周边文档一行,upsert 键=vault 相对路径 `Doc ID`,经 `Paper` relation 指回论文)。编排顺序**先 upsert 论文拿 page_id、再 upsert 相关文档带 relation**。本阶段 relation 恰为一篇论文(无论文的方向笔记押后)。镜像 Obsidian 的「论文索引行(INV1)+ 相关资料枢纽(INV20)」两层结构 | outcomes: notion-two-db-relation-order |
 | INV20 | **论文相关资料文档(Obsidian 枢纽)**:每篇论文可按需挂一个相关资料文档,聚合该论文的**周边资料位置链接**(阅读笔记/分析笔记/方向笔记/补充材料),**不重复论文元数据**(元数据属 Zotero+索引行)。**统一命名与落点**:枢纽是**主题文件夹内 `paper_assets/<年>-<第一作者>-<标题>.md`**(与 INV22/INV25 的文献树附属笔记同一份文件,不再另起 `<论文名>论文相关资料.md`——两条脉络合一);索引表(`01-Paperlist.md` 的 Assets 列 / 索引行)经**受管块之外**的小节链接到它——块外由 INV4 保护、重投影不覆盖。(同一论文在不同主题文件夹下各有一份、内容随语境不同,见 INV25)build-literature-tree 与 analyze-paper 共用这一份枢纽:前者写 `# 相关文献树` 反链,后者挂分析笔记链接 | （待补） |
 | INV22 | **文献树为 novelty tree**(彭思达 literature-tree 法):**可变深度**概念分类拓扑,内部节点是**抽象概念**、论文是**叶**(按 `resource_id` 引用)。**两种同构树共用一套 `concept` 结构与同一渲染器**,靠节点 kind 区分:**技术路线树** `topic → 里程碑任务(task) → pipeline/representation → module(可选) → 论文(叶)`;**挑战洞见树** `topic → challenge → insight → 论文(叶)`。每个概念节点记 **novelty 锚点**=首个提出该概念的论文,按节点类型:**task=类1、pipeline=类2、module=类3**(挑战树中 insight 可选记首提者、challenge 通常不记);**类4=用 module 改进已有 pipeline 的工作**,是**论文级属性**(语境相关),作普通成员挂在被改进节点下、**不设 schema 字段**。一个 doc 一棵树,技术树与挑战树各自编号自含笔记(`02-…技术路线树`、`03-…挑战洞见树`),**共享同一全集**(承 INV25 一文多树)。树旁**并存一份 flat 全集 paper list**(单一元数据账本,论文可在册但 `classified:false` 未分类)。**Vault 布局**:一个主题的全部内容放在一个**以主题命名的文件夹**里(无 `-literature-tree` 外壳);索引文件用**图书馆编码前缀**——`01-Paperlist.md` **固定**是扁平全集账本,每棵树/视图是带编号的自包含笔记(`02-…文献树.md`、`03-…`,创建序,skill 分配编号、CLI 只固定 01 槽)。**一棵树=一个自包含笔记**:内联 Mermaid 概览 + 嵌套 `##`任务/`###`pipeline 小节(各带 novelty 锚点、可选 `内容简介`、`论文列表` subpaperlist);**无 H1**(文件名即标题)。每篇论文另有 `paper_assets/<年>-<第一作者>-<标题>.md` 相关资料笔记,其 `# 相关文献树` 小节反向链接回它在树中的 pipeline 位置(承 INV20 枢纽)。本轮渲染目标限 **Obsidian 受管块 + 内联 Mermaid**(不产 PNG/draw.io/HTML/Notion),块外内容幂等存活(复用 INV4/INV18 机制)。(一文多树与附属分身见 INV25) | outcomes: novelty-tree-topology-and-paperlist / module-level-and-challenge-tree |
-| INV23 | **略读级(recommend-papers)临时性**:略读经外部服务(四推荐源 REST + NotebookLM)进行,四源(S2 Recommendations / Scholar Inbox / S2 author watchlist / HF Daily)按 arXiv id 合并去重,仅对用户细化后的 shortlist 走 NotebookLM 略读(省 token,不略读全池);产物为**临时 Reading Report,绝不落 vault、不改 Zotero**;看中的论文经 find/ingest 正式管线入库(判重两步核验)。CLI 不碰这些网络/MCP(承 INV18),聚合在 `bin/recommend-papers.py` | （待补） |
-| INV24 | **详细分析级(analyze-paper)源与落点**:详细分析只经 zotero-mcp `get_content` 读正文(承 INV10 不解析 PDF 本体),产物落 Obsidian 附属分析笔记(`<论文名>分析.md`),与人工批注笔记**分立**、`related` 互链;局部分析在同一笔记**受管块之外多小节追加**(承 INV4 保护),并挂到该论文相关资料枢纽(INV20) | （待补） |
+| INV23 | **略读级(recommend-papers)临时性**:略读经外部服务(四推荐源 REST + NotebookLM)进行,四源(S2 Recommendations / Scholar Inbox / S2 author watchlist / HF Daily)按 arXiv id 合并去重,仅对用户细化后的 shortlist 走 NotebookLM 略读(省 token,不略读全池);产物为**临时 Reading Report,绝不落 vault、不改 Zotero**;看中的论文经 find/ingest 正式管线入库(精确判重)。推荐聚合器不访问 Zotero,种子由 Local API CLI 注入 | （待补） |
+| INV24 | **详细分析级(analyze-paper)源、落点与结构**:详细分析只经 Zotero Local API 读取索引全文(承 INV10 不直接解析 PDF 本体),每篇论文产出 Obsidian 分析文档对(`<论文名>分析.md` + 可编辑 `<论文名>解析树.canvas`),与人工批注笔记**分立**并互链;Markdown 详细展开、Canvas 按参考图固定为 Abstract/Introduction/Method/Experiments/Limitation 五分支,二者的挑战/贡献/模块/实验/局限内容一致并带论文内证据锚点,作者陈述与分析推断分开;局部分析只更新对应小节/节点,不得覆盖整篇或重建 Canvas,保留人工内容与布局(承 INV4 保护),并把两份分析文档挂到该论文相关资料枢纽(INV20) | outcomes: structured-paper-analysis-note |
 | INV25 | **论文↔文献树多对多,附属按主题分身**:同一篇论文(按 `resource_id`/Zotero 规范身份唯一)可被**任意多个概念节点、多棵树**引用——同 topic 内多树(`02-`/`03-`…含技术树+挑战树)、跨不同主题文件夹的树皆可;树节点只**引用**不复制,元数据全局唯一(承 INV10,不因复现而重复)。反链是复数关系:一篇论文的 `# 相关文献树` 小节可同时指向多棵树的多个位置。**附属笔记(`paper_assets/…`)按主题文件夹分身**:同一论文在不同 topic 下各有一份,内容随语境不同(反链指向各自 topic 的树、聚合各自周边资料);`01-Paperlist.md` 是**每个主题文件夹内**的账本,同一论文入多个主题各登记一行(按 topic 隔离,非全局单账本)。绝不加"一个 resource_id 只归一个节点/一棵树"的唯一性检查 | outcomes: paper-in-multiple-trees |
 | INV26 | **跨 agent 委派不扩权**:调用方与目标方地位对称,但目标 agent 的任务范围、工作目录和副作用权限只能等于或窄于用户已授予调用方的范围;破坏性动作、对外发布、凭据访问或任务扩张必须返回调用方走原有决策门禁。调用方负责检查实际产物、整合与最终验证 | safety: no-agent-permission-expansion |
 | INV27 | **项目初始化只增不覆且宿主中立**:`init-project` 以 `AGENTS.md` 为项目规则真源,固定使用本地标准目录名;先 plan 再 apply,已有文件、目录冲突与 symlink 不被静默覆盖。无 Git 管理时只执行 `git init`,不 stage/commit/push;默认不生成 Claude/Codex 自定义 agent 或 hook | safety: no-init-project-clobber / no-init-project-host-automation; outcomes: init-project-idempotent |
+| INV28 | **本机 Hub 是无独立权威状态的聚合与路由层**：只绑定 loopback，catalog 与 HTTP/UI 分层；Zotero 持有论文/PDF/批注，Obsidian 持有 Markdown/Canvas/知识关系，Notion 保持单向投影。Hub 不自动同步或写回；唯一写入例外是 INV30 所定义、由人显式触发的受控 Vault 文档/附件操作。打开动作只接受 catalog 登记的 opaque action id，不接受任意路径、URL 或 shell；Notion 动作只从 Notion 投影返回并本地登记的 page ID 构造 allowlisted HTTPS URL，按用户约定在 cmux browser 打开，失败时返回可见错误而不静默换宿主 | contract: hub-http-boundary / outcomes: hub-catalog-and-cmux-notion |
+| INV29 | **Hub contract 约束各投影格式，而非反向适配自由格式**：`HubCatalog` 的 resource/topic/artifact/action schema 是 Web Hub、Obsidian 与 Notion 的共享接口；Obsidian 受管文档必须声明 schema version、artifact kind、稳定 artifact/resource/topic id 与关联字段。Markdown 使用薄 `sw_*` frontmatter；不能携带 frontmatter 的标准 JSON Canvas 使用 Vault 内显式 `.scholar-workflow/artifacts.yml`，不得向 Canvas JSON 塞私有顶层字段。投影器从同一 catalog 生成受管身份，Hub 不通过文件名或自由 Markdown 猜语义。人工正文、Canvas 布局与受管区外内容仍由 Obsidian 持有并受 INV4/INV24 保护。既有 `01-Paperlist.md` 表格解析只允许作为有版本的一次性迁移输入，不得成为长期 Hub API | contract: hub-catalog-schema / outcomes: obsidian-follows-hub-contract |
+| INV30 | **Hub 编辑与 Vault 附件写入必须显式、受控且可检测冲突**：只允许修改 HubCatalog 已登记、仍位于 `research_vault_root` 内的 Markdown/Canvas；无自动保存，保存须携带读取时的内容 revision，外部已修改则 409 停止，采用原子替换并保护 `sw_*` 身份字段。论文 PDF/正式批注仍只由 Zotero 管理，Hub 不替换其附件；笔记图片、数据和补充文件属于 Vault asset，以显式 manifest 关联 artifact，客户端不能指定任意目标路径，不从正文 wikilink 猜关系，新增不覆盖同名文件，首版不删除或原地替换附件 | contract: hub-vault-write-boundary / outcomes: hub-explicit-edit-and-vault-assets |
+| INV31 | **Hub 以 cmux 为默认运行和查看环境**：Hub 只把当前/可选 cmux workspace 当作短期运行上下文，不写入 `HubCatalog`；浏览器仅见进程内 opaque workspace/action ID，不得提交原始 workspace UUID、URL、路径或 shell 字符串。PDF/Markdown/Notion 可由人显式打开到当前或选定 workspace，Obsidian/Zotero 仍是原生编辑器。Codex 首版动作只新建目标 workspace 内可见的空白 native agent-session；不向既有 terminal 注入按键，不自动恢复桌面端 thread，不接受客户端 prompt/cwd/model/sandbox/command。cmux 不可用时必须可见降级，不改 socket 为 `allowAll`、不回退其他浏览器，且 Hub 内建目录与已登记 Vault 文档阅读仍可用 | safety: hub-cmux-runtime / outcomes: hub-cmux-workspace-actions |
 
 ## 非目标（NG）
 
@@ -73,14 +78,15 @@
 | NG7 | 无证据自动宣布某论文是"突破性工作"（反浮夸）。注意与 INV22 的 novelty 锚点区分:锚点是"首个提出该 task/pipeline/module(类1/2/3)"的**可核实先后事实**、非价值判断,不受本条约束;本条禁的是给论文贴超出锚点定义的"突破"徽章 | （待补） |
 | NG8 | 第一阶段自动下载书籍/标准/数据集文件（先只做元数据和索引） | （待补） |
 | NG9 | `init-project` 默认或隐式安装项目级自定义 agent、自动格式化 hook 或审查/验证 agent | safety: no-init-project-host-automation |
+| NG10 | Hub 成为新的论文/笔记数据库，接收任意文件路径、任意 URL、workspace UUID、Codex prompt/权限参数或 shell 命令，向已有 terminal 注入按键，或在页面加载时自动启动外部应用/自动写回任何权威系统；INV30 的人工显式、已登记 Vault 文档/附件操作是唯一写入例外 | contract: hub-http-boundary / hub-vault-write-boundary / hub-cmux-runtime |
 
 ## 阶段状态（随开发更新）
 
 | 阶段 | 目标 | 状态 |
 |---|---|---|
 | Phase 0 | 插件骨架、契约、evals 基线、开发规范 | ✅ 完成（v0.23.0:review 类 skills 退场,跨模型部分重构为双向 agent-collaboration,新增宿主中立 init-project；config-setup 与 project-backlog 保留） |
-| Phase 1 | 论文发现 + 下载到收件箱 + 经 zotero-mcp 入库（find-resource / ingest-resource 真实可用；存在性/语义/写入经 zotero-mcp） | 🚧 进行中（resolver / 下载到 inbox 已落地；CLI 的 sync/locate/resolve/catalog 退场；存在性/写入迁移至 MCP；skill/reference/agent/evals 已按 zotero-mcp 重写并对齐；实战已完成 create/import/补元数据/加入分类闭环） |
-| Phase 2 | 投影同步（Obsidian 索引 + 本机 PDF 链接服务 + Notion 双库投影） | 🚧 进行中（Obsidian 层级投影 + loopback PDF link-service + launchd 自启已落真机 vault；**Notion 双库(Papers + Related Docs)已 v0.8.1 实盘上线并固化进 skill 层**——机械层 `bin/notion-project.py`(唯一 Notion API 出口，CLI 零外部网络)+ 展示层 SKILL.md 组装专题页；已用 text2cad 8 篇端到端验证。剩：方向级笔记(无 Zotero item)的 Notion 表示，INV21 显式押后作后续 ticket） |
+| Phase 1 | 论文发现 + 下载到收件箱 + 经 Zotero Local API 入库 | 🚧 进行中（Local API 读写/授权/三阶段上传/精确判重已有契约测试；Zotero 10.0.2 实机 probe/search/collections、精确 DOI 复用与现有 PDF 复用已通过；skill/reference/agent/evals 已迁移；待真实写授权/create/PDF 上传端到端验证） |
+| Phase 2 | 投影同步（Obsidian 索引 + 本机 Hub/PDF 服务 + Notion 双库投影） | 🚧 进行中（v0.26.0 已把既有 loopback PDF 服务扩成统一 Web Hub；v0.27.0 进一步确定 cmux-first 运行模型：runtime-only opaque workspace registry、当前/选定 workspace 的 PDF/Markdown/Canvas/Notion 查看动作、Obsidian/Zotero 原生编辑按钮、只创建空白 native agent-session 的 Codex 按钮，以及显式 `open-hub` 入口。HubCatalog、阅读优先界面、Vault 乐观并发编辑/附件、薄 `sw_*` frontmatter 和人类可读正文边界保持不变。**Notion 双库(Papers + Related Docs)已实盘上线**，投影结果只持久化 ID 映射供 Hub 使用。剩：旧 Vault 显式迁移命令、Zotero 全库分页 assembler、方向级笔记(无 Zotero item)的 Notion 表示） |
 | Phase 3 | 文献脉络树 | 🚧 进行中（novelty tree 模型 v0.10.0 落库；**v0.15.0 渲染形态重构**：一棵树=一个自包含笔记(内联 Mermaid + `##`任务/`###`pipeline 分节 + subpaperlist)、`01-Paperlist.md` 独立全集账本、图书馆编码前缀、多树共存、`paper_assets/` 相关资料笔记 `# 相关文献树` 反链(INV20)、无 H1;共享渲染器 `projection.py` 删 DOI 列 + 星级 Importance(连带 sync-projections 变 9 列)。schema:`literature-tree.schema.json`(paper_list + 三级概念树 + summary/asset_note + challenge-insight seam)、`workflows/novelty_tree.py`(render_mermaid + render_tree_note/render_paperlist + plan/project，复用 render_table/ObsidianAdapter)、`project-literature-tree` CLI(带 --dry-run + paperlist_only)、SKILL/agent/docs、INV22 + outcomes 守护。**v0.17.0 模型广义扩展**:novelty 三类→四类(task=1/pipeline=2/module=3 节点锚点、类4=改进型论文作普通成员不入 schema)、拓扑加**可选 module 第四层**(变深度)、**挑战洞见树(challenge→insight→论文)从 schema seam 升为正式落地**——与技术树同构、复用 `concept` 结构与同一渲染器(F3 兑现);`render_mermaid` 由硬编码三层重写为递归 N 层(修 module/insight 被图静默丢弃的 bug)、`_KIND_DEPTH`/`_ANCHOR_LABEL`/classDef 加 module/challenge/insight 表项;新增 INV25(一文多树+附属按主题分身)。实盘端到端已完成(世界模型 39 篇双树)。剩：真实主题更多端到端实盘） |
 | Phase 4 | 一致性审计 | ⏳ 未开始 |
 | Phase 5 | 两级 AI 阅读（略读推荐 + 详细分析） | 🚧 进行中（recommend-papers：四源聚合适配器 + HF Daily 单源贯通 + vendor Scholar Inbox 客户端 + 两层 recommend.yml + SKILL/README 已落地，INV23；analyze-paper：SKILL/README 已落地，INV24；build-literature-tree 加 NotebookLM 批读编排提示。剩：notebooklm-py 实盘略读闭环、watchlist 半自动登记子模式、doctor 探针 + 回落、B1/B2 端到端实跑） |
@@ -90,7 +96,7 @@
 | ID | 事项 | 说明 |
 |---|---|---|
 | F1 | 给文章标题加入重要程度批注 | 在展示/索引论文标题时附一个推荐重要程度的批注，辅助人工判断优先级。待 Zotero 元数据读取链路稳定后再设计。 |
-| F2 | ~~Zotero 官方本地写 API 落地后重启程序化写入~~ **已兑现** | 由 zotero-mcp（第三方 MCP）提供本地读写能力，程序化写入已重启：新增性写入直接执行，破坏性动作须批准（见 G4/G9/INV9/NG5）。原"直至官方提供本地写 API"的前提不再适用。 |
+| F2 | ~~Zotero 官方本地写 API 落地后重启程序化写入~~ **已兑现** | 由 Zotero 10+ 官方 Local API 提供本地读写能力；无需第三方 MCP。新增性写入直接执行，破坏性动作须批准（见 G4/G9/INV9/NG5）。 |
 | F3 | ~~challenge-insight tree（挑战-洞见树）~~ **已落地（v0.17.0）** | 与技术路线树同构、复用 `concept` 结构与同一渲染器（一个 doc 一棵树），已并入 INV22。原 `challenge_insight_tree` schema seam 退场（不再做平行异构结构）。触发源:世界模型调研实盘已手搭双树。 |
 | F4 | recommend-papers 略读闭环实盘 + watchlist 登记 + doctor 回落 | A3/A4：notebooklm-py 实盘略读、watchlist 半自动登记子模式（authorId 台账 + 项目层配置按 cwd 加载）、doctor 探针 + NotebookLM/Scholar Inbox 回落。tracer(A1) + 四源聚合(A2)已落地，闭环待实盘。 |
 | F5 | Scholar Inbox 反馈回流（rate / trending / collect） | feed-agent 的 recommend-papers 已吸收 scholar-agent 的「拉取 + NotebookLM 略读」主链，但缺反馈回流：`rate`/`rate-batch`（点赞驯化推荐口味）、`trending`（跨社区热点，独立于个性化 digest）、`collect`（Scholar Inbox 侧收藏）。vendored `scholar_inbox` 目前只含读取侧（api/auth/config）。补法倾向扩 vendored client + recommend-papers 加「反馈」子模式，不原样引入整个 scholar-agent skill（与 recommend-papers 大面积重复）。参考 jiahao-shao1/sjh-skills 的 scholar-agent。 |
@@ -101,6 +107,12 @@
 - 每条目标应由 `evals/` 的用例守护。`（待补）` 标记尚未有守护 eval 的缺口。
 - 目标或范围变化必须同步记入 `CHANGELOG.md`。
 - 这是活文档，不归档。原始设计文档已移出仓库（`archived/scholar-workflow/project_references/`），仅作历史快照留存。
+- **Zotero 官方 Local API 迁移（v0.24.0）**：第三方 zotero-mcp 与 bundled MCP
+  配置退场；Zotero 10+ Local API 成为统一边界。确定性 CLI 新增读、授权、精确判重、
+  create、collection 与三阶段附件上传；回环限制、禁代理/重定向、上传 URL 校验与 macOS
+  Keychain 守护写密钥。Local API 没有原生 semantic/vector endpoint，INV14 改为全文
+  quicksearch 召回 + 当前宿主模型排序，不新建 embedding 基础设施。以下 zotero-mcp 条目
+  保留为历史决策记录，不代表当前架构。
 - **zotero-mcp 转向的下游同步（✅ 已完成对齐）**：全部 4 个顶层 references（security / storage / identity / source）、全部 5 个 SKILL.md、全部 5 个 agents、`evals/safety.json`（`no-zotero-write` 删除 → `no-unapproved-destructive-zotero` + `no-create-without-existence-check`；`no-existence-on-unreachable` 语义迁至 MCP；删除守护已删机制的 `no-unapproved-apply` / `plan-invalidated-on-change`）均已按 zotero-mcp 新模型重写；代码层退场项（`adapters/zotero_local.py`、`workflows/sync.py`、`dedup`、CLI 的 `sync`/`locate`/`resolve`/`catalog`）已删除。
 - **审批原则变更（本轮）**：写入审批从"每次写入须批准"改为"新增性写入直接执行、仅破坏性动作须批准"（G4/G9/INV9/NG5），并同步至 `~/.claude/CLAUDE.md` 与 `references/security-policy.md`。
 - **INV16 两层守护的缘由(v0.18.0/v0.19.0)**：INV16 正文已把"可达性"写成名实一致的两层(doctor 对路径 fail-fast + 端点 advisory;skill 层核验工具注册),不再靠脚注反向解释"必检退出 3"。缘由：CLI 子进程够不到 MCP 工具,只能探端点 TCP/HTTP 层;而 HTTP-MCP 只在会话启动瞬间注册、端点未起则整会话静默无工具且不自愈——若把端点暂态计入退出码会让每次 Zotero 没开都阻断整会话,故端点检查定为 advisory,真正的 fail-fast 交 skill 层(工具缺失时,见 `security-policy.md` zotero-mcp boundary)。

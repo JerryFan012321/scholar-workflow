@@ -7,8 +7,8 @@ persistent, deep read-through you keep in the vault.
 
 ## What it does
 
-- Reads the paper's text through zotero-mcp `get_content` — it never parses the PDF
-  body (metadata stays authoritative; INV10/INV24).
+- Reads Zotero's indexed text through `scholar-workflow zotero fulltext` — it never
+  parses the PDF body directly (metadata stays authoritative; INV10/INV24).
 - Optionally reads the paper's **code repo** to clarify an implementation — but **only
   when you ask**, never on its own. It clones read-only and never runs the code (no
   execute, no `pip install`, no build); the repo is treated as untrusted evidence, never
@@ -17,6 +17,16 @@ persistent, deep read-through you keep in the vault.
 - Maintains **one evolving note per paper**: a whole-paper or focused pass adds or deepens
   sections; a single section may be revised in place, but the note as a whole only
   accretes — a rerun never blanks it and rewrites.
+- Structures a whole-paper read as **conclusion snapshot → problem and motivation → method
+  pipeline → experiments → limitations**. Challenges record prior methods, failure modes,
+  and technical causes; each method module records its motivation, mechanism, why it works,
+  advantage, and evidence anchor. Focused reads update only the relevant subtree.
+- Creates a paired, editable Obsidian Canvas (`<paper>解析树.canvas`) with the same analysis
+  tree: Abstract, Introduction, Method, Experiments, and Limitation. Repeated challenges,
+  contributions, and pipeline modules expand dynamically. Later passes preserve the user's
+  layout and custom Canvas nodes while updating the relevant analysis nodes. The Canvas stays
+  standard JSON Canvas and is registered in `.scholar-workflow/artifacts.yml` rather than
+  receiving private top-level fields.
 - Keeps the analysis note **distinct from** the annotations note (from
   `export-annotations`) and cross-links the two via frontmatter `related`.
 - Hangs the analysis note on the paper's related-docs hub so all of a paper's satellite
@@ -25,8 +35,8 @@ persistent, deep read-through you keep in the vault.
 
 ## Where the note lives
 
-- One paper → one analysis note (e.g. `<paper-name>分析.md`) under `research_vault_root`, in the
-  same folder as the paper's index row / hub.
+- One paper → one analysis pair (`<paper-name>分析.md` + `<paper-name>解析树.canvas`) under
+  `research_vault_root`, in the same folder as the paper's index row / hub.
 - All analysis content sits in the **human area, outside managed blocks**, so
   re-projection / sync never overwrites it (INV4).
 
@@ -35,7 +45,7 @@ persistent, deep read-through you keep in the vault.
 | | analyze-paper | export-annotations |
 |---|---|---|
 | Content | Claude's read-through / synthesis | your highlights + comments |
-| Source | get_content (paper body) | your Zotero annotations |
+| Source | Zotero indexed full text | your Zotero annotations |
 | Note | `<paper>分析.md` | `<paper>批注.md` |
 
 They are separate files, cross-linked via `related` — never merged.
@@ -48,4 +58,4 @@ paper per run. To have it read the implementation, say so explicitly ("read the 
 "check the repo") and whether to keep the clone.
 
 If NotebookLM was already used to skim this paper in `recommend-papers`, this tier is
-the deeper follow-up — it reads the full body via get_content rather than a skim.
+the deeper follow-up — it reads Zotero's indexed body rather than a skim.

@@ -1,9 +1,8 @@
 """CLI-boundary exit-code tests.
 
-After the zotero-mcp pivot, the only surviving exit-3 (dependency) trigger is
-`doctor` reporting a missing local config path — its meaning shifted from "Zotero
-unreachable" to "a required local path is missing". Existence/dedup/writes now run
-in the host LLM via zotero-mcp, so they have no CLI trigger path here.
+Exit 3 covers an unavailable runtime dependency, including a missing local config path
+or an unavailable Zotero Local API. Identity conflicts and recoverable partial writes
+use their own CLI codes.
 """
 from __future__ import annotations
 import textwrap

@@ -17,11 +17,9 @@ class ResourceKind(StrEnum):
 
 
 class TaskState(StrEnum):
-    """States the CLI download flow actually writes. The pre-zotero-mcp pipeline
-    states (classify/dedup/sync/index/project + approval/conflict) are gone — those
-    stages now live in the skill layer, not the CLI."""
+    """States written by the standalone arXiv download flow."""
     APPROVED = "approved"        # job created, about to download
-    DOWNLOADED = "downloaded"    # PDF landed in the inbox, awaiting zotero-mcp import
+    DOWNLOADED = "downloaded"    # PDF landed in the inbox, awaiting Local API import
     NO_ARXIV_PDF = "no_arxiv_pdf"
     DOWNLOAD_FAILED = "download_failed"
 
@@ -79,7 +77,7 @@ class ActionItem(BaseModel):
 class ActionPlan(BaseModel):
     """A deterministic "what to download / project" list. Not a signed, expiring,
     tamper-checked plan — the CLI generates and consumes it in one call, and approval
-    of destructive actions lives in the skill layer (host LLM via zotero-mcp)."""
+    of destructive actions lives in the skill layer."""
     plan_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     actions: list[ActionItem] = Field(default_factory=list)

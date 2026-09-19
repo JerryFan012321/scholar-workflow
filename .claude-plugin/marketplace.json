@@ -3,15 +3,23 @@
   "owner": {
     "name": "Jerry Fan"
   },
+  "interface": {
+    "displayName": "Jerry Plugins"
+  },
   "plugins": [
     {
       "name": "scholar-workflow",
-      "description": "Plan-first scholarly resource management: papers, technical docs, Obsidian/Notion projections, literature novelty trees, paper recommendations, and detailed analyses.",
+      "description": "Plan-first scholarly resource management with a local research Hub: manage papers through Zotero, maintain readable Obsidian and Notion projections, analyze papers, and route viewing through cmux.",
       "source": {
         "source": "github",
         "repo": "JerryFan012321/scholar-workflow",
         "ref": "release"
-      }
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Education & Research"
     }
   ]
 }

@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "hub-catalog.schema.json",
+  "title": "Scholar Workflow Hub Catalog",
+  "description": "Canonical, rebuildable resource and artifact contract consumed by the Web Hub, Obsidian projection, and Notion projection. It owns no knowledge body.",
+  "type": "object",
+  "required": ["schema_version", "revision", "generated_at", "sources", "resources", "topics", "artifacts", "assets", "diagnostics"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "revision": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "sources": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/source_status" }
+    },
+    "resources": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/resource" }
+    },
+    "topics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/topic" }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "assets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/asset" }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    }
+  },
+  "$defs": {
+    "source_status": {
+      "type": "object",
+      "required": ["source", "available", "detail"],
+      "additionalProperties": false,
+      "properties": {
+        "source": { "type": "string", "minLength": 1 },
+        "available": { "type": "boolean" },
+        "detail": { "type": ["string", "null"] }
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "required": ["level", "code", "message", "entity_id"],
+      "additionalProperties": false,
+      "properties": {
+        "level": { "type": "string" },
+        "code": { "type": "string" },
+        "message": { "type": "string" },
+        "entity_id": { "type": ["string", "null"] }
+      }
+    },
+    "identifiers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "doi": { "type": ["string", "null"] },
+        "arxiv": { "type": ["string", "null"] },
+        "isbn": { "type": ["string", "null"] },
+        "url": { "type": ["string", "null"] }
+      }
+    },
+    "zotero": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "item_key": { "type": ["string", "null"], "pattern": "^[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}$" },
+        "attachment_key": { "type": ["string", "null"], "pattern": "^[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}$" },
+        "collection_keys": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}$" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "projections": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "notion_page_id": { "type": ["string", "null"] }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "required": ["resource_id", "kind", "title", "authors", "topic_ids", "artifact_ids"],
+      "additionalProperties": false,
+      "properties": {
+        "resource_id": { "type": "string", "minLength": 1 },
+        "kind": {
+          "type": "string",
+          "enum": ["paper", "technical_document", "snapshot", "drawio", "image", "dataset"]
+        },
+        "title": { "type": ["string", "null"] },
+        "authors": { "type": "array", "items": { "type": "string" } },
+        "year": { "type": ["integer", "null"] },
+        "venue": { "type": ["string", "null"] },
+        "importance": { "type": ["string", "null"] },
+        "identifiers": { "$ref": "#/$defs/identifiers" },
+        "zotero": { "$ref": "#/$defs/zotero" },
+        "projections": { "$ref": "#/$defs/projections" },
+        "topic_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "artifact_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "topic": {
+      "type": "object",
+      "required": ["topic_id", "name", "resource_ids", "artifact_ids"],
+      "additionalProperties": false,
+      "properties": {
+        "topic_id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "parent_id": { "type": ["string", "null"] },
+        "resource_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "artifact_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["artifact_id", "kind", "format", "vault_path"],
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": { "type": "string", "minLength": 1 },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "collection-index",
+            "paper-list",
+            "paper-hub",
+            "literature-tree",
+            "paper-analysis",
+            "analysis-canvas",
+            "annotation-note",
+            "reading-note",
+            "direction-note",
+            "technical-document"
+          ]
+        },
+        "format": { "type": "string", "enum": ["markdown", "canvas", "file"] },
+        "vault_path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\\\)(?!.*//).+$",
+          "description": "Vault-relative POSIX path; never absolute and never contains '..'."
+        },
+        "resource_id": { "type": ["string", "null"] },
+        "topic_id": { "type": ["string", "null"] },
+        "parent_id": { "type": ["string", "null"] },
+        "tree_kind": { "type": ["string", "null"], "enum": ["technical", "challenge", null] },
+        "revision": { "type": ["string", "null"] }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "required": [
+        "asset_id",
+        "owner_artifact_ids",
+        "vault_path",
+        "display_name",
+        "media_type",
+        "size",
+        "sha256",
+        "role"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": { "type": "string", "minLength": 1 },
+        "owner_artifact_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "vault_path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\\\)(?!.*//).+$",
+          "description": "Vault-relative POSIX path; never absolute and never contains '..'."
+        },
+        "display_name": { "type": "string", "minLength": 1 },
+        "media_type": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9!#$&^_.+\\-]*/[a-z0-9][a-z0-9!#$&^_.+\\-]*$"
+        },
+        "size": { "type": "integer", "minimum": 0 },
+        "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "role": {
+          "type": "string",
+          "enum": ["embed", "supplement", "data", "source"]
+        }
+      }
+    }
+  }
+}

@@ -11,7 +11,7 @@
       "id": "additive-import",
       "input": "把这些论文加入 Zotero：2401.01234, 2312.56789",
       "expected_skill": "ingest-resource",
-      "comment": "明确的新增性入库请求 → ingest-resource 直接执行:先经 zotero-mcp 存在性核验、确认目标 collection,随后新增性写入直接继续,无审批门(G4/G9)"
+      "comment": "明确的新增性入库请求 → ingest-resource 直接执行:先经 Local API 存在性核验、确认目标 collection,随后由 zotero ingest 重复核验并写入,无审批门(G4/G9)"
     },
     {
       "id": "file-technical-doc",
@@ -117,7 +117,7 @@
       "id": "analyze-paper-deep-read",
       "input": "帮我深入分析这篇 DeepCAD 论文的方法",
       "expected_skill": "analyze-paper",
-      "comment": "单篇已入库论文的深度/局部分析 → analyze-paper;经 get_content 读正文,产物落附属分析笔记(一文一进化)"
+      "comment": "单篇已入库论文的深度/局部分析 → analyze-paper;经 Zotero Local API 读索引正文,产物落附属分析笔记(一文一进化)"
     },
     {
       "id": "recommend-daily-feed",
@@ -129,7 +129,7 @@
       "id": "sync-obsidian-index",
       "input": "重建一下 world model 这个主题的论文索引表",
       "expected_skill": "sync-projections",
-      "comment": "重建 Obsidian 索引 / 同步投影 → sync-projections;经 zotero-mcp 拉数据交 CLI 渲染受管块"
+      "comment": "重建 Obsidian 索引 / 同步投影 → sync-projections;经 Zotero Local API CLI 拉数据后渲染受管块"
     },
     {
       "id": "env-consult-server",

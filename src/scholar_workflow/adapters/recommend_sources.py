@@ -114,7 +114,7 @@ def fetch_s2_author_papers(author_id: str, limit: int = 50,
 def normalize_scholar_inbox(digest: dict, min_score: float = 0.0) -> list[dict]:
     """Normalize a Scholar Inbox digest (already fetched by the vendored client in
     bin/, which owns the session/login). Pure so it stays testable and keeps src/
-    network- and MCP-free (INV18). arXiv-only, like the S2 sources."""
+    network- and Zotero-free (INV18). arXiv-only, like the S2 sources."""
     out: list[dict] = []
     for row in digest.get("digest_df", []):
         arxiv_id = row.get("arxiv_id")

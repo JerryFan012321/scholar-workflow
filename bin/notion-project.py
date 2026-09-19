@@ -2,7 +2,7 @@
 """Push a two-DB Notion projection from a prepared JSON payload (skill mechanical layer).
 
 Reads stdin JSON {papers:[...], related_docs:[...]} that the host LLM assembled from
-zotero-mcp fields, then upserts it into the two-DB model (GOALS INV21): papers into the
+Zotero Local API fields, then upserts it into the two-DB model (GOALS INV21): papers into the
 Papers DB keyed by Resource ID, related docs into the Related Docs DB keyed by Doc ID with
 a Paper relation back to their paper. Papers go first so each doc's relation resolves to a
 real page_id. Prints {papers:{resource_id:page_id}, related_docs:{doc_id:page_id}} so the
@@ -33,8 +33,13 @@ import sys
 
 from scholar_workflow.config import load_config
 from scholar_workflow.adapters.notion import NotionAdapter
+from scholar_workflow.hub.links import ProjectionLinkStore
 
 TOKEN_ENV = "SCHOLAR_WORKFLOW_NOTION_TOKEN"
+
+
+def _projection_link_store() -> ProjectionLinkStore:
+    return ProjectionLinkStore()
 
 
 def _die(msg: str, code: int) -> None:
@@ -82,6 +87,10 @@ def main() -> None:
                                                key_property="Doc ID")
     finally:
         adapter.close()
+
+    # Persist IDs only. The Hub uses this relation map to construct its opaque
+    # cmux actions; paper metadata and note content remain in Zotero/the Vault.
+    _projection_link_store().record_notion_pages(paper_ids)
 
     json.dump({"papers": paper_ids, "related_docs": doc_ids},
               sys.stdout, ensure_ascii=False)

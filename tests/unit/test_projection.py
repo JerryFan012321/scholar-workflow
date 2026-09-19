@@ -59,7 +59,10 @@ def test_project_creates_file_and_preserves_outside(tmp_path):
     # append a manual note outside the managed block, then re-project
     full.write_text(full.read_text() + "\n## notes\nkeep me\n")
     project_obsidian([ENTRY], idx, "Papers", _adapter(tmp_path), 23128)
-    assert "keep me" in full.read_text()
+    text = full.read_text()
+    assert "keep me" in text
+    assert "sw_kind: paper-list" in text
+    assert "sw_catalog_id:" in text
 
 
 def test_project_is_idempotent(tmp_path):

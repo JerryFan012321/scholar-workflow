@@ -4,15 +4,15 @@ How skills are tested and pinned. Development-time doc — never loaded at runti
 
 ## What evals are here
 
-`evals/` holds three JSON suites. Since the zotero-mcp pivot, most cases are
+`evals/` holds three JSON suites. Since the Zotero Local API migration, many cases are
 **behavior specifications for the host LLM at the skill layer** — not code the CLI
-can assert, because the CLI subprocess cannot reach MCP tools.
+can assert through contract tests; judgment-heavy behavior remains at the skill layer.
 
 | Suite | File | Answers | Enforcement today |
 |---|---|---|---|
 | Routing | `evals/routing.json` | Does the right skill fire for a given input? | Human/LLM judgment against the `description` fields |
 | Safety | `evals/safety.json` | Are forbidden actions blocked? | Per case's `enforcement_layer` (see below); only `cli` cases carry an exit code |
-| Outcomes | `evals/outcomes.json` | Do end-to-end acceptance criteria hold? | Behavior spec; all cases currently `pending` |
+| Outcomes | `evals/outcomes.json` | Do end-to-end acceptance criteria hold? | Behavior specs with per-case `pending` / `pass` status |
 
 Every safety case declares an **`enforcement_layer`** so it guards a real path, not a
 fictitious one:
@@ -23,7 +23,7 @@ fictitious one:
   carry an `exit_code` (from the AGENT.md table), and only when the CLI actively raises;
   a structural guarantee (e.g. the Obsidian adapter never writing outside the managed
   block) is a `cli` case with no code, checked by contract tests.
-- **`host_llm`** — skill-layer behavior the host LLM must honor via zotero-mcp. There is
+- **`host_llm`** — skill-layer behavior the host LLM must honor. There is
   **no CLI exit code to assert** (the CLI subprocess can't reach MCP); the case pins the
   expected refusal/stop in `expected` and a reviewer checks the trace. Never fake a CLI
   exit code here — that was a real past bug (host-layer cases wearing CLI codes).

@@ -59,6 +59,17 @@ class _FakeAdapter:
         pass
 
 
+class _FakeLinkStore:
+    instances: list["_FakeLinkStore"] = []
+
+    def __init__(self):
+        self.pages = None
+        self.__class__.instances.append(self)
+
+    def record_notion_pages(self, pages):
+        self.pages = dict(pages)
+
+
 def _fake_config():
     notion = SimpleNamespace(data_source_id="papers-ds",
                              related_docs_data_source_id="related-ds",
@@ -68,12 +79,14 @@ def _fake_config():
 
 def _setup(monkeypatch, payload, token="test-token"):
     _FakeAdapter.instances.clear()
+    _FakeLinkStore.instances.clear()
     if token is None:
         monkeypatch.delenv(notion_project.TOKEN_ENV, raising=False)
     else:
         monkeypatch.setenv(notion_project.TOKEN_ENV, token)
     monkeypatch.setattr(notion_project, "load_config", _fake_config)
     monkeypatch.setattr(notion_project, "NotionAdapter", _FakeAdapter)
+    monkeypatch.setattr(notion_project, "_projection_link_store", _FakeLinkStore)
     monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(payload)))
 
 
@@ -99,6 +112,9 @@ def test_paper_relation_wired_from_page_id_map(monkeypatch, capsys):
     assert out["related_docs"] == {
         "paper/科研项目/上汽标注/Text2CAD论文相关资料.md":
         "pid::paper/科研项目/上汽标注/Text2CAD论文相关资料.md"}
+    assert _FakeLinkStore.instances[-1].pages == {
+        "arxiv:2409.17106": "pid::arxiv:2409.17106"
+    }
 
 
 def test_missing_token_exits_3(monkeypatch):

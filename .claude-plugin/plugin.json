@@ -1,15 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "scholar-workflow",
-  "version": "0.23.0",
-  "description": "Plan-first scholarly resource management: scope research requests, manage papers through Zotero, maintain Obsidian and Notion projections, build literature trees, analyze papers, coordinate agents, and initialize Git-managed project skeletons.",
+  "version": "0.27.0",
+  "description": "Plan-first scholarly resource management with a local research Hub: manage papers through Zotero, maintain readable Obsidian and Notion projections, build literature trees, analyze papers, coordinate agents, and initialize Git-managed project skeletons.",
   "author": {
     "name": "Scholar Workflow contributors"
-  },
-  "mcpServers": {
-    "zotero-mcp": {
-      "type": "http",
-      "url": "http://127.0.0.1:23120/mcp"
-    }
   }
 }

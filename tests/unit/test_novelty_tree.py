@@ -71,12 +71,20 @@ def test_tree_is_single_file(tmp_path):
     assert [p["path"] for p in plan] == [f"{ROOT}/{TREE_FILE}"]
     assert plan[0]["heading"] == ""  # no H1 — filename is the title
     assert plan[0]["papers"] == 3  # 2 in implicit field + 1 gaussian
+    assert plan[0]["frontmatter"]["sw_schema"] == 1
+    assert plan[0]["frontmatter"]["sw_kind"] == "literature-tree"
+    assert plan[0]["frontmatter"]["sw_tree_kind"] == "technical"
+    assert plan[0]["frontmatter"]["sw_topic_id"] == "novel-view-synthesis"
 
 
 def test_paperlist_is_01_ledger(tmp_path):
     plan = plan_paperlist(DOC, ROOT, PORT)
     assert plan[0]["path"] == f"{ROOT}/01-Paperlist.md"
     assert plan[0]["papers"] == 4  # whole set incl. unclassified
+    assert plan[0]["frontmatter"]["sw_kind"] == "paper-list"
+    assert plan[0]["frontmatter"]["sw_catalog_id"] == (
+        "topic:novel-view-synthesis:paper-list"
+    )
 
 
 # --- tree note body ---
@@ -123,6 +131,10 @@ def test_project_writes_and_is_idempotent(tmp_path):
     project_novelty_tree(DOC, ROOT, a, PORT, TREE_FILE)
     after = tree.read_text(encoding="utf-8")
     assert "keep" in after and after == first
+    # Hub identity is a thin machine header; the existing readable Markdown survives.
+    assert "sw_kind: literature-tree" in after
+    assert "```mermaid" in after
+    assert "### implicit neural field" in after
 
 
 def test_chinese_topic_path_safe(tmp_path):

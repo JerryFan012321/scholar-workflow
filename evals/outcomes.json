@@ -53,7 +53,7 @@
     },
     {
       "id": "download-to-inbox",
-      "description": "论文 PDF 由 CLI 下载并落入 paper_inbox；Zotero 写入不在 CLI，而由宿主 LLM 经 zotero-mcp 完成",
+      "description": "论文 PDF 由 CLI 下载并落入 paper_inbox；zotero ingest 精确判重后经 Local API 创建条目并三阶段上传附件",
       "status": "pending"
     },
     {
@@ -82,8 +82,33 @@
       "status": "pending"
     },
     {
+      "id": "structured-paper-analysis-note",
+      "description": "INV24 结构化精读:每篇论文维护 Markdown 分析笔记 + 可编辑 JSON Canvas 文档对。Canvas 与参考图一致含 Abstract/Introduction/Method/Experiments/Limitation 五分支;挑战含前序方法/失败表现/技术原因,贡献含问题/做法/优势,方法模块含动机/做法/有效原因/技术优势,实验含对比/消融,局限含原因/影响/陈述类型。Canvas 与 Markdown 内容一致并带论文内证据锚点;局部精读只更新对应子树,保留 Canvas 布局、自建节点和人工内容",
+      "status": "pending"
+    },
+    {
       "id": "init-project-idempotent",
       "description": "INV27 项目初始化：plan 零写入，apply 只补缺并确保 Git 管理；重跑逐字节不变，已有 AGENTS.md/.gitignore 保留，冲突或 symlink 在写前拒绝，且不生成自定义 agent/hook、不 stage/commit/push。由 tests/unit/test_init_project.py 守护",
+      "status": "pass"
+    },
+    {
+      "id": "hub-catalog-and-cmux-notion",
+      "description": "INV28 本机 Hub：HubCatalog 是可重建关系快照；HTTP 仅绑定 loopback，保留 PDF URL 并支持 HEAD/Range；Notion page ID 只在服务端转成 allowlisted URL 和 opaque action，严格通过 cmux argv 打开，失败不回落 Safari；长驻服务按 catalog revision 刷新 action registry。由 test_hub_catalog.py、test_hub_http.py、test_hub_actions.py、test_hub_links.py 守护",
+      "status": "pass"
+    },
+    {
+      "id": "obsidian-follows-hub-contract",
+      "description": "INV29 Obsidian 受管格式服从 Hub contract：Markdown 投影写入白名单 sw_* frontmatter；标准 JSON Canvas 不注入私有字段，而由显式 artifacts.yml 登记。人工 YAML、正文、Canvas 布局和注释保持可读；未知 sw_*、无效 manifest、路径逃逸和 symlink fail closed，不回落陈旧 snapshot。由 test_obsidian.py、test_novelty_tree.py、test_hub_projection.py、test_hub_vault.py、test_hub_artifact_manifest.py 守护",
+      "status": "pass"
+    },
+    {
+      "id": "hub-explicit-edit-and-vault-assets",
+      "description": "INV30 Hub 显式编辑与附件：已登记 Markdown/Canvas 只在人工保存时按 raw-file revision 原子写入，stale 返回 409，sw_* 不可由客户端更改；Vault assets 由显式 YAML manifest 关联，不解析正文，同名新增不覆盖，路径/owner/hash/size/symlink 均校验，Zotero PDF 保持只读。界面阅读优先，编辑和附件默认收起，安全 DOM Markdown 与实时预览已由静态 HTTP 契约和 Codex 内置浏览器人工 smoke 验证。由 test_hub_http.py、test_hub_attachments.py、test_hub_catalog.py、test_hub_vault.py、test_hub_artifact_manifest.py 守护",
+      "status": "pass"
+    },
+    {
+      "id": "hub-cmux-workspace-actions",
+      "description": "INV31 cmux-first Hub：运行时 workspace 不进 HubCatalog，客户端只见 opaque workspace/action ID；人工可把已登记 PDF/Markdown/Notion 打开到当前或选定 workspace，Obsidian/Zotero 分别作为原生编辑器，Codex 按钮只新建目标 workspace 的空白 native agent-session。cmux 无权限/无 socket 时按钮可见降级，Hub 内建目录与已登记 Vault 文档阅读仍可用，不回退系统浏览器。由 cmux Hub action/HTTP/CLI contract tests 守护",
       "status": "pass"
     }
   ]

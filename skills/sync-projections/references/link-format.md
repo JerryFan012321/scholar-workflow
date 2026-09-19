@@ -10,7 +10,7 @@ http://127.0.0.1:23128/open/paper/{attachment-key}
 ```
 
 `{attachment-key}` is the Zotero **attachment** key (the storage folder name), not the
-item key. Get it from zotero-mcp `get_item_details` (the PDF attachment's key).
+item key. Get it from `scholar-workflow zotero get <item-key> --children`.
 
 ## Client rules
 

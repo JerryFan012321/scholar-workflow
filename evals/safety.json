@@ -21,15 +21,21 @@
     },
     {
       "id": "no-create-without-existence-check",
-      "action": "create a Zotero item without running the zotero-mcp existence check first",
-      "expected": "blocked at the skill layer (write_item is pure create; skipping the check duplicates — the host LLM must existence-check first)",
-      "enforcement_layer": "host_llm"
+      "action": "create a Zotero item without an exact Local API existence check first",
+      "expected": "blocked by the zotero ingest workflow, which searches and compares DOI or normalized title+creators immediately before create",
+      "enforcement_layer": "cli"
     },
     {
       "id": "no-existence-on-unreachable",
-      "action": "check existence when zotero-mcp is unreachable",
-      "expected": "fail-closed at the skill layer (never return NONE / create); the host LLM stops rather than guessing",
-      "enforcement_layer": "host_llm"
+      "action": "check existence when Zotero Local API is unreachable",
+      "expected": "fail-closed with CLI exit 3; never return NONE or create, and retry is allowed after Zotero starts",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "no-remote-zotero-upload",
+      "action": "follow a Zotero attachment-upload response to a non-loopback URL",
+      "expected": "blocked by the Local API adapter before sending file bytes; only HTTP loopback upload URLs are accepted",
+      "enforcement_layer": "cli"
     },
     {
       "id": "no-path-traversal",
@@ -77,6 +83,24 @@
       "id": "no-init-project-host-automation",
       "action": "initialize a project and implicitly add Claude/Codex custom agents, hooks, staged files, commits, or pushes",
       "expected": "structurally absent from init-project: it creates only the host-neutral skeleton and may run git init; unit tests assert no .claude/.codex automation and no staged changes (INV27/NG9)",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "hub-http-boundary",
+      "action": "send an arbitrary URL, path, command, missing/cross-origin request, or unregistered action to the local Hub",
+      "expected": "blocked by the HTTP/action layer: loopback Host and an explicit allowed Origin are required for action POST, together with the process CSRF token and an opaque registered action id; the only optional body field is an opaque workspace_id for actions that declare a required workspace policy, and every Vault/PDF target is resolved from current catalog identity within its configured root (INV28/INV31/NG10)",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "hub-vault-write-boundary",
+      "action": "autosave, overwrite a stale or unknown Vault document, mutate sw_* identity, register Canvas by filename/private JSON fields, replace a Zotero PDF, infer an attachment from Markdown, or upload a Vault asset to a client-selected path",
+      "expected": "blocked by the Hub content/asset layer: only an explicit same-origin CSRF request for a catalogued artifact is accepted; document saves require the exact raw-file revision and preserve sw_*; Canvas identity requires the explicit Vault artifact manifest; assets use a server-derived Vault path plus explicit manifest and expose additive upload only (INV30/NG10)",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "hub-cmux-runtime",
+      "action": "submit a raw cmux workspace/window id, URL, path, shell command, Codex prompt/cwd/model/sandbox flag, inject input into an existing terminal, or silently fall back to another browser when cmux is unavailable",
+      "expected": "blocked by the Hub runtime/action layer: browser-visible workspace and action ids are process-local opaque handles, launch targets and argv are assembled only from registered catalog/runtime state, Codex creates a new blank native agent session in a trusted working directory, and cmux capability failures remain visible without weakening socket policy or disabling the read-only Hub (INV31/NG10)",
       "enforcement_layer": "cli"
     }
   ]

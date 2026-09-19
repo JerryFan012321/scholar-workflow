@@ -9,13 +9,38 @@
 
 ## 架构
 
-宿主 LLM 负责理解、分类与推荐;确定性 CLI(`src/scholar_workflow/`)负责可测试的文件操作,
-**从不直接操作你的 Zotero 库**。其核心投影/状态命令不发网络请求;唯一的对外访问是受限且
-显式声明的——`apply` 从 arXiv 下载 PDF,独立的 `bin/notion-project.py` / `bin/recommend-papers.py`
-各自访问其声明的外部服务。**Zotero 是权威主库** —— 元数据、存在性核验、语义检索一律经
-[zotero-mcp](https://github.com/54yyyu/zotero-mcp)。新增性写入(create / import / 元数据)经
-zotero-mcp 的受控工具执行,破坏性动作需你批准。论文 PDF 下载到收件箱,再由宿主经 zotero-mcp
-(`write_item import`)入库。**Obsidian** 保存知识笔记与派生索引;**Notion** 保存可选的跨设备投影。
+宿主 LLM 负责理解、分类、排序与推荐;确定性 CLI(`src/scholar_workflow/`)负责可测试的文件和
+Zotero 操作。Zotero 适配器只连接 Zotero 10+ 的回环 Local API;其他对外访问均受限且显式声明——
+`apply` 从 arXiv 下载 PDF,独立的 `bin/notion-project.py` / `bin/recommend-papers.py` 各自访问其
+声明的服务。**Zotero 是权威主库** —— 元数据、存在性核验、索引全文与新增性写入使用官方
+Local API。主题召回由 Local API 全字段/全文 quicksearch 加宿主模型排序完成,不需要 MCP server
+或本地向量库。破坏性动作仍需批准。**Obsidian** 保存知识笔记与派生索引;**Notion** 保存可选投影。
+
+### 本地研究 Hub
+
+Hub 默认以 cmux 为运行与查看环境。在一个 cmux terminal 中启动服务，再从同一 workspace 的
+另一个 terminal surface 打开：
+
+```bash
+scholar-workflow serve-hub
+# 在另一个 cmux terminal surface 中
+scholar-workflow open-hub
+```
+
+顶部 workspace 选择器可把 PDF、Markdown/Canvas 与 Notion 打开到 Hub 所在 workspace 或人工
+选择的其他 workspace。独立按钮分别把 Vault 文档交给 Obsidian、把论文条目交给 Zotero 原生编辑。
+经确认的 Codex 按钮只在所选 workspace 新建一个空白、可见的 native agent-session，绝不接受
+浏览器传入的 prompt、command、model、权限或工作目录。若服务不是从 cmux 启动，workspace 动作会
+明确显示不可用，但 Hub 内建阅读与受控 Vault 编辑仍可使用。
+
+Hub 在 `http://127.0.0.1:23128/hub/` 提供统一的人类入口：搜索论文、流式读取只读 Zotero PDF、
+即时预览受 Catalog 管理的 Markdown/Canvas，也可在版本冲突保护下显式编辑已有 Vault 文档并实时
+预览。标准 JSON Canvas 不注入私有字段，而通过 `.scholar-workflow/artifacts.yml` 显式登记。文档
+图片、数据与补充文件从默认折叠的附件区新增，字节仍在 Vault，关系记录在可人工检查的 manifest；
+Notion 不会静默切到 Safari。HubCatalog 约束三种投影的机器身份；Obsidian 仍保留原有可读
+Markdown 正文，Hub 只增加薄的 `sw_*` frontmatter。
+详细接口见 [`references/hub-contract.md`](references/hub-contract.md)。既有 `serve-links` 命令与
+`/open/paper/<attachment-key>` 链接继续兼容。
 
 ## Skills
 
@@ -41,8 +66,11 @@ zotero-mcp 的受控工具执行,破坏性动作需你批准。论文 PDF 下载
 - **Claude Code 或 Codex**(Codex CLI / Codex app;IDE extension 不加载插件)。
 - **Python ≥ 3.11** —— 确定性 CLI 是一个 Python 包。
 - **Git** —— `init-project` 创建或核验项目骨架时需要。
-- **Zotero + [zotero-mcp](https://github.com/54yyyu/zotero-mcp)** —— 权威主库。插件硬
-  依赖它做读/写/语义检索;缺失时涉库 skill 会 fail-fast。
+- **cmux** —— workspace 定向的 PDF/文档/Notion 查看和空白 Codex 会话按钮需要。没有 live cmux
+  socket 时，目录、已登记 Vault 文档阅读和 Obsidian/Zotero 编辑跳转仍可用；cmux 专属动作会明确禁用。
+- **Zotero 10+ 且启用 Local API** —— 权威主库。在 Zotero 的
+  **设置 → 高级**中启用;不再需要 Zotero 插件或 MCP server。Codex 在沙箱中运行时可能还需
+  放行 localhost/网络权限才能访问 23119;在把 exit 3 判断为 Zotero 离线前,应带该权限重试。
 - **按功能可选:**
   - Notion 集成 token —— 仅启用 Notion 投影时需要。
   - `notebooklm-py` + Google 登录 —— 仅 `recommend-papers` 略读级 + 文献树 NotebookLM
@@ -66,7 +94,7 @@ zotero-mcp 的受控工具执行,破坏性动作需你批准。论文 PDF 下载
    codex plugin marketplace add JerryFan012321/scholar-workflow --ref release
    codex plugin add scholar-workflow@jerry-plugins
    ```
-   安装后新开 Claude Code 或 Codex 会话,让 bundled skills、hooks 与 MCP tools 生效。
+   安装后新开 Claude Code 或 Codex 会话,让 bundled skills 与 hooks 生效。
 
 2. **装 CLI**(提供 skill 调用的 `scholar-workflow` 命令):
    ```bash
@@ -87,7 +115,15 @@ zotero-mcp 的受控工具执行,破坏性动作需你批准。论文 PDF 下载
    这会写 `~/.config/scholar-workflow/config.yml`(只写你指定的键,非全倒默认值)、校验、
    后续编辑时保留注释。需要时用 `SCHOLAR_WORKFLOW_HOME` 覆盖位置。
 
-4. **按需提供凭证**(见[环境要求](#环境要求))。token / cookie 存环境变量或各工具自己的
+4. **授权 Zotero 写入。** 启动 Zotero 后运行:
+   ```bash
+   scholar-workflow zotero probe
+   scholar-workflow zotero authorize
+   ```
+   多阶段 PDF 导入请选择 Zotero 弹窗中的 **Always Allow**。密钥存入 macOS Keychain,
+   不会打印或写进 config/git;读命令不需要密钥。
+
+5. **按需提供其他凭证**(见[环境要求](#环境要求))。token / cookie 存环境变量或各工具自己的
    登录态,**绝不进配置或 git**。如 Notion:`export SCHOLAR_WORKFLOW_NOTION_TOKEN=...`。
 
 ## 更新
@@ -119,13 +155,17 @@ scholar-workflow`)。你的 `config.yml` 与凭证在仓库之外,更新不受�
 
 插件仍处于 `0.x` 活跃开发期。哪些已稳、哪些仍在打磨:
 
-- **已端到端实盘:** 论文入库(查找 → 判重核验 → 导入 Zotero),以及 Obsidian / Notion 投影。
+- **Zotero 10.0.2 实机已跑通:** Local API 已完成 probe、search、collections、持久写授权、
+  条目创建、imported PDF 上传、精确 DOI 复用与附件复用。同一 ingest payload 重跑会返回原
+  item/attachment，不重复上传。
+- **cmux 实机已跑通:** `open-hub` 已在调用者 workspace 新建 Hub browser surface，选择器能识别
+  Hub 所在 workspace；确认 Codex 动作后在同一 workspace 新建了空白 native agent-session，未发送 prompt。
 - **已实现但尚未真实端到端跑通:** `build-literature-tree` 的 CLI 渲染路径(尤其第四层
   `module` 和落盘到 vault 的挑战洞见树)、`recommend-papers` 的 NotebookLM 略读层、
   `check-consistency`。
 - **不支持跨运行续跑:** 重跑 `apply` 是全新任务、会把每一项从头下载,不会接着上次的进度。
-- **库安全规则在 skill 层而非代码层:** create 前的判重、破坏性 Zotero 动作的审批,都由宿主
-  LLM 按 skill 指令遵守 —— CLI 够不到 zotero-mcp,无法在代码里强制。
+- **身份安全双层执行:** skill 先预览候选,`zotero ingest` 在创建前再次执行 DOI 或规范化
+  title+creators 精确核验。当前 CLI 不暴露破坏性 Zotero 命令;未来若增加仍需审批。
 
 ## 开发
 

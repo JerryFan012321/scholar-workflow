@@ -73,4 +73,7 @@ loaded at skill runtime.
 - SKILL.md body and references: English (trigger words in `description` may be
   bilingual).
 - Keep SKILL.md short; push detail into `references/` loaded on demand.
+- Keep only project-specific routing, exact tool calls, artifact formats, environment
+  facts, and safety/permission boundaries. Do not prescribe generic research, analysis,
+  classification, ranking, summarization, or writing methods the host model already has.
 - After authoring, add a routing case to `evals/routing.json`.
