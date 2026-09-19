@@ -17,6 +17,7 @@ RELEASE_BRANCH="release"
 
 # Runtime manifest — exactly what ships. Keep in sync with README's release boundary.
 RUNTIME_PATHS=(
+  ".agents"
   ".claude-plugin"
   ".codex-plugin"
   "agents"

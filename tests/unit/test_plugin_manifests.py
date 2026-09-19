@@ -24,29 +24,42 @@ def test_host_manifests_share_identity_version_without_bundled_mcp():
 def test_release_builder_includes_codex_runtime_files():
     release_script = (ROOT / "scripts/make-release.sh").read_text(encoding="utf-8")
 
+    assert '".agents"' in release_script
     assert '".codex-plugin"' in release_script
     assert '".mcp.json"' not in release_script
 
 
 def test_marketplace_entry_has_current_codex_metadata():
-    marketplace = _load_json(".claude-plugin/marketplace.json")
-    entry = next(
+    claude_marketplace = _load_json(".claude-plugin/marketplace.json")
+    claude_entry = next(
         plugin
-        for plugin in marketplace["plugins"]
+        for plugin in claude_marketplace["plugins"]
+        if plugin["name"] == "scholar-workflow"
+    )
+    codex_marketplace = _load_json(".agents/plugins/marketplace.json")
+    codex_entry = next(
+        plugin
+        for plugin in codex_marketplace["plugins"]
         if plugin["name"] == "scholar-workflow"
     )
 
-    assert marketplace["interface"]["displayName"]
-    assert entry["source"] == {
+    assert claude_marketplace["name"] == codex_marketplace["name"] == "jerry-plugins"
+    assert claude_marketplace["interface"] == codex_marketplace["interface"]
+    assert claude_entry["source"] == {
         "source": "github",
         "repo": "JerryFan012321/scholar-workflow",
         "ref": "release",
     }
-    assert entry["policy"] == {
+    assert codex_entry["source"] == {
+        "source": "url",
+        "url": "https://github.com/JerryFan012321/scholar-workflow.git",
+        "ref": "release",
+    }
+    assert claude_entry["policy"] == codex_entry["policy"] == {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL",
     }
-    assert entry["category"] == "Education & Research"
+    assert claude_entry["category"] == codex_entry["category"] == "Education & Research"
 
 
 def test_skill_inventory_uses_collaboration_not_review_workflows():

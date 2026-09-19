@@ -1,0 +1,22 @@
+{
+  "name": "jerry-plugins",
+  "interface": {
+    "displayName": "Jerry Plugins"
+  },
+  "plugins": [
+    {
+      "name": "scholar-workflow",
+      "description": "Plan-first scholarly resource management with a local research Hub: manage papers through Zotero, maintain readable Obsidian and Notion projections, analyze papers, and route viewing through cmux.",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/JerryFan012321/scholar-workflow.git",
+        "ref": "release"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Education & Research"
+    }
+  ]
+}

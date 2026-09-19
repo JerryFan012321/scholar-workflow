@@ -95,6 +95,9 @@ and `/open/paper/<attachment-key>` URLs remain compatible.
 
 1. **Install the plugin in your host.**
 
+   The release ships separate native marketplace metadata for Codex and a
+   Claude-compatible marketplace entry; both install the same plugin root and version.
+
    Claude Code:
    ```text
    /plugin marketplace add JerryFan012321/scholar-workflow@release
@@ -191,6 +194,7 @@ The plugin is in active `0.x` development. What's solid vs. still settling:
 
 ## Development
 
-This is the `release` branch (runtime only), including both host manifests. Development — conventions, planning docs,
-tests, and evals — lives on the `main` branch. See its `AGENT.md` for contributor
-guidelines. Run tests there with `pytest tests/unit tests/contract`.
+This is the `release` branch (runtime only), including the native Codex marketplace,
+the Claude-compatible marketplace, and both host manifests. Development — conventions,
+planning docs, tests, and evals — lives on the `main` branch. See its `AGENT.md` for
+contributor guidelines. Run tests there with `pytest tests/unit tests/contract`.

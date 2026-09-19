@@ -194,7 +194,8 @@ Two branches, disjoint by purpose:
 - **`main`** — the development branch. Everything lives here: runtime code **plus** the
   development layer (`planning/`, `dev-guide/`, `tests/`, `evals/`, `AGENT.md`, `CLAUDE.md`).
 - **`release`** — an **orphan** branch (independent history) that ships to users. It
-contains **only runtime files**: `.claude-plugin/`, `.codex-plugin/`, `agents/`, `bin/`, `contracts/`,
+contains **only runtime files**: `.agents/plugins/marketplace.json`, `.claude-plugin/`,
+  `.codex-plugin/`, `agents/`, `bin/`, `contracts/`,
   `hooks/`, `references/`, `skills/`, `src/`, `scripts/guard-sqlite.sh`, `.gitignore`,
   `CHANGELOG.md`, `README.md`, `README.zh-CN.md`, `pyproject.toml`. No dev docs, no tests,
   no `AGENT.md`/`CLAUDE.md` (the latter references a private `@RTK.md`).
