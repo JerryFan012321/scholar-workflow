@@ -18,6 +18,8 @@ runtime.
   constraint duplicates a top-level policy, link instead of restating.
 - **References** — if a rule becomes shared by another skill, promote it to
   top-level `references/` and replace both copies with a pointer.
+- **Output formats** — keep exact fields and layouts when they are user-visible contracts,
+  but remove prose that turns those fields into a mandatory internal reasoning process.
 
 ## After the change
 

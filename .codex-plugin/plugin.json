@@ -1,6 +1,6 @@
 {
   "name": "scholar-workflow",
-  "version": "0.27.1",
+  "version": "0.27.2",
   "description": "Plan-first scholarly resource management with a local research Hub: manage papers through Zotero, maintain readable Obsidian and Notion projections, build literature trees, analyze papers, coordinate agents, and initialize Git-managed project skeletons.",
   "author": {
     "name": "Scholar Workflow contributors",

@@ -83,7 +83,27 @@
     },
     {
       "id": "structured-paper-analysis-note",
-      "description": "INV24 结构化精读:每篇论文维护 Markdown 分析笔记 + 可编辑 JSON Canvas 文档对。Canvas 与参考图一致含 Abstract/Introduction/Method/Experiments/Limitation 五分支;挑战含前序方法/失败表现/技术原因,贡献含问题/做法/优势,方法模块含动机/做法/有效原因/技术优势,实验含对比/消融,局限含原因/影响/陈述类型。Canvas 与 Markdown 内容一致并带论文内证据锚点;局部精读只更新对应子树,保留 Canvas 布局、自建节点和人工内容",
+      "description": "INV24 canonical 结构化精读:每篇论文维护同源 Markdown 分析笔记 + 可编辑 JSON Canvas 文档对,两者一一对应 Abstract/Introduction/Method/Experiments/Limitation 五分支。Abstract 含 task/challenge/insight/贡献/实验结论;Introduction 含任务与应用、逐项前序挑战(前序方法/失败或局限/技术原因)、our pipeline(创新及逐项问题/做法/优势)、demos;Method 含 overview(任务/输入/输出/步骤)与逐模块动机/做法/有效原因/技术优势;Experiments 含对比与消融的任务或数据、baseline/metric、结果、所支撑贡献和证据;Limitation 含逐项局限、成因、影响范围、陈述类型和证据。Canvas 可压缩措辞但不得引入 Markdown 没有的主张,每个 claim-bearing 字段在两端都携带同一可见证据或 availability-state 后缀",
+      "status": "pending"
+    },
+    {
+      "id": "structured-paper-analysis-focused-update",
+      "description": "INV24 局部精读投影:用户只要求某节、某模块或某实验时,Markdown 与 Canvas 只更新对应 canonical 子树;未请求分支保持原样,并保留 Canvas 已有布局、稳定节点身份、人工节点和人工内容;只有基线哈希仍匹配的生成字段可被直接更新",
+      "status": "pending"
+    },
+    {
+      "id": "structured-paper-analysis-source-gap",
+      "description": "INV24 来源缺口可见:canonical 字段无法由当前正文通道核实时,结果明确区分「论文未报告」「当前正文通道无法核实」「不适用」,不得把 Zotero 索引遗漏的表格、公式或图示误写为论文未报告,且 Canvas 与 Markdown 使用相同状态",
+      "status": "pending"
+    },
+    {
+      "id": "structured-paper-analysis-human-edit-conflict",
+      "description": "INV24 人工编辑保护:每个生成 Markdown 标题(根/固定结构/重复子树)、字段和每个 Canvas 节点携带稳定 canonical path 与按统一 UTF-8 规范计算的上次生成值基线哈希;同一路径的 Markdown/Canvas 是一个更新单元,任一端无标记、标记异常、缺失或与基线不符时两端均保持原样并返回路径与拟议值,只有用户明确接受后才替换;用户节点占用 canonical Canvas ID 时报告冲突,不得用 collision suffix 绕过并新建重复节点",
+      "status": "pending"
+    },
+    {
+      "id": "runtime-skill-result-contract-only",
+      "description": "运行期 skill 只规定可观察输出与外部接口(路由、工具调用、权威来源、权限/安全、存储位置、字段/schema 和人类可读呈现),不要求模型采用特定内部分析框架、分类方式、思考步骤或推理顺序;只有真实工具依赖、安全/权限边界和脆弱外部操作顺序可以规定执行先后。结构化格式被表述为自由判断之后的结果投影",
       "status": "pending"
     },
     {

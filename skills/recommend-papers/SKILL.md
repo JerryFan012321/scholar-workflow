@@ -7,13 +7,16 @@ description: Produce an ephemeral daily paper feed from configured sources, skim
 
 ## Feed
 
-1. Collect representative arXiv IDs from the Zotero library with
-   `scholar-workflow zotero search`; use them as Semantic Scholar positive seeds.
+1. Use arXiv IDs supplied by the user or returned by
+   `scholar-workflow zotero search "<requested-or-configured-topic>" --fulltext` as Semantic
+   Scholar positive seeds. Keep the selected seed IDs visible in the run result.
 2. Run the configured source aggregator:
    `echo '{"seed_arxiv_ids":[...]}' | python3 ${CLAUDE_PLUGIN_ROOT}/bin/recommend-papers.py`.
    It returns `{candidates,count,skipped}`; source failures remain in `skipped` and do
    not discard successful sources.
-3. Select a shortlist from the metadata result. Do not skim the whole candidate pool.
+3. Apply explicit user filters, configured interests, and the configured limit to produce a
+   shortlist. Retain source scores and match signals in the result. Do not skim the whole
+   candidate pool.
 4. Skim only the shortlist with NotebookLM using arXiv URLs. Reuse a same-topic notebook
    when available. If NotebookLM is unavailable, use Zotero indexed full text for a
    smaller shortlist or return metadata-only recommendations.

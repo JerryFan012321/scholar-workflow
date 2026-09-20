@@ -147,14 +147,59 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Next action**: Resolve the two forks in discussion, then split into concrete WIs (term-store CLI + skill; later interactive-learning skills). Keep three fixed mastery tiers, user-commanded.
 - **Related**: analyze-paper (feeds terms), build-literature-tree (mastery↔milestone), knowledge agent, WI-013
 
-### WI-019: Experiment management (ledger, not execution) — deferred
-- **Status**: deferred
-- **Priority**: p3
+### WI-019: Research project system v2 — umbrella
+- **Status**: in-progress
+- **Priority**: p1
 - **Type**: planning
-- **Context**: Discussion 2026-08-27. The plugin will NOT run experiments to find failure cases (explicitly rejected). But an **experiment-management** artifact is on the agenda: a ledger of experiments the user runs by hand (config, results), linkable to a paper's failure-case / limitations discussion. Needs its own scoping pass; not started.
-- **Blocker**: none (deferred by priority)
-- **Next action**: When revisited: design an experiment-ledger schema (experiment id → config, dataset, result, linked paper/failure-case) and decide CLI vs vault-note ownership. Management/tracking only — never execution.
-- **Related**: analyze-paper (limitations/failure-case), WI-018 (learning family)
+- **Context**: The earlier experiment-ledger idea has expanded through the 2026-09-20 discussion into a full research-project contract: a stable common base, per-dataset local layout, machine-independent `env/`, explicit source/config profiles, Run/Attempt/Target separation, local artifact promotion, and safe legacy migration. External repository research informs only source/config profiles; it cannot override the common data, experiment, environment, documentation, backup, or Hub boundaries. The complete draft is `planning/project-system-v2.md`.
+- **Blocker**: user decisions D1-D9 in the plan before schemas are frozen
+- **Next action**: Review the decision table, then execute WI-020 through WI-024 in dependency order. Do not edit the current initializer or migrate a real project before the contract phase is approved.
+- **Related**: G11, INV27, INV32-INV35, WI-020, WI-021, WI-022, WI-023, WI-024
+
+### WI-020: init-project v2 common contract and declarative initializer
+- **Status**: ready
+- **Priority**: p1
+- **Type**: refactor
+- **Context**: Replace the old hard-coded `dataset/{metadata,raw}`, top-level `dataset_toolkits/`, `env/server/`, and single generic `src/pipeline/` skeleton with a declarative tracked/local base. Preserve plan-before-apply, idempotency, fail-closed symlink handling, host neutrality, and no stage/commit/push. Existing projects receive diagnostics and proposed patches only.
+- **Blocker**: WI-019 decision freeze; project-layout manifest name/version decision
+- **Next action**: Write project-layout/base-layout schemas and contract tests first, then split the initializer into common tracked paths, local-only paths, and an explicit profile resolver.
+- **Related**: INV27, INV32, `planning/project-system-v2.md` Phase A-B
+
+### WI-021: Source and configuration profile catalog
+- **Status**: ready
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: Encode the source/config organization learned from TRELLIS, Gaussian Splatting, Detectron2, SAM 2, DreamerV3, and TorchTitan as six primary profiles (`paper-method`, `multi-stage-3d`, `research-framework`, `foundation-model`, `world-model`, `training-platform`) plus orthogonal addons. Profiles may affect only source/config/entrypoint/test-related paths and must never redefine the common outer contract.
+- **Blocker**: WI-020 profile manifest and catalog loader
+- **Next action**: Add a schema-validated catalog, path confinement tests, explicit CLI selection, stable profile versions, and generated AGENTS responsibility rows. Do not generate algorithm placeholder files or auto-detect a profile.
+- **Related**: INV27, INV32, `planning/project-system-v2.md` Phase C
+
+### WI-022: Run/Attempt/Target experiment contracts and management skill
+- **Status**: pending-decision
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: A Run is the scientific recipe; an Attempt is one real execution on a Target. Multiple Runs may share a commit, and one Run may have local and SSH Attempts. The first implementation manages records, validation, indexing, completion receipts, and migration plans; it does not implicitly launch training or accept arbitrary remote commands.
+- **Blocker**: choose the skill name, Run ID convention, YAML/JSON representation, and dirty-worktree policy
+- **Next action**: Add Run/Attempt/Target/Artifact schemas and failing contract tests, then implement host-neutral `experiment` CLI commands and a thin direct-invocation skill.
+- **Related**: INV33, INV34, `planning/project-system-v2.md` Phase D
+
+### WI-023: Artifact promotion and verified local backup policy
+- **Status**: pending-decision
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: Experiment reports, resolved configs, metrics, parameters, environment summaries, and selected high-value outputs must return from execution servers to local storage. Copying back to the workstation is artifact promotion, not yet a verified backup. Large reproducible intermediates may remain manifest-only.
+- **Blocker**: backup medium/frequency and default large-artifact retention policy
+- **Next action**: Implement explicit selection, atomic copy, SHA-256 verification, no-overwrite semantics, promotion receipts, and `local-required` / `local-selected` / `manifest-only` states. Add actual backup-state transitions only after the second-copy target is decided.
+- **Related**: INV35, `planning/project-system-v2.md` Phase E
+
+### WI-024: Legacy layout diagnostics and one-project pilot migration
+- **Status**: pending-decision
+- **Priority**: p1
+- **Type**: planning
+- **Context**: Existing `dataset/raw`, `dataset/metadata`, `dataset_toolkits`, `env/server`, tracked docs/experiments, and legacy experiment bundles are semantically ambiguous. Migration must preserve every byte, keep old output/log paths in place, and stop on multiple scripts/configs or unknown commits. No batch migration of unrelated projects is authorized.
+- **Blocker**: WI-020 and WI-022; user choice of the first real project after a temporary-project rehearsal
+- **Next action**: Build read-only `migrate-plan`, validate it on a temporary fixture, then present the exact proposed mapping for one user-selected project before any move, rename, untrack, or metadata insertion.
+- **Related**: INV27, INV32-INV35, `planning/project-system-v2.md` Phase F
 
 ## Completed
 

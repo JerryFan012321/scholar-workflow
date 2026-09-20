@@ -1,7 +1,9 @@
 # HANDOFF — 从这里接着干
 
 > 交接文档,供下一个开发会话快速进入状态。与 `GOALS.md`(意图层,同目录)、`../CHANGELOG.md`(变更史)
-> 配合看。最后更新:2026-09-19(v0.27.1 已发布并安装到 Codex;v0.27.0 cmux-first Hub 完成;
+> 配合看。最后更新:2026-09-20(v0.27.2 工作树:论文解析 canonical 输出 + runtime skill 结果接口，尚未发布;
+> 科研项目系统 v2 规划启动，尚未实现;v0.27.1 已发布并安装到 Codex;
+> v0.27.0 cmux-first Hub 完成;
 > v0.26.0 本地研究 Hub MVP;
 > 此前 14 个运行期 skill 简化完成;
 > 上游 2026-09-06:v0.24.0 Zotero MCP → 官方 Local API;
@@ -16,6 +18,46 @@
 > v0.13.1 vendored writing-great-skills + 描述精简、v0.13.0 config schema 两处 BREAKING 改名/删键;
 > v0.12.0 Phase 5 两级 AI 阅读 recommend-papers + analyze-paper + marketplace.json;v0.11.0 env-setup;
 > v0.10.0 Phase 3 novelty tree;Phase 2 规格见 `phase2-sync-projections.md`)。
+
+## 2026-09-20 论文解析格式化与 skill 结果接口（v0.27.2 工作树，尚未发布）
+
+用户将两项工作提升为当前最高优先级：论文精读必须按参考图稳定产出结构化、可编辑结果；所有
+运行期 skill 只格式化思考结果，不规定模型内部如何思考。已完成以下收口：
+
+- `analyze-paper` 明确为“自由形成判断，再投影结果”。原 Markdown/Canvas 两份容易漂移的格式说明
+  合并为单一 `skills/analyze-paper/references/analysis-format.md`；两份产物一一对应
+  Abstract / Introduction / Method / Experiments / Limitation 五分支和图中全部字段。
+- 全篇分析填全 canonical 字段；局部分析只改目标子树。主张必须带论文内锚点或明确使用
+  `论文未报告`、`当前正文通道无法核实`、`不适用`，并区分作者陈述与分析推断。现有 Markdown
+  人工正文、Canvas 布局、稳定节点身份和自建节点/边均受保护；不可见标题/字段身份与基线哈希把
+  人手改过的内容识别为冲突，原样保留并返回拟议值，不做静默覆盖；同一 canonical path 的
+  Markdown/Canvas 项作为一对，任一端冲突时两端都不变。
+- 清理 survey/find/recommend/build-tree/export/sync/check/env/init 等 skill 中残余的通用排序、分类、
+  命名偏好、交互顺序和思考步骤措辞；保留真实工具依赖、安全/权限、权威来源、存储与格式契约。
+- 上位规则已经同步到项目 `AGENT.md`、`GOALS.md` INV36、开发期 skill authoring/iteration 文档，
+  以及用户要求的全局 `/Users/jerryfan/.claude/CLAUDE.md`。运行期 eval 新增 canonical tree 路由、
+  代码仓负向路由、只读代码安全、focused update、source gap 和 result-contract-only outcome。
+- 版本已在两个宿主 manifest、Python package 与 `pyproject.toml` 同步到 `0.27.2`；尚未构建 release、
+  推送或重装 Codex 插件。10 个受影响 skill 均通过 quick validator；完整测试为 **359 passed**，
+  其中新增 4 个静态契约测试守护单一格式源、参考图字段、字段级证据和人工编辑冲突规则。
+
+## 2026-09-20 科研项目系统 v2（规划中，尚未实现）
+
+用户已确认后续调整 `init-project`，同时明确此前对 TRELLIS、Gaussian Splatting、Detectron2、
+SAM 2、DreamerV3、TorchTitan 的调查只用于回答“源码与相关配置如何组织”，不能覆盖已经商定的
+数据、实验、环境、备份与 Hub 边界。本轮先形成 `planning/project-system-v2.md`，不直接修改初始化器，
+也不迁移任何现有项目。
+
+本计划的上位边界是：数据按 `dataset/<dataset-id>/` 聚合；数据工具进入
+`src/utils/dataset_toolkit/`；`env/` 只保存机器无关环境定义；Run 表示科学配方、Attempt 表示一次
+真实执行，target 属于 Attempt；服务器是执行场，本地保留源码、文档、实验报告和晋升后的关键成果；
+源码/config profile 只能叠加在共同项目契约之上。现有 `init-project` 的
+`dataset/{metadata,raw}`、顶层 `dataset_toolkits/`、`env/server/` 和单层 `experiments/<id>/`
+仍是旧实现，在 v2 契约、迁移诊断和回归测试就绪前不得静默改写。
+
+执行顺序暂定为：先锁定契约与 eval，再重构声明式 initializer，再加入源码/config profiles、
+实验档案管理与成果回收规则，最后只在用户逐项目确认后迁移既有项目。当前已发布版本仍为
+v0.27.1；工作树因上方论文解析/skill 收口已进入 v0.27.2，本规划本身不构成新运行时能力。
 
 ## 2026-09-19 发布与 Codex 安装（v0.27.1，已完成）
 
@@ -153,7 +195,8 @@ Vault 附件与阅读优先 UI。工作树仍包含用户此前的多批未提�
 ## 2026-09-18 结构化论文精读（v0.25.0）
 
 用户以论文解析树图片明确了 `analyze-paper` 的持久笔记格式。新增按需加载的
-`skills/analyze-paper/references/analysis-note-format.md`，整篇精读固定为“结论速览→问题与动机
+当时新增 `skills/analyze-paper/references/analysis-note-format.md`（现已在 v0.27.2 合并为
+`skills/analyze-paper/references/analysis-format.md`），整篇精读固定为“结论速览→问题与动机
 →方法管线→实验→局限”，并为挑战、贡献、pipeline module、对比/消融和局限规定结构化字段与
 论文内证据锚点。局部精读只更新对应子树、不生成空骨架；`SKILL.md` 主体仍只保留格式引用，
 不增加通用分析方法提示。随后按用户要求加入同目录的 `<论文名>解析树.canvas`：使用 JSON Canvas

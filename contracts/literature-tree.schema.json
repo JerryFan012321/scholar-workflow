@@ -58,7 +58,7 @@
         },
         "novelty_anchor": {
           "type": ["string", "null"],
-          "description": "resource_id of the FIRST paper that proposed this concept — the node-level novelty anchor. By node kind: task=类1, pipeline=类2, module=类3; on a challenge tree an insight node may anchor the first paper to propose that idea (a challenge node usually has none — challenges are identified, not proposed). A verifiable priority fact, not a value judgment. 类4 (papers that merely improve an existing pipeline/module with a new module) are NOT anchors and get no schema field — they are ordinary members of the papers[] of the node they refine; see the build-literature-tree SKILL."
+          "description": "resource_id of the earliest supported introducing paper within the declared corpus — the node-level novelty anchor. By node kind: task=类1, pipeline=类2, module=类3; on a challenge tree an insight node may anchor the earliest supported paper in the corpus to propose that idea (a challenge node usually has none — challenges are identified, not proposed). This is a bounded, evidence-backed priority claim, not a value judgment; leave it null when unsupported. 类4 (papers that merely improve an existing pipeline/module with a new module) are NOT anchors and get no schema field — they are ordinary members of the papers[] of the node they refine; see the build-literature-tree SKILL."
         },
         "anchor_note": {
           "type": ["string", "null"],

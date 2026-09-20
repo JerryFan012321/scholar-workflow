@@ -21,8 +21,8 @@ pointer.
    `references/project-instructions.md`; never replace a collision to make room.
 5. Run `scripts/init_project.py apply TARGET`. It creates only missing paths and
    initializes Git only when no enclosing repository already manages the target.
-6. If a baseline `AGENTS.md` was created, inspect the project and propose content for
-   its unresolved markers. Replace markers only after user confirmation.
+6. New baseline `AGENTS.md` markers remain unresolved until the user approves a proposed
+   patch grounded in existing project files.
 7. Re-run `plan` and inspect `git status --short`. Report created, preserved,
    conflicted/unresolved, and Git state.
 

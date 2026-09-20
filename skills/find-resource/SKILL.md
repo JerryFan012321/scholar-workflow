@@ -18,8 +18,10 @@ description: Search for papers, verify paper identity, recall related items from
    confirm candidates with `scholar-workflow zotero get <item-key> --children`.
    Apply the identity outcomes from `identity-policy.md`: `exact`, `conflict`, or
    `none`. A conflict is reported with item keys and is never merged here.
-3. For topic recall, run the same full-text search and rank the returned candidates.
-   Fuzzy relevance never establishes paper identity; confirm exact matches before reuse.
+3. For topic recall, run the same full-text search. Return each candidate with observable
+   match signals from its title, abstract, or relevant indexed text. Any ordering states its
+   explicit user, source, or configuration basis. Fuzzy relevance never establishes paper
+   identity; confirm exact matches before reuse.
 4. For discovery, query paper metadata sources, normalize identifiers, and run the exact
    Zotero existence check before reporting library status.
 5. Return:

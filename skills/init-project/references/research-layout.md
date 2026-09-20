@@ -8,8 +8,9 @@ Use this reference when filling directory responsibilities or project-specific a
 materialized data. `dataset_toolkits/` owns download and preprocessing programs. A data change
 is complete only when the toolkit output and metadata index still agree.
 
-Choose project-specific Git rules after considering size, licensing, privacy, and
-reproducibility. Do not blanket-ignore raw data or outputs without that decision.
+Git treatment of raw data and outputs is project-specific. The recorded rule states any
+applicable size, licensing, privacy, or reproducibility constraints; without a recorded
+decision, do not add a blanket ignore rule.
 
 ## Experiment contract
 
@@ -31,6 +32,6 @@ record.
 `env/` holds reproducible environment configuration and setup scripts. `env/server/` records
 server-specific setup and known issues, but credentials remain outside Git.
 
-`src/` contains cohesive implementation modules. Prefer short, domain-meaningful directory
-names. `src/pipeline/` integrates the end-to-end flow; add separate pipelines when intermediate
-artifacts or post-processing form independently runnable stages.
+`src/` contains cohesive implementation modules. `src/pipeline/` contains end-to-end pipeline
+integrations. Independently runnable entries expose their input, output, and intermediate-
+artifact boundaries.

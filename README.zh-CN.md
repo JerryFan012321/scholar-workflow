@@ -54,7 +54,7 @@ Markdown 正文，Hub 只增加薄的 `sw_*` frontmatter。
 | check-consistency | 跨系统一致性审计(只读) |
 | export-annotations | 把某篇论文的 Zotero 批注整理成结构化 vault 笔记 |
 | recommend-papers | 每日多源论文 feed + NotebookLM 略读 → 推荐清单 |
-| analyze-paper | 论文详细分析,写成 vault 附属笔记 |
+| analyze-paper | 把论文详细分析投影为 Markdown + 可编辑 Canvas 文档对 |
 | env-setup | 搭建并查阅个人 API-key / SSH 服务器 env-records 台账 |
 | agent-collaboration | 在 Claude Code、Codex 或其他可用 agent 之间双向协调边界清楚的任务 |
 | init-project | 初始化宿主中立、由 Git 管理且不带自定义 agent/hook 的研究项目骨架 |

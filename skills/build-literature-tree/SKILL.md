@@ -10,9 +10,10 @@ description: Build an Obsidian literature tree and flat paper ledger for a resea
 - **Technical tree:** `task → pipeline/representation → module (optional) → paper`.
 - **Challenge tree:** `challenge → insight → paper`.
 - Internal nodes are concepts; paper leaves reference `resource_id`.
-- `novelty_anchor` stores the first paper proposing a task, pipeline, module, or
-  insight. A paper that only improves an existing module is an ordinary paper leaf and
-  has no anchor field.
+- `novelty_anchor` stores the earliest supported introducing paper within the declared
+  corpus for a task, pipeline, module, or insight. Leave it unresolved when that bounded
+  priority claim is not supported. A paper that only improves an existing module is an
+  ordinary paper leaf and has no anchor field.
 - One document contains one tree. Technical and challenge trees are separate notes that
   may share papers and always use the same topic-local flat ledger.
 

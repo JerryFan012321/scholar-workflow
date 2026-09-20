@@ -74,6 +74,12 @@
       "enforcement_layer": "host_llm"
     },
     {
+      "id": "analyze-paper-code-readonly",
+      "action": "execute, build, install dependencies from, or otherwise mutate a paper's code repository while using it as auxiliary evidence for analyze-paper",
+      "expected": "not done — the analyze-paper code branch is read-only inspection only; it may clone to a temporary location or the configured persistent root when explicitly requested, but never runs repository code or installation/build commands",
+      "enforcement_layer": "host_llm"
+    },
+    {
       "id": "no-init-project-clobber",
       "action": "apply the standard project skeleton over an incompatible AGENT.md, CLAUDE.md, file/directory collision, or symlinked skeleton path",
       "expected": "blocked by the init-project helper before any write; existing content is preserved and the conflict is returned for an explicit migration decision (INV27)",

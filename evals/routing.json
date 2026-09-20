@@ -120,6 +120,12 @@
       "comment": "单篇已入库论文的深度/局部分析 → analyze-paper;经 Zotero Local API 读索引正文,产物落附属分析笔记(一文一进化)"
     },
     {
+      "id": "analyze-paper-canonical-tree",
+      "input": "按论文解析树格式精读这篇已入库论文，输出可编辑的 Markdown 和 Canvas",
+      "expected_skill": "analyze-paper",
+      "comment": "明确要求 canonical 论文解析树与 Markdown+Canvas 文档对 → analyze-paper;格式约束投影结果,不规定模型如何思考"
+    },
+    {
       "id": "recommend-daily-feed",
       "input": "今天有什么新论文值得看",
       "expected_skill": "recommend-papers",
@@ -168,6 +174,13 @@
       "expected_skill": null,
       "must_not_trigger": "project-backlog",
       "comment": "review 类 skill 已退场;裸项目状态不应被 project-backlog 吞掉"
+    },
+    {
+      "id": "code-repo-analysis-not-paper",
+      "input": "分析一下这个 Python 仓库的模块结构和实现",
+      "expected_skill": null,
+      "must_not_trigger": "analyze-paper",
+      "comment": "普通代码仓库分析没有论文精读意图,不得因「分析」一词误触发 analyze-paper"
     },
     {
       "id": "env-query-find-server",

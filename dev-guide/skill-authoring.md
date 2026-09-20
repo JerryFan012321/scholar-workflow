@@ -76,4 +76,7 @@ loaded at skill runtime.
 - Keep only project-specific routing, exact tool calls, artifact formats, environment
   facts, and safety/permission boundaries. Do not prescribe generic research, analysis,
   classification, ranking, summarization, or writing methods the host model already has.
+- Apply `AGENT.md`'s result-interface rule: headings, fields, schemas, evidence labels,
+  and readable layouts constrain the emitted artifact, not the model's internal reasoning
+  framework or analysis order.
 - After authoring, add a routing case to `evals/routing.json`.

@@ -7,7 +7,7 @@ description: Rebuild Obsidian paper indexes or push the one-way Notion managemen
 
 ## Obsidian
 
-1. Choose one output:
+1. Supported outputs map to commands as follows:
    - one topic table: `scholar-workflow project-obsidian`;
    - a Zotero collection subtree: `scholar-workflow project-tree`.
 2. Read live structure and papers with

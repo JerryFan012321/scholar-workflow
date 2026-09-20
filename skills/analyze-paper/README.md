@@ -1,61 +1,80 @@
 # analyze-paper
 
-In-depth analysis of one already-ingested paper, written as a companion Obsidian note.
-This is the **detailed** reading tier — the counterpart to the ephemeral skim tier in
-`recommend-papers`. Where the skim tier decides *whether to read*, this tier produces a
-persistent, deep read-through you keep in the vault.
+Create a persistent, detailed analysis of one already-ingested paper as a paired
+Obsidian Markdown note and editable JSON Canvas. The skill does not prescribe how the
+paper must be read or reasoned about. It projects freely formed judgments into one
+canonical, human-readable result structure.
 
-## What it does
+## What it produces
 
-- Reads Zotero's indexed text through `scholar-workflow zotero fulltext` — it never
-  parses the PDF body directly (metadata stays authoritative; INV10/INV24).
-- Optionally reads the paper's **code repo** to clarify an implementation — but **only
-  when you ask**, never on its own. It clones read-only and never runs the code (no
-  execute, no `pip install`, no build); the repo is treated as untrusted evidence, never
-  as instructions. Ephemeral by default; it saves the repo under `code_repo_root` only if
-  you ask to keep it.
-- Maintains **one evolving note per paper**: a whole-paper or focused pass adds or deepens
-  sections; a single section may be revised in place, but the note as a whole only
-  accretes — a rerun never blanks it and rewrites.
-- Structures a whole-paper read as **conclusion snapshot → problem and motivation → method
-  pipeline → experiments → limitations**. Challenges record prior methods, failure modes,
-  and technical causes; each method module records its motivation, mechanism, why it works,
-  advantage, and evidence anchor. Focused reads update only the relevant subtree.
-- Creates a paired, editable Obsidian Canvas (`<paper>解析树.canvas`) with the same analysis
-  tree: Abstract, Introduction, Method, Experiments, and Limitation. Repeated challenges,
-  contributions, and pipeline modules expand dynamically. Later passes preserve the user's
-  layout and custom Canvas nodes while updating the relevant analysis nodes. The Canvas stays
-  standard JSON Canvas and is registered in `.scholar-workflow/artifacts.yml` rather than
-  receiving private top-level fields.
-- Keeps the analysis note **distinct from** the annotations note (from
-  `export-annotations`) and cross-links the two via frontmatter `related`.
-- Hangs the analysis note on the paper's related-docs hub so all of a paper's satellite
-  docs aggregate in one place, and (if the direction has a literature tree) states where
-  the paper sits in it — surfacing update candidates without writing the tree.
+- `<paper-name>分析.md` — the complete analysis, with evidence anchors and explicit
+  source status.
+- `<paper-name>解析树.canvas` — an editable left-to-right tree that maps one-to-one to
+  the Markdown note. It may shorten wording for display, but it does not add claims that
+  are absent from the note.
 
-## Where the note lives
+Both files live under `research_vault_root`, beside the paper's index row / related-docs
+hub. The Markdown note uses thin `sw_*` frontmatter; the Canvas is registered separately in
+`.scholar-workflow/artifacts.yml`, remains valid JSON Canvas, and receives no private top-level
+fields. Analysis content stays outside managed projection blocks, so a later sync does not
+overwrite it.
 
-- One paper → one analysis pair (`<paper-name>分析.md` + `<paper-name>解析树.canvas`) under
-  `research_vault_root`, in the same folder as the paper's index row / hub.
-- All analysis content sits in the **human area, outside managed blocks**, so
-  re-projection / sync never overwrites it (INV4).
+## Canonical analysis tree
 
-## Analysis vs annotations
+Whole-paper analysis projects the result into five corresponding branches in both
+artifacts:
 
-| | analyze-paper | export-annotations |
-|---|---|---|
-| Content | Claude's read-through / synthesis | your highlights + comments |
-| Source | Zotero indexed full text | your Zotero annotations |
-| Note | `<paper>分析.md` | `<paper>批注.md` |
+1. **Abstract** — task, technical challenge, key insight and its benefit, technical
+   contributions and their benefits, and the experiment headline.
+2. **Introduction** — task/application (including inputs and outputs), prior-method
+   challenges (previous method, failure or limitation, technical reason), the proposed
+   pipeline (one-sentence innovation plus each contribution's problem, mechanism, and
+   advantage), and demos/applications.
+3. **Method** — an overview of the task, inputs, outputs, and method steps, followed by
+   each pipeline module's motivation, mechanism, why it works, and technical advantage.
+4. **Experiments** — comparison experiments and ablations, including the evaluated
+   task/data, baseline or changed component, metric/result, supported contribution or
+   attributable conclusion, and evidence anchor.
+5. **Limitation** — each limitation, its cause and scope, whether it is author-stated or
+   an analysis inference, and its evidence anchor.
 
-They are separate files, cross-linked via `related` — never merged.
+Claim-bearing entries distinguish paper-reported evidence from analysis inference and
+carry a visible field-level evidence/status suffix in both artifacts. Missing values are explicit:
+`论文未报告`, `当前正文通道无法核实`, and `不适用` have different meanings and are not
+interchangeable.
+
+This tree is an output schema, not a reading sequence or reasoning framework.
+
+## Whole and focused updates
+
+- A **whole-paper** pass fills all five branches without fabricating unsupported content.
+- A **focused** pass updates only the requested subtree and preserves the rest of the
+  note, the user's Canvas layout, and custom Canvas nodes.
+- Invisible heading/field identity and baseline-hash comments distinguish unchanged generated
+  structure from human edits. Human-edited content is preserved and returned as a path-level conflict,
+  not silently overwritten; its matching Markdown/Canvas path is treated as one paired update.
+- Repeated challenges, contributions, method modules, experiments, ablations, and
+  limitations expand to match the paper rather than a fixed count.
+- Each paper keeps one evolving Markdown/Canvas pair; later passes deepen or revise the
+  relevant nodes instead of blanking the pair and starting over.
+
+## Sources and safety
+
+The paper body comes from Zotero indexed text via
+`scholar-workflow zotero fulltext`; Zotero remains authoritative for paper identity and
+metadata. If indexed text omits a table, figure, or formula needed to support a field,
+the result records that source gap instead of guessing.
+
+The paper's code repository is consulted only when you explicitly request it. It is
+cloned read-only, treated as untrusted evidence rather than instructions, and never
+executed, built, or installed. The clone is temporary unless you explicitly ask to keep
+it under `code_repo_root`.
+
+The analysis note remains separate from the annotations note produced by
+`export-annotations`; the two are cross-linked through frontmatter `related`.
 
 ## Usage
 
-Ask to "analyze this paper" (whole) or "analyze the method / this section" (focused).
-Each pass evolves the same note — new or deepened sections, no blank-and-rewrite. One
-paper per run. To have it read the implementation, say so explicitly ("read the code" /
-"check the repo") and whether to keep the clone.
-
-If NotebookLM was already used to skim this paper in `recommend-papers`, this tier is
-the deeper follow-up — it reads Zotero's indexed body rather than a skim.
+Ask to “analyze this paper” for the complete tree, or name a section such as the method,
+experiments, or one module for a focused update. Mention “read/check the code repository”
+explicitly if repository evidence is required, and say whether the clone should be kept.

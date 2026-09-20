@@ -52,6 +52,6 @@ Different arXiv versions share one base id and never create separate items.
 
 The Local API provides quick search, including indexed full text, but no native semantic
 or vector endpoint. Use `scholar-workflow zotero search "<topic>" --fulltext` to recall
-candidates, then let the current host model rank titles, abstracts, and relevant text.
-This project stores no embedding index. Fuzzy similarity is only a candidate signal;
-the exact identity check above controls writes.
+candidates and expose the title, abstract, or relevant-text signals supporting each result.
+This project stores no embedding index. Any ordering states its explicit basis. Fuzzy
+similarity is only a candidate signal; the exact identity check above controls writes.
