@@ -19,7 +19,8 @@ vault。看中的论文走常规的 `find-resource` / `ingest-resource` 管线�
 ## 漏斗怎么走
 
 1. **全量可选项**——聚合器只打印**元数据级**候选(便宜,不 skim)。
-2. **细化**——按兴趣 / 项目关键词过滤,或手动挑,得到 shortlist。
+2. **细化**——按你显式给出的条件、已配置的兴趣 / 项目关键词和数量上限过滤，或手动挑选，
+   得到 shortlist。清单保留来源分数和实际采用的匹配信号，不依赖未说明的隐式排序规则。
 3. **略读**——只有 shortlist 进 NotebookLM(约 500 token/问,而读一篇 PDF 约 50K token)。
 4. **推荐清单**——一份供你拍板的简短 markdown。临时性;看中的再入库。
 
@@ -55,8 +56,8 @@ vault。看中的论文走常规的 `find-resource` / `ingest-resource` 管线�
   无 session)。其余源照常完成。
 - **HF Daily 超时**——它走系统 HTTP 代理(`httpx` `trust_env`,即 `HTTP_PROXY`/`HTTPS_PROXY`
   环境变量),S2 走直连。这些路径在适配器里固定;HF Daily 连不上时先查代理环境变量。
-- **NotebookLM 不可达**——回落到纯元数据推荐,或经 `analyze-paper` / `get_content` 阅读
-  (更慢、更费 token)。
+- **NotebookLM 不可达**——回落到纯元数据推荐,或经 `analyze-paper` / Zotero 索引全文读取
+  已入库论文(更慢、更费 token)。
 
 ## 引用声明
 

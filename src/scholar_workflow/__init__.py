@@ -1,3 +1,3 @@
 """scholar-workflow: deterministic engine for scholarly resource management."""
 
-__version__ = "0.27.1"
+__version__ = "0.27.2"

@@ -64,7 +64,7 @@ and `/open/paper/<attachment-key>` URLs remain compatible.
 | check-consistency | Audit cross-system consistency (read-only) |
 | export-annotations | Turn a paper's Zotero annotations into a structured vault note |
 | recommend-papers | Daily multi-source paper feed + NotebookLM skim → Reading Report |
-| analyze-paper | In-depth analysis of a paper, written as a companion vault note |
+| analyze-paper | Project detailed paper analysis into paired Markdown + editable Canvas |
 | env-setup | Scaffold — and consult — a personal API-key / SSH-server env-records ledger |
 | agent-collaboration | Coordinate bounded work bidirectionally between Claude Code, Codex, or another available agent |
 | init-project | Initialize a host-neutral, Git-managed research project skeleton without custom agents or hooks |

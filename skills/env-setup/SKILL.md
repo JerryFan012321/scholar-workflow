@@ -24,10 +24,10 @@ scope.
 
 ## Operations
 
-1. **Query or use:** read `servers.yaml` / `apis.yaml` first when the user asks what
-   is recorded or a task needs one of the user's recorded hosts/credentials. Reading
-   never initializes or mutates the ledger. If nothing matches, report that before asking
-   for missing details.
+1. **Query or use:** `servers.yaml` / `apis.yaml` are authoritative when the user asks what
+   is recorded or a task needs one of the user's recorded hosts/credentials. Reading never
+   initializes or mutates the ledger. A no-match result states that no matching record
+   exists; initialization remains opt-in.
 2. **Initialize:** only on request, run `scholar-workflow env-init`. It creates missing
    templates/records and a local Git repository without overwriting or pushing.
 3. **Register API:** append the key record to `apis.yaml`, including owner and scope.

@@ -9,8 +9,10 @@ technical:  milestone task → pipeline / representation → module (optional) �
 challenge:  challenge → insight → paper (leaf)
 ```
 
-Each concept records its **novelty anchor** — the first paper that proposed that
-task / pipeline / module / insight (classes 1/2/3 and insight seminals). A paper that only
+Each concept records its **novelty anchor** — the earliest supported introducing paper
+within the tree's declared corpus for that task / pipeline / module / insight (classes
+1/2/3 and insight seminals). It is left unresolved when priority is not established; the
+tree does not turn a bounded corpus into a global first-paper claim. A paper that only
 *improves* an existing pipeline (class 4) hangs as an ordinary member, no anchor. Alongside
 each tree sits a flat **paper list**: the full collected set (a paper may be listed but not
 yet classified, and may appear in more than one tree).

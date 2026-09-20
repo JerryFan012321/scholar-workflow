@@ -7,8 +7,8 @@ description: Audit Zotero, Obsidian indexes, Notion projections, attachments, an
 
 ## Steps
 
-1. Resolve the requested scope: all data, a Zotero collection, a Vault directory, or a
-   Notion project.
+1. Supported audit scopes are all data, a Zotero collection, a Vault directory, and a
+   Notion project. The emitted result identifies the applied scope.
 2. Load `references/consistency-invariants.md` and run every applicable check using
    read-only Zotero Local API, filesystem, link-service, and Notion reads.
 3. Emit structured JSON containing scope and issues. Each issue includes system,

@@ -24,7 +24,8 @@ Thin router for broad research requests. It creates no persistent artifact.
    already names an artifact or action, route directly without another scoping round.
 2. When an ambiguous topic cannot be scoped from the request, a read-only, throwaway web
    reconnaissance is allowed. It must not download, ingest, or write files.
-3. Dispatch the agreed steps to the owning skills in order, carrying the confirmed scope.
+3. Dispatch only the owning skill or skills required by the confirmed artifact. Order them
+   only where one product is an input to another.
 4. Report each delegated product and its location. This skill writes nothing itself.
 
 ## Constraints

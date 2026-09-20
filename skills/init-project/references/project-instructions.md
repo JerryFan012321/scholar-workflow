@@ -26,9 +26,9 @@ The standard `AGENTS.md` leaves four project-specific markers:
 - additional behavior boundaries;
 - raw-data and experiment-artifact Git policy.
 
-Inspect the repository before drafting them. Separate inferred facts from user choices, remove
-generic coding advice, and present one processed patch for confirmation. A user may leave any
-marker unresolved.
+Proposed marker content must distinguish repository-backed facts from unresolved user choices,
+omit generic coding advice, and be presented as one patch for confirmation. A user may leave
+any marker unresolved.
 
 Project-specific rules belong in `AGENTS.md`. Do not add them to global user instructions or
 to a host-specific adapter.

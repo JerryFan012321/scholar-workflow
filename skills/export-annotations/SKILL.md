@@ -16,12 +16,13 @@ description: Export one paper's Zotero highlights and comments to a separate Obs
 4. Create a separate annotations note. Never overwrite an analysis or human-authored
    note; cross-link related notes through frontmatter `related`.
 5. Write frontmatter with title, arXiv id, source item ID, annotation counts, and related
-   links. Organize entries by argument/concept rather than page order; retain inline
-   `(p.N)` provenance.
+   links. Group entries under descriptive headings suited to the material or requested
+   view; retain inline `(p.N)` provenance and preserve source order within a group when it
+   matters.
 6. Preserve source types exactly:
    - user comments: verbatim callouts;
    - highlighted paper text: block quotes;
-   - model-added context: a separate `补充（Claude）` callout.
+   - model-added context: a separate `补充（模型）` callout.
    Omit empty entries and stripped machine translations.
 
 ## Constraints

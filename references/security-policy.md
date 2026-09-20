@@ -58,8 +58,9 @@ it still requires optimistic concurrency protection.
   **Settings → Advanced**, then retry the command. Unlike MCP registration, this does
   not require restarting the agent session. Never treat unavailability as "not found".
 - The Local API has no native semantic/vector endpoint. Use `zotero search --fulltext`
-  for broad recall and let the current host model rank the returned candidates. A fuzzy
-  candidate never proves identity; exact field confirmation still decides create/skip.
+  for broad recall and expose the observable match signals for returned candidates. Any
+  ordering states its basis. A fuzzy candidate never proves identity; exact field
+  confirmation still decides create/skip.
 - Writes are HTTP API calls, never raw database access. Destructive commands are not
   exposed by the current CLI.
 

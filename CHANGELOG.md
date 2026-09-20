@@ -3,6 +3,24 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [Unreleased]
+
+### Changed
+- **Research-project system v2 planning.** Added the implementation plan for a layered
+  `init-project`: a stable common project contract, explicit source/config profiles, separate
+  Run/Attempt/Target experiment identities, local artifact promotion, and non-destructive legacy
+  migration. This entry records planning only; the released initializer and runtime behavior are
+  unchanged.
+- **analyze-paper.** Unified the detailed Markdown note and editable JSON Canvas under one
+  canonical five-branch output contract matching the requested paper-analysis tree. Whole and
+  focused updates now share exact fields, field-level evidence/availability states, stable
+  identities, and baseline-hash conflict protection for human edits without prescribing a
+  reading or reasoning sequence.
+- **Runtime skill contracts.** Made the project-wide rule explicit: skills structure observable
+  results and external interfaces, not a model's internal reasoning. Removed residual ranking,
+  classification, ordering, naming, and interaction-process prose while retaining real tool,
+  safety, storage, and format contracts.
+
 ## [0.27.1] — 2026-09-19
 
 ### Fixed
