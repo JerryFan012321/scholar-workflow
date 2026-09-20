@@ -5,6 +5,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.27.2] — 2026-09-20
+
 ### Changed
 - **Research-project system v2 planning.** Added the implementation plan for a layered
   `init-project`: a stable common project contract, explicit source/config profiles, separate

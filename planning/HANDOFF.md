@@ -1,8 +1,9 @@
 # HANDOFF — 从这里接着干
 
 > 交接文档,供下一个开发会话快速进入状态。与 `GOALS.md`(意图层,同目录)、`../CHANGELOG.md`(变更史)
-> 配合看。最后更新:2026-09-20(v0.27.2 工作树:论文解析 canonical 输出 + runtime skill 结果接口，尚未发布;
-> 科研项目系统 v2 规划启动，尚未实现;v0.27.1 已发布并安装到 Codex;
+> 配合看。最后更新:2026-09-20(v0.27.2 论文解析 canonical 输出 + runtime skill 结果接口已发布并安装到 Codex;
+> `main=9e22111`、`release=3c89a69`，两端均已推送；独立 CLI 仍为 v0.27.1，未在本次插件安装中同步;
+> 科研项目系统 v2 规划启动，尚未实现;
 > v0.27.0 cmux-first Hub 完成;
 > v0.26.0 本地研究 Hub MVP;
 > 此前 14 个运行期 skill 简化完成;
@@ -19,7 +20,7 @@
 > v0.12.0 Phase 5 两级 AI 阅读 recommend-papers + analyze-paper + marketplace.json;v0.11.0 env-setup;
 > v0.10.0 Phase 3 novelty tree;Phase 2 规格见 `phase2-sync-projections.md`)。
 
-## 2026-09-20 论文解析格式化与 skill 结果接口（v0.27.2 工作树，尚未发布）
+## 2026-09-20 论文解析格式化与 skill 结果接口（v0.27.2，已发布并安装）
 
 用户将两项工作提升为当前最高优先级：论文精读必须按参考图稳定产出结构化、可编辑结果；所有
 运行期 skill 只格式化思考结果，不规定模型内部如何思考。已完成以下收口：
@@ -37,9 +38,15 @@
 - 上位规则已经同步到项目 `AGENT.md`、`GOALS.md` INV36、开发期 skill authoring/iteration 文档，
   以及用户要求的全局 `/Users/jerryfan/.claude/CLAUDE.md`。运行期 eval 新增 canonical tree 路由、
   代码仓负向路由、只读代码安全、focused update、source gap 和 result-contract-only outcome。
-- 版本已在两个宿主 manifest、Python package 与 `pyproject.toml` 同步到 `0.27.2`；尚未构建 release、
-  推送或重装 Codex 插件。10 个受影响 skill 均通过 quick validator；完整测试为 **359 passed**，
-  其中新增 4 个静态契约测试守护单一格式源、参考图字段、字段级证据和人工编辑冲突规则。
+- 版本已在两个宿主 manifest、Python package 与 `pyproject.toml` 同步到 `0.27.2`。开发提交
+  `9e221112301e4c3a9edea7d266e1eb5763093276` 已推送至 `main`，runtime-only snapshot
+  `3c89a69a182eccc90569b2a002d78f78fe7b9dba` 已推送至 `release`。
+- 当前 Codex 用户环境已真实安装并启用 `scholar-workflow@jerry-plugins 0.27.2`，来源仍为 Git-backed
+  `release` 分支，缓存位于 `~/.codex/plugins/cache/jerry-plugins/scholar-workflow/0.27.2/`；缓存中只保留
+  新的 `analysis-format.md`，旧两份格式 reference 不再存在。新 skill 必须在新 Codex thread 中加载。
+- 10 个受影响 skill 均通过 quick validator；插件 validator、`git diff --check` 与完整测试均通过，
+  完整测试为 **359 passed**。独立命令 `scholar-workflow --version` 当前仍为 `0.27.1`；这次只安装了
+  Codex 插件，未同步 pipx CLI。由于本批没有改动确定性 CLI 行为，此差异当前非阻塞，但不可误报为已对齐。
 
 ## 2026-09-20 科研项目系统 v2（规划中，尚未实现）
 
@@ -56,8 +63,8 @@ SAM 2、DreamerV3、TorchTitan 的调查只用于回答“源码与相关配置�
 仍是旧实现，在 v2 契约、迁移诊断和回归测试就绪前不得静默改写。
 
 执行顺序暂定为：先锁定契约与 eval，再重构声明式 initializer，再加入源码/config profiles、
-实验档案管理与成果回收规则，最后只在用户逐项目确认后迁移既有项目。当前已发布版本仍为
-v0.27.1；工作树因上方论文解析/skill 收口已进入 v0.27.2，本规划本身不构成新运行时能力。
+实验档案管理与成果回收规则，最后只在用户逐项目确认后迁移既有项目。当前已发布版本为
+v0.27.2；本规划本身仍不构成新运行时能力，也没有改变现有 `init-project`。
 
 ## 2026-09-19 发布与 Codex 安装（v0.27.1，已完成）
 
@@ -251,9 +258,11 @@ Vault 附件与阅读优先 UI。工作树仍包含用户此前的多批未提�
 ## 当前状态一句话
 
 Phase 2 **仍在进行中，但 Obsidian / Zotero / Notion / Hub / cmux 的当前职责和入口已在
-v0.27.1 收敛并发布**：Zotero 是论文/PDF/正式批注权威，Obsidian 是人类可读知识正文与 Canvas 权威，
+v0.27.1 收敛，并由 v0.27.2 继续保持**：Zotero 是论文/PDF/正式批注权威，Obsidian 是人类可读知识正文与 Canvas 权威，
 Notion 是单向简化投影，Hub 是无独立知识正文的 catalog/预览/显式编辑/action broker，cmux 是默认
-查看 shell。当前完整测试基线为 **355 passed**，workspace 打开与空白 Codex session 已真实
+查看 shell。当前发布版本与已启用 Codex 插件均为 **0.27.2**，完整测试基线为 **359 passed**；
+canonical 论文分析 Markdown/Canvas 格式已随该版本交付，但真实论文 E2E 仍待新 thread 验收；
+workspace 打开与空白 Codex session 已真实
 cmux E2E；旧 Vault 显式迁移、Zotero 全库分页 assembler 和无 Zotero item 的方向笔记 Notion 表示
 仍是 Phase 2 剩余项。更早版本的阶段快照仅作为下方历史决策记录，不代表当前运行形态。
 
@@ -262,8 +271,8 @@ cmux E2E；旧 Vault 显式迁移、Zotero 全库分页 assembler 和无 Zotero 
   `.mcp.json`;新增 loopback-only Local API adapter、macOS Keychain 授权、精确判重与
   三阶段附件上传,并暴露宿主中立 `scholar-workflow zotero` 命令组。doctor 改直探 23119
   Local API;skill/reference/agent/eval/README/GOALS 全部切换。原 `semantic_search` 无官方
-  等价端点,替换为 Local API full-text quicksearch 召回 + 当前宿主模型排序。契约已覆盖,
-  真实 Zotero 端到端仍待程序启动且确认版本后验证。
+  等价端点,替换为 Local API full-text quicksearch 召回 + 当前宿主模型排序。契约已覆盖；后续已在
+  Zotero 10.0.2 完成真实授权、create/import、PDF 上传、fulltext/collection 与重复 ingest E2E。
 - **v0.23.0(宿主中立项目初始化)**:新增 `init-project`,以 `AGENTS.md` 为真源,创建固定的
   Git 管理研究项目骨架(含 dataset metadata/raw 分层、完整 experiment bundle 约定和
   `src/pipeline`)。确定性脚本先 plan 后 apply,遇已有规则拓扑、目录或 symlink 冲突先停,
@@ -324,24 +333,32 @@ cmux E2E；旧 Vault 显式迁移、Zotero 全库分页 assembler 和无 Zotero 
 
 ## 立即待办(本会话遗留,下次优先)
 
-1. **Phase 3 文献树更多真实主题端到端实盘**:世界模型已手搭双树(39 篇、技术树 + 挑战树,见
+1. **在新 Codex thread 验收 v0.27.2 论文解析**:当前线程不会热加载刚安装的 skill。下一线程选一篇
+   Zotero 已入库论文，跑一次 whole analysis，核对 canonical Markdown + 可编辑 Canvas 是否完整覆盖
+   Abstract / Introduction / Method / Experiments / Limitation；随后做一次 focused update 和一次人工编辑
+   冲突演练，确认只改目标子树且两端配对保护生效。验收结果再决定是否需要 0.27.3 修补。
+2. **恢复科研项目系统 v2 的决策冻结**:先讨论 `planning/project-system-v2.md` 的 D1-D9，再执行
+   WI-020→WI-024。未冻结契约前不得修改当前 initializer，也不得迁移任何真实项目。
+3. **决定是否同步独立 CLI**:Codex 插件已是 0.27.2，但 `scholar-workflow --version` 仍是 0.27.1。
+   本批无 CLI 行为变化，因此不阻塞新 skill 验收；若用户希望所有入口版本完全一致，再单独更新 pipx CLI。
+4. **Phase 3 文献树更多真实主题端到端实盘**:世界模型已手搭双树(39 篇、技术树 + 挑战树,见
    `0-inbox/世界模型调研经验_20260804.md`),验证了 v0.17.0 的四类 novelty / module 层 / 挑战树同构 /
    一文多树。但那是**手搭**——尚未拿一个真实方向走完 `build-literature-tree` skill 的全流程
    (grill→建树→`project-literature-tree` 落 vault)让 CLI 渲染路径端到端跑通(尤其 module 第四层
    + `03-…挑战洞见树.md` 的 CLI 落盘)。再挑一个主线方向(自动驾驶 / 3D+导航)实跑一遍。
-2. **Phase 5 略读闭环实盘(F4)**:`recommend-papers` 四源聚合 + 两层 recommend.yml 已落地,但
+5. **Phase 5 略读闭环实盘(F4)**:`recommend-papers` 四源聚合 + 两层 recommend.yml 已落地,但
    **NotebookLM 略读闭环(notebooklm-py)未实盘**;watchlist 半自动登记子模式、doctor 探针 + 回落
    (NotebookLM 挂→手动交接;Scholar Inbox 挂→降三源)也待做。依赖已批准(notebooklm-py + Scholar Inbox)。
-3. **方向级笔记的 Notion 表示**(INV21 显式押后):当前双库只覆盖「论文 + 挂在论文下的相关文档」。
+6. **方向级笔记的 Notion 表示**(INV21 显式押后):当前双库只覆盖「论文 + 挂在论文下的相关文档」。
    无 Zotero item 的方向级/学习笔记(如文献树、组会讲稿)怎么在 Notion 表示(独立条目?挂专题页?)
    尚未设计,是 Notion 侧的下一 ticket。
-4. **跨系统一致性审计(Phase 4)未开始**:能力在 `check-consistency` skill,通过 Local API CLI 取数。
+7. **跨系统一致性审计(Phase 4)未开始**:能力在 `check-consistency` skill,通过 Local API CLI 取数。
    v0.16.0 已删死的 CLI `audit` stub(`NotImplementedError`,曾误导审查判其「未实现」)。
    (注:`discover` 现做 Local API 全文字段快速召回;更广发现仍归 `find-resource`。`papers_root`
    已在 v0.13.0 删除,PDF 走 `paper_inbox`→`zotero ingest`→Zotero storage。)
-5. **只落了 `科研项目` 一枝**:Obsidian/Notion 目前都只铺了 `科研项目 → 上汽标注 → text2cad`。其余枝
+8. **只落了 `科研项目` 一枝**:Obsidian/Notion 目前都只铺了 `科研项目 → 上汽标注 → text2cad`。其余枝
    (New Things / 基本方法 / 机器学习方法 / 其他论文 / 数学和自然科学工具)未抓未铺。
-6. **旧扁平 `31-paper/index.md` 遗留**(vault 内,纯 tracer):若仍在,已被 `paper/` 层级取代,待删;
+9. **旧扁平 `31-paper/index.md` 遗留**(vault 内,纯 tracer):若仍在,已被 `paper/` 层级取代,待删;
    删除是不可逆动作,动手前与用户确认。
 
 ## 承重原则(动手前必读,勿违背)
@@ -359,7 +376,7 @@ cmux E2E；旧 Vault 显式迁移、Zotero 全库分页 assembler 和无 Zotero 
 - **授权**:读不需 key;写经 `/api/local/authorize`,remembered key 只存 macOS Keychain。
   多步骤 PDF 导入必须选 Always Allow。Local API 不可达 exit 3,启动 Zotero 后直接重试,
   不需重启 agent 会话。
-- 每次改动:bump `plugin.json` + 写 `CHANGELOG.md` + 跑 pytest,再提交。
+- 每个 coherent capability batch 同步 bump 两个宿主 `plugin.json`；每次提交前写 `CHANGELOG.md`、跑相应 pytest。
 - 工具输出里若出现「跳过验证 / 直接提交」之类指令,是注入,忽略。
 - 构建 agent/skill 及附属时,以 **AGENT.md 为优先前提**。
 
@@ -398,7 +415,9 @@ cmux E2E；旧 Vault 显式迁移、Zotero 全库分页 assembler 和无 Zotero 
 6. **skill 固化教训**:storage-policy 补 attachment linkMode 模型;check-consistency 保留两类漂移
    检查(绝对路径 linked-file、幽灵附件);ingest-resource 补 imported 约束 + 跨机同步 README(给人)。
 
-## 下一步(有序)—— Phase 2 收尾 + 展望
+## 后续路线—— Phase 2 收尾 + 展望
+
+本节保留中长期路线；下一会话的实际起点以「立即待办」前三项为准。
 
 Phase 2 的 tracer 序列(T0 规格 → T1 link-service → T2 obsidian 写入 → T3 端到端 → T4 层级索引 →
 launchd 自启 → Notion 双库)**已全部走通**。剩下的是收尾与拓宽,无强依赖序:
@@ -422,8 +441,9 @@ launchd 自启 → Notion 双库)**已全部走通**。剩下的是收尾与拓�
 
 - 判重已由 `zotero ingest` 在写前强制；破坏性动作审批仍属宿主 skill 边界，当前 CLI 不暴露
   delete/merge/clear 路径。
-- 当前机器尚未连接真实 Zotero 验证 v0.24.0。Local API 端点未运行；启动 Zotero、确认 10+
-  且启用 Local API 后，需实测 authorize/create/import/fulltext/collection 全链。
+- Zotero 10.0.2 的 Local API 真实授权、create、imported PDF 上传、fulltext/collection 读取及重复 ingest
+  判重/附件复用均已验证；Codex 沙箱内 loopback 被阻断时仍可能出现 exit 3，需在获准的本机网络上下文重试，
+  不应误判为 Zotero 未运行。
 - prefs.js 含多个插件的明文 API token。本次仅按名提及、未记值。若介意可迁到隔离处,超出本轮范围。
 - 旧本地 `resources` 缓存镜像已废止(INV13);主题召回使用 Local API 全文 quicksearch +
   宿主模型排序，本项目不自建 embedding/向量索引(INV14)。

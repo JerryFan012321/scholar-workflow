@@ -15,7 +15,7 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Status**: in-progress
 - **Priority**: p1
 - **Type**: eval
-- **Context**: codex-review.md flagged P1-3: evals/routing.json was missing positive cases. 2026-08-29 added the 4 missing (analyze-paper, recommend-papers, sync-projections, env-setup) + 1 backlog-vs-review disambiguation → 22 cases; test_evals_schema green. REMAINING: the 13 "pending" outcomes in outcomes.json have NO guarding tests, so promoting them to "pass" would be unfounded — each "pass" outcome cites a real test file; the 13 pending do not. Promotion needs real end-to-end validation (WI-007 territory), not a status edit.
+- **Context**: codex-review.md flagged P1-3: evals/routing.json was missing positive cases. 2026-08-29 added the 4 missing (analyze-paper, recommend-papers, sync-projections, env-setup) + 1 backlog-vs-review disambiguation → 22 cases; test_evals_schema green. REMAINING: the 18 "pending" outcomes in outcomes.json have NO guarding end-to-end evidence, so promoting them to "pass" would be unfounded — each "pass" outcome cites a real test file; the 18 pending do not. Promotion needs real end-to-end validation (WI-007 territory), not a status edit.
 - **Blocker**: none (routing done; outcome promotion needs real runs)
 - **Next action**: When battle-testing (WI-007) exercises a pending outcome end-to-end, add its guarding test and promote that outcome to pass. Do not bulk-promote without evidence.
 - **Related**: P1-3 (codex-review.md), GOALS.md eval guard (G7), WI-007
@@ -42,10 +42,10 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Status**: ready
 - **Priority**: p2
 - **Type**: code-change
-- **Context**: README Status & limitations documents three implementations marked "implemented but not yet run end-to-end": (1) build-literature-tree CLI render path, especially the fourth "module" level and the challenge-insight tree written to vault; (2) recommend-papers NotebookLM skim tier; (3) check-consistency audit. These need real use to find gaps.
+- **Context**: Four implementations still need real end-to-end use: (1) analyze-paper v0.27.2 canonical Markdown/Canvas output, focused update, and human-edit conflict protection in a new Codex thread; (2) build-literature-tree CLI render path, especially the fourth "module" level and the challenge-insight tree written to vault; (3) recommend-papers NotebookLM skim tier; (4) check-consistency audit. These need real use to find gaps.
 - **Blocker**: none
-- **Next action**: Pick one (likely build-literature-tree since it has the most complex output schema), run it on a real research direction, capture failures, fix, iterate.
-- **Related**: INV22 (literature-tree schema), INV23 (recommend-papers ephemeral), check-consistency skill
+- **Next action**: First open a new Codex thread and run analyze-paper 0.27.2 on one real Zotero paper, including one focused update and one deliberate human-edit conflict; capture evidence before promoting any related outcome. Then resume the remaining three battle tests.
+- **Related**: INV24 (structured paper analysis), INV22 (literature-tree schema), INV23 (recommend-papers ephemeral), check-consistency skill
 
 ### WI-008: Step 0 — CLI bootstrap contract (config-UX follow-on)
 - **Status**: deferred
