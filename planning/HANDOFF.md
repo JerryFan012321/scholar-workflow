@@ -3,13 +3,13 @@
 > 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
 > `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-09-22。
 >
-> 当前工作树正在实施 Scholar Workflow 三系统联合改造 v2，源码与 manifests 已准备为
-> `0.28.0`，但尚未 commit、push、构建、发布或安装。此前已安装环境仍是 `0.27.2`
-> plugin，独立 PATH CLI 仍是 `0.27.1`，23128 仍由旧 `0.18.0` venv 服务持有。本批没有
+> Scholar Workflow 三系统联合改造 v2 已以 `0.28.0` 发布：实现提交 `f4364ad` 与 runtime release
+> 提交 `ce1712d` 均已推送，Codex 的 `scholar-workflow@jerry-plugins` 与独立 PATH CLI
+> 均已更新到 `0.28.0`。23128 仍由旧 `0.18.0` venv 服务持有；本批没有
 > 迁移真实 Vault/JEPA、没有改造任何真实项目、没有切换 LaunchAgent/23128、没有运行真实
 > Codex task，也没有把 promotion 记成 verified backup。
 
-## 2026-09-22 三系统联合改造 v2（实施中）
+## 2026-09-22 三系统联合改造 v2（0.28.0 已发布并安装）
 
 用户已经明确要求实施此前确认的完整计划。当前工作拆为三个可独立验证的运行时轨道：
 
@@ -20,7 +20,7 @@
 - **Hub Control Plane v2**：唯一 `HubDirectory` 根、Papers/Projects/Tools libraries、显式 registry、
   workspace binding、受控 TaskRecipe/TaskRun 与项目 `docs/` 文件边界；旧 `/api/v1/catalog` 仅作派生兼容。
 
-当前工作树已经落地的确定性基座：
+0.28.0 已发布的确定性基座：
 
 - Project：`project-layout` schema v2 与稳定 UUIDv4 `project_id`、声明式共同布局、六类
   source/config profiles、Run/Attempt/Target、成果 promotion 和只读 legacy migration plan；实验 mutation
@@ -49,9 +49,8 @@
   复制仍额外拒绝 file/link 托管关系，focused update 将生成节点 `type` 纳入 baseline 冲突检测并恢复
   renderer 所有权。
 
-接手时先运行本节对应的 unit/contract/full regression，再检查本批 diff；不要依据后面的历史章节
-把 v2 误判为“尚未实现”。真实迁移、正式 23128 切换、LaunchAgent 变更、release 构建/发布、
-插件重装和真实 Codex worker 执行仍分别等待迁移计划、正式 canary 证据或用户对外部状态变更的单独确认。
+接手时不要依据后面的历史章节把 v2 误判为“尚未实现”。真实迁移、正式 23128 切换、LaunchAgent
+变更和真实 Codex worker 执行仍分别等待迁移计划、正式 canary 证据或用户对外部状态变更的单独确认。
 fixture 中的临时端口 health/Library/UI canary 已通过；这里的“正式 canary”指基于拟发布构建、保存旧服务
 回滚基线后执行的切换前验证，不等同于已经批准 23128 cutover。
 
@@ -71,7 +70,7 @@ Knowledge 仍有三个明确后续面：focused update 会保留用户自建 Can
 > 本节记录提出 v2 时的现场证据；“尚未实现”等状态已被上方 2026-09-22 工作树状态取代。
 > 真实 JEPA/Vault 迁移仍未实施。
 
-本节对应的规划变更当前仍在 `main` 工作树，尚未 commit、push、构建 release 或安装新插件版本。
+本节对应的规划后来已随 0.28.0 发布；以下只保留当时发现问题和形成规划的历史证据。
 
 真实 V-JEPA 2 分析验收已经完成，但结果不能记为 v0.27.2 outcome 通过。实物检查发现：分析 Markdown
 476 行中有 194 行逐字段 baseline 注释；Canvas 有 194 个文本节点、193 条边，总高度约 35,940 px；
@@ -137,7 +136,7 @@ Hub API 却不可用。现有源码已有统一 HubCatalog、opaque actions、Va
 
 ## 2026-09-20 科研项目系统 v2（历史规划基线）
 
-> 本节记录实现前的规划状态；Project v2 确定性基座现已在 0.28.0 工作树中实现，但真实项目迁移
+> 本节记录实现前的规划状态；Project v2 确定性基座现已随 0.28.0 发布，但真实项目迁移
 > 仍未获授权。
 
 用户已确认后续调整 `init-project`，同时明确此前对 TRELLIS、Gaussian Splatting、Detectron2、
@@ -176,7 +175,7 @@ v0.27.2；本规划本身仍不构成新运行时能力，也没有改变现有 
 ## 2026-09-19 cmux-first Hub（v0.27.0，本批已完成）
 
 > **历史策略提示**：本节“新建空白 native agent-session”的 v0.27 行为已被 Hub Control Plane v2
-> 取代。0.28.0 工作树不注册 legacy blank-session action；未来任务只能走预登记 TaskRecipe、受限
+> 取代。0.28.0 不注册 legacy blank-session action；未来任务只能走预登记 TaskRecipe、受限
 > brief/effort 和明确 thread ID，生产入口在 worker 完成独立验收前保持禁用。
 
 用户已确定 cmux 是 Hub 的默认运行与查看环境，而不是可有可无的 Notion 打开器。
@@ -430,15 +429,15 @@ cmux E2E。正式 23128 仍由 0.18.0 `serve-links` LaunchAgent 占用，统一 
 
 ## 立即待办（下次优先）
 
-1. **完成 0.28.0 工作树收口**：统一运行 unit/contract/full regression、Ruff、schema/plugin/skill
-   validation；Knowledge 继续完成 provider catalog apply seam、V-JEPA 临时 golden/可读性验收和周度
-   scheduler/repair-plan，Hub 继续完成拟发布构建的正式 canary 与生产 worker gate。
+1. **继续受门禁的真实验收**：0.28.0 已通过 582 项回归及 schema/plugin/skill validation；Knowledge
+   下一步是 V-JEPA 临时 golden/可读性验收和周度 scheduler/repair-plan，Hub 下一步是正式 23128
+   canary 与生产 worker gate。
 2. **保持外部状态门禁**：WI-024/WI-030 只能在 fixture 上生成迁移计划；WI-041 等待备份介质、
    retention 和恢复演练；不切换 23128、不修改 LaunchAgent、不迁移真实项目/Vault、不运行真实
    Codex task，也不把 promotion 标成 verified backup。
-3. **发布时统一实际运行版本**：当前源码/manifests 是尚未发布或安装的 0.28.0；已启用 Codex 插件仍是
-   0.27.2，独立 PATH CLI 仍是 0.27.1，因此它们不包含本工作树新增的 analysis/experiment/Hub doctor
-   CLI 能力。只有在 release review、正式 canary 和另行批准安装后，才能声称入口版本与能力一致。
+3. **保持实际运行版本可证明**：源码、两个宿主 manifests、Codex 插件和独立 PATH CLI 当前均为
+   0.28.0；23128 listener 仍是明确保留的旧 0.18.0 服务。后续必须先完成正式 canary 和回滚基线，
+   经单独批准后才能切换 listener，不能因为插件/CLI 已更新就宣称 HubService 已升级。
 4. **Phase 3 文献树更多真实主题端到端实盘**:世界模型已手搭双树(39 篇、技术树 + 挑战树,见
    `0-inbox/世界模型调研经验_20260804.md`),验证了 v0.17.0 的四类 novelty / module 层 / 挑战树同构 /
    一文多树。但那是**手搭**——尚未拿一个真实方向走完 `build-literature-tree` skill 的全流程

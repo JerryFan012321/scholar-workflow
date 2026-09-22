@@ -286,7 +286,7 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Status**: in-progress
 - **Priority**: p1
 - **Type**: code-change
-- **Context**: The current 23128 listener is an identifiable but old 0.18.0 service while source/manifests are 0.27.2. The new build needs self-describing health and a canary path before any cutover.
+- **Context**: The current 23128 listener is an identifiable but old 0.18.0 service while source, manifests, Codex plugin, and PATH CLI are now 0.28.0. The published build has self-describing health and a canary path, but the live cutover still requires an approved formal canary and rollback baseline.
 - **Blocker**: live 23128 cutover remains a separate user gate
 - **Next action**: Against the eventual release artifact, save the old plist/venv/GET baseline and run the implemented temporary-port canary; do not modify LaunchAgent or 23128 without approval.
 - **Related**: INV39, INV44, WI-040
