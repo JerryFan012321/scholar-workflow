@@ -3,10 +3,24 @@
 > 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
 > `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-09-22。
 >
-> Scholar Workflow 三系统联合改造 v2 已以 `0.28.0` 发布；当前正在交付 `0.28.1` 的 Hub
-> one-command binding 修复。用户已显式停止并 disable 旧 `0.18.0` LaunchAgent，23128 现由
-> 手工启动的 cmux-visible Hub 持有；该前台服务仍需在安装 `0.28.1` 后重启。本批没有迁移真实
-> Vault/JEPA、没有改造真实项目、没有运行真实 Codex task，也没有把 promotion 记成 verified backup。
+> Scholar Workflow `0.28.1` 的 Hub one-command binding 修复已发布并实机验证：Codex、Claude Code
+> 插件与独立 PATH CLI 均为 `0.28.1`；23128 由 cmux 可见前台服务持有，`hub-doctor` 报告
+> `owner_mode=cmux-visible`，真实 `open-hub` 只在页面完成 binding 后输出成功，页面显示绿色
+> “已绑定工作区”并加载 305 篇 Papers。旧 `0.18.0` LaunchAgent 仍保持停止/disabled。本批没有迁移
+> 真实 Vault/JEPA、没有改造真实项目、没有运行真实 Codex task，也没有把 promotion 记成 verified backup。
+
+## 2026-09-22 Hub one-command binding（0.28.1 已发布并安装）
+
+- 实现提交 `69d9c72`，首个 runtime release 提交 `9dc6544`；main/release 均已推送。
+- `open-hub` 新建 opaque view 后等待轻量 `/api/v2/workspaces/status` 确认 lease，不再把“cmux 已打开
+  页面”误当成“workspace 已绑定”；pre-0.28.1 service 由 capability 握手立即拒绝并提示重启。
+- 浏览器把 nonce/lease binding 放在 Papers page 加载之前；裸 `/hub/` 明确提示只读，且禁用会造成
+  “已选择即已绑定”错觉的 workspace selector。
+- 真实 cmux E2E：0.28.1 前台 service PID 76722 监听 23128；从同一 workspace 的新 terminal 仅运行
+  `scholar-workflow open-hub` 即得到 `[ok] Hub opened and bound to the current cmux workspace`，带
+  `?instance=...` 的页面显示“已绑定工作区”，Papers=305、Knowledge artifacts=32。
+- 回归：585 passed；plugin validation、targeted Ruff lint、JavaScript syntax、Python compileall 与
+  `git diff --check` 均通过。当前仍没有受管 start/status/stop lifecycle，退出前台服务使用 `Ctrl-C`。
 
 ## 2026-09-22 三系统联合改造 v2（0.28.0 已发布并安装）
 
@@ -434,9 +448,9 @@ cmux E2E。正式 23128 仍由 0.18.0 `serve-links` LaunchAgent 占用，统一 
 2. **保持外部状态门禁**：WI-024/WI-030 只能在 fixture 上生成迁移计划；WI-041 等待备份介质、
    retention 和恢复演练；不得恢复或修改旧 LaunchAgent，不得把当前手工 23128 前台进程静默改为
    后台受管服务；不迁移真实项目/Vault、不运行真实 Codex task，也不把 promotion 标成 verified backup。
-3. **保持实际运行版本可证明**：源码与两个宿主 manifests 正在更新至 0.28.1；插件、PATH CLI 和
-   当前 23128 前台服务必须分别验证，不能因为仓库版本已更新就宣称运行服务已升级。旧 0.18.0
-   LaunchAgent 已停止/disabled，不得静默恢复；未来若改为受管服务仍需单独设计 start/stop 生命周期。
+3. **保持实际运行版本可证明**：源码、两个宿主 manifests、Codex/Claude Code 插件、PATH CLI 与
+   当前 23128 cmux 前台服务均已核验为 0.28.1；旧 0.18.0 LaunchAgent 已停止/disabled，不得静默
+   恢复。当前服务仍由 terminal 前台生命周期持有，未来若改为受管服务须单独设计 start/stop。
 4. **Phase 3 文献树更多真实主题端到端实盘**:世界模型已手搭双树(39 篇、技术树 + 挑战树,见
    `0-inbox/世界模型调研经验_20260804.md`),验证了 v0.17.0 的四类 novelty / module 层 / 挑战树同构 /
    一文多树。但那是**手搭**——尚未拿一个真实方向走完 `build-literature-tree` skill 的全流程

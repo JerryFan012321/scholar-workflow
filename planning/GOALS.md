@@ -81,7 +81,7 @@
 | INV41 | **批量知识生产逐项隔离并以验证结果决定成功**：每个输入独立经历 queued/running/validated/failed/repaired 状态；渲染后必须校验 schema、必备角色、证据归属、链接、Canvas 图完整性和节点预算。失败项至多自动修复一次，修复前清理其未提交临时产物，不能污染其他条目；仍失败则保留诊断但不发布产物、不记成功 | **0.28.0 已发布并通过混合批次/故障注入测试** |
 | INV42 | **知识库维护是可重复审计而非隐式重写**：周期性审计检查孤儿资源/产物、失效 manifest、重复 canonical analysis、模板版本漂移、raw loopback 身份泄漏和未闭合批任务；默认只报告与生成迁移/修复计划，真实正文、Canvas、项目和 Zotero 条目未经明确任务不得批量改写 | **0.28.0 已发布基于显式 manifest 的全库只读审计**；周度调度与单次显式 repair-plan/apply 仍在 WI-032 |
 | INV43 | **HubDirectory 是唯一公共根，Library 是 typed、paged provider**：首版固定 Papers、Projects、Tools 三个 Library，每个 item 用 `library_id + item_type + item_id` 引用；provider 在服务端分页、排序和筛选，空库仍返回能力与诊断。旧 `HubCatalog` 只作为 `knowledge_catalog` 兼容子投影 | **0.28.0 已发布，并会在显式 snapshot 存在时选用权威 Knowledge provider；23128 已由手工 cmux 前台 v2 Hub 接管，真实 Knowledge provider 初始化仍未执行** |
-| INV44 | **HubService 与 workspace binding 有可验证身份和租约**：默认由可见 cmux `runtime` workspace 持有唯一服务；绑定使用 nonce、service generation、lease generation 和 cmux instance fingerprint，跨实例或过期绑定拒绝复用。`open-hub` 封装绑定协议且只在服务端确认后成功；裸 `/hub/` 明确只读。显式 headless/unbound 模式只读，页面加载不启动服务或外部应用 | **0.28.1 补齐 one-command verified binding；旧 0.18.0 LaunchAgent 已由用户显式停止/disabled，当前 23128 为手工 cmux 前台服务** |
+| INV44 | **HubService 与 workspace binding 有可验证身份和租约**：默认由可见 cmux `runtime` workspace 持有唯一服务；绑定使用 nonce、service generation、lease generation 和 cmux instance fingerprint，跨实例或过期绑定拒绝复用。`open-hub` 封装绑定协议且只在服务端确认后成功；裸 `/hub/` 明确只读。显式 headless/unbound 模式只读，页面加载不启动服务或外部应用 | **0.28.1 one-command verified binding 已通过真实 cmux E2E；旧 0.18.0 LaunchAgent 保持停止/disabled，23128 为 cmux 前台服务** |
 | INV45 | **Codex 任务由 TaskRecipe、LogicalTask、TaskRun 和明确 thread ID 分层**：浏览器不提交 shell、路径、环境变量、model、sandbox、permission 或任意 config；brief 只经 stdin，固定 argv 使用 `shell=False`，worker 先探测 Codex capability，并以幂等键、每线程互斥、心跳、取消、超时和进程组回收约束运行 | 内部 store/worker、跨进程 thread lock 与故障恢复原语已随 **0.28.0 发布**；生产 worker manager/HTTP entry 与真实执行仍禁用 |
 | INV46 | **Project Library 和知识系统只通过显式独立复制交接内容**：项目 manifest 提供稳定 `project_id`，主机 registry 提供可信根；Hub 文件 API 只接受 `project_id + docs 相对路径`。Knowledge→Project 复制剥离知识系统机器身份，Project→Knowledge 归档创建新 Vault 身份；不建立同步或语义 provenance。项目删除只移入 `.scholar-workflow/trash/docs/<timestamp>/`，首版无永久删除且 Hub 不执行 Git 写操作 | Project Library、`docs/` copy/paste/trash 与 Knowledge→Project 独立复制已随 **0.28.0 发布**；反向真实归档/迁移未执行 |
 
@@ -120,7 +120,7 @@
 | Phase 5 | 两级 AI 阅读（略读推荐 + 详细分析） | 🚧 进行中（recommend-papers 基座已落地；analyze-paper v2 的人类正文、紧凑 Canvas、profile/IR、conformance、一次修复与 canonical transaction 已随 0.28.0 发布。剩：临时 V-JEPA 2 golden/真实 Obsidian 可读性验收、真实迁移审批，以及 notebooklm-py 略读闭环、watchlist 半自动登记、doctor 探针 + 回落） |
 | Phase 6 | 科研项目系统 v2（共同基座 + 源码/config profiles + Run/Attempt/Target + 本地成果保存） | 🚧 基座已随 0.28.0 发布并通过 fixture 测试；真实项目 pilot 与 backup backend 未执行 |
 | Phase 7 | 科研知识系统 v2（核心文档 + 原子资源 + 附属产物 + 人类投影 + 批量 conformance） | 🚧 分析/批处理/只读审计基座已随 0.28.0 发布；全库对象迁移、真实 JEPA pilot 与周调度未执行 |
-| Phase 8 | Hub Control Plane v2（HubDirectory + typed Libraries + workspace binding + TaskRecipe） | 🚧 API/安全/UI、内部 task 契约与 fixture canary 已发布；旧 LaunchAgent 已停止/disabled，23128 由手工 cmux 前台 Hub 持有，0.28.1 补齐 verified one-command binding；剩：受管生命周期与长期 worker |
+| Phase 8 | Hub Control Plane v2（HubDirectory + typed Libraries + workspace binding + TaskRecipe） | 🚧 API/安全/UI、内部 task 契约、fixture canary 与真实 one-command binding 已发布并验证；旧 LaunchAgent 已停止/disabled，23128 由 cmux 前台 Hub 持有；剩：受管生命周期与长期 worker |
 
 ## 未来项（记录待办，暂不实现）
 
