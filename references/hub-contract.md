@@ -144,6 +144,12 @@ Only a service started from a clean cmux workspace/socket environment may report
 forged in-memory lease state exists. The Web UI may request a nonce and bind its selected
 opaque workspace; without a successful bind it keeps all write/launch controls disabled.
 
+`scholar-workflow open-hub` is the user-level binding operation. It creates the opaque view
+instance, opens that tagged view in the caller's current cmux workspace, and does not report
+success until `GET /api/v2/workspaces/status` confirms the live binding. The status response
+contains no raw workspace identity. A bare `/hub/` URL has no view identity, is explicitly
+read-only, and cannot present a selected workspace as a completed binding.
+
 ## Task contracts and current execution gate
 
 The stable model is:
@@ -176,6 +182,7 @@ GET  /hub/item?library_id=<id>&item_type=<type>&item_id=<id>
 GET  /api/v2/directory?instance=<opaque-view-instance>
 GET  /api/v2/libraries/<papers|projects|tools>/items
 GET  /api/v2/health
+GET  /api/v2/workspaces/status?instance=<opaque-view-instance>
 POST /api/v2/workspaces/nonce
 POST /api/v2/workspaces/bind
 POST /api/v2/projects/<project-id>/docs/copy

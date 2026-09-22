@@ -51,8 +51,14 @@ def test_open_hub_uses_exact_cmux_argv_and_no_shell(tmp_path, monkeypatch):
     cmux.chmod(0o755)
     calls: list[tuple[list[str], dict[str, object]]] = []
     probes: list[int] = []
+    bindings: list[tuple[int, str]] = []
 
     monkeypatch.setattr(cli, "_probe_hub_health", lambda port: probes.append(port))
+    monkeypatch.setattr(
+        cli,
+        "_wait_for_hub_binding",
+        lambda port, instance: bindings.append((port, instance)),
+    )
     monkeypatch.setattr(cli, "_resolve_cmux_executable", lambda: cmux)
 
     def runner(argv, **kwargs):
@@ -71,6 +77,8 @@ def test_open_hub_uses_exact_cmux_argv_and_no_shell(tmp_path, monkeypatch):
     )
     assert result.exit_code == 0, result.output
     assert probes == [24680]
+    assert bindings == [(24680, "instance_A234567890abcdef")]
+    assert "opened and bound" in result.output
     assert len(calls) == 1
     argv, kwargs = calls[0]
     assert argv == [
@@ -96,7 +104,13 @@ def test_open_hub_uses_exact_cmux_argv_and_no_shell(tmp_path, monkeypatch):
 def test_open_hub_generates_a_url_safe_opaque_instance(tmp_path, monkeypatch):
     home = _configured_home(tmp_path)
     calls: list[list[str]] = []
+    bindings: list[tuple[int, str]] = []
     monkeypatch.setattr(cli, "_probe_hub_health", lambda _port: None)
+    monkeypatch.setattr(
+        cli,
+        "_wait_for_hub_binding",
+        lambda port, instance: bindings.append((port, instance)),
+    )
     monkeypatch.setattr(cli, "_resolve_cmux_executable", lambda: Path("/safe/cmux"))
 
     def runner(argv, **_kwargs):
@@ -116,6 +130,82 @@ def test_open_hub_generates_a_url_safe_opaque_instance(tmp_path, monkeypatch):
     assert instance.startswith("hub_")
     assert len(instance) >= 24
     assert all(char.isalnum() or char in "_-" for char in instance)
+    assert bindings == [(24680, instance)]
+
+
+def test_wait_for_hub_binding_polls_until_browser_reports_bound(monkeypatch):
+    payloads = [
+        b'{"bound":false}',
+        b'{"bound":true}',
+    ]
+    paths: list[str] = []
+
+    class Response:
+        status = 200
+
+        def read(self, _limit):
+            return payloads.pop(0)
+
+    class Connection:
+        def __init__(self, host: str, port: int, timeout: float) -> None:
+            assert (host, port, timeout) == ("127.0.0.1", 23128, 1.0)
+
+        def request(self, method: str, path: str) -> None:
+            assert method == "GET"
+            paths.append(path)
+
+        @staticmethod
+        def getresponse():
+            return Response()
+
+        @staticmethod
+        def close() -> None:
+            pass
+
+    ticks = iter([0.0, 0.0, 0.1])
+    monkeypatch.setattr(cli.http.client, "HTTPConnection", Connection)
+    monkeypatch.setattr(cli.time, "monotonic", lambda: next(ticks))
+    monkeypatch.setattr(cli.time, "sleep", lambda _seconds: None)
+
+    cli._wait_for_hub_binding(23128, "instance_A234567890abcdef")
+
+    assert paths == [
+        "/api/v2/workspaces/status?instance=instance_A234567890abcdef",
+        "/api/v2/workspaces/status?instance=instance_A234567890abcdef",
+    ]
+
+
+def test_wait_for_hub_binding_fails_when_browser_never_binds(monkeypatch):
+    class Response:
+        status = 200
+
+        @staticmethod
+        def read(_limit):
+            return b'{"bound":false}'
+
+    class Connection:
+        def __init__(self, *_args, **_kwargs) -> None:
+            pass
+
+        @staticmethod
+        def request(_method: str, _path: str) -> None:
+            pass
+
+        @staticmethod
+        def getresponse():
+            return Response()
+
+        @staticmethod
+        def close() -> None:
+            pass
+
+    ticks = iter([0.0, 0.0, 8.0])
+    monkeypatch.setattr(cli.http.client, "HTTPConnection", Connection)
+    monkeypatch.setattr(cli.time, "monotonic", lambda: next(ticks))
+    monkeypatch.setattr(cli.time, "sleep", lambda _seconds: None)
+
+    with pytest.raises(cli.ExternalServiceError, match="did not complete"):
+        cli._wait_for_hub_binding(23128, "instance_A234567890abcdef")
 
 
 def test_serve_hub_canary_routes_to_ephemeral_read_only_mode(monkeypatch):
@@ -212,6 +302,39 @@ def test_health_probe_rejects_an_old_hub_without_cmux_capability(monkeypatch):
     monkeypatch.setattr(cli.http.client, "HTTPConnection", OldHubConnection)
 
     with pytest.raises(cli.DependencyError, match="Restart it"):
+        cli._probe_hub_health(23128)
+
+
+def test_health_probe_rejects_pre_0281_hub_without_verified_binding(monkeypatch):
+    class PreviousResponse:
+        status = 200
+
+        @staticmethod
+        def read(_limit):
+            return (
+                b'{"status":"ok","schema_version":1,'
+                b'"capabilities":["cmux-workspace-actions-v1"]}'
+            )
+
+    class PreviousHubConnection:
+        def __init__(self, host: str, port: int, timeout: float) -> None:
+            assert (host, port, timeout) == ("127.0.0.1", 23128, 1.5)
+
+        @staticmethod
+        def request(method: str, path: str) -> None:
+            assert (method, path) == ("GET", "/api/v1/health")
+
+        @staticmethod
+        def getresponse():
+            return PreviousResponse()
+
+        @staticmethod
+        def close() -> None:
+            pass
+
+    monkeypatch.setattr(cli.http.client, "HTTPConnection", PreviousHubConnection)
+
+    with pytest.raises(cli.DependencyError, match="verified workspace binding"):
         cli._probe_hub_health(23128)
 
 

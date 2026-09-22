@@ -80,7 +80,10 @@ def test_hub_shell_and_catalog_are_served_with_security_headers(hub_server):
     assert health == {
         "status": "ok",
         "schema_version": 1,
-        "capabilities": ["cmux-workspace-actions-v1"],
+        "capabilities": [
+            "cmux-workspace-actions-v1",
+            "open-hub-verified-binding-v1",
+        ],
     }
 
 

@@ -24,6 +24,9 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/写入(create/impor
 - Hub 默认由可见 cmux `runtime` workspace 中的唯一服务持有；workspace/file/task mutation 必须有
   有效 binding，unbound/headless 只读。项目文件操作只限显式注册项目的 `docs/`，请求只接受
   `project_id + docs 相对路径`；删除进入 `.scholar-workflow/trash/docs/`，Hub 不执行 Git 写操作。
+- `scholar-workflow open-hub` 必须封装 instance、nonce、lease 与 cmux fingerprint 协议，自动绑定
+  调用者当前 workspace，且仅在服务端确认 binding 后报告成功；裸 `/hub/` 必须明确标记为只读入口，
+  不得让“已选择 workspace”冒充“已绑定 workspace”。
 - TaskRecipe 只接受 allowlisted target、最多 8 KiB 的 bounded brief 和 `fast/standard/deep` effort；
   浏览器不能提交命令、cwd/path、model、sandbox、permission、环境变量或任意 config。
 

@@ -580,11 +580,15 @@ function applyWorkspaceListing(payload) {
       return option;
     }));
   }
-  select.disabled = !available || !state.cmux.selectedWorkspaceId;
+  const hasBindingInstance = Boolean(hubInstance());
+  select.disabled = !available || !state.cmux.selectedWorkspaceId || !hasBindingInstance;
   select.value = state.cmux.selectedWorkspaceId || "";
 
   const status = byId("cmux-status");
-  if (state.cmux.capabilityError) {
+  if (!hasBindingInstance) {
+    status.textContent = "只读入口；请在 cmux 终端运行 scholar-workflow open-hub";
+    status.className = "cmux-status error";
+  } else if (state.cmux.capabilityError) {
     status.textContent = state.cmux.capabilityError;
     status.className = "cmux-status error";
   } else if (!state.cmux.selectedWorkspaceId) {
@@ -598,9 +602,10 @@ function applyWorkspaceListing(payload) {
 
 function syncOperationStatus() {
   const bound = Boolean(state.directory?.operations?.bound);
-  byId("operation-status").textContent = bound
-    ? "已绑定工作区"
-    : "只读 · 未绑定工作区";
+  let label = "只读 · 未绑定工作区";
+  if (bound) label = "已绑定工作区";
+  else if (!hubInstance()) label = "只读 · 请运行 scholar-workflow open-hub";
+  byId("operation-status").textContent = label;
   document.querySelector(".status-dot").classList.toggle("readonly", !bound);
 }
 
@@ -1210,7 +1215,6 @@ async function boot() {
     state.actions = await actionsResponse.json();
     state.csrfToken = (await sessionResponse.json()).csrf_token;
     syncLibraryQueryControls();
-    await loadLibraryPage(true);
     if (workspacesResponse.ok) {
       applyWorkspaceListing(await workspacesResponse.json());
     } else {
@@ -1230,6 +1234,7 @@ async function boot() {
         capability_error: state.cmux.capabilityError,
       });
     }
+    await loadLibraryPage(true);
     const papers = state.directory.libraries.find((library) => library.library_id === "papers");
     byId("paper-count").textContent = String(papers?.total_count || 0);
     byId("topic-count").textContent = String(state.catalog.topics.length);

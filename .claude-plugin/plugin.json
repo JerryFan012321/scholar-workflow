@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "scholar-workflow",
-  "version": "0.28.0",
+  "version": "0.28.1",
   "description": "Human-first scholarly knowledge, reproducible research projects, and a typed local Hub control plane for Zotero, Obsidian, Codex, and cmux.",
   "author": {
     "name": "Scholar Workflow contributors"

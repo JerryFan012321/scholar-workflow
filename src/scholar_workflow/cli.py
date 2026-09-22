@@ -7,6 +7,7 @@ import os
 import re
 import secrets
 import subprocess
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -107,7 +108,12 @@ def _analysis_state_paths() -> tuple[Path, Path]:
 
 _HUB_INSTANCE_RE = re.compile(r"^[A-Za-z0-9_-]{16,128}$")
 _CMUX_TIMEOUT_SECONDS = 5.0
-_REQUIRED_HUB_CAPABILITY = "cmux-workspace-actions-v1"
+_HUB_BIND_TIMEOUT_SECONDS = 8.0
+_HUB_BIND_POLL_SECONDS = 0.15
+_REQUIRED_HUB_CAPABILITIES = {
+    "cmux-workspace-actions-v1",
+    "open-hub-verified-binding-v1",
+}
 
 
 def _validate_hub_instance(
@@ -169,14 +175,53 @@ def _probe_hub_health(port: int) -> None:
     if not isinstance(payload, dict) or payload.get("status") != "ok":
         raise ExternalServiceError("Research Hub health response did not report status=ok")
     capabilities = payload.get("capabilities")
-    if (
-        not isinstance(capabilities, list)
-        or _REQUIRED_HUB_CAPABILITY not in capabilities
+    if not isinstance(capabilities, list) or not _REQUIRED_HUB_CAPABILITIES.issubset(
+        capabilities
     ):
         raise DependencyError(
-            "Research Hub is running but does not support cmux workspace actions. "
+            "Research Hub is running but does not support verified workspace binding. "
             "Restart it with the current `scholar-workflow serve-hub`."
         )
+
+
+def _wait_for_hub_binding(port: int, instance_token: str) -> None:
+    """Wait until the browser has completed the nonce-backed workspace binding."""
+    deadline = time.monotonic() + _HUB_BIND_TIMEOUT_SECONDS
+    path = f"/api/v2/workspaces/status?{urlencode({'instance': instance_token})}"
+    while True:
+        connection = http.client.HTTPConnection(
+            "127.0.0.1",
+            port,
+            timeout=1.0,
+        )
+        try:
+            connection.request("GET", path)
+            response = connection.getresponse()
+            body = response.read(65537)
+        except (OSError, http.client.HTTPException):
+            response = None
+            body = b""
+        finally:
+            connection.close()
+
+        if response is not None and response.status == 200 and len(body) <= 65536:
+            try:
+                payload = json.loads(body)
+            except (TypeError, UnicodeDecodeError, json.JSONDecodeError):
+                payload = None
+            if (
+                isinstance(payload, dict)
+                and payload.get("bound") is True
+            ):
+                return
+
+        if time.monotonic() >= deadline:
+            raise ExternalServiceError(
+                "The Hub browser opened, but workspace binding did not complete. "
+                "Keep the tagged Hub tab open and retry `scholar-workflow open-hub`; "
+                "a manually opened bare /hub/ page is read-only."
+            )
+        time.sleep(_HUB_BIND_POLL_SECONDS)
 
 
 def _probe_v2_hub_health(port: int) -> dict[str, object]:
@@ -858,7 +903,8 @@ def open_hub(instance: str | None) -> None:
             f"cmux could not open the Hub: "
             f"{detail or f'exit status {result.returncode}'}"
         )
-    click.echo("Opened Scholar Hub in the current cmux workspace.")
+    _wait_for_hub_binding(port, instance_id)
+    click.echo("[ok] Hub opened and bound to the current cmux workspace")
 
 
 def _serve_hub_foreground(

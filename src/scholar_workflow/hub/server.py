@@ -89,6 +89,7 @@ _KEY_RE = re.compile(r"^[A-Z0-9]+$")
 _RANGE_RE = re.compile(r"^bytes=(\d*)-(\d*)$")
 _HUB_INSTANCE_RE = re.compile(r"^[A-Za-z0-9_-]{8,128}$")
 _CMUX_HUB_CAPABILITY = "cmux-workspace-actions-v1"
+_VERIFIED_BINDING_CAPABILITY = "open-hub-verified-binding-v1"
 _V2_CAPABILITIES = (
     "hub-directory-v2",
     "typed-library-pagination-v1",
@@ -223,6 +224,8 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             self._respond_json(200, catalog.model_dump(mode="json"))
         elif path == "/api/v2/directory":
             self._handle_v2_directory(parsed.query)
+        elif path == "/api/v2/workspaces/status":
+            self._handle_v2_workspace_status(parsed.query)
         elif path.startswith("/api/v2/libraries/") and path.endswith("/items"):
             self._handle_v2_library(path, parsed.query)
         elif path == "/api/v2/health":
@@ -253,7 +256,10 @@ class HubRequestHandler(BaseHTTPRequestHandler):
                 {
                     "status": "ok",
                     "schema_version": 1,
-                    "capabilities": [_CMUX_HUB_CAPABILITY],
+                    "capabilities": [
+                        _CMUX_HUB_CAPABILITY,
+                        _VERIFIED_BINDING_CAPABILITY,
+                    ],
                 },
             )
         elif path.startswith("/api/v1/artifacts/") and path.endswith("/content"):
@@ -536,6 +542,29 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             update={"operations": self._operation_status(instance_token)}
         )
         self._respond_json(200, directory.model_dump(mode="json"))
+
+    def _handle_v2_workspace_status(self, query: str) -> None:
+        parameters = parse_qs(query, keep_blank_values=True)
+        if set(parameters) != {"instance"} or len(parameters["instance"]) != 1:
+            self._respond_text(400, "Expected exactly one Hub instance token")
+            return
+        instance_token = parameters["instance"][0]
+        if not _HUB_INSTANCE_RE.fullmatch(instance_token):
+            self._respond_text(400, "Invalid Hub instance token")
+            return
+        runtime = self.server.runtime
+        available = (
+            runtime.owner_mode == "cmux-visible"
+            and runtime.binding_coordinator is not None
+        )
+        self._respond_json(
+            200,
+            {
+                "bound": self._operation_status(instance_token).bound,
+                "service_generation": runtime.service_generation,
+                "workspace_binding_available": available,
+            },
+        )
 
     def _handle_v2_library(self, path: str, query: str) -> None:
         service = self.server.runtime.directory_service

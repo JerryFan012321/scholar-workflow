@@ -1550,6 +1550,8 @@ def test_hub_ui_is_library_first_and_surfaces_read_only_binding_state(tmp_path):
         assert "`/open/paper/${" not in script
         assert "knowledge_catalog" in script
         assert "只读 · 未绑定工作区" in script
+        assert "只读入口；请在 cmux 终端运行 scholar-workflow open-hub" in script
+        assert "Boolean(hubInstance())" in script
         assert "openProjectOperations" in script
         assert "/docs/${operation}" in script
         assert "confirmation_required" in script
@@ -1743,6 +1745,14 @@ def test_workspace_nonce_and_bind_api_resolve_opaque_workspace_server_side(tmp_p
             _request(port, "/api/v2/directory?instance=hub-instance").read()
         )
         assert directory["operations"]["bound"] is True
+        status = json.loads(
+            _request(port, "/api/v2/workspaces/status?instance=hub-instance").read()
+        )
+        assert status == {
+            "bound": True,
+            "service_generation": bindings.service_generation,
+            "workspace_binding_available": True,
+        }
         assert "raw-never-returned" not in json.dumps(payload)
     finally:
         server.shutdown()

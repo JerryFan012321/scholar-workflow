@@ -286,9 +286,9 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Status**: in-progress
 - **Priority**: p1
 - **Type**: code-change
-- **Context**: The current 23128 listener is an identifiable but old 0.18.0 service while source, manifests, Codex/Claude Code plugins, and PATH CLI are now 0.28.0. The published build has self-describing health and a canary path, but the live cutover still requires an approved formal canary and rollback baseline.
-- **Blocker**: live 23128 cutover remains a separate user gate
-- **Next action**: Against the eventual release artifact, save the old plist/venv/GET baseline and run the implemented temporary-port canary; do not modify LaunchAgent or 23128 without approval.
+- **Context**: The user explicitly stopped and disabled the old 0.18.0 LaunchAgent. Port 23128 is now held by a manually started cmux-visible Hub; 0.28.1 makes `open-hub` wait for a verified binding instead of returning after page creation. A managed, self-identifying start/stop lifecycle is still absent.
+- **Blocker**: decide the durable managed owner and explicit start/status/stop mechanism; the old LaunchAgent must not be silently revived
+- **Next action**: Keep the current cmux foreground lifecycle documented and observable, then design a managed replacement with explicit stop/restart semantics and rollback evidence before enabling it.
 - **Related**: INV39, INV44, WI-040
 
 ### WI-035: HubDirectory, Papers Library and v1 compatibility

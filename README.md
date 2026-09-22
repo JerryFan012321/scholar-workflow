@@ -56,6 +56,23 @@ scholar-workflow serve-hub --canary --port 0 \
   --knowledge-provider-state-root /path/to/provider-state
 ```
 
+For normal use, keep `serve-hub` in the foreground and press `Ctrl-C` in that terminal to stop
+it. `open-hub` identifies the caller's current cmux workspace, opens a page with an opaque
+one-time view identity, and completes the nonce/lease binding automatically. It exits successfully
+only after the service confirms that binding and prints:
+
+```text
+[ok] Hub opened and bound to the current cmux workspace
+```
+
+No manual workspace selection is required for the initial binding. A manually entered
+`http://127.0.0.1:23128/hub/` is an explicit read-only entry point, not a writable Hub view; the
+page directs the user to run `scholar-workflow open-hub` from a cmux terminal. If automatic
+binding fails, the command exits non-zero with a diagnostic instead of reporting success while the
+page remains read-only. In `scholar-workflow hub-doctor --json`, `owner_mode=cmux-visible` and
+`workspace_binding_available=true` mean that the service can bind views; the successful
+`open-hub` receipt confirms the binding for that specific browser view.
+
 The v2 API exposes the canonical directory at `/api/v2/directory`, paged library items below
 `/api/v2/libraries/`, and self-describing health at `/api/v2/health`. The old
 `/api/v1/catalog` response is derived from `HubDirectory.knowledge_catalog`; it is not a

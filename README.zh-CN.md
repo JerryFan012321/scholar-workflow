@@ -47,6 +47,21 @@ scholar-workflow serve-hub --canary --port 0 \
   --knowledge-provider-state-root /path/to/provider-state
 ```
 
+正常使用时，`serve-hub` 保持在前台运行；需要退出时在它所在的 terminal 按 `Ctrl-C`。`open-hub`
+会识别调用它的当前 cmux workspace、打开带一次性实例身份的页面并自动完成 nonce/lease binding；
+只有服务端确认页面已经绑定后，命令才以成功退出并输出：
+
+```text
+[ok] Hub opened and bound to the current cmux workspace
+```
+
+不需要手工选择首次绑定的 workspace，也不要把浏览器中手工输入的
+`http://127.0.0.1:23128/hub/` 当作可写入口。裸 `/hub/` 是明确的只读入口；页面会提示在 cmux
+terminal 中运行 `scholar-workflow open-hub`。如自动绑定失败，命令会以非零状态退出并说明原因，
+而不会在页面仍为只读时报告成功。`scholar-workflow hub-doctor --json` 中
+`owner_mode=cmux-visible`、`workspace_binding_available=true` 表示服务具备绑定能力；某个具体浏览器
+实例是否已绑定则由 `open-hub` 的成功回执确认。
+
 v2 API 在 `/api/v2/directory` 提供唯一目录，在 `/api/v2/libraries/` 下分页返回各库内容，并由
 `/api/v2/health` 报告可诊断运行状态。旧 `/api/v1/catalog` 只从
 `HubDirectory.knowledge_catalog` 派生，不形成第二份状态。空 Library 仍可见并说明 provider 状态；

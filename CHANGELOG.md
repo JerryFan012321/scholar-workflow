@@ -5,6 +5,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.28.1] — 2026-09-22
+
+### Fixed
+- **One-command Hub binding.** `scholar-workflow open-hub` now waits for the browser's verified
+  nonce/lease binding before reporting success, using a lightweight binding-status endpoint rather
+  than repeatedly rebuilding the directory. Initial binding runs before paper-page loading, and a
+  timeout returns a diagnostic instead of silently leaving a read-only view. A capability handshake
+  rejects a still-running pre-0.28.1 service immediately and asks for an explicit restart.
+- **Honest direct-entry state.** A manually opened bare `/hub/` is visibly identified as read-only,
+  its workspace selector cannot imply a writable binding, and the UI points to `open-hub` as the
+  supported bound entry point.
+
+### Documentation
+- **Complete Hub lifecycle.** Documented start, automatic binding confirmation, doctor fields,
+  direct-entry behavior, and foreground shutdown with `Ctrl-C` in both user guides.
+
 ## [0.28.0] — 2026-09-22
 
 ### Added
