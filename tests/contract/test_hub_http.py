@@ -6,18 +6,18 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import pytest
 
+from scholar_workflow.hub.actions import ActionExecutor, ActionKind, ActionRegistry
 from scholar_workflow.hub.models import (
     ArtifactFormat,
     ArtifactKind,
     HubArtifact,
     HubCatalog,
 )
-from scholar_workflow.hub.actions import ActionExecutor, ActionKind, ActionRegistry
 from scholar_workflow.hub.server import StaticCatalogProvider, start_hub_server
 
 
@@ -29,7 +29,7 @@ def hub_server(tmp_path):
     (storage / "S6LZUS6S" / "论文.pdf").write_bytes(b"%PDF-1.7\n0123456789")
     vault.mkdir()
     catalog = HubCatalog(
-        generated_at=datetime(2026, 9, 18, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
         resources=[],
         topics=[],
         artifacts=[],
@@ -39,6 +39,8 @@ def hub_server(tmp_path):
         storage_root=storage,
         vault_root=vault,
         catalog_provider=StaticCatalogProvider(catalog),
+        owner_mode="cmux-visible",
+        require_workspace_binding=False,
     )
     yield server, server.server_address[1]
     server.shutdown()
@@ -108,12 +110,12 @@ def test_hub_static_ui_exposes_workspace_target_without_eager_actions(hub_server
     assert "/api/v1/cmux/workspaces" in script
     assert 'state.actions["__hub__"]' in script
     assert "window.confirm" in script
-    assert "启动空白 Codex" in script
+    assert "启动空白 Codex" not in script
+    assert "查看和 Codex 将在所选工作区打开" not in script
+    assert "任务执行尚未启用" in script
+    assert "/api/v2/workspaces/nonce" in script
+    assert "/api/v2/workspaces/bind" in script
     assert "pdfLink" not in script
-    boot_source = script.split("async function boot()", 1)[1].split(
-        "document.querySelector", 1
-    )[0]
-    assert 'method: "POST"' not in boot_source
 
 
 def test_pdf_supports_head_and_single_byte_range(hub_server):
@@ -175,7 +177,7 @@ def test_action_surface_exposes_only_opaque_id_and_rejects_client_target(tmp_pat
             return {"opened": True}
 
     catalog = HubCatalog(
-        generated_at=datetime(2026, 9, 18, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
         resources=[], topics=[], artifacts=[],
     )
     server = start_hub_server(
@@ -185,6 +187,8 @@ def test_action_surface_exposes_only_opaque_id_and_rejects_client_target(tmp_pat
         catalog_provider=StaticCatalogProvider(catalog),
         action_executor=ActionExecutor(registry, {ActionKind.NOTION_CMUX: Launcher()}),
         public_actions={"manual": [public]},
+        owner_mode="cmux-visible",
+        require_workspace_binding=False,
     )
     try:
         port = server.server_address[1]
@@ -247,7 +251,7 @@ def test_cmux_workspaces_and_workspace_scoped_actions_use_only_opaque_ids(tmp_pa
     storage.mkdir()
     vault.mkdir()
     catalog = HubCatalog(
-        generated_at=datetime(2026, 9, 18, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
         resources=[], topics=[], artifacts=[],
     )
 
@@ -305,6 +309,8 @@ def test_cmux_workspaces_and_workspace_scoped_actions_use_only_opaque_ids(tmp_pa
         vault_root=vault,
         catalog_provider=StaticCatalogProvider(catalog),
         action_service=action_service,
+        owner_mode="cmux-visible",
+        require_workspace_binding=False,
     )
     try:
         port = server.server_address[1]
@@ -387,7 +393,7 @@ def test_action_request_shape_and_workspace_policy_are_enforced(tmp_path):
     storage.mkdir()
     vault.mkdir()
     catalog = HubCatalog(
-        generated_at=datetime(2026, 9, 18, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
         resources=[], topics=[], artifacts=[],
     )
     selectable = SimpleNamespace(
@@ -424,6 +430,8 @@ def test_action_request_shape_and_workspace_policy_are_enforced(tmp_path):
         vault_root=vault,
         catalog_provider=StaticCatalogProvider(catalog),
         action_service=service,
+        owner_mode="cmux-visible",
+        require_workspace_binding=False,
     )
     try:
         port = server.server_address[1]
@@ -455,7 +463,7 @@ def test_action_request_shape_and_workspace_policy_are_enforced(tmp_path):
         server.server_close()
 
 
-def test_codex_action_is_global_and_only_registered_for_explicit_trusted_cwd(tmp_path):
+def test_codex_task_action_is_not_exposed_until_worker_is_enabled(tmp_path):
     storage = tmp_path / "storage"
     vault = tmp_path / "vault"
     project = tmp_path / "trusted-project"
@@ -463,7 +471,7 @@ def test_codex_action_is_global_and_only_registered_for_explicit_trusted_cwd(tmp
     vault.mkdir()
     project.mkdir()
     catalog = HubCatalog(
-        generated_at=datetime(2026, 9, 18, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
         resources=[], topics=[], artifacts=[],
     )
     server = start_hub_server(
@@ -476,10 +484,7 @@ def test_codex_action_is_global_and_only_registered_for_explicit_trusted_cwd(tmp
     try:
         port = server.server_address[1]
         actions = json.loads(_request(port, "/api/v1/actions").read())
-        assert list(actions) == ["__hub__"]
-        assert len(actions["__hub__"]) == 1
-        assert actions["__hub__"][0]["kind"] == "codex.session"
-        assert actions["__hub__"][0]["workspace_policy"] == "required"
+        assert actions == {}
         assert str(project) not in json.dumps(actions)
     finally:
         server.shutdown()
@@ -500,7 +505,7 @@ def test_action_surface_refreshes_when_live_catalog_revision_changes(tmp_path):
             return self.catalog
 
     empty = HubCatalog(
-        generated_at=datetime(2026, 9, 18, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
         resources=[], topics=[], artifacts=[],
     )
     provider = MutableCatalogProvider(empty)
@@ -558,7 +563,7 @@ def test_artifact_preview_reads_only_catalog_registered_vault_file(tmp_path):
         vault_path="世界模型/分析.md",
     )
     catalog = HubCatalog(
-        generated_at=datetime(2026, 9, 18, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
         resources=[], topics=[], artifacts=[artifact],
     )
     server = start_hub_server(
@@ -602,7 +607,7 @@ def _editable_hub(tmp_path, *, artifact_format=ArtifactFormat.MARKDOWN, suffix="
         vault_path=f"研究/内容{suffix}",
     )
     catalog = HubCatalog(
-        generated_at=datetime(2026, 9, 18, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
         resources=[],
         topics=[],
         artifacts=[artifact],
@@ -612,6 +617,8 @@ def _editable_hub(tmp_path, *, artifact_format=ArtifactFormat.MARKDOWN, suffix="
         storage_root=storage,
         vault_root=vault,
         catalog_provider=StaticCatalogProvider(catalog),
+        owner_mode="cmux-visible",
+        require_workspace_binding=False,
     )
     return server, note, artifact
 
@@ -799,8 +806,40 @@ def test_artifact_write_requires_csrf_and_explicit_same_origin(tmp_path, headers
         server.server_close()
 
 
-@pytest.mark.parametrize("content", ["[]", "null", "not json"])
-def test_canvas_write_requires_a_json_object(tmp_path, content):
+@pytest.mark.parametrize(
+    "content",
+    [
+        "[]",
+        "null",
+        "not json",
+        "{}",
+        '{"nodes":[],"edges":{}}',
+        json.dumps({
+            "nodes": [{
+                "id": "missing-type",
+                "x": 0,
+                "y": 0,
+                "width": 400,
+                "height": 160,
+                "text": "Readable text",
+            }],
+            "edges": [],
+        }),
+        json.dumps({
+            "nodes": [{
+                "id": "one",
+                "type": "text",
+                "x": 0,
+                "y": 0,
+                "width": 400,
+                "height": 160,
+                "text": "Readable text",
+            }],
+            "edges": [{"id": "dangling", "fromNode": "one", "toNode": "two"}],
+        }),
+    ],
+)
+def test_canvas_write_requires_a_valid_json_canvas(tmp_path, content):
     server, note, artifact = _editable_hub(
         tmp_path, artifact_format=ArtifactFormat.CANVAS, suffix=".canvas"
     )
@@ -821,6 +860,42 @@ def test_canvas_write_requires_a_json_object(tmp_path, content):
             )
         assert error.value.code == 422
         assert note.read_text(encoding="utf-8") == original
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_canvas_write_accepts_standard_typed_nodes(tmp_path):
+    server, note, artifact = _editable_hub(
+        tmp_path, artifact_format=ArtifactFormat.CANVAS, suffix=".canvas"
+    )
+    try:
+        port = server.server_address[1]
+        token = json.loads(_request(port, "/api/v1/session").read())["csrf_token"]
+        encoded = urllib.parse.quote(artifact.artifact_id, safe="")
+        current = json.loads(
+            _request(port, f"/api/v1/artifacts/{encoded}/content").read()
+        )
+        content = json.dumps({
+            "nodes": [{
+                "id": "readable-node",
+                "type": "text",
+                "x": 0,
+                "y": 0,
+                "width": 400,
+                "height": 160,
+                "text": "Readable text",
+            }],
+            "edges": [],
+        })
+        response = _put_content(
+            port,
+            artifact.artifact_id,
+            {"content": content, "base_revision": current["revision"]},
+            token=token,
+        )
+        assert response.status == 200
+        assert json.loads(note.read_text(encoding="utf-8"))["nodes"][0]["type"] == "text"
     finally:
         server.shutdown()
         server.server_close()
@@ -918,7 +993,7 @@ def test_write_rejects_catalog_path_escape_even_if_validation_was_bypassed(tmp_p
     )
     catalog = HubCatalog.model_construct(
         schema_version=1,
-        generated_at=datetime(2026, 9, 18, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
         revision="test",
         sources=[],
         resources=[],
@@ -931,6 +1006,8 @@ def test_write_rejects_catalog_path_escape_even_if_validation_was_bypassed(tmp_p
         storage_root=storage,
         vault_root=vault,
         catalog_provider=StaticCatalogProvider(catalog),
+        owner_mode="cmux-visible",
+        require_workspace_binding=False,
     )
     try:
         port = server.server_address[1]

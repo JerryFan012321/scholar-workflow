@@ -1,8 +1,14 @@
-# 功能规格(草案)— 两级 AI 论文阅读:略读(推荐上游)+ 详细分析(落 vault)
+# 历史设计快照 — 两级 AI 论文阅读：略读（推荐上游）+ 详细分析（落 Vault）
 
-> 规划层文档(永久,不归档)。意图对照 `GOALS.md`,变更史 `../CHANGELOG.md`。
-> **状态:草案,待用户审阅后再落地。** 本文只记方案,不动代码。
+> 规划层历史文档（永久、不归档）。意图对照 `GOALS.md`，变更史见 `../CHANGELOG.md`。
+> **状态：历史设计已从 v0.12.0 起分阶段落地；本文不是当前 runtime 规格。** 下文保留早期来源、
+> 路由与决策背景，其中 `zotero-mcp`、字段化分析格式和“待落地”等表述只描述当时状态，不得据此
+> 修改现行实现。当前能力与数据源契约以 `GOALS.md`、对应 runtime skill/reference 和测试为准。
 > 参照学习:sjh-skills `scholar-agent`(推荐→筛选→NotebookLM 略读→反馈闭环)。
+>
+> **2026-09-21 边界说明：**本文保留两级阅读的来源与路由历史；详细分析的现行目标格式不再由本文
+> 定义。其人类正文、Canvas、证据反链和机器 sidecar 契约以 `GOALS.md` INV24/INV38 与
+> `knowledge-system-v2.md` 为准。下文早期“字段化分析笔记”描述不得覆盖该新契约。
 
 ## 缘起(为什么做)
 
@@ -197,4 +203,3 @@ recommend-papers 的设置分两层,承 sjh 模型,落到本项目目录约定:
 - sjh-skills `scholar-agent`(GitHub jiahao-shao1/sjh-skills):推荐+NotebookLM 略读闭环的现成范式。
 - `notebooklm-py`(GitHub teng-lin/notebooklm-py):Google 内部 RPC API 的非官方 CLI。
 - 现有 `skills/export-annotations/`:批注笔记产物,与详细分析分工互链。
-

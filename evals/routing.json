@@ -126,6 +126,12 @@
       "comment": "明确要求 canonical 论文解析树与 Markdown+Canvas 文档对 → analyze-paper;格式约束投影结果,不规定模型如何思考"
     },
     {
+      "id": "analyze-paper-selected-batch",
+      "input": "把我选中的这批已入库论文逐篇分析，每篇都生成解析树并检查格式",
+      "expected_skill": "analyze-paper",
+      "comment": "用户已选定论文的批量分析 → analyze-paper;每篇独立产物、conformance 与失败状态，不承担论文发现"
+    },
+    {
       "id": "recommend-daily-feed",
       "input": "今天有什么新论文值得看",
       "expected_skill": "recommend-papers",

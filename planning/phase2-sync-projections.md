@@ -7,6 +7,12 @@
 > 是当时的决策记录,保留不改写。实际进展已超出:Notion 双库(Papers + Related Docs)已于
 > **v0.8.1 实盘上线并固化进 skill 层**(机械层 `bin/notion-project.py` + 展示层 SKILL.md)。
 > 当前权威状态见 `GOALS.md` Phase 2 行 + INV17/INV19/INV21 + `../CHANGELOG.md` [0.8.1]。
+>
+> **2026-09-21 入口契约修订：**本文的 `127.0.0.1:<port>/open/paper/...` 是已实现的历史兼容
+> 路由，不再是新知识正文的长期身份格式。当前目标由重写后的 INV17 与
+> `knowledge-system-v2.md` §8.1 / K-E 定义：持久层保存 resource/attachment ID，运行时派生受管动作
+> （默认 owner 与启动体验的决策见 K5）；
+> 旧链接在显式迁移完成前继续可用，不在本规划阶段批量改写。
 
 ## 目标(本轮)
 

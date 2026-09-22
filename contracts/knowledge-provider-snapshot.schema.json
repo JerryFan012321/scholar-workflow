@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholar-workflow.local/contracts/knowledge-provider-snapshot.schema.json",
+  "title": "Atomic Knowledge provider manifest and catalog snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "snapshot_revision",
+    "manifest",
+    "artifacts",
+    "relations",
+    "projections",
+    "catalog",
+    "receipts"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "snapshot_revision": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "manifest": {
+      "$ref": "https://scholar-workflow.local/contracts/knowledge-manifest.schema.json"
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "https://scholar-workflow.local/contracts/knowledge-change-set.schema.json#/$defs/artifact"
+      }
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "$ref": "https://scholar-workflow.local/contracts/knowledge-change-set.schema.json#/$defs/relation"
+      }
+    },
+    "projections": {
+      "type": "array",
+      "items": {
+        "$ref": "https://scholar-workflow.local/contracts/knowledge-change-set.schema.json#/$defs/projection"
+      }
+    },
+    "catalog": {"$ref": "hub-catalog.schema.json"},
+    "receipts": {
+      "type": "array",
+      "items": {
+        "$ref": "https://scholar-workflow.local/contracts/knowledge-apply-receipt.schema.json"
+      }
+    }
+  }
+}

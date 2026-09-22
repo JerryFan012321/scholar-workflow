@@ -1,24 +1,29 @@
+import json
 import subprocess
 import sys
+import uuid
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "skills" / "init-project" / "scripts" / "init_project.py"
 
-EXPECTED_DIRECTORIES = {
+EXPECTED_TRACKED_DIRECTORIES = {
     ".agents/skills",
     "assets",
-    "configs",
-    "dataset/metadata",
-    "dataset/raw",
-    "dataset_toolkits",
+    "configs/components",
+    "configs/recipes",
+    "env",
+    "src/utils/dataset_toolkit",
+    "tools",
+    "tests",
+}
+
+EXPECTED_LOCAL_DIRECTORIES = {
+    "dataset",
     "docs/notes",
     "docs/plan",
     "docs/report",
-    "env/server",
-    "experiments",
-    "src/pipeline",
+    "experiments/profiles/targets",
 }
 
 
@@ -47,18 +52,32 @@ def test_apply_creates_host_neutral_git_managed_skeleton(tmp_path):
     result = run_init("apply", target)
 
     assert result.returncode == 0, result.stderr
-    for relative in EXPECTED_DIRECTORIES:
+    for relative in EXPECTED_TRACKED_DIRECTORIES:
         directory = target / relative
         assert directory.is_dir()
         assert (directory / ".gitkeep").is_file()
+    for relative in EXPECTED_LOCAL_DIRECTORIES:
+        directory = target / relative
+        assert directory.is_dir()
+        assert not (directory / ".gitkeep").exists()
 
     assert (target / ".git").is_dir()
     assert "@AGENTS.md" in (target / "CLAUDE.md").read_text(encoding="utf-8")
     assert "Canonical project instructions" in (target / "AGENT.md").read_text(encoding="utf-8")
-    assert "dataset/metadata/" in (target / "AGENTS.md").read_text(encoding="utf-8")
+    agents_text = (target / "AGENTS.md").read_text(encoding="utf-8")
+    assert agents_text.startswith("# demo-project Project Instructions\n")
+    assert "src/utils/dataset_toolkit/" in agents_text
+    assert "dataset/" in (target / ".gitignore").read_text(encoding="utf-8")
+    layout = json.loads((target / "project-layout.json").read_text(encoding="utf-8"))
+    assert layout["schema_version"] == 2
+    assert uuid.UUID(layout["project_id"]).version == 4
+    assert layout["source_profile"] is None
+    assert layout["addons"] == []
     assert not (target / ".claude").exists()
     assert not (target / ".codex").exists()
     assert not (target / ".DS_Store").exists()
+    assert not (target / "dataset_toolkits").exists()
+    assert not (target / "env/server").exists()
 
     staged = subprocess.run(
         ["git", "-C", str(target), "diff", "--cached", "--name-only"],

@@ -1,7 +1,7 @@
 # 科研项目系统 v2 — 改造计划
 
-> 状态：Draft 0.1，2026-09-20。当前只形成契约、阶段和验收标准；尚未修改
-> `init-project`、尚未新增实验管理能力、尚未迁移任何真实项目。
+> 状态：Accepted 0.3，2026-09-22。用户已授权按本文实施 `init-project`、项目身份和实验档案；
+> 真实项目迁移、正式备份后端和既有项目的 destructive/untrack 操作仍不在授权范围内。
 >
 > 本文使用三种标记：**已锁定**表示用户已经确认的上位规则；**推荐**表示本计划给出的实现选择；
 > **待决策**表示实现前仍需用户裁定。外部 AI 项目调研只影响源码和配置 profile，不能覆盖已锁定规则。
@@ -23,17 +23,22 @@
 
 发生冲突时按以下顺序处理：
 
-1. 本文标记为“已锁定”的用户共识；
-2. `planning/GOALS.md` 中的不变量与非目标；
-3. 共同项目契约；
-4. 源码/config profile；
-5. 单个项目经用户确认的覆盖项；
-6. 外部仓库的组织习惯。
+1. 根 `AGENT.md` 及其导入规则；
+2. `planning/GOALS.md` 中的目标、不变量与非目标；
+3. 已同步进入 GOALS 的、本文标记为“已锁定”的用户共识；
+4. 共同项目契约；
+5. 源码/config profile；
+6. 单个项目经用户确认的覆盖项；
+7. 外部仓库的组织习惯。
+
+新的用户共识必须先同步到 `GOALS.md` 与 `CHANGELOG.md`，phase spec 只细化、不得覆盖上位 G/INV/NG。
 
 TRELLIS、Gaussian Splatting、Detectron2、SAM 2、DreamerV3 和 TorchTitan 是 profile 的设计证据，
 不是项目根目录规范的权威来源。
 
-## 3. 已锁定的共同契约
+## 3. 共同契约与跨系统接口
+
+3.1–3.5 均为已锁定的共同契约。P-D10 已由三系统联合计划裁定为显式独立复制，不建立托管链接。
 
 ### 3.1 Git 与源码
 
@@ -82,16 +87,26 @@ dataset/
 - 试验性源码如确有需要使用 `prototypes/`，框架型扩展优先使用 `extensions/`。
 - 其他既有项目的 `.gitignore`、tracked 文件和目录迁移必须逐项目讨论，不能批量改写。
 
+### 3.5 与全局科研知识系统的接口（已锁定）
+
+- 项目 `docs/` 是项目内独立工作正文；跨项目知识 Vault 的契约见 `knowledge-system-v2.md`。
+- Knowledge→Project 只能由人或 agent 显式选择内容并复制到已注册项目的 `docs/`。复制时移除知识系统
+  `sw_*` 身份、sidecar、baseline marker 与托管关系；目标冲突时拒绝，不覆盖、不自动改名。
+- Project→Knowledge 由人或 agent 判断内容成熟后显式归档，创建新的 Vault-native 文档和身份。
+- 两个副本独立演化；系统不建立实时同步、托管 project-reference 或必须维护的语义 provenance。
+- Run/Attempt 报告继续属于实验档案。复制或归档其人类可读内容不会改变 recipe、retention、promotion
+  或 backup 状态。
+
 ## 4. 目标结构
 
-以下是 v2 的概念结构。`project-layout.json` 和精确实验字段属于本计划的推荐实现，需经过决策门后落地：
+以下是 v2 的概念结构。`project-layout.json` 是便携项目身份与所选 profile 的正式 manifest：
 
 ```text
 project/
 ├── AGENTS.md
 ├── CLAUDE.md
 ├── AGENT.md
-├── project-layout.json                 # 推荐：已选 source profile/addon 及版本
+├── project-layout.json                 # schema v2：稳定 project_id + profile/addon 及版本
 ├── .agents/
 │   └── skills/
 ├── src/
@@ -295,8 +310,8 @@ Artifact manifest 同时记录“是什么”和“怎样保存”：
 
 ### 6.5 实验管理能力边界
 
-持续的实验生命周期不塞进 `init-project`。建议新增用户直呼的实验管理 skill（暂用工作名
-`manage-experiment`），由宿主中立 CLI 提供确定性操作：
+持续的实验生命周期不塞进 `init-project`。本批采用宿主中立的确定性 CLI，并由现有
+`init-project` 文档说明实验档案入口；不新增 standalone `manage-experiment` skill：
 
 ```text
 experiment new-run
@@ -481,19 +496,20 @@ CHANGELOG.md
 
 `scripts/make-release.sh` 当前已整体纳入 `skills/` 和 `contracts/`，实现时仍须通过 release 内容测试确认。
 
-## 13. 待决策项与推荐
+## 13. 已冻结决策与外部决策门
 
-| ID | 待决策项 | 可选方向 | 当前推荐 |
+| ID | 决策项 | 状态 | 已冻结结果 |
 |---|---|---|---|
-| D1 | 实验 skill 名称 | `manage-experiment` / `experiment-management` | `manage-experiment`，动词明确 |
-| D2 | Run ID | 时间戳 / 日期+slug / UUID | `YYYYMMDD-HHMM-<slug>`，可读且基本唯一 |
-| D3 | 实验文档格式 | JSON / YAML | YAML 供人读，JSON Schema 校验解析后的对象 |
-| D4 | dirty worktree | 一律拒绝 / 保存 patch 后允许 draft | 正式 Run 要求 clean；显式 draft 可保存 patch，不能冒充 frozen Run |
-| D5 | project manifest 名称 | `project-layout.json` / 隐藏文件 | 可见的 `project-layout.json` |
-| D6 | profile 扩展目录 | `projects/` / `extensions/` | `extensions/`，避免与“项目”概念混淆 |
-| D7 | 备份介质与频率 | 外置盘 / NAS / 云端加密副本 / 组合 | 待用户说明现有设备后决定 |
-| D8 | 大产物默认阈值 | 按类型 / 按大小 / 全人工选择 | 类型默认 + 人工覆盖，暂不先定大小阈值 |
-| D9 | 首个真实迁移项目 | 新空项目 / 3DGS 项目 / 其他 | 先临时项目，再由用户选择一个真实项目 |
+| D1 | 实验工作流入口 | 已冻结 | 本批不新增 standalone skill；确定性能力进入 `scholar-workflow experiment`，初始化和项目契约继续由 `init-project` skill 说明 |
+| D2 | Run ID | 已冻结 | `YYYYMMDD-HHMM-<slug>`；冲突时拒绝并要求显式新 ID |
+| D3 | 实验文档格式 | 已冻结 | YAML 供人读，JSON Schema 校验解析后的对象 |
+| D4 | dirty worktree | 已冻结 | 正式 Run 要求 clean；显式 draft 可保存 patch，不能冒充 frozen Run |
+| D5 | project manifest | 已冻结 | `project-layout.json`，`schema_version: 2`；`project_id` 是初始化时生成一次的规范小写 UUID，复制/重跑保持不变且不含主机路径 |
+| D6 | profile 扩展目录 | 已冻结 | `extensions/`，避免与“项目”概念混淆 |
+| D7 | 备份介质与频率 | 外部决策门 | 未确定前只实现 promotion 和 `backup_pending`，不得声明 verified |
+| D8 | 大产物默认阈值 | 已冻结 | 类型默认 + 人工覆盖，首版不设通用大小阈值 |
+| D9 | 首个真实迁移项目 | 外部决策门 | 只完成临时 fixture；真实项目由用户以后逐项选择 |
+| P-D10 | 项目 `docs/` 与全局知识 Vault 的衔接 | 已冻结 | 显式独立复制；目标获得新身份并独立演化，无实时同步、托管链接或强制 provenance |
 
 ## 14. 完成定义
 
@@ -506,3 +522,5 @@ CHANGELOG.md
 5. 旧项目无静默移动、删除、覆盖、untrack 或 profile 猜测；
 6. 每个真实项目的配置和迁移都经过用户单独确认；
 7. Claude Code 与 Codex 安装得到同一套能力与契约。
+8. 项目 `docs/` 与全局知识 Vault 不形成静默双真源；跨域内容只经显式复制，副本拥有独立身份，
+   不依赖持续来源关系才能读写或演化。

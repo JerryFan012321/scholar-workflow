@@ -11,6 +11,22 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/写入(create/impor
 论文下载: CLI 落入 paper_inbox 收件箱，再经 Zotero Local API 入库
 ```
 
+## 三系统运行边界
+
+- **Project System** 持有便携 `project_id`、共同项目布局、源码/config profile 和
+  Run/Attempt/Target/Artifact 档案；主机项目根只进入显式 host registry。
+- **Knowledge System** 持有 Vault 核心文档、原子资源、附属产物、analysis result contract 和
+  knowledge relations；批量产物逐项通过 conformance gate，失败不得记成功。
+- **Hub Control Plane** 以唯一 `HubDirectory` 聚合 Papers/Projects/Tools、Knowledge Contexts 与
+  Operations；旧 `HubCatalog` 只是版本化 `knowledge_catalog` 兼容投影，Hub 不成为正文或 transcript 真源。
+- Knowledge 与 Project 只经人或 agent 显式复制内容；副本获得目标系统 identity 并独立演化，
+  不建立自动同步、托管 project-reference 或强制 provenance。
+- Hub 默认由可见 cmux `runtime` workspace 中的唯一服务持有；workspace/file/task mutation 必须有
+  有效 binding，unbound/headless 只读。项目文件操作只限显式注册项目的 `docs/`，请求只接受
+  `project_id + docs 相对路径`；删除进入 `.scholar-workflow/trash/docs/`，Hub 不执行 Git 写操作。
+- TaskRecipe 只接受 allowlisted target、最多 8 KiB 的 bounded brief 和 `fast/standard/deep` effort；
+  浏览器不能提交命令、cwd/path、model、sandbox、permission、环境变量或任意 config。
+
 ## 设计哲学(上位准则)
 
 所有下游规则(skill / reference / INV / NG / 约束)都服从这两条。冲突时,本节优先。

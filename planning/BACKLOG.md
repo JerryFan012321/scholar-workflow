@@ -42,10 +42,10 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Status**: ready
 - **Priority**: p2
 - **Type**: code-change
-- **Context**: Four implementations still need real end-to-end use: (1) analyze-paper v0.27.2 canonical Markdown/Canvas output, focused update, and human-edit conflict protection in a new Codex thread; (2) build-literature-tree CLI render path, especially the fourth "module" level and the challenge-insight tree written to vault; (3) recommend-papers NotebookLM skim tier; (4) check-consistency audit. These need real use to find gaps.
+- **Context**: The first real analyze-paper v0.27.2 run is complete: V-JEPA 2 exposed a contract-level failure rather than a passing acceptance case (194 field markers in 476 Markdown lines; 194-node/35,940px-high Canvas; duplicate Evidence nodes; non-source "对应挑战 / 贡献" fields; no claim-level evidence backlinks). Its redesign is now WI-027/WI-028 and its migration rerun is WI-030. The other three implementations still need real end-to-end use: build-literature-tree's module/challenge render path, recommend-papers NotebookLM skim tier, and check-consistency audit.
 - **Blocker**: none
-- **Next action**: First open a new Codex thread and run analyze-paper 0.27.2 on one real Zotero paper, including one focused update and one deliberate human-edit conflict; capture evidence before promoting any related outcome. Then resume the remaining three battle tests.
-- **Related**: INV24 (structured paper analysis), INV22 (literature-tree schema), INV23 (recommend-papers ephemeral), check-consistency skill
+- **Next action**: Keep the analyze-paper outcomes pending until WI-027/WI-028 are implemented and WI-030 reruns the JEPA golden case; meanwhile resume the remaining three battle tests when scheduled.
+- **Related**: INV24, INV38, WI-027, WI-028, WI-030, INV22 (literature-tree schema), INV23 (recommend-papers ephemeral), check-consistency skill
 
 ### WI-008: Step 0 — CLI bootstrap contract (config-UX follow-on)
 - **Status**: deferred
@@ -152,54 +152,207 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Priority**: p1
 - **Type**: planning
 - **Context**: The earlier experiment-ledger idea has expanded through the 2026-09-20 discussion into a full research-project contract: a stable common base, per-dataset local layout, machine-independent `env/`, explicit source/config profiles, Run/Attempt/Target separation, local artifact promotion, and safe legacy migration. External repository research informs only source/config profiles; it cannot override the common data, experiment, environment, documentation, backup, or Hub boundaries. The complete draft is `planning/project-system-v2.md`.
-- **Blocker**: user decisions D1-D9 in the plan before schemas are frozen
-- **Next action**: Review the decision table, then execute WI-020 through WI-024 in dependency order. Do not edit the current initializer or migrate a real project before the contract phase is approved.
+- **Blocker**: none for runtime implementation; backup medium and first real migration remain external decision gates
+- **Next action**: Keep the implemented WI-020 through WI-023 contracts green through the final regression/release review; keep WI-024 read-only until a real project is selected.
 - **Related**: G11, INV27, INV32-INV35, WI-020, WI-021, WI-022, WI-023, WI-024
 
 ### WI-020: init-project v2 common contract and declarative initializer
-- **Status**: ready
+- **Status**: done
 - **Priority**: p1
 - **Type**: refactor
 - **Context**: Replace the old hard-coded `dataset/{metadata,raw}`, top-level `dataset_toolkits/`, `env/server/`, and single generic `src/pipeline/` skeleton with a declarative tracked/local base. Preserve plan-before-apply, idempotency, fail-closed symlink handling, host neutrality, and no stage/commit/push. Existing projects receive diagnostics and proposed patches only.
-- **Blocker**: WI-019 decision freeze; project-layout manifest name/version decision
-- **Next action**: Write project-layout/base-layout schemas and contract tests first, then split the initializer into common tracked paths, local-only paths, and an explicit profile resolver.
+- **Blocker**: none; `project-layout.json` schema v2 and stable UUID `project_id` are frozen
+- **Next action**: Keep the fixture contract green; do not retrofit a real project before WI-024 is explicitly unblocked.
 - **Related**: INV27, INV32, `planning/project-system-v2.md` Phase A-B
 
 ### WI-021: Source and configuration profile catalog
-- **Status**: ready
+- **Status**: done
 - **Priority**: p1
 - **Type**: code-change
 - **Context**: Encode the source/config organization learned from TRELLIS, Gaussian Splatting, Detectron2, SAM 2, DreamerV3, and TorchTitan as six primary profiles (`paper-method`, `multi-stage-3d`, `research-framework`, `foundation-model`, `world-model`, `training-platform`) plus orthogonal addons. Profiles may affect only source/config/entrypoint/test-related paths and must never redefine the common outer contract.
-- **Blocker**: WI-020 profile manifest and catalog loader
-- **Next action**: Add a schema-validated catalog, path confinement tests, explicit CLI selection, stable profile versions, and generated AGENTS responsibility rows. Do not generate algorithm placeholder files or auto-detect a profile.
+- **Blocker**: WI-020 interfaces must land in the same capability batch
+- **Next action**: No code action before release review; do not auto-detect a profile or generate algorithm placeholders.
 - **Related**: INV27, INV32, `planning/project-system-v2.md` Phase C
 
 ### WI-022: Run/Attempt/Target experiment contracts and management skill
-- **Status**: pending-decision
+- **Status**: done
 - **Priority**: p1
 - **Type**: code-change
 - **Context**: A Run is the scientific recipe; an Attempt is one real execution on a Target. Multiple Runs may share a commit, and one Run may have local and SSH Attempts. The first implementation manages records, validation, indexing, completion receipts, and migration plans; it does not implicitly launch training or accept arbitrary remote commands.
-- **Blocker**: choose the skill name, Run ID convention, YAML/JSON representation, and dirty-worktree policy
-- **Next action**: Add Run/Attempt/Target/Artifact schemas and failing contract tests, then implement host-neutral `experiment` CLI commands and a thin direct-invocation skill.
+- **Blocker**: none; choices are frozen in `project-system-v2.md` §13
+- **Next action**: Keep fixture/fault tests green; a real experiment remains outside this capability batch. No standalone skill was added.
 - **Related**: INV33, INV34, `planning/project-system-v2.md` Phase D
 
 ### WI-023: Artifact promotion and verified local backup policy
-- **Status**: pending-decision
+- **Status**: done
 - **Priority**: p1
 - **Type**: code-change
 - **Context**: Experiment reports, resolved configs, metrics, parameters, environment summaries, and selected high-value outputs must return from execution servers to local storage. Copying back to the workstation is artifact promotion, not yet a verified backup. Large reproducible intermediates may remain manifest-only.
-- **Blocker**: backup medium/frequency and default large-artifact retention policy
-- **Next action**: Implement explicit selection, atomic copy, SHA-256 verification, no-overwrite semantics, promotion receipts, and `local-required` / `local-selected` / `manifest-only` states. Add actual backup-state transitions only after the second-copy target is decided.
+- **Blocker**: verified-backup transition remains blocked on backup medium/frequency; promotion is unblocked
+- **Next action**: Keep the implemented explicit selection, atomic verified copy, no-overwrite promotion receipts and cross-process race/fault tests green. `backup.state=verified` is rejected by both runtime and schema until WI-041 defines an independent medium and restore exercise.
 - **Related**: INV35, `planning/project-system-v2.md` Phase E
 
 ### WI-024: Legacy layout diagnostics and one-project pilot migration
-- **Status**: pending-decision
+- **Status**: blocked
 - **Priority**: p1
 - **Type**: planning
 - **Context**: Existing `dataset/raw`, `dataset/metadata`, `dataset_toolkits`, `env/server`, tracked docs/experiments, and legacy experiment bundles are semantically ambiguous. Migration must preserve every byte, keep old output/log paths in place, and stop on multiple scripts/configs or unknown commits. No batch migration of unrelated projects is authorized.
-- **Blocker**: WI-020 and WI-022; user choice of the first real project after a temporary-project rehearsal
-- **Next action**: Build read-only `migrate-plan`, validate it on a temporary fixture, then present the exact proposed mapping for one user-selected project before any move, rename, untrack, or metadata insertion.
+- **Blocker**: user choice of the first real project after the completed temporary-project fixture rehearsal
+- **Next action**: After the user selects one real project, run the existing read-only migration planner and present its exact patch; do not apply it implicitly.
 - **Related**: INV27, INV32-INV35, `planning/project-system-v2.md` Phase F
+
+### WI-025: Research knowledge system v2 — umbrella
+- **Status**: in-progress
+- **Priority**: p1
+- **Type**: planning
+- **Context**: The 2026-09-21 V-JEPA 2 run showed that the existing paper-centric Vault, field-heavy analysis contract, 194-node Canvas, and raw 23128 links do not yet form a coherent human-first knowledge system. The new design separates core charter/survey/catalog documents, atomic paper/technical-document/blog resources, attached artifacts, human-readable Markdown, machine sidecars, and managed resource actions. The complete draft is `planning/knowledge-system-v2.md`; this work is separate from the research-project skeleton in WI-019.
+- **Blocker**: none for runtime contracts; K6 real JEPA migration remains an external decision gate
+- **Next action**: Finish the WI-028 visual golden pilot and WI-032 scheduler/repair-plan seam; keep the completed WI-026/WI-027/WI-029/WI-031 contracts green. Do not migrate real Vault data or switch 23128.
+- **Related**: G12, INV17, INV24, INV37-INV39, WI-007, WI-011, WI-015, WI-018, WI-026, WI-027, WI-028, WI-029, WI-030
+
+### WI-026: Knowledge object model and multi-resource HubCatalog assembler
+- **Status**: done
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: HubCatalog currently assembles paper resources from literature-tree payloads, while technical documents do not become resources and Blog/Web articles have no formal kind. Existing `ResourceKind` also mixes semantic resources with `snapshot/drawio/image/dataset` file-like kinds. Define core-document roles (`charter`, `survey`, `catalog`), atomic resource kinds (`paper`, `technical-document`, `blog-post`), rendition/asset compatibility mappings, attached-artifact ownership, stable IDs, and reverse relations without parsing filenames or free Markdown. Reuse the technical-document index direction from WI-011/WI-015 and the knowledge-family scope from WI-018 rather than creating a second registry.
+- **Blocker**: none; object and authority decisions are frozen in `knowledge-system-v2.md`
+- **Next action**: Keep the implemented strict object/owner schemas and CAS/idempotent `KnowledgeChangeSet` apply-to-provider snapshot green, including receipt-content validation, state-root inode rebinding, manifest/catalog closure and ID/path collision tests. Projects remain a separate Library; never infer relations from prose or paths, and do not initialize a real provider/Vault migration before WI-030 approval.
+- **Related**: INV29, INV37, WI-011, WI-015, WI-018, `planning/knowledge-system-v2.md` K-B
+
+### WI-027: Human-readable knowledge artifact and machine-sidecar contract
+- **Status**: done
+- **Priority**: p1
+- **Type**: refactor
+- **Context**: V-JEPA 2's Markdown contains 194 per-field baseline comments in 476 lines, so the nominal text artifact is not human-first. Persistent notes need independently readable prose, thin identity frontmatter, inline evidence, and external section/claim baseline state. Machine structure may remain available as a manifest/sidecar or rebuildable export, but must not become a second editable body.
+- **Blocker**: none; sidecar and claim/backlink result contracts are frozen
+- **Next action**: Keep the implemented human-first renderer and canonical Markdown/Canvas/sidecar transaction green. Real Vault writes remain prohibited until WI-030 presents and receives approval for the exact JEPA patch.
+- **Related**: INV24, INV38, WI-028, `planning/knowledge-system-v2.md` K-C
+
+### WI-028: analyze-paper Markdown and Canvas v2
+- **Status**: in-progress
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: Redesign the detailed paper artifact around readable prose plus a compact visual overview. Evidence belongs with its claim and links back; Method steps form one continuous flow; standalone Evidence nodes and pipeline "对应挑战 / 贡献" are removed. JSON Canvas remains standard and editable, preserves user layout/nodes, uses headings and larger semantic nodes, and keeps detailed content in Markdown rather than mirroring every field.
+- **Blocker**: WI-027 interface in the same capability batch; private CSS is explicitly not required in v1
+- **Next action**: The output contract, renderer, conformance gate and sidecar-aware conflict plan are implemented. Complete the temporary V-JEPA 2 golden fixture and real Obsidian screenshot/readability check; do not write the real Vault analysis yet.
+- **Related**: INV24, INV38, WI-007, WI-027, WI-030, `planning/knowledge-system-v2.md` K-D
+
+### WI-029: Knowledge catalog provider and stable Hub/PDF entry
+- **Status**: done
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: Knowledge System v2 must expose a versioned `knowledge_catalog` inside the unique HubDirectory and keep stable resource/artifact identities separate from raw loopback URLs. Service lifecycle, workspace binding and task control now belong to WI-033–WI-040 rather than this knowledge work item.
+- **Blocker**: WI-026 provider model
+- **Next action**: Keep typed paper/attachment/knowledge-artifact landings, the v1-derived projection, and the authoritative provider-snapshot apply contract green through release review. `serve-hub` now selects that provider only when its explicit snapshot already exists; do not initialize live provider state, switch 23128, or rewrite stored raw links in this batch.
+- **Related**: INV17, INV29, INV43, WI-026, WI-033, WI-035, `planning/knowledge-system-v2.md` K-E
+
+### WI-030: Knowledge-system migration planner and JEPA golden pilot
+- **Status**: blocked
+- **Priority**: p1
+- **Type**: planning
+- **Context**: Existing `01-Paperlist.md`, literature trees, `paper_assets/`, analysis notes, Canvas layouts, and raw 23128 links are live user data. Migration must preserve bytes until an exact plan is approved, keep user prose/layout/custom nodes, and distinguish runtime release from Vault conversion. V-JEPA 2 is the first evidence-rich pilot because it exposes every target defect.
+- **Blocker**: WI-026-WI-029; K6 confirmation of the JEPA pilot and each real patch
+- **Next action**: Build a read-only migration plan against a temporary fixture, including a scan for same-resource analysis/Canvas copies across topics. Identical hashes may only produce an alias/dedup proposal; differing hashes remain unresolved and must be shown as canonical-vs-topic-context candidates without automatic selection. Then present the exact V-JEPA 2 Markdown/Canvas/catalog/link diff before any real Vault write. Do not batch-migrate other topics.
+- **Related**: INV37-INV42, WI-007, WI-026, WI-027, WI-028, WI-029, WI-031, WI-032, `planning/knowledge-system-v2.md` K-G
+
+### WI-031: Per-paper analysis conformance and batch isolation
+- **Status**: done
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: A batch must not report success merely because files were emitted. Whole/focused profiles, required observable roles, evidence placement, Canvas graph validity, node budget and human-readable output need one deterministic validation boundary applied independently to every paper.
+- **Blocker**: WI-027/WI-028 result contracts in the same capability batch
+- **Next action**: Keep profile/IR validation, per-item state, one-repair maximum, cleanup and mixed-success isolation tests green. Crash-stale `running` batches remain report-only until a lease/recovery contract is separately approved.
+- **Related**: G13, INV40, INV41, WI-027, WI-028
+
+### WI-032: Knowledge maintenance and template-version audit
+- **Status**: in-progress
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: The library needs a repeatable way to find orphan artifacts, broken manifests, duplicate canonical analyses, template drift, raw loopback identity leakage and unfinished batch items without rewriting content automatically.
+- **Blocker**: WI-026 and WI-031 data surfaces
+- **Next action**: The explicit-manifest, strictly read-only audit surface is implemented. Add the optional weekly scheduler and an explicit single-use repair-plan/apply contract later; all real repairs and Vault writes remain separate approved actions.
+- **Related**: G13, INV42, WI-026, WI-031
+
+### WI-033: Hub Control Plane v2 — umbrella and formal contract
+- **Status**: in-progress
+- **Priority**: p1
+- **Type**: planning
+- **Context**: `hub-investigation-conclusion.md` established evidence but is not an activated specification. `planning/hub-control-plane-v2.md` freezes HubDirectory, typed Libraries, registries, bindings, project-doc boundaries and task control as a third system alongside Project and Knowledge.
+- **Blocker**: none
+- **Next action**: Keep the implemented WI-034–WI-040 contract surfaces aligned through full regression and the release-artifact canary. Do not fold control-plane ownership back into Knowledge System or enable production task execution implicitly.
+- **Related**: G14, INV43-INV46, WI-034-WI-040
+
+### WI-034: Hub service identity, diagnostics and temporary-port canary
+- **Status**: in-progress
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: The current 23128 listener is an identifiable but old 0.18.0 service while source/manifests are 0.27.2. The new build needs self-describing health and a canary path before any cutover.
+- **Blocker**: live 23128 cutover remains a separate user gate
+- **Next action**: Against the eventual release artifact, save the old plist/venv/GET baseline and run the implemented temporary-port canary; do not modify LaunchAgent or 23128 without approval.
+- **Related**: INV39, INV44, WI-040
+
+### WI-035: HubDirectory, Papers Library and v1 compatibility
+- **Status**: done
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: Replace the mixed root with one versioned HubDirectory and typed/paged Library providers. Papers must page through Zotero Local API; old `/api/v1/catalog` remains a derived read-only projection.
+- **Blocker**: none for the HubDirectory/Papers seam; the broader Knowledge provider apply remains WI-026/WI-029
+- **Next action**: Keep the completed typed Papers paging, authority namespaces, provider diagnostics, v1-derived projection and optional authoritative Knowledge-provider selection tests green; live provider initialization and 23128 cutover remain separate gates.
+- **Related**: INV29, INV43, WI-026, WI-029
+
+### WI-036: Projects Library and safe project-doc operations
+- **Status**: done
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: Projects come only from portable `project_id` plus explicit host registry. Hub file operations are limited to registered `docs/`; knowledge/project copies become independent, and deletion is recoverable trash.
+- **Blocker**: WI-020 project-layout contract
+- **Next action**: Do not register or modify a real project until selected; retain the cross-process/race/fault no-overwrite tests.
+- **Related**: INV46, WI-020, WI-027, WI-035
+
+### WI-037: ToolDefinition registry and Tools Library
+- **Status**: done
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: Scholar Workflow, Codex, cmux, Zotero, Obsidian and future tools require explicit provider/capability/health/recipe declarations. PATH scanning is prohibited.
+- **Blocker**: none
+- **Next action**: Populate real ToolDefinition rows only through explicit host configuration after release; never scan `$PATH`.
+- **Related**: INV43, NG13, WI-039
+
+### WI-038: WorkspaceProfile, Lease and HubViewBinding
+- **Status**: done
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: Existing opaque workspace mappings are process-local but do not express service generation, lease expiry or cmux instance identity. Executable views need exactly one verified primary binding.
+- **Blocker**: WI-034 service identity
+- **Next action**: Validate the implemented nonce/generation/socket-instance invalidation against the formal cmux canary before cutover.
+- **Related**: INV44, WI-034, WI-039
+
+### WI-039: TaskRecipe, LogicalTask, TaskRun and Codex worker
+- **Status**: in-progress
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: Replace blank-session-only action with server-registered recipes, bounded brief/effort and explicit Codex thread IDs while preserving the prohibition on browser commands, paths and security configuration.
+- **Blocker**: WI-036–WI-038 contracts
+- **Next action**: Internal schemas/store/worker, explicit-thread parsing, cross-process locks, cancel/timeout and process-group recovery are implemented with fake-worker tests. Next is a separately gated production worker manager/HTTP surface and real capability canary; do not launch a real task in this batch.
+- **Related**: INV31, INV45, NG15
+
+### WI-040: Library-first UI, compatibility rollout and 23128 cutover gate
+- **Status**: in-progress
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: The Hub UI currently assumes a whole catalog loaded client-side. It must navigate Libraries, Knowledge Contexts and Operations, with server pagination and visible disabled actions when unbound.
+- **Blocker**: WI-035–WI-039; live cutover additionally needs explicit user approval
+- **Next action**: Library/Knowledge/Operations UI and fixture canary are implemented. Run the formal release-artifact canary and compatibility baseline, then stop for explicit approval before replacing 23128.
+- **Related**: G14, INV43-INV45, WI-034-WI-039
+
+### WI-041: Verified backup backend and retention policy
+- **Status**: blocked
+- **Priority**: p2
+- **Type**: decision
+- **Context**: Artifact promotion to the workstation is not an independent backup. A verified transition requires a selected second medium, retention rule and restore exercise.
+- **Blocker**: user choice of backup medium/frequency/retention
+- **Next action**: Keep promotion receipts at backup-pending; implement verified transitions only after the decision.
+- **Related**: INV35, WI-023
 
 ## Completed
 

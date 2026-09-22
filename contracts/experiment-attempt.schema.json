@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholar-workflow.local/contracts/experiment-attempt.schema.json",
+  "title": "Scholar Workflow experiment attempt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "attempt_id",
+    "run_id",
+    "target_id",
+    "target_profile_sha256",
+    "status",
+    "started_at",
+    "finished_at",
+    "exit_code",
+    "actual",
+    "output_inventory"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "attempt_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"},
+    "run_id": {"type": "string", "pattern": "^[0-9]{8}-[0-9]{4}-[a-z0-9][a-z0-9-]{0,47}$"},
+    "target_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"},
+    "target_profile_sha256": {"$ref": "#/$defs/sha256"},
+    "status": {"enum": ["planned", "running", "succeeded", "failed", "interrupted"]},
+    "started_at": {"type": ["string", "null"], "format": "date-time"},
+    "finished_at": {"type": ["string", "null"], "format": "date-time"},
+    "exit_code": {"type": ["integer", "null"]},
+    "actual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "working_directory", "output_location", "log_location", "hostname", "os",
+        "gpu", "driver", "cuda", "python", "commit", "recipe_hash"
+      ],
+      "properties": {
+        "working_directory": {"type": ["string", "null"]},
+        "output_location": {"type": ["string", "null"]},
+        "log_location": {"type": ["string", "null"]},
+        "hostname": {"type": ["string", "null"]},
+        "os": {"type": ["string", "null"]},
+        "gpu": {"type": ["string", "null"]},
+        "driver": {"type": ["string", "null"]},
+        "cuda": {"type": ["string", "null"]},
+        "python": {"type": ["string", "null"]},
+        "commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+        "recipe_hash": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]}
+      }
+    },
+    "output_inventory": {
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/file_snapshot"}]
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "file_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

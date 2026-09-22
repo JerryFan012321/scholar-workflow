@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholar-workflow.local/contracts/analysis-commit-request.schema.json",
+  "title": "Validated analysis canonical commit request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "commit_id",
+    "batch_id",
+    "item_id",
+    "source_state",
+    "resource_id",
+    "note_stem",
+    "document",
+    "paths",
+    "base_revisions",
+    "base_catalog_revision",
+    "relations",
+    "projections"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "commit_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$"},
+    "batch_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$"},
+    "item_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$"},
+    "source_state": {"enum": ["validated", "repaired"]},
+    "resource_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "note_stem": {"type": "string", "minLength": 1, "maxLength": 240},
+    "document": {"$ref": "analysis-ir.schema.json"},
+    "paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["markdown", "canvas", "sidecar"],
+      "properties": {
+        "markdown": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\\\).+\\.md$"},
+        "canvas": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\\\).+\\.canvas$"},
+        "sidecar": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\\\).+\\.json$"}
+      }
+    },
+    "base_revisions": {
+      "type": "object",
+      "minProperties": 3,
+      "maxProperties": 3,
+      "additionalProperties": {
+        "type": ["string", "null"],
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      }
+    },
+    "base_catalog_revision": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "relations": {
+      "type": "array",
+      "items": {"$ref": "knowledge-change-set.schema.json#/$defs/relation"}
+    },
+    "projections": {
+      "type": "array",
+      "items": {"$ref": "knowledge-change-set.schema.json#/$defs/projection"}
+    }
+  }
+}

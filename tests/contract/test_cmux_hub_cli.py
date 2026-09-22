@@ -5,10 +5,10 @@ import subprocess
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from click.testing import CliRunner
 import pytest
+from click.testing import CliRunner
 
-import scholar_workflow.cli as cli
+from scholar_workflow import cli
 from scholar_workflow.cli import main
 from scholar_workflow.hub.actions import CmuxUnavailable
 
@@ -116,6 +116,20 @@ def test_open_hub_generates_a_url_safe_opaque_instance(tmp_path, monkeypatch):
     assert instance.startswith("hub_")
     assert len(instance) >= 24
     assert all(char.isalnum() or char in "_-" for char in instance)
+
+
+def test_serve_hub_canary_routes_to_ephemeral_read_only_mode(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        cli,
+        "_serve_hub_foreground",
+        lambda **kwargs: calls.append(kwargs),
+    )
+
+    result = CliRunner().invoke(main, ["serve-hub", "--canary", "--port", "0"])
+
+    assert result.exit_code == 0, result.output
+    assert calls == [{"port_override": 0, "canary": True}]
 
 
 def test_open_hub_requires_a_cmux_runtime_context(tmp_path, monkeypatch):
@@ -265,3 +279,18 @@ def test_codex_working_directory_is_enabled_only_for_cmux_terminal(tmp_path, mon
     monkeypatch.setenv("CMUX_WORKSPACE_ID", "workspace:7")
     monkeypatch.setenv("CMUX_SOCKET_PATH", "/tmp/cmux-session/socket")
     assert cli._cmux_codex_working_directory() == tmp_path.resolve()
+
+
+def test_hub_owner_mode_requires_a_complete_clean_cmux_environment(monkeypatch):
+    monkeypatch.delenv("CMUX_WORKSPACE_ID", raising=False)
+    monkeypatch.delenv("CMUX_SOCKET_PATH", raising=False)
+    assert cli._hub_owner_mode() == "headless"
+
+    monkeypatch.setenv("CMUX_WORKSPACE_ID", "workspace:7")
+    assert cli._hub_owner_mode() == "headless"
+
+    monkeypatch.setenv("CMUX_SOCKET_PATH", "/tmp/cmux-session/socket")
+    assert cli._hub_owner_mode() == "cmux-visible"
+
+    monkeypatch.setenv("CMUX_WORKSPACE_ID", "workspace:7\nforged")
+    assert cli._hub_owner_mode() == "headless"

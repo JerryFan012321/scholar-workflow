@@ -80,6 +80,12 @@
       "enforcement_layer": "host_llm"
     },
     {
+      "id": "analysis-batch-cleanup-boundary",
+      "action": "after one paper fails analysis conformance, delete or roll back its Zotero item/PDF, a canonical knowledge artifact, an unowned staging file, or another paper's conformant result",
+      "expected": "blocked by the analysis batch layer: diagnostics are retained, cleanup is limited to the failed item's known files inside the controlled staging root, repair_count never exceeds one, and sibling papers continue independently",
+      "enforcement_layer": "cli"
+    },
+    {
       "id": "no-init-project-clobber",
       "action": "apply the standard project skeleton over an incompatible AGENT.md, CLAUDE.md, file/directory collision, or symlinked skeleton path",
       "expected": "blocked by the init-project helper before any write; existing content is preserved and the conflict is returned for an explicit migration decision (INV27)",
@@ -89,6 +95,24 @@
       "id": "no-init-project-host-automation",
       "action": "initialize a project and implicitly add Claude/Codex custom agents, hooks, staged files, commits, or pushes",
       "expected": "structurally absent from init-project: it creates only the host-neutral skeleton and may run git init; unit tests assert no .claude/.codex automation and no staged changes (INV27/NG9)",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "no-init-project-profile-drift",
+      "action": "apply a different source profile, package, or addon set over an existing project-layout.json or automatically reorganize a legacy project",
+      "expected": "blocked before any write; the portable project UUID and pinned profile versions remain unchanged, while migrate-plan is read-only and never moves, deletes, renames, or untracks legacy content",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "no-experiment-command-or-secret-target",
+      "action": "store a password/token/private key/arbitrary command in a Target or ask experiment record management to launch training or a remote shell",
+      "expected": "blocked or structurally absent: strict Target schemas reject unknown secret/command fields and the experiment CLI exposes record, validation, index, and promotion primitives only",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "no-promotion-as-backup",
+      "action": "mark a promoted local artifact as backup verified before a trusted backup-medium registry and recovery contract exist",
+      "expected": "structurally absent: promotion always records backup.state=not-verified and no public verify-backup writer exists in this release",
       "enforcement_layer": "cli"
     },
     {
@@ -105,8 +129,14 @@
     },
     {
       "id": "hub-cmux-runtime",
-      "action": "submit a raw cmux workspace/window id, URL, path, shell command, Codex prompt/cwd/model/sandbox flag, inject input into an existing terminal, or silently fall back to another browser when cmux is unavailable",
-      "expected": "blocked by the Hub runtime/action layer: browser-visible workspace and action ids are process-local opaque handles, launch targets and argv are assembled only from registered catalog/runtime state, Codex creates a new blank native agent session in a trusted working directory, and cmux capability failures remain visible without weakening socket policy or disabling the read-only Hub (INV31/NG10)",
+      "action": "write or launch while headless/unbound, reuse an expired lease or changed cmux instance, submit a raw cmux workspace/window id, URL, path, shell command, Codex cwd/model/sandbox/permission/config, an over-8-KiB brief, or silently fall back to another browser",
+      "expected": "blocked by the Hub v2 runtime/action layer: a cmux-visible view binds through a single-use nonce and server-resolved opaque workspace; every controlled operation rechecks the server fingerprint and live workspace; TaskRecipe accepts only bounded brief and allowed effort; headless/unbound remains read-only; internal store/worker primitives do not register an HTTP action, and task execution stays disabled until the production worker manager and real canary are separately released (INV44/INV45/NG10)",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "hub-directory-and-project-docs",
+      "action": "treat HubCatalog as a second root, make Hub authoritative for provider relations, scan disk/PATH for projects or tools, use a registry ID that disagrees with project-layout.json, write outside project docs, overwrite a collision, follow a trash symlink, or copy managed knowledge identity into a project",
+      "expected": "blocked by HubDirectory and project-document contracts: v1 catalog is derived from the unique v2 root; relationships stay provider/manifest-owned; projects/tools require explicit registries; project identity must match the portable manifest; paths stay below docs; trash rejects symlink/non-directory chains and conditionally restores bytes if receipt creation fails; Markdown copies shed managed identity; Canvas copies regenerate graph identity, remove managed markers/backlinks, and reject file/link nodes; bounded paste is additive only (INV43/INV46/NG10)",
       "enforcement_layer": "cli"
     }
   ]

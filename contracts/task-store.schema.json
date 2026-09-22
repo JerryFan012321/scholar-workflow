@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholar-workflow.local/contracts/task-store.schema.json",
+  "title": "Scholar Workflow logical task and run store",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "tasks", "runs", "idempotency"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "tasks": {"type": "array", "items": {"$ref": "#/$defs/task"}},
+    "runs": {"type": "array", "items": {"$ref": "#/$defs/run"}},
+    "idempotency": {"type": "array", "items": {"$ref": "#/$defs/idempotency"}}
+  },
+  "$defs": {
+    "portable_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    },
+    "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "thread_id": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "nullable_time": {"type": ["string", "null"], "format": "date-time"},
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_id",
+        "recipe_id",
+        "title",
+        "project_id",
+        "effort",
+        "configuration_fingerprint",
+        "approved_summary",
+        "brief_hash",
+        "codex_thread_id",
+        "archived",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "task_id": {"$ref": "#/$defs/portable_id"},
+        "recipe_id": {"$ref": "#/$defs/portable_id"},
+        "title": {"type": "string", "minLength": 1, "maxLength": 200},
+        "project_id": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/portable_id"}]
+        },
+        "effort": {"enum": ["fast", "standard", "deep"]},
+        "configuration_fingerprint": {"$ref": "#/$defs/sha256"},
+        "approved_summary": {"type": ["string", "null"], "maxLength": 2000},
+        "brief_hash": {"$ref": "#/$defs/sha256"},
+        "codex_thread_id": {"$ref": "#/$defs/thread_id"},
+        "archived": {"type": "boolean"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "updated_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id",
+        "task_id",
+        "state",
+        "mode",
+        "idempotency_key",
+        "request_fingerprint",
+        "configuration_fingerprint",
+        "source_thread_id",
+        "codex_thread_id",
+        "result_summary",
+        "result_summary_hash",
+        "created_at",
+        "started_at",
+        "heartbeat_at",
+        "timeout_at",
+        "cancel_requested_at",
+        "completed_at"
+      ],
+      "properties": {
+        "run_id": {"$ref": "#/$defs/portable_id"},
+        "task_id": {"$ref": "#/$defs/portable_id"},
+        "state": {
+          "enum": [
+            "queued",
+            "running",
+            "succeeded",
+            "failed",
+            "interrupted",
+            "cancelled",
+            "timed_out",
+            "recovery_required"
+          ]
+        },
+        "mode": {"enum": ["create", "resume", "fork"]},
+        "idempotency_key": {"$ref": "#/$defs/portable_id"},
+        "request_fingerprint": {"$ref": "#/$defs/sha256"},
+        "configuration_fingerprint": {"$ref": "#/$defs/sha256"},
+        "source_thread_id": {"$ref": "#/$defs/thread_id"},
+        "codex_thread_id": {"$ref": "#/$defs/thread_id"},
+        "result_summary": {"type": ["string", "null"], "maxLength": 2000},
+        "result_summary_hash": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]
+        },
+        "created_at": {"type": "string", "format": "date-time"},
+        "started_at": {"$ref": "#/$defs/nullable_time"},
+        "heartbeat_at": {"$ref": "#/$defs/nullable_time"},
+        "timeout_at": {"$ref": "#/$defs/nullable_time"},
+        "cancel_requested_at": {"$ref": "#/$defs/nullable_time"},
+        "completed_at": {"$ref": "#/$defs/nullable_time"}
+      }
+    },
+    "idempotency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["idempotency_key", "request_fingerprint", "run_id"],
+      "properties": {
+        "idempotency_key": {"$ref": "#/$defs/portable_id"},
+        "request_fingerprint": {"$ref": "#/$defs/sha256"},
+        "run_id": {"$ref": "#/$defs/portable_id"}
+      }
+    }
+  }
+}

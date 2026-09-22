@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholar-workflow.local/contracts/analysis-baseline.schema.json",
+  "title": "Analysis baseline sidecar",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "artifact_id",
+    "note_stem",
+    "document",
+    "markdown_sha256",
+    "canvas_sha256",
+    "claims",
+    "generated_node_ids",
+    "generated_edge_ids"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "artifact_id": {"type": "string", "pattern": "^analysis:[^\\s]+$"},
+    "note_stem": {"type": "string", "minLength": 1, "maxLength": 240},
+    "document": {"$ref": "analysis-ir.schema.json"},
+    "markdown_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "canvas_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Hash of renderer-owned node text and edge endpoints only; user nodes, edges, styling, and layout are excluded."
+    },
+    "claims": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "markdown_sha256", "canvas_node_id", "canvas_text_sha256"],
+        "properties": {
+          "role": {"enum": ["task", "input", "workflow", "output", "boundary"]},
+          "markdown_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "canvas_node_id": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
+          "canvas_text_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "generated_node_ids": {
+      "type": "array",
+      "description": "Exact IDs emitted by the deterministic renderer; this list does not adopt other Canvas nodes.",
+      "items": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
+      "maxItems": 40,
+      "uniqueItems": true
+    },
+    "generated_edge_ids": {
+      "type": "array",
+      "description": "Exact IDs emitted by the deterministic renderer; this list does not adopt other Canvas edges.",
+      "items": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
+      "uniqueItems": true
+    }
+  }
+}

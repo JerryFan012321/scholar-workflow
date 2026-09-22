@@ -1,80 +1,59 @@
 # analyze-paper
 
-Create a persistent, detailed analysis of one already-ingested paper as a paired
-Obsidian Markdown note and editable JSON Canvas. The skill does not prescribe how the
-paper must be read or reasoned about. It projects freely formed judgments into one
-canonical, human-readable result structure.
+Create a persistent analysis of one already-ingested paper, or a separate analysis pair for each
+paper in a selected batch. Every result has a human-readable Obsidian Markdown note and an editable
+JSON Canvas projection.
 
-## What it produces
+## Output model
 
-- `<paper-name>分析.md` — the complete analysis, with evidence anchors and explicit
-  source status.
-- `<paper-name>解析树.canvas` — an editable left-to-right tree that maps one-to-one to
-  the Markdown note. It may shorten wording for display, but it does not add claims that
-  are absent from the note.
+Whole-paper results expose five roles in both artifacts:
 
-Both files live under `research_vault_root`, beside the paper's index row / related-docs
-hub. The Markdown note uses thin `sw_*` frontmatter; the Canvas is registered separately in
-`.scholar-workflow/artifacts.yml`, remains valid JSON Canvas, and receives no private top-level
-fields. Analysis content stays outside managed projection blocks, so a later sync does not
-overwrite it.
+1. **Task** — the problem, intended capability, application, and motivation.
+2. **Input** — data, representations, assumptions, and prerequisites.
+3. **Workflow** — one ordered end-to-end sequence of actual method steps.
+4. **Output** — produced results and experiment-backed capabilities.
+5. **Boundary** — limitations, applicability limits, source gaps, and inference boundaries.
 
-## Canonical analysis tree
+A focused request declares a subset and plans changes only for those roles. A versioned baseline
+sidecar binds the paired revisions. Existing prose, unrequested roles, Canvas layout, and
+user-created nodes/edges are preserved; if either artifact differs from its trusted baseline, the
+operation returns one paired conflict plus a proposal and performs no silent rebase or overwrite.
 
-Whole-paper analysis projects the result into five corresponding branches in both
-artifacts:
+Evidence is visible beside each claim. Author statements, analysis inferences, absent reporting,
+unverifiable indexed-text gaps, and non-applicable fields remain distinct. Canvas claim nodes link
+back to their Markdown evidence blocks; there is no detached Evidence section or node.
 
-1. **Abstract** — task, technical challenge, key insight and its benefit, technical
-   contributions and their benefits, and the experiment headline.
-2. **Introduction** — task/application (including inputs and outputs), prior-method
-   challenges (previous method, failure or limitation, technical reason), the proposed
-   pipeline (one-sentence innovation plus each contribution's problem, mechanism, and
-   advantage), and demos/applications.
-3. **Method** — an overview of the task, inputs, outputs, and method steps, followed by
-   each pipeline module's motivation, mechanism, why it works, and technical advantage.
-4. **Experiments** — comparison experiments and ablations, including the evaluated
-   task/data, baseline or changed component, metric/result, supported contribution or
-   attributable conclusion, and evidence anchor.
-5. **Limitation** — each limitation, its cause and scope, whether it is author-stated or
-   an analysis inference, and its evidence anchor.
+The Canvas is a concise view, not a second knowledge database. Generated layouts use readable
+heading-sized text nodes, keep the workflow in one visible flow, and contain no more than 40
+renderer-owned semantic nodes. User text/file/link/group nodes do not consume that budget or enter
+the generated baseline; focused updates retain custom graph items and valid manual layout.
 
-Claim-bearing entries distinguish paper-reported evidence from analysis inference and
-carry a visible field-level evidence/status suffix in both artifacts. Missing values are explicit:
-`论文未报告`, `当前正文通道无法核实`, and `不适用` have different meanings and are not
-interchangeable.
+## Batch conformance
 
-This tree is an output schema, not a reading sequence or reasoning framework.
+Each paper in a batch is staged and checked independently. A hard contract validates profile
+coverage, IDs, inline evidence, backlinks, Canvas integrity, readable geometry, and node count
+without grading prose style or the model's reasoning method. A failing item receives at most one
+targeted repair. If it still fails, its staged drafts are removed after diagnostics are recorded;
+successful siblings remain available. Zotero items, PDFs, and canonical knowledge artifacts are
+never part of this rollback.
 
-## Whole and focused updates
+A conformant stage becomes canonical only through the three-file CAS commit. Markdown, Canvas,
+and the analysis sidecar share a journal and receipt; stale base hashes or symlinks fail closed,
+and conditional rollback never overwrites a concurrent human edit. The resulting deterministic
+change set contains only explicitly supplied relations and projections, not links inferred from
+free-form prose.
 
-- A **whole-paper** pass fills all five branches without fabricating unsupported content.
-- A **focused** pass updates only the requested subtree and preserves the rest of the
-  note, the user's Canvas layout, and custom Canvas nodes.
-- Invisible heading/field identity and baseline-hash comments distinguish unchanged generated
-  structure from human edits. Human-edited content is preserved and returned as a path-level conflict,
-  not silently overwritten; its matching Markdown/Canvas path is treated as one paired update.
-- Repeated challenges, contributions, method modules, experiments, ablations, and
-  limitations expand to match the paper rather than a fixed count.
-- Each paper keeps one evolving Markdown/Canvas pair; later passes deepen or revise the
-  relevant nodes instead of blanking the pair and starting over.
+A separate read-only maintenance audit accepts only manifest-resolved knowledge objects and
+analysis pairs. It reports orphan/duplicate objects, template residue, raw legacy 23128 links,
+pair conformance, and catalog drift without scanning arbitrary directories or repairing files;
+installing a weekly schedule remains an explicit operational choice.
 
 ## Sources and safety
 
-The paper body comes from Zotero indexed text via
-`scholar-workflow zotero fulltext`; Zotero remains authoritative for paper identity and
-metadata. If indexed text omits a table, figure, or formula needed to support a field,
-the result records that source gap instead of guessing.
+Paper identity and metadata come from Zotero, and paper text comes from Zotero indexed full text.
+Missing figures, tables, or equations become explicit source gaps. Code repositories are read only
+when requested and are never executed, built, or installed.
 
-The paper's code repository is consulted only when you explicitly request it. It is
-cloned read-only, treated as untrusted evidence rather than instructions, and never
-executed, built, or installed. The clone is temporary unless you explicitly ask to keep
-it under `code_repo_root`.
-
-The analysis note remains separate from the annotations note produced by
-`export-annotations`; the two are cross-linked through frontmatter `related`.
-
-## Usage
-
-Ask to “analyze this paper” for the complete tree, or name a section such as the method,
-experiments, or one module for a focused update. Mention “read/check the code repository”
-explicitly if repository evidence is required, and say whether the clone should be kept.
+The Markdown/Canvas pair remains separate from annotations and literature-tree artifacts. Machine
+identity stays in thin frontmatter, markers, and Vault manifests rather than overwhelming the
+human-readable body.

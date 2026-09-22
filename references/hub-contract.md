@@ -1,234 +1,214 @@
-# Local Hub Contract
+# Hub Control Plane v2 Contract
 
-`HubCatalog` is the shared contract consumed by the Web Hub, the managed Obsidian
-identity layer, and Notion launch actions. It is a rebuildable snapshot, not a fourth
-knowledge database.
-
-```text
-Zotero Local API ── bibliography / PDF identity ───┐
-                                                   ├─> HubCatalog snapshot
-validated workflow payload ── topic relations ────┤      ├─> Web Hub
-Vault sw_* frontmatter ── Markdown identity ───────┤      ├─> Obsidian projection
-Vault artifacts.yml ── JSON Canvas identity ───────┤      ├─> file editor / assets
-Vault assets.yml ── explicit note attachments ─────┘      ├─> dynamic actions
-Notion upsert result ── page-ID mapping only ──────────────┘
-
-runtime only (never serialized into HubCatalog):
-cmux tree ── raw workspace IDs ──> WorkspaceRegistry ── opaque IDs ──> Web Hub
-                                                     └─> cmux view / blank Codex session
-```
-
-## Authority boundaries
-
-- Zotero owns paper bibliography, PDFs, and formal annotations.
-- The Obsidian Vault owns human-readable Markdown/Canvas content and knowledge relations.
-- The Vault artifact manifest registers formats such as JSON Canvas that cannot carry YAML
-  frontmatter; it does not own their content.
-- The Vault asset manifest explicitly relates note images, data, and supplements to
-  artifacts; their bytes still belong to the Vault.
-- Notion is a simplified, one-way, cross-device projection.
-- cmux owns transient workspace/surface state. Raw workspace IDs remain in the Hub process and
-  are never persisted in `HubCatalog`, the Vault, or projection state.
-- The Hub owns resource/topic/artifact relations and launch actions. It does not cache paper
-  full text or note bodies and never stores absolute paths or commands. An explicit Hub save
-  writes the body directly and atomically to the authoritative Vault; it does not copy the
-  body into the catalog or state directory.
-
-The rebuildable snapshot is `${SCHOLAR_WORKFLOW_HOME}/hub/catalog.json`. The
-`resource_id -> notion_page_id` mapping is stored separately in `projection-links.json`;
-that file contains IDs only, never titles, bodies, URLs, or credentials.
-
-## Python interfaces
-
-```python
-CatalogProvider.load() -> HubCatalog
-CatalogSnapshotStore.load() -> HubCatalog
-CatalogSnapshotStore.save(catalog) -> None
-VaultCatalogProvider.load() -> HubCatalog
-VaultArtifactManifestProvider.load() -> HubCatalog
-VaultAssetCatalogProvider.load() -> HubCatalog
-LinkedCatalogProvider.load() -> HubCatalog
-
-build_topic_catalog_patch(doc, root, port, filename, paperlist_only=...) -> HubCatalog
-merge_catalog_patch(base, patch) -> HubCatalog
-
-ActionRegistry.register(kind=..., label=..., target=...) -> PublicAction
-CatalogActionService.public_actions() -> dict[str, list[PublicAction]]
-CatalogActionService.public_workspaces(instance_token=...) -> WorkspaceListing
-CatalogActionService.execute(opaque_action_id, workspace_id=...) -> launch_result
-WorkspaceRegistry.resolve(opaque_workspace_id) -> raw_workspace_id
-CmuxControl.open(server_validated_target, workspace_id=raw_workspace_id)
-CmuxControl.new_codex_session(workspace_id=..., working_directory=trusted_path)
-ArtifactContentStore.read(artifact_id) -> ArtifactContent
-ArtifactContentStore.write(artifact_id, content=..., base_revision=...) -> ArtifactContent
-VaultAssetStore.add_bytes(owner_artifact_id, display_name, content, role=...) -> HubAsset
-VaultAssetStore.get(asset_id) -> HubAsset
-VaultAssetStore.resolve_path(asset_id) -> Path
-```
-
-`RegisteredAction.target` exists only in process memory. The browser receives only
-`PublicAction.id`, `label`, `kind`, and `workspace_policy`. A second process-local registry maps
-raw cmux workspace IDs to opaque workspace IDs and exposes only a display label plus
-`is_current` / `contains_hub` hints. The action service rebuilds its catalog-derived registry
-whenever the live catalog revision changes, so a long-running Hub sees new Vault artifacts and
-Notion page IDs without a restart.
-
-The default provider order is:
+`HubDirectory` schema 2 is the only Hub root. It is a rebuildable control-plane
+projection, not a knowledge database and not an authority for provider-owned
+relationships.
 
 ```text
-snapshot
-  -> Markdown sw_* overlay
-  -> explicit JSON Canvas artifact manifest
-  -> explicit Vault asset manifest
-  -> Notion page-ID overlay
+Zotero / Vault manifests / project manifests / explicit tool registry / Codex
+                                  |
+                                  v
+                            HubDirectory
+                    aggregate, route, validate, project
 ```
 
-None of these providers parses human prose or Canvas nodes to infer catalog relationships.
+`HubCatalog` schema 1 survives only as the `knowledge_catalog` member of
+`HubDirectory`. During migration, `GET /api/v1/catalog` is derived from that member;
+there is no second catalog root or independently mutable v1 state.
 
-## Managed Obsidian Markdown
+## Authority and identity
 
-The Hub owns only the following frontmatter layer; human properties and the body remain
-unchanged:
+- Zotero owns paper bibliography, PDFs, attachments, and formal annotations.
+- The Vault owns human-readable Markdown/Canvas and its checked artifact/asset
+  manifests. Those providers own their declared relationships.
+- A project's `project-layout.json` owns its stable UUIDv4 `project_id`. The host
+  registry maps that ID to one local root and capability set; it is a locator, not a
+  portable identity source.
+- The explicit `ToolDefinition` registry owns tool registrations. Hub never scans
+  `$PATH` for tools.
+- Codex owns transcript and thread identity. Hub task records may retain an explicit
+  thread ID and approved summary, never a copied transcript.
+- cmux owns transient workspace state. Hub keeps only process-local opaque workspace
+  handles and a hashed instance fingerprint.
+- Hub aggregates and renders relationships supplied by these authorities. It does not
+  become their relation owner.
 
-```yaml
----
-sw_schema: 1
-sw_kind: literature-tree
-sw_catalog_id: topic:world-models:tree:02-world-models
-sw_topic_id: world-models
-sw_revision: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-sw_tree_kind: technical
----
+Every cross-library reference has this shape:
+
+```json
+{"library_id":"papers","item_type":"paper","item_id":"ABCD2345"}
 ```
 
-The allowlist is `sw_schema`, `sw_kind`, `sw_catalog_id`, `sw_topic_id`,
-`sw_resource_id`, `sw_zotero_item_key`, `sw_attachment_key`, `sw_parent_id`,
-`sw_revision`, and `sw_tree_kind`. Unknown `sw_*` fields, absolute paths, `..`, and symlink
-escape are rejected. An invalid declaration masks a stale snapshot record with the same ID or
-path; it cannot silently fall back to the older registration.
+`papers`, `projects`, and `tools` name the three Library providers. The reserved
+`knowledge` namespace identifies `knowledge_catalog` artifacts and Knowledge Contexts;
+it is not a fourth Library and never routes a Vault artifact through the Zotero provider.
 
-The body may continue using the existing Markdown tables, Mermaid diagrams, sections, and
-human notes. The Hub never derives structure from free-form text. Current artifact kinds are
-`collection-index`, `paper-list`, `paper-hub`, `literature-tree`, `paper-analysis`,
-`analysis-canvas`, `annotation-note`, `reading-note`, `direction-note`, and
-`technical-document`.
+Loopback URLs, including `127.0.0.1:23128`, are presentation entry points and never
+object identity.
 
-## JSON Canvas registration
-
-JSON Canvas 1.0 stays a standard object with `nodes` and `edges`; Hub-only metadata must not be
-inserted into the Canvas JSON. Register an analysis Canvas in the human-checkable Vault file
-`.scholar-workflow/artifacts.yml`:
-
-```yaml
-schema_version: 1
-artifacts:
-  - artifact_id: analysis:paper-one:canvas
-    kind: analysis-canvas
-    format: canvas
-    vault_path: world-models/paper-one-analysis.canvas
-    resource_id: paper:one
-    topic_id: world-models
-    parent_id: analysis:paper-one
-```
-
-The current manifest contract accepts analysis Canvas entries only. IDs and paths must be
-unique; the target must be an existing, regular `.canvas` file inside the Vault with no
-symlink traversal. A move or rename updates only `vault_path`; the stable `artifact_id` is
-preserved. Invalid entries are diagnosed and mask stale snapshot records with the same ID.
-
-## Vault note attachments
-
-Paper PDFs and formal annotations remain Zotero attachments. The Hub reads a paper PDF only
-through its opaque Zotero `attachment_key` and never replaces it.
-
-Images, data, and supplements belonging to a Vault note are separate `HubAsset` objects. Their
-relationship comes only from `.scholar-workflow/assets.yml`:
-
-```yaml
-schema_version: 1
-assets:
-  - asset_id: asset:0123456789abcdef
-    owner_artifact_ids: [analysis:paper-one]
-    vault_path: attachments/analysis-paper-one-a1b2c3d4/figure.png
-    display_name: figure.png
-    media_type: image/png
-    size: 12345
-    sha256: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-    role: embed
-```
-
-A Markdown `![[attachments/...]]` is presentation only and is never relationship authority.
-The server derives the destination from the artifact ID; the client submits only one portable
-filename and the bytes. A same-name upload becomes `-2`, `-3`, and so on instead of
-overwriting. The first version intentionally exposes no replace, move, or delete operation.
-Missing files, path/symlink violations, and size/hash drift produce diagnostics rather than a
-fabricated catalog asset.
-
-## HTTP interface
+## Canonical root and libraries
 
 ```text
-GET        /hub/
-GET        /api/v1/catalog
-GET        /api/v1/actions
-GET        /api/v1/session
-GET        /api/v1/cmux/workspaces?instance=<opaque-instance>
-GET        /api/v1/health  includes capability cmux-workspace-actions-v1
-GET        /api/v1/artifacts/<artifact-id>/content
-PUT        /api/v1/artifacts/<artifact-id>/content  {content, base_revision}
-GET        /api/v1/artifacts/<artifact-id>/assets
-POST       /api/v1/artifacts/<artifact-id>/assets?name=...&role=...  raw file bytes
-GET | HEAD /api/v1/assets/<opaque-asset-id>/content
-POST       /api/v1/actions/<opaque-action-id>  body is {} or {"workspace_id":"<opaque>"}
-GET | HEAD /open/paper/<attachment-key>  legacy-compatible; PDF Range is supported
+HubDirectory
+├── schema_version = 2
+├── libraries = [Papers, Projects, Tools]
+├── knowledge_catalog
+├── knowledge_contexts
+├── operations
+└── diagnostics
 ```
 
-The server binds only to `127.0.0.1`, validates `Host`, rejects CORS, and requires an allowed
-same-origin `Origin` plus the process CSRF token for every state-changing request and launch
-action. Preview and write endpoints resolve only catalog-registered Vault-relative paths.
+The three initial libraries are always present, including when empty or unavailable.
+Each descriptor reports authority, availability, count, and a human-readable detail.
 
-PUT accepts existing registered Markdown/Canvas files only and requires the raw-file
-`sha256:` revision returned by the read endpoint. An Obsidian or external edit causes HTTP
-409 instead of silent overwrite. Saves use a same-directory temporary file, `fsync`, and
-atomic replace. Canvas content must remain a JSON object; client code cannot add, remove, or
-change managed Markdown `sw_*` fields. The HTTP `revision` is a whole-file concurrency token;
-`sw_revision` remains the projector output revision and is unchanged by a manual save. There
-is no autosave.
+- **Papers** pages the Zotero Local API with server-side `start`, `limit`, query,
+  bibliographic item-type, sort, and direction parameters. Production must not materialize
+  the full `HubCatalog` before paging. For only the parent rows in that page, it resolves
+  child PDF attachment keys and exposes their loopback PDF path. If a malformed or
+  non-bibliographic row is skipped, the cursor still advances by the number of provider rows
+  consumed, so paging cannot repeat or stall.
+- **Projects** reads only the explicit host registry. Resolving a project fails closed
+  unless its real root contains a regular, non-symlink `project-layout.json` with
+  schema 2 and the exact registry `project_id`.
+- **Tools** reads only explicit `ToolDefinition` rows. Health checks and recipe IDs are
+  registered identifiers, never browser-supplied commands.
 
-The UI is reading-first. It renders a safe Markdown subset through DOM construction and
-`textContent`, never `innerHTML`; editing and the attachment panel are secondary, and the
-editor has a responsive live preview. Only explicit HTTP/HTTPS Markdown links become
-clickable. Obsidian wikilinks and embeds render as inert readable tokens in the Web view.
+Cursors are opaque and bind library, normalized query, filter, sorting, direction,
+and offset. Reusing a cursor with different query parameters is rejected.
 
-Workspace-scoped POST bodies accept exactly one process-local opaque `workspace_id`; actions
-that do not use cmux reject it, and actions that require cmux reject an empty body. The server
-resolves both action and workspace targets. The client cannot submit raw workspace UUIDs,
-URLs, paths, prompts, commands, models, or permission settings.
+Paper cards link to a stable `/hub/item` landing keyed by the complete
+`TypedEntityRef`. The landing resolves the current Zotero parent and PDF attachment
+server-side. The paper landing links to a typed `papers:attachment:*` landing, and only
+that attachment landing resolves `/open/paper/<attachment-key>` as an implementation-level
+byte stream. Analysis Markdown/Canvas uses a `knowledge:artifact:*` landing and is never
+presented as an item owned by the Papers provider.
 
-Notion page IDs are converted server-side into allowlisted HTTPS URLs and executed as
-`cmux open <url> --workspace <server-resolved-id> --focus true`. PDF and registered Vault
-preview actions use the same selected-workspace contract. Obsidian and Zotero are separate
-native-editor actions and never consume a workspace selection. The global Codex action is
-available only when `serve-hub` starts in a real cmux terminal; after explicit confirmation it
-uses cmux's native `agent-session` surface with provider `codex` and the server's trusted startup
-directory, without `--command` or a prompt. Any cmux failure is visible and never falls back to
-Safari or another system browser. HTML, SVG, and unknown asset types are download-only; only
-allowlisted images, PDF, JSON, and plain-text types may render inline.
+## Knowledge and project copies
 
-All cmux, Obsidian, and Zotero launches use argv with `shell=False` and a small child-process
-environment allowlist. Hub credentials and unrelated host environment variables are not inherited;
-the cmux adapter receives only the socket/workspace variables it needs.
+Knowledge and projects never live-sync. A copy is an explicit content transfer and
+the result evolves independently.
 
-`scholar-workflow open-hub` is the explicit cmux entry point. It requires the caller's cmux
-workspace/socket environment, health-checks an already-running loopback Hub, generates a
-URL-safe opaque browser-instance token, and opens that URL in the caller's workspace. It never
-starts the Hub or cmux implicitly and has no system-browser fallback. The health check requires
-the `cmux-workspace-actions-v1` capability marker, so an older long-running Hub is rejected with
-an explicit restart instruction instead of opening a stale UI.
+Knowledge-to-project copies accept registered UTF-8 Markdown and JSON Canvas. Markdown
+loses `sw_*` frontmatter, analysis identity comments, managed-block markers, and
+generated claim block IDs while retaining readable prose. Canvas is parsed as a graph,
+has every node/edge identity regenerated, loses `sw_*` fields and generated claim
+markers/backlinks, and rejects file/link or unsupported node types rather than carrying
+managed relationships across the boundary. The service copies no sidecar, baseline,
+Zotero PDF, annotation, or unselected attachment, and creates no semantic provenance
+relation.
+
+Project-to-knowledge promotion is a separate knowledge-ingest operation that creates a
+new Vault-native identity. It does not preserve a live backlink or synchronization
+contract.
+
+## Project document operations
+
+Hub accepts only `project_id` plus POSIX paths relative to the registered project's
+`docs/`. It rejects absolute paths, `..`, backslashes, symlinks in any traversed path,
+missing manifests, disabled/unregistered projects, implicit overwrite, and automatic
+rename. It never accepts a client absolute path and never performs `git add`, commit, or
+push.
+
+Copy, paste, and trash inspect relevant Git paths. A tracked, modified,
+tracked-deleted, or unknown source/destination requires explicit confirmation for that
+operation. Paste accepts bounded UTF-8 text into a new relative path only; it does not
+overwrite or accept a client absolute path.
+
+Delete means recoverable trash only:
+
+```text
+.scholar-workflow/trash/docs/<UTC timestamp>/<original relative path>
+```
+
+The private directory and every descendant are checked before any move or directory
+creation; a symlink or non-directory fails closed. Each moved file has a receipt with
+the original path, content hash, deletion time, and Git state. Permanent deletion and
+automatic trash cleanup are not exposed in v2's initial surface.
+
+## Workspace ownership and binding
+
+`HubService` is one process generation. A browser view becomes writable only through:
+
+```text
+server nonce -> opaque workspace selection -> server resolution -> WorkspaceLease
+```
+
+The lease records service generation, lease generation, profile, opaque workspace, and
+the server-derived cmux fingerprint. Nonces are single-use and bounded. On every
+controlled mutation or launch, Hub recomputes the current fingerprint and resolves the
+opaque workspace against a fresh cmux tree. A missing workspace, changed instance,
+expired lease, or restarted service invalidates the binding.
+
+Only a service started from a clean cmux workspace/socket environment may report
+`owner_mode=cmux-visible`. A headless service is permanently read-only even if stale or
+forged in-memory lease state exists. The Web UI may request a nonce and bind its selected
+opaque workspace; without a successful bind it keeps all write/launch controls disabled.
+
+## Task contracts and current execution gate
+
+The stable model is:
+
+```text
+TaskRecipe -> LogicalTask -> TaskRun -> explicit codex_thread_id
+```
+
+A browser task request may contain only a registered recipe, an allowed project or
+typed object, an idempotency key, one of `fast | standard | deep`, and a UTF-8 brief of
+at most 8 KiB. The server maps effort to fixed configuration and derives cwd from the
+project registry. Brief text goes over stdin. Process launch uses an argv array with
+`shell=False`; resume/fork requires the saved thread ID and never uses `--last`.
+
+The repository currently implements and tests these schemas, validators, command
+construction, capability probe, durable task store, cross-process thread exclusion,
+idempotency, heartbeat/cancel/timeout state, and process-group recovery primitives with
+fake subprocesses. It does **not** expose a production worker manager or task execution
+endpoint and has not run a real Codex task. Health reports `task_execution=false`, the UI
+exposes no task button, and the legacy blank-session action is not registered. Wiring the
+long-lived cmux workers into production HTTP, supervising them across service restarts,
+and real capability/cancel/recovery canaries remain release gates rather than claimed
+runtime capabilities.
+
+## HTTP surface
+
+```text
+GET  /hub/
+GET  /hub/item?library_id=<id>&item_type=<type>&item_id=<id>
+GET  /api/v2/directory?instance=<opaque-view-instance>
+GET  /api/v2/libraries/<papers|projects|tools>/items
+GET  /api/v2/health
+POST /api/v2/workspaces/nonce
+POST /api/v2/workspaces/bind
+POST /api/v2/projects/<project-id>/docs/copy
+POST /api/v2/projects/<project-id>/docs/copy-knowledge
+POST /api/v2/projects/<project-id>/docs/paste
+POST /api/v2/projects/<project-id>/docs/trash
+
+GET  /api/v1/catalog          derived compatibility projection
+GET  /api/v1/session
+GET  /api/v1/actions
+GET  /api/v1/cmux/workspaces
+GET  /api/v1/artifacts/<id>/content
+PUT  /api/v1/artifacts/<id>/content
+GET  /api/v1/artifacts/<id>/assets
+POST /api/v1/artifacts/<id>/assets
+GET | HEAD /api/v1/assets/<id>/content
+GET | HEAD /open/paper/<attachment-key>
+```
+
+All state-changing routes require loopback Host validation, an allowed same-origin
+`Origin`, the process CSRF token, and (in production) a freshly validated workspace
+binding. The browser cannot submit shell commands, cwd, arbitrary paths, model names,
+sandbox/permission settings, raw Codex configuration, environment variables, or raw
+cmux IDs.
+
+`GET /api/v2/health` separates service, package, build, protocol, HubDirectory schema,
+owner mode, cmux fingerprint, provider capabilities, worker capabilities, and log
+location. Unknown build revisions or log locations are explicit `null` values with a
+detail, never silently omitted.
 
 ## Migration boundary
 
-New generated `01-Paperlist.md` and literature-tree notes carry managed `sw_*` frontmatter.
-New analysis pairs register the Markdown note in frontmatter and the standard JSON Canvas in
-the artifact manifest. Legacy tables and filenames may be consumed only by a versioned,
-one-time importer; they must never become the long-term Hub API. Remaining work includes the
-explicit legacy-Vault migration command and a paginated Zotero-library assembler.
+This contract does not authorize switching the live `23128` listener, changing a
+LaunchAgent, rewriting existing raw-port links, migrating projects or knowledge, or
+enabling task execution. Those actions require canary verification and the separate
+approval gates in the implementation plan.

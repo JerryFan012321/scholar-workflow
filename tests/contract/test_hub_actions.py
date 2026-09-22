@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import json
+import socket
 import subprocess
 from dataclasses import asdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -16,8 +17,8 @@ from scholar_workflow.hub.actions import (
     ActionRegistry,
     CatalogActionService,
     CmuxArtifactLauncher,
-    CmuxLaunchError,
     CmuxLauncher,
+    CmuxLaunchError,
     CmuxResourceLauncher,
     CmuxUnavailable,
     CodexLauncher,
@@ -48,6 +49,45 @@ from scholar_workflow.hub.models import (
     HubResource,
     ProjectionLinks,
 )
+
+
+def test_cmux_instance_fingerprint_changes_when_same_socket_path_is_recreated(
+    tmp_path, monkeypatch
+):
+    socket_path = tmp_path / "cmux.sock"
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("CMUX_SOCKET_PATH", str(socket_path))
+    registry = WorkspaceRegistry(CmuxControl())
+
+    first_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    first_socket.bind(socket_path.name)
+    try:
+        first = registry.instance_fingerprint()
+    finally:
+        first_socket.close()
+        socket_path.unlink()
+
+    second_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    second_socket.bind(socket_path.name)
+    try:
+        second = registry.instance_fingerprint()
+    finally:
+        second_socket.close()
+
+    assert first.startswith("sha256:")
+    assert second.startswith("sha256:")
+    assert second != first
+
+
+def test_cmux_instance_fingerprint_rejects_symlinked_socket_path(tmp_path, monkeypatch):
+    target = tmp_path / "target.sock"
+    target.write_text("not a socket", encoding="utf-8")
+    socket_path = tmp_path / "cmux.sock"
+    socket_path.symlink_to(target)
+    monkeypatch.setenv("CMUX_SOCKET_PATH", str(socket_path))
+
+    with pytest.raises(CmuxControlError, match="must not be a symlink"):
+        WorkspaceRegistry(CmuxControl()).instance_fingerprint()
 
 
 NOTION_URL = "https://www.notion.so/0123456789abcdef0123456789abcdef"
@@ -337,7 +377,7 @@ def test_cmux_launcher_reports_missing_binary_without_fallback(monkeypatch):
 def test_catalog_notion_id_becomes_opaque_cmux_action():
     registry = ActionRegistry(id_factory=lambda: "act_notion")
     catalog = HubCatalog(
-        generated_at=datetime(2026, 9, 18, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
         resources=[
             HubResource(
                 resource_id="paper:one",
@@ -361,7 +401,7 @@ def test_catalog_notion_id_becomes_opaque_cmux_action():
 def test_invalid_notion_projection_id_is_not_registered():
     registry = ActionRegistry(id_factory=lambda: "act_never")
     catalog = HubCatalog(
-        generated_at=datetime(2026, 9, 18, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
         resources=[
             HubResource(
                 resource_id="paper:one",
@@ -378,7 +418,7 @@ def test_invalid_notion_projection_id_is_not_registered():
 def test_catalog_artifact_becomes_opaque_obsidian_action(tmp_path):
     registry = ActionRegistry(id_factory=lambda: "act_obsidian")
     catalog = HubCatalog(
-        generated_at=datetime(2026, 9, 18, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
         resources=[], topics=[],
         artifacts=[
             HubArtifact(
@@ -617,7 +657,7 @@ def test_notion_launcher_targets_selected_workspace_by_opaque_id(tmp_path, monke
 def test_catalog_resource_view_action_is_opaque_and_uses_fixed_hub_origin(tmp_path):
     registry = ActionRegistry(id_factory=lambda: "act_resource")
     catalog = HubCatalog(
-        generated_at=datetime(2026, 9, 18, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
         resources=[
             HubResource(
                 resource_id="paper:one",
@@ -661,7 +701,7 @@ def test_catalog_artifact_view_resolves_only_registered_vault_path(tmp_path):
     note.write_text("# Readable\n", encoding="utf-8")
     registry = ActionRegistry(id_factory=lambda: "act_artifact")
     catalog = HubCatalog(
-        generated_at=datetime(2026, 9, 18, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
         resources=[],
         topics=[],
         artifacts=[
@@ -701,7 +741,7 @@ def test_catalog_zotero_action_hides_key_and_launcher_builds_deep_link(
 ):
     registry = ActionRegistry(id_factory=lambda: "act_zotero")
     catalog = HubCatalog(
-        generated_at=datetime(2026, 9, 18, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
         resources=[
             HubResource(
                 resource_id="paper:one",
@@ -857,7 +897,7 @@ def test_cmux_control_redacts_non_uuid_workspace_and_target_from_error(tmp_path)
 
 def test_catalog_action_service_registers_only_configured_kinds_and_global_codex():
     catalog = HubCatalog(
-        generated_at=datetime(2026, 9, 18, tzinfo=timezone.utc),
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
         resources=[
             HubResource(
                 resource_id="paper:one",

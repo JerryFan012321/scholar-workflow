@@ -24,6 +24,8 @@ it still requires optimistic concurrency protection.
 | Write Obsidian managed block / Notion machine fields | Allowed — additive |
 | Explicitly save one catalog-registered Vault Markdown/Canvas from the Hub | Allowed — user-authored; exact base revision and atomic replace required |
 | Add one Vault asset through the Hub | Allowed — additive; server-derived path and explicit manifest relation only |
+| Copy an explicit document into a registered project's `docs/` | Allowed only while a cmux-visible Hub view has a live binding; collision and Git-risk checks apply |
+| Move one registered project document to project-local trash | Allowed only while live-bound; recoverable receipt required and every private-directory component must be non-symlink |
 | Delete item/attachment, overwrite a conflicting item, merge identities | Approval required — per item |
 | Automatically overwrite human-authored content, or silently replace/delete a Vault asset | Never |
 | Write `zotero.sqlite` directly | Permanently forbidden |
@@ -67,23 +69,43 @@ it still requires optimistic concurrency protection.
 ## Loopback services
 
 - Zotero Local API and the local-link service are loopback-only.
+- `HubDirectory` schema 2 is the only Hub root. `HubCatalog` is its
+  `knowledge_catalog` compatibility projection. Relation authority stays with the
+  declaring Zotero/Vault/manifest/provider; Hub only aggregates and presents it.
 - Services accept opaque IDs / canonical paths only; reject `..` and symlink escapes.
 - Hub document writes require same-origin Host/Origin, the process CSRF token, a registered
-  artifact ID, and the exact content revision returned by the preceding read. There is no
-  autosave and no endpoint for creating an arbitrary note or choosing a destination path.
+  artifact ID, the exact content revision returned by the preceding read, and a freshly
+  revalidated workspace binding. There is no autosave and no endpoint for creating an
+  arbitrary Vault note or choosing a Vault destination path.
+- Project operations accept only `project_id` plus paths relative to that project's checked
+  `docs/`. Absolute paths, `..`, symlink traversal, implicit overwrite, and writes outside
+  `docs/` are rejected. Delete always moves into checked project-local trash; the service
+  must reject a symlink or non-directory anywhere in `.scholar-workflow/trash/docs/...`
+  before moving bytes or writing a receipt. Hub never performs a Git write.
+- Knowledge-to-project copy produces independent content. Markdown loses `sw_*`, analysis
+  identity comments, managed-block markers, and generated block IDs; sidecars and managed
+  relationships are not copied. Canvas node/edge identities are regenerated, `sw_*` fields
+  and generated backlinks are removed, and file/link or unsupported nodes fail closed.
+  Project paste is bounded UTF-8, additive only, and receives the same destination-path and
+  Git-state checks as copy.
 - Hub launch actions also require an allowed Origin and the process CSRF token. Their opaque
   registry refreshes from the live catalog revision; browser clients never submit a target.
   Workspace-aware actions may additionally accept exactly one process-local opaque
   `workspace_id`; raw cmux window/workspace identifiers are never public request fields.
-- cmux workspace discovery is ephemeral runtime state, not `HubCatalog` content. A missing
-  socket, denied cmux capability, or expired workspace handle disables only cmux-dependent
-  actions with a visible error; it must not change cmux socket policy, fall back to another
-  browser, or make the read-only Hub unavailable.
-- A Hub Codex action creates a new blank native cmux agent session in a server-trusted working
-  directory. The client cannot provide a prompt, command, path, model, sandbox, config flag,
-  session identifier, or terminal target, and the server never sends keys into an existing
-  terminal. Future task buttons must resolve a server-registered recipe rather than browser
-  command text.
+- cmux workspace discovery is ephemeral runtime state, not `HubDirectory` content. A binding
+  uses a single-use nonce, service/lease generation, and server-derived instance fingerprint.
+  Every controlled mutation or launch must recompute the fingerprint and resolve the leased
+  opaque workspace against a fresh cmux tree. A missing workspace, denied capability, expired
+  lease, changed instance, or headless owner disables writes and launches with a visible error;
+  it must not weaken socket policy, fall back to another browser, or make reading unavailable.
+- Codex requests are defined by a server-registered `TaskRecipe`, bounded UTF-8 brief (at most
+  8 KiB), allowed `fast | standard | deep` effort, explicit project/object selection, and
+  idempotency key. The client cannot provide a shell command, cwd/path, model, sandbox,
+  permission, raw config, environment, terminal target, or `--last`. Briefs go through stdin;
+  argv construction uses `shell=False`; resume/fork requires an explicit saved thread ID.
+  The long-lived worker is not enabled in the current release, so health must report
+  `task_execution=false` and neither API nor UI may claim task execution or expose the legacy
+  blank-session action.
 - JSON Canvas identity comes from the checked Vault artifact manifest. Missing, invalid,
   escaping, or symlinked manifest entries fail closed rather than exposing a stale path.
 - Hub Vault assets are distinct from Zotero attachments. Their bytes remain inside the

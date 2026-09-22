@@ -1,7 +1,7 @@
 {
   "name": "scholar-workflow",
-  "version": "0.27.2",
-  "description": "Plan-first scholarly resource management with a local research Hub: manage papers through Zotero, maintain readable Obsidian and Notion projections, build literature trees, analyze papers, coordinate agents, and initialize Git-managed project skeletons.",
+  "version": "0.28.0",
+  "description": "Human-first scholarly knowledge, reproducible research projects, and a typed local Hub control plane for Zotero, Obsidian, Codex, and cmux.",
   "author": {
     "name": "Scholar Workflow contributors",
     "url": "https://github.com/JerryFan012321"
@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "Scholar Workflow",
     "shortDescription": "Local research Hub, resources, and workflows",
-    "longDescription": "Browse a local research Hub; discover, verify, import, organize, and analyze scholarly resources; initialize Git-managed research projects; and coordinate bounded work across agent runtimes.",
+    "longDescription": "Browse typed Papers, Projects, Tools, and knowledge contexts in a local Hub; maintain readable paper analyses; initialize reproducible research projects; and coordinate bounded work across agent runtimes.",
     "developerName": "Scholar Workflow contributors",
     "category": "Education & Research",
     "capabilities": [

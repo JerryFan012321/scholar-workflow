@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholar-workflow.local/contracts/analysis-commit-receipt.schema.json",
+  "title": "Canonical analysis commit receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "commit_id",
+    "request_fingerprint",
+    "artifact_id",
+    "state",
+    "committed_at",
+    "files",
+    "change_set"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "commit_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$"},
+    "request_fingerprint": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "artifact_id": {"type": "string", "pattern": "^analysis:[^\\s]+$"},
+    "state": {"const": "committed"},
+    "committed_at": {"type": "string", "format": "date-time"},
+    "files": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "before_sha256", "after_sha256", "action"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "before_sha256": {
+            "type": ["string", "null"],
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "after_sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+          "action": {"enum": ["created", "replaced", "unchanged"]}
+        }
+      }
+    },
+    "change_set": {"$ref": "knowledge-change-set.schema.json"}
+  }
+}

@@ -83,22 +83,32 @@
     },
     {
       "id": "structured-paper-analysis-note",
-      "description": "INV24 canonical 结构化精读:每篇论文维护同源 Markdown 分析笔记 + 可编辑 JSON Canvas 文档对,两者一一对应 Abstract/Introduction/Method/Experiments/Limitation 五分支。Abstract 含 task/challenge/insight/贡献/实验结论;Introduction 含任务与应用、逐项前序挑战(前序方法/失败或局限/技术原因)、our pipeline(创新及逐项问题/做法/优势)、demos;Method 含 overview(任务/输入/输出/步骤)与逐模块动机/做法/有效原因/技术优势;Experiments 含对比与消融的任务或数据、baseline/metric、结果、所支撑贡献和证据;Limitation 含逐项局限、成因、影响范围、陈述类型和证据。Canvas 可压缩措辞但不得引入 Markdown 没有的主张,每个 claim-bearing 字段在两端都携带同一可见证据或 availability-state 后缀",
+      "description": "INV24/INV40 论文分析 v2:每篇论文维护同源、人类可独立阅读的 Markdown 分析笔记与可编辑 JSON Canvas;whole profile 在两端覆盖 Task/Input/Workflow/Output/Boundary 五个可观察角色,Workflow 是一条有序端到端流程且不添加原论文流程中没有的对应挑战/贡献节点;Canvas 可压缩措辞但不得引入 Markdown 没有的主张,语义节点不超过 40,生成节点具备可读尺寸和间距",
       "status": "pending"
     },
     {
       "id": "structured-paper-analysis-focused-update",
-      "description": "INV24 局部精读投影:用户只要求某节、某模块或某实验时,Markdown 与 Canvas 只更新对应 canonical 子树;未请求分支保持原样,并保留 Canvas 已有布局、稳定节点身份、人工节点和人工内容;只有基线哈希仍匹配的生成字段可被直接更新",
+      "description": "INV24/INV40 局部精读投影:focused profile 明确声明角色子集,Markdown 与 Canvas 只更新相应 claim;未请求角色保持原样,并保留 Canvas 已有安全布局、稳定节点身份、人工节点和人工内容;缺失或异常 marker 以及 revision/baseline 冲突都作为一对 Markdown/Canvas 人工编辑冲突返回",
       "status": "pending"
     },
     {
       "id": "structured-paper-analysis-source-gap",
-      "description": "INV24 来源缺口可见:canonical 字段无法由当前正文通道核实时,结果明确区分「论文未报告」「当前正文通道无法核实」「不适用」,不得把 Zotero 索引遗漏的表格、公式或图示误写为论文未报告,且 Canvas 与 Markdown 使用相同状态",
+      "description": "INV24/INV40 行内证据:每个 claim 在 Markdown 与 Canvas 的同一内容块内使用同一证据/availability suffix,Canvas 反链到 Markdown claim block;不存在独立 Evidence 分区/表/节点。结果明确区分「作者明确陈述」「分析推断」「论文未报告」「当前正文通道无法核实」「不适用」,不得把 Zotero 索引遗漏误写为论文未报告",
       "status": "pending"
     },
     {
       "id": "structured-paper-analysis-human-edit-conflict",
-      "description": "INV24 人工编辑保护:每个生成 Markdown 标题(根/固定结构/重复子树)、字段和每个 Canvas 节点携带稳定 canonical path 与按统一 UTF-8 规范计算的上次生成值基线哈希;同一路径的 Markdown/Canvas 是一个更新单元,任一端无标记、标记异常、缺失或与基线不符时两端均保持原样并返回路径与拟议值,只有用户明确接受后才替换;用户节点占用 canonical Canvas ID 时报告冲突,不得用 collision suffix 绕过并新建重复节点",
+      "description": "INV24 人工编辑保护:每个生成 claim 在 Markdown/Canvas 两端具有同一稳定 claim identity;同一 claim 是一个更新单元,任一端无 marker、marker 异常、缺失或与维护的 revision/baseline 不符时两端均保持原样并返回冲突,只有用户明确接受后才替换;用户节点占用 canonical Canvas ID 时报告冲突,不得用 collision suffix 绕过并新建重复节点",
+      "status": "pending"
+    },
+    {
+      "id": "analysis-batch-conformance-isolation",
+      "description": "INV41 批量论文分析:每篇已入库论文分别经 versioned IR、Markdown/Canvas hard-conformance 和持久状态;失败项最多一次定向修复,再次失败时先留结构化 diagnostics 再只清理本项受控暂存草稿;批次返回 completed/partial/failed,合格兄弟项不回滚,Zotero item/PDF 与正式知识产物始终不参与失败清理",
+      "status": "pending"
+    },
+    {
+      "id": "analysis-maintenance-audit-readonly",
+      "description": "INV42 知识维护审计:只接收 manifest 明确给出的分析文档对,复用 hard-conformance 报告缺失文件、非法 Canvas、symlink 与 Markdown/Canvas 漂移;审计前后 Zotero/Vault/Notion/catalog/state 字节不变,不扫描项目或任意 Vault 目录,不隐式修复;每周调度必须显式配置且状态不变时不重复通知",
       "status": "pending"
     },
     {
@@ -108,7 +118,12 @@
     },
     {
       "id": "init-project-idempotent",
-      "description": "INV27 项目初始化：plan 零写入，apply 只补缺并确保 Git 管理；重跑逐字节不变，已有 AGENTS.md/.gitignore 保留，冲突或 symlink 在写前拒绝，且不生成自定义 agent/hook、不 stage/commit/push。由 tests/unit/test_init_project.py 守护",
+      "description": "INV27/INV32 项目初始化：plan 零写入，apply 只补缺并确保 Git 管理；project-layout schema v2 的 UUIDv4 project_id 只生成一次，复制/重跑保持；六类 source profile 与 addon 显式选择且漂移在写前拒绝；已有 AGENTS.md/.gitignore 保留，symlink 冲突拒绝，且不生成自定义 agent/hook、不 stage/commit/push。由 tests/unit/test_init_project.py 与 tests/contract/test_init_project_profiles.py 守护",
+      "status": "pass"
+    },
+    {
+      "id": "project-experiment-records",
+      "description": "INV33/INV34 Project System v2：Run recipe 仅含 commit、脚本、resolved config、dataset/split、seed 与机器无关环境并在首个 Attempt 冻结；Attempt 快照显式 Target；Target 拒绝 secret/command；promotion 原子校验且始终 not-verified，受信备份介质契约落地前无 public verified writer；legacy migrate-plan 零写入。由 tests/contract/test_project_system_contracts.py、test_experiment_lifecycle.py 与 test_experiment_cli.py 守护",
       "status": "pass"
     },
     {
@@ -128,7 +143,7 @@
     },
     {
       "id": "hub-cmux-workspace-actions",
-      "description": "INV31 cmux-first Hub：运行时 workspace 不进 HubCatalog，客户端只见 opaque workspace/action ID；人工可把已登记 PDF/Markdown/Notion 打开到当前或选定 workspace，Obsidian/Zotero 分别作为原生编辑器，Codex 按钮只新建目标 workspace 的空白 native agent-session。cmux 无权限/无 socket 时按钮可见降级，Hub 内建目录与已登记 Vault 文档阅读仍可用，不回退系统浏览器。由 cmux Hub action/HTTP/CLI contract tests 守护",
+      "description": "INV31/INV44 cmux-first Hub：运行时 workspace 不进入 HubDirectory，客户端只见 opaque workspace/action ID；只读浏览和已登记资源打开能力通过 contract tests 守护，cmux 无权限、无 socket、未绑定或 headless 时 Hub 阅读仍可用而受控写入关闭。旧空白 native agent-session 已移除；TaskRecipe worker 与任务执行尚未发布，不作为本结果的通过项",
       "status": "pass"
     }
   ]

@@ -1,24 +1,111 @@
 # HANDOFF — 从这里接着干
 
-> 交接文档,供下一个开发会话快速进入状态。与 `GOALS.md`(意图层,同目录)、`../CHANGELOG.md`(变更史)
-> 配合看。最后更新:2026-09-20(v0.27.2 论文解析 canonical 输出 + runtime skill 结果接口已发布并安装到 Codex;
-> `main=9e22111`、`release=3c89a69`，两端均已推送；独立 CLI 仍为 v0.27.1，未在本次插件安装中同步;
-> 科研项目系统 v2 规划启动，尚未实现;
-> v0.27.0 cmux-first Hub 完成;
-> v0.26.0 本地研究 Hub MVP;
-> 此前 14 个运行期 skill 简化完成;
-> 上游 2026-09-06:v0.24.0 Zotero MCP → 官方 Local API;
-> v0.23.0 review skills 退场 + 双向 agent-collaboration
-> + 宿主中立 init-project;上游 v0.22.0
-> Claude Code/Codex 双宿主插件打包;上游 v0.21.2 env-setup 路由边界修复;
-> v0.19.0 zotero-mcp 插件 bundling 修「作用域陷阱」+ doctor 三源探针
-> + 入库自动批准矩阵;上游 v0.18.0 doctor 端点探针初版。同日更早 v0.17.0 文献树模型广义扩展——四类
-> novelty + module 层 + 挑战树落地 + INV25 一文多树。上游 2026-08-03:v0.16.0 agent 拓扑重构 + codex
-> 复审两轮整改。更早同批:v0.15.1
-> survey-topic 补冷启动广度侦察 prose、v0.15.0 文献树渲染形态重构、v0.14.0 survey-topic 编排入口新增、
-> v0.13.1 vendored writing-great-skills + 描述精简、v0.13.0 config schema 两处 BREAKING 改名/删键;
-> v0.12.0 Phase 5 两级 AI 阅读 recommend-papers + analyze-paper + marketplace.json;v0.11.0 env-setup;
-> v0.10.0 Phase 3 novelty tree;Phase 2 规格见 `phase2-sync-projections.md`)。
+> 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
+> `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-09-22。
+>
+> 当前工作树正在实施 Scholar Workflow 三系统联合改造 v2，源码与 manifests 已准备为
+> `0.28.0`，但尚未 commit、push、构建、发布或安装。此前已安装环境仍是 `0.27.2`
+> plugin，独立 PATH CLI 仍是 `0.27.1`，23128 仍由旧 `0.18.0` venv 服务持有。本批没有
+> 迁移真实 Vault/JEPA、没有改造任何真实项目、没有切换 LaunchAgent/23128、没有运行真实
+> Codex task，也没有把 promotion 记成 verified backup。
+
+## 2026-09-22 三系统联合改造 v2（实施中）
+
+用户已经明确要求实施此前确认的完整计划。当前工作拆为三个可独立验证的运行时轨道：
+
+- **Project System v2**：稳定 `project_id`、声明式项目布局、源码/config profile、
+  Run/Attempt/Target、promotion 与真实备份状态；不承担全局知识同步。
+- **Knowledge System v2**：人类 Markdown 主体、机器 sidecar、论文分析 profile/IR、内联证据、
+  可读 Canvas 和逐篇 conformance gate；不迁移真实 Vault，先用 fixture/JEPA 迁移计划验收。
+- **Hub Control Plane v2**：唯一 `HubDirectory` 根、Papers/Projects/Tools libraries、显式 registry、
+  workspace binding、受控 TaskRecipe/TaskRun 与项目 `docs/` 文件边界；旧 `/api/v1/catalog` 仅作派生兼容。
+
+当前工作树已经落地的确定性基座：
+
+- Project：`project-layout` schema v2 与稳定 UUIDv4 `project_id`、声明式共同布局、六类
+  source/config profiles、Run/Attempt/Target、成果 promotion 和只读 legacy migration plan；实验 mutation
+  由项目级 `O_NOFOLLOW`/flock 串行化，promotion 使用 `O_EXCL` no-overwrite，WI-041 前模型/schema
+  均拒绝 `backup.state=verified`。
+- Knowledge：严格的 core/atomic/supporting 对象与 owner schema、AnalysisProfile/IR、可读
+  Markdown/Canvas renderer（生成节点均为标准 JSON Canvas `type: text`）、内联 Evidence 与正文反链、
+  baseline sidecar、focused-update 冲突计划、
+  逐篇 conformance、一次修复和失败隔离；validated/repaired bundle 通过带 flock、CAS、journal、
+  receipt 与条件回滚的 Markdown/Canvas/sidecar 提交，产生确定性 KnowledgeChangeSet；change set
+  通过 base-revision CAS、flock、原子单快照和幂等 apply receipt 更新显式 provider manifest 与派生
+  knowledge catalog；receipt 内容、provider 根目录 inode、manifest/catalog 双向闭包及 ID/path namespace
+  都会在重放与提交时复核，并可经显式 manifest 执行不写源文件的全库审计。
+- Hub：唯一 `HubDirectory`、typed/paged Papers/Projects/Tools、独立 `knowledge` landing namespace、
+  显式 registries、结构化 health/`hub-doctor`/临时只读 canary、socket 实例感知的 workspace binding，
+  以及 UI 可见但仅在有效 binding 下开放的项目 `docs/` copy/paste/Knowledge-copy/trash。内部
+  TaskStore/TaskWorker 已覆盖跨进程互斥、幂等、取消/超时和进程组回收；生产 HTTP 仍报告
+  `task_execution=false`，不会把这些内部原语误报成可执行入口。项目文档最终 open/link/unlink
+  通过逐组件 dirfd + `O_NOFOLLOW` 固定父目录，并在写后复核 parent inode，外部 symlink swap
+  会 fail closed 而不是越过 `docs/`。
+  `serve-hub` 在 `$SCHOLAR_WORKFLOW_HOME/knowledge-provider/knowledge-provider.snapshot.json` 已显式存在
+  时读取该权威 provider，并把其路径报告给 health；文件不存在时继续走旧只读兼容 provider，不会创建
+  snapshot、迁移真实 Vault 或切换 23128。
+- Canvas 写入边界：analysis conformance/commit、Hub 直接编辑与 Knowledge→Project 复制共用严格
+  JSON Canvas 验证器；顶层结构、标准节点类型、正数尺寸、类型必需字段、唯一 ID 和边端点均先验证，
+  复制仍额外拒绝 file/link 托管关系，focused update 将生成节点 `type` 纳入 baseline 冲突检测并恢复
+  renderer 所有权。
+
+接手时先运行本节对应的 unit/contract/full regression，再检查本批 diff；不要依据后面的历史章节
+把 v2 误判为“尚未实现”。真实迁移、正式 23128 切换、LaunchAgent 变更、release 构建/发布、
+插件重装和真实 Codex worker 执行仍分别等待迁移计划、正式 canary 证据或用户对外部状态变更的单独确认。
+fixture 中的临时端口 health/Library/UI canary 已通过；这里的“正式 canary”指基于拟发布构建、保存旧服务
+回滚基线后执行的切换前验证，不等同于已经批准 23128 cutover。
+
+最终工作树回归为 **582 passed**；30 份 JSON contract/eval/manifest 均可解析，Python `compileall`、
+Hub JavaScript 语法、两个变更 Skill 的 quick validator、插件 validator、`git diff --check` 和本批
+变更文件的 Ruff 检查均通过。全仓 Ruff 仍报告 80 项既有基线债务（主要是旧文件 import 排序与
+`datetime.UTC` 现代化），本批未借联合改造机械改写无关旧代码。
+
+Knowledge 仍有三个明确后续面：focused update 会保留用户自建 Canvas 节点/边和合法布局，但对系统
+生成内容发生人工 revision 漂移时仍返回 conflict/proposed patch，不静默覆盖；crash 后遗留的
+`running` batch 由审计报告、没有 lease 自动接管；真实 V-JEPA 视觉验收、周度调度与 repair-plan/apply
+尚未执行。它们与真实 JEPA/Vault 迁移一起继续受门禁，不应由“事务/provider 基座已完成”推断为已发布
+或已迁移。
+
+## 2026-09-21 科研知识系统 v2（历史规划基线）
+
+> 本节记录提出 v2 时的现场证据；“尚未实现”等状态已被上方 2026-09-22 工作树状态取代。
+> 真实 JEPA/Vault 迁移仍未实施。
+
+本节对应的规划变更当前仍在 `main` 工作树，尚未 commit、push、构建 release 或安装新插件版本。
+
+真实 V-JEPA 2 分析验收已经完成，但结果不能记为 v0.27.2 outcome 通过。实物检查发现：分析 Markdown
+476 行中有 194 行逐字段 baseline 注释；Canvas 有 194 个文本节点、193 条边，总高度约 35,940 px；
+25 个独立 Evidence 节点重复主张内已有证据，Method 另有 5 个原图没有的“对应挑战 / 贡献”字段。
+同一论文还分散在主题目录、两棵文献树、`paper_assets/`、分析对和 Canvas manifest 中，关系契约没有
+贯穿全部层次。这些是当前 output contract 的系统性问题，不是单篇写作失误。
+
+新增 `planning/knowledge-system-v2.md`，沿用项目系统 v2 的设计公式但保持两者分离：先锁定契约与 eval，
+再建立核心文档—原子资源—附属产物模型和人类/机器投影，再重做 analyze-paper/Canvas，随后收口
+Hub/PDF 服务生命周期，最后经临时 fixture 后显式迁移 JEPA。上位目标已增加 G12、INV37–INV39、
+NG11–NG12，并修订 INV2、INV17、INV19–INV21、INV24、INV25 与 INV29；BACKLOG 新增 WI-025–WI-030。
+该段的旧 P-D10 推荐已被 2026-09-22 联合计划取代：项目 `docs/` 与全局 Vault 不建立托管链接；
+内容只能由人或 agent 显式复制，目标获得新 identity 并独立演化，不维持同步或强制 provenance。
+
+已锁定的结果要求：
+
+- 每个主题以纲领/梳理/目录类核心文档作为人类入口；论文、重要技术文档和 Blog/Web article 是原子，
+  分析、批注、Canvas 与补充材料是附属产物。
+- 人类可读 Markdown 是必备正文；复杂 canonical path、baseline hash、关系边与节点映射移入
+  manifest/sidecar，不能让机器格式淹没正文。
+- Canvas 只做概览：Method 流程连续排列，每个步骤合并做法/作用/证据；Evidence 不单独列节点，
+  删除 pipeline 的“对应挑战 / 贡献”，通过 heading、大节点、低密度布局和真实截图验收可读性。
+- PDF/文档入口从稳定 resource/artifact identity 派生；raw loopback URL 只保留兼容能力，不再是
+  新知识正文的规范资源标识。
+
+23128 的具体问题已只读确认：它是 scholar-workflow 自己的旧 `serve-links` LaunchAgent，不是第三方
+服务器；当前常驻 executable 为 0.18.0，而仓库/插件为 0.27.2，所以旧 PDF 路由仍可用，`/hub/` 和
+Hub API 却不可用。现有源码已有统一 HubCatalog、opaque actions、Vault 冲突保护和 cmux 动作，不应另造
+第二个 PDF server；缺口是唯一 owner、status/start/stop/restart/upgrade、版本/capability doctor 和正式
+切换流程。本轮没有停止、卸载或替换该服务。
+
+下一步先审阅 `knowledge-system-v2.md` 的 K1–K6。真正实现时按 WI-026→WI-029 前进，最后 WI-030
+先出 JEPA migration plan；在用户确认具体 patch 前，不改真实 Vault。旧 v0.27.2 的
+`structured-paper-analysis-*` eval 继续保持 pending，并由 WI-027/WI-028 重写，不得把本次运行误报为通过。
 
 ## 2026-09-20 论文解析格式化与 skill 结果接口（v0.27.2，已发布并安装）
 
@@ -48,7 +135,10 @@
   完整测试为 **359 passed**。独立命令 `scholar-workflow --version` 当前仍为 `0.27.1`；这次只安装了
   Codex 插件，未同步 pipx CLI。由于本批没有改动确定性 CLI 行为，此差异当前非阻塞，但不可误报为已对齐。
 
-## 2026-09-20 科研项目系统 v2（规划中，尚未实现）
+## 2026-09-20 科研项目系统 v2（历史规划基线）
+
+> 本节记录实现前的规划状态；Project v2 确定性基座现已在 0.28.0 工作树中实现，但真实项目迁移
+> 仍未获授权。
 
 用户已确认后续调整 `init-project`，同时明确此前对 TRELLIS、Gaussian Splatting、Detectron2、
 SAM 2、DreamerV3、TorchTitan 的调查只用于回答“源码与相关配置如何组织”，不能覆盖已经商定的
@@ -84,6 +174,10 @@ v0.27.2；本规划本身仍不构成新运行时能力，也没有改变现有 
   CLI/manifest 版本一致性均通过。
 
 ## 2026-09-19 cmux-first Hub（v0.27.0，本批已完成）
+
+> **历史策略提示**：本节“新建空白 native agent-session”的 v0.27 行为已被 Hub Control Plane v2
+> 取代。0.28.0 工作树不注册 legacy blank-session action；未来任务只能走预登记 TaskRecipe、受限
+> brief/effort 和明确 thread ID，生产入口在 worker 完成独立验收前保持禁用。
 
 用户已确定 cmux 是 Hub 的默认运行与查看环境，而不是可有可无的 Notion 打开器。
 本批在不改变 `HubCatalog` 权威边界的前提下，将运行时分工固定为：
@@ -257,14 +351,17 @@ Vault 附件与阅读优先 UI。工作树仍包含用户此前的多批未提�
 
 ## 当前状态一句话
 
-Phase 2 **仍在进行中，但 Obsidian / Zotero / Notion / Hub / cmux 的当前职责和入口已在
-v0.27.1 收敛，并由 v0.27.2 继续保持**：Zotero 是论文/PDF/正式批注权威，Obsidian 是人类可读知识正文与 Canvas 权威，
+Phase 2 **仍在进行中；Obsidian / Zotero / Notion / Hub / cmux 的职责与代码入口已在
+v0.27.1 收敛，并由 v0.27.2 继续保持，但正式 listener 尚未收口**：Zotero 是论文/PDF/正式批注权威，Obsidian 是人类可读知识正文与 Canvas 权威，
 Notion 是单向简化投影，Hub 是无独立知识正文的 catalog/预览/显式编辑/action broker，cmux 是默认
 查看 shell。当前发布版本与已启用 Codex 插件均为 **0.27.2**，完整测试基线为 **359 passed**；
-canonical 论文分析 Markdown/Canvas 格式已随该版本交付，但真实论文 E2E 仍待新 thread 验收；
+canonical 论文分析 Markdown/Canvas v0.27.2 格式已随该版本交付；V-JEPA 2 真实 E2E 已完成并暴露
+正文 marker 过密、Evidence 重复和 Canvas 过长等系统性问题，因此旧 outcome 不能记为通过，后续验收
+已转入知识系统 v2 的 WI-027/WI-028；
 workspace 打开与空白 Codex session 已真实
-cmux E2E；旧 Vault 显式迁移、Zotero 全库分页 assembler 和无 Zotero item 的方向笔记 Notion 表示
-仍是 Phase 2 剩余项。更早版本的阶段快照仅作为下方历史决策记录，不代表当前运行形态。
+cmux E2E。正式 23128 仍由 0.18.0 `serve-links` LaunchAgent 占用，统一 Hub API 尚未接管；受管 lifecycle
+与 listener 切换、旧 Vault 显式迁移、Zotero 全库分页 assembler 和无 Zotero item 的方向笔记 Notion
+表示仍是 Phase 2 剩余项。更早版本的阶段快照仅作为下方历史决策记录，不代表当前运行形态。
 
 自 v0.8.2 后又落多批:
 - **v0.24.0(Zotero Local API 迁移)**:删除两个宿主 manifest 中的 MCP 声明与
@@ -331,16 +428,17 @@ cmux E2E；旧 Vault 显式迁移、Zotero 全库分页 assembler 和无 Zotero 
   curl-直连仅留 break-glass)。security-policy zotero-mcp boundary 重写(纠正 v0.18.0 错指引)。memory 加
   `reference_httpmcp_scope_trap`。测试 119→**123**(+4 doctor)。诊断反馈文档已标记已阅读。
 
-## 立即待办(本会话遗留,下次优先)
+## 立即待办（下次优先）
 
-1. **在新 Codex thread 验收 v0.27.2 论文解析**:当前线程不会热加载刚安装的 skill。下一线程选一篇
-   Zotero 已入库论文，跑一次 whole analysis，核对 canonical Markdown + 可编辑 Canvas 是否完整覆盖
-   Abstract / Introduction / Method / Experiments / Limitation；随后做一次 focused update 和一次人工编辑
-   冲突演练，确认只改目标子树且两端配对保护生效。验收结果再决定是否需要 0.27.3 修补。
-2. **恢复科研项目系统 v2 的决策冻结**:先讨论 `planning/project-system-v2.md` 的 D1-D9，再执行
-   WI-020→WI-024。未冻结契约前不得修改当前 initializer，也不得迁移任何真实项目。
-3. **决定是否同步独立 CLI**:Codex 插件已是 0.27.2，但 `scholar-workflow --version` 仍是 0.27.1。
-   本批无 CLI 行为变化，因此不阻塞新 skill 验收；若用户希望所有入口版本完全一致，再单独更新 pipx CLI。
+1. **完成 0.28.0 工作树收口**：统一运行 unit/contract/full regression、Ruff、schema/plugin/skill
+   validation；Knowledge 继续完成 provider catalog apply seam、V-JEPA 临时 golden/可读性验收和周度
+   scheduler/repair-plan，Hub 继续完成拟发布构建的正式 canary 与生产 worker gate。
+2. **保持外部状态门禁**：WI-024/WI-030 只能在 fixture 上生成迁移计划；WI-041 等待备份介质、
+   retention 和恢复演练；不切换 23128、不修改 LaunchAgent、不迁移真实项目/Vault、不运行真实
+   Codex task，也不把 promotion 标成 verified backup。
+3. **发布时统一实际运行版本**：当前源码/manifests 是尚未发布或安装的 0.28.0；已启用 Codex 插件仍是
+   0.27.2，独立 PATH CLI 仍是 0.27.1，因此它们不包含本工作树新增的 analysis/experiment/Hub doctor
+   CLI 能力。只有在 release review、正式 canary 和另行批准安装后，才能声称入口版本与能力一致。
 4. **Phase 3 文献树更多真实主题端到端实盘**:世界模型已手搭双树(39 篇、技术树 + 挑战树,见
    `0-inbox/世界模型调研经验_20260804.md`),验证了 v0.17.0 的四类 novelty / module 层 / 挑战树同构 /
    一文多树。但那是**手搭**——尚未拿一个真实方向走完 `build-literature-tree` skill 的全流程
@@ -417,23 +515,26 @@ cmux E2E；旧 Vault 显式迁移、Zotero 全库分页 assembler 和无 Zotero 
 
 ## 后续路线—— Phase 2 收尾 + 展望
 
-本节保留中长期路线；下一会话的实际起点以「立即待办」前三项为准。
+本节保留中长期路线；下一会话的实际起点以「立即待办」为准。下方历史 Phase 2 路线只说明已完成
+能力与仍有效的安全边界，不覆盖 2026-09-21 新增的知识系统 v2 计划。
 
 Phase 2 的 tracer 序列(T0 规格 → T1 link-service → T2 obsidian 写入 → T3 端到端 → T4 层级索引 →
 launchd 自启 → Notion 双库)**已全部走通**。剩下的是收尾与拓宽,无强依赖序:
 
-1. **方向级笔记 Notion 表示**(见「立即待办 1」):Notion 侧唯一未覆盖的结构,INV21 押后的 ticket。
-2. **`bin/notion-project.py` 单测**(见「立即待办 2」):补编排层的 MockTransport 测试。
-3. **铺其余 5 枝**(见「立即待办 4」):把 Obsidian + Notion 投影从 `科研项目` 扩到全分类树。
+1. **方向级笔记 Notion 表示**：Notion 侧尚未覆盖的结构，INV21 押后的 ticket。
+2. **`bin/notion-project.py` 单测**：补编排层的 MockTransport 测试。
+3. **铺其余 5 枝**：把 Obsidian + Notion 投影从 `科研项目` 扩到全分类树。
 4. **Phase 3 剩余**:novelty tree 模型 + grill + 渲染已落地(v0.10.0 起,v0.15.0 渲染形态、
    v0.17.0 四类/module/挑战树),挑战洞见树已从 schema seam 升为正式落地(F3 兑现、seam 退场)。
-   剩:拿一个真实方向走完 skill 全流程让 CLI 渲染路径端到端跑通(见「立即待办 1」)。
+   剩：在不打断知识系统 v2 优先级的前提下，另选一个真实方向走完 skill 全流程，让 CLI 渲染路径
+   端到端跑通。
 5. **env-records 拓展**(v0.11.0 后续,可选):当前是记录台账 + 脚手架;若要「一键重建环境」可加读
    `setup/<alias>/<env>.sh` 并远程执行,或 `env-load` 式把 apis.yaml 注入子进程环境。均属可选增量。
 
-承重原则(Phase 2,仍适用):Local API 取数与投影渲染分离,只经 JSON 通信;
-投影 CLI 不发外部网络(INV18;Notion 推送走独立的 `bin/notion-project.py`);PDF 链接按
-附件 key 本机 loopback 解析、吐原始 PDF,Notion 侧 Web Source + Local URL 双链共存(INV17);Obsidian
+承重原则（Phase 2，按 2026-09-21 契约修订后仍适用）：Local API 取数与投影渲染分离，只经 JSON 通信；
+投影 CLI 不发外部网络（INV18；Notion 推送走独立的 `bin/notion-project.py`）；论文持久层只保留
+Zotero item/attachment key 与 Web Source，Hub 在运行时由稳定身份派生受管打开动作；raw loopback URL
+只作兼容路由，不再作为正文或 Notion 的规范身份（INV17）；Obsidian
 表是可重建派生索引、managed-block 内增量、marker 外人工内容零改动(INV4);Notion 单向 本地→Notion、
 相关文档只投影摘要 + 回跳(INV19)、双库 Papers + Related Docs relation 连接(INV21)。
 

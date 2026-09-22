@@ -1,7 +1,16 @@
 "use strict";
 
 const state = {
+  directory: null,
   catalog: null,
+  library: "papers",
+  libraryItems: [],
+  libraryNextCursor: null,
+  libraryLoading: false,
+  libraryRequestId: 0,
+  librarySort: "title",
+  libraryDirection: "asc",
+  libraryItemType: "",
   topic: "all",
   query: "",
   actions: {},
@@ -24,6 +33,10 @@ const state = {
     uploading: false,
     requestId: 0,
   },
+  projectOps: {
+    project: null,
+    submitting: false,
+  },
 };
 const byId = (id) => document.getElementById(id);
 let previewRenderFrame = null;
@@ -35,10 +48,24 @@ function node(tag, className, text) {
   return element;
 }
 
-function resourceText(resource) {
-  const ids = resource.identifiers || {};
-  return [resource.title, ...(resource.authors || []), ids.doi, ids.arxiv, resource.venue]
-    .filter(Boolean).join(" ").toLocaleLowerCase();
+function hubInstance() {
+  return new URLSearchParams(window.location.search).get("instance");
+}
+
+function directoryEndpoint() {
+  const instance = hubInstance();
+  if (instance === null) return "/api/v2/directory";
+  return `/api/v2/directory?${new URLSearchParams({ instance }).toString()}`;
+}
+
+function stateChangingHeaders(contentType = "application/json") {
+  const headers = {
+    "Content-Type": contentType,
+    "X-Scholar-Hub-Token": state.csrfToken,
+  };
+  const instance = hubInstance();
+  if (instance) headers["X-Scholar-Hub-Instance"] = instance;
+  return headers;
 }
 
 function artifactLabel(kind) {
@@ -349,6 +376,130 @@ function scheduleLivePreview(content) {
   });
 }
 
+function renderLibraries() {
+  const nav = byId("library-nav");
+  nav.replaceChildren(...state.directory.libraries.map((library) => {
+    const count = library.available ? library.total_count : "!";
+    const button = node("button", "nav-item", `${library.label} · ${count}`);
+    button.type = "button";
+    button.dataset.libraryId = library.library_id;
+    button.title = library.detail || library.authority;
+    button.classList.toggle("active", state.library === library.library_id);
+    button.addEventListener("click", () => selectLibrary(library.library_id));
+    return button;
+  }));
+}
+
+const LIBRARY_TYPE_OPTIONS = {
+  papers: [
+    ["", "全部论文类型"],
+    ["journalArticle", "期刊论文"],
+    ["conferencePaper", "会议论文"],
+    ["preprint", "预印本"],
+    ["report", "报告"],
+    ["thesis", "学位论文"],
+    ["book", "书籍"],
+    ["webpage", "网页"],
+  ],
+  projects: [["", "全部项目"], ["project", "项目"]],
+  tools: [
+    ["", "全部工具"],
+    ["scholar-workflow", "Scholar Workflow"],
+    ["codex", "Codex"],
+    ["cmux", "cmux"],
+    ["zotero", "Zotero"],
+    ["obsidian", "Obsidian"],
+    ["external", "外部工具"],
+  ],
+};
+
+function syncLibraryQueryControls() {
+  const sort = byId("library-sort");
+  const allowedSorts = state.library === "papers"
+    ? [["title", "标题"], ["year", "年份"], ["id", "标识符"]]
+    : [["title", "名称"], ["id", "标识符"]];
+  if (!allowedSorts.some(([value]) => value === state.librarySort)) {
+    state.librarySort = "title";
+  }
+  sort.replaceChildren(...allowedSorts.map(([value, label]) => {
+    const option = node("option", "", label);
+    option.value = value;
+    return option;
+  }));
+  sort.value = state.librarySort;
+
+  const type = byId("library-type");
+  const typeOptions = LIBRARY_TYPE_OPTIONS[state.library] || [["", "全部类型"]];
+  if (!typeOptions.some(([value]) => value === state.libraryItemType)) {
+    state.libraryItemType = "";
+  }
+  type.replaceChildren(...typeOptions.map(([value, label]) => {
+    const option = node("option", "", label);
+    option.value = value;
+    return option;
+  }));
+  type.value = state.libraryItemType;
+  byId("library-direction").value = state.libraryDirection;
+}
+
+async function selectLibrary(libraryId) {
+  state.library = libraryId;
+  state.topic = "all";
+  state.libraryItemType = "";
+  for (const item of document.querySelectorAll(".nav-item")) {
+    item.classList.toggle("active", item.dataset.libraryId === libraryId);
+  }
+  const library = state.directory.libraries.find((entry) => entry.library_id === libraryId);
+  byId("view-title").textContent = library ? library.label : libraryId;
+  byId("resource-heading").textContent = library ? library.label : "资料";
+  syncLibraryQueryControls();
+  await loadLibraryPage(true);
+  renderResources();
+  renderArtifacts();
+}
+
+async function loadLibraryPage(reset = false) {
+  if (state.library === "papers" && state.topic !== "all") {
+    state.libraryNextCursor = null;
+    byId("load-more").hidden = true;
+    return;
+  }
+  if (state.libraryLoading && !reset) return;
+  if (!reset && !state.libraryNextCursor) return;
+  const requestId = reset ? state.libraryRequestId + 1 : state.libraryRequestId;
+  if (reset) state.libraryRequestId = requestId;
+  state.libraryLoading = true;
+  byId("load-more").disabled = true;
+  try {
+    const query = new URLSearchParams({ limit: "24" });
+    const queryText = state.query.trim();
+    if (queryText) query.set("query", queryText);
+    query.set("sort", state.librarySort);
+    query.set("direction", state.libraryDirection);
+    if (state.libraryItemType) query.set("type", state.libraryItemType);
+    if (!reset && state.libraryNextCursor) query.set("cursor", state.libraryNextCursor);
+    const response = await fetch(
+      `/api/v2/libraries/${encodeURIComponent(state.library)}/items?${query}`,
+      { credentials: "same-origin" },
+    );
+    if (!response.ok) throw new Error(await responseMessage(response));
+    const page = await response.json();
+    if (requestId !== state.libraryRequestId) return;
+    state.libraryItems = reset ? page.items : [...state.libraryItems, ...page.items];
+    state.libraryNextCursor = page.next_cursor;
+  } catch (error) {
+    if (requestId !== state.libraryRequestId) return;
+    state.libraryItems = reset ? [] : state.libraryItems;
+    state.libraryNextCursor = null;
+    byId("revision").textContent = `Library 读取失败：${String(error.message || error)}`;
+  } finally {
+    if (requestId !== state.libraryRequestId) return;
+    state.libraryLoading = false;
+    byId("load-more").disabled = false;
+    byId("load-more").hidden = !state.libraryNextCursor;
+  }
+}
+
 function renderTopics() {
   const nav = byId("topic-nav");
   nav.replaceChildren();
@@ -361,23 +512,24 @@ function renderTopics() {
   }
 }
 
-function selectTopic(topicId) {
+async function selectTopic(topicId) {
+  const libraryChanged = state.library !== "papers";
+  state.library = "papers";
   state.topic = topicId;
   for (const item of document.querySelectorAll(".nav-item")) {
     item.classList.toggle("active", topicId === "all" ? item.dataset.view === "all" : item.dataset.topicId === topicId);
   }
   const topic = state.catalog.topics.find((entry) => entry.topic_id === topicId);
   byId("view-title").textContent = topic ? topic.name : "全部资料";
+  byId("resource-heading").textContent = "Papers";
+  if (libraryChanged && topicId === "all") await loadLibraryPage(true);
+  byId("load-more").hidden = topicId !== "all" || !state.libraryNextCursor;
   renderResources();
   renderArtifacts();
 }
 
 function actionUsesWorkspace(action) {
   return ["required", "selectable"].includes(action.workspace_policy);
-}
-
-function actionIsCodex(action) {
-  return String(action.kind || "").split(".").includes("codex");
 }
 
 function selectedWorkspaceId() {
@@ -439,9 +591,48 @@ function applyWorkspaceListing(payload) {
     status.textContent = "没有可选择的 cmux 工作区";
     status.className = "cmux-status error";
   } else {
-    status.textContent = "查看和 Codex 将在所选工作区打开";
+    status.textContent = "已选择工作区；任务执行尚未启用";
     status.className = "cmux-status";
   }
+}
+
+function syncOperationStatus() {
+  const bound = Boolean(state.directory?.operations?.bound);
+  byId("operation-status").textContent = bound
+    ? "已绑定工作区"
+    : "只读 · 未绑定工作区";
+  document.querySelector(".status-dot").classList.toggle("readonly", !bound);
+}
+
+async function bindSelectedWorkspace() {
+  const instance = hubInstance();
+  const workspaceId = selectedWorkspaceId();
+  if (!instance || !workspaceId || !state.csrfToken) return false;
+  const nonceResponse = await fetch("/api/v2/workspaces/nonce", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: stateChangingHeaders(),
+    body: "{}",
+  });
+  if (!nonceResponse.ok) throw new Error(await responseMessage(nonceResponse));
+  const noncePayload = await nonceResponse.json();
+  const bindResponse = await fetch("/api/v2/workspaces/bind", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: stateChangingHeaders(),
+    body: JSON.stringify({
+      nonce: noncePayload.nonce,
+      profile_id: "runtime",
+      workspace_id: workspaceId,
+    }),
+  });
+  if (!bindResponse.ok) throw new Error(await responseMessage(bindResponse));
+  const directoryResponse = await fetch(directoryEndpoint(), { credentials: "same-origin" });
+  if (!directoryResponse.ok) throw new Error(await responseMessage(directoryResponse));
+  state.directory = await directoryResponse.json();
+  state.catalog = state.directory.knowledge_catalog;
+  syncOperationStatus();
+  return true;
 }
 
 function renderHubActions() {
@@ -453,17 +644,15 @@ function actionButton(action) {
   const button = node("button", "action-button", action.label);
   button.type = "button";
   const requiresWorkspace = actionUsesWorkspace(action);
-  if (requiresWorkspace && !selectedWorkspaceId()) {
+  if (!state.directory?.operations?.bound || (requiresWorkspace && !selectedWorkspaceId())) {
     button.disabled = true;
-    button.title = unavailableWorkspaceReason();
+    button.title = !state.directory?.operations?.bound
+      ? "Hub 当前未绑定工作区，只读模式"
+      : unavailableWorkspaceReason();
   }
   button.addEventListener("click", async () => {
     const workspaceId = requiresWorkspace ? selectedWorkspaceId() : null;
     if (requiresWorkspace && !workspaceId) return;
-    if (actionIsCodex(action)
-        && !window.confirm("将在所选 cmux 工作区启动空白 Codex 交互会话。继续？")) {
-      return;
-    }
     button.disabled = true;
     const original = button.textContent;
     button.textContent = "正在打开…";
@@ -471,10 +660,7 @@ function actionButton(action) {
       const response = await fetch(`/api/v1/actions/${encodeURIComponent(action.id)}`, {
         method: "POST",
         credentials: "same-origin",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Scholar-Hub-Token": state.csrfToken,
-        },
+        headers: stateChangingHeaders(),
         body: JSON.stringify(workspaceId ? { workspace_id: workspaceId } : {}),
       });
       if (!response.ok) {
@@ -486,7 +672,8 @@ function actionButton(action) {
     } finally {
       window.setTimeout(() => {
         button.textContent = original;
-        button.disabled = requiresWorkspace && !selectedWorkspaceId();
+        button.disabled = !state.directory?.operations?.bound
+          || (requiresWorkspace && !selectedWorkspaceId());
       }, 2800);
     }
   });
@@ -504,6 +691,18 @@ function resourceCard(resource) {
   const footer = node("div", "card-footer");
   footer.append(node("span", "", resource.venue || resource.resource_id));
   const controls = node("div", "card-actions");
+  if (resource.ref && resource.ref.item_id) {
+    const landing = node("a", "open-pdf", resource.attachment_key ? "论文落地页" : "查看资料");
+    const query = new URLSearchParams({
+      library_id: resource.ref.library_id,
+      item_type: resource.ref.item_type,
+      item_id: resource.ref.item_id,
+    });
+    landing.href = resource.landing_path || `/hub/item?${query}`;
+    landing.target = "_blank";
+    landing.rel = "noopener";
+    controls.append(landing);
+  }
   for (const action of state.actions[resource.resource_id] || []) {
     controls.append(actionButton(action));
   }
@@ -512,15 +711,155 @@ function resourceCard(resource) {
   return card;
 }
 
+function syncProjectOperationForm() {
+  const kind = byId("project-ops-kind").value;
+  byId("project-ops-source-row").hidden = !["copy", "trash"].includes(kind);
+  byId("project-ops-artifact-row").hidden = kind !== "copy-knowledge";
+  byId("project-ops-destination-row").hidden = !["copy", "copy-knowledge", "paste"].includes(kind);
+  byId("project-ops-content-row").hidden = kind !== "paste";
+  byId("project-ops-submit").disabled = state.projectOps.submitting
+    || !state.directory?.operations?.bound;
+}
+
+function openProjectOperations(project) {
+  if (!state.directory?.operations?.bound || !project.enabled || !project.docs_available) return;
+  state.projectOps.project = project;
+  state.projectOps.submitting = false;
+  byId("project-ops-project").textContent = `${project.display_name} · ${project.ref.item_id}`;
+  byId("project-ops-source").value = "";
+  byId("project-ops-destination").value = "";
+  byId("project-ops-content").value = "";
+  byId("project-ops-confirm").checked = false;
+  byId("project-ops-status").textContent = "";
+  const artifacts = state.catalog.artifacts.filter(
+    (artifact) => ["markdown", "canvas"].includes(artifact.format),
+  );
+  byId("project-ops-artifact").replaceChildren(...artifacts.map((artifact) => {
+    const option = node("option", "", `${artifactLabel(artifact.kind)} · ${artifact.vault_path}`);
+    option.value = artifact.artifact_id;
+    return option;
+  }));
+  syncProjectOperationForm();
+  byId("project-ops-dialog").showModal();
+}
+
+async function submitProjectOperation(event) {
+  event.preventDefault();
+  const project = state.projectOps.project;
+  if (!project || state.projectOps.submitting || !state.directory?.operations?.bound) return;
+  const operation = byId("project-ops-kind").value;
+  const source = byId("project-ops-source").value.trim();
+  const destination = byId("project-ops-destination").value.trim();
+  const confirmGit = byId("project-ops-confirm").checked;
+  let body;
+  if (operation === "copy") {
+    body = { source_path: source, destination_path: destination, confirm_git: confirmGit };
+  } else if (operation === "copy-knowledge") {
+    body = {
+      artifact_id: byId("project-ops-artifact").value,
+      destination_path: destination,
+      confirm_git: confirmGit,
+    };
+  } else if (operation === "paste") {
+    body = {
+      destination_path: destination,
+      content: byId("project-ops-content").value,
+      confirm_git: confirmGit,
+    };
+  } else if (operation === "trash") {
+    body = { relative_path: source, confirm_git: confirmGit };
+  } else {
+    return;
+  }
+  state.projectOps.submitting = true;
+  byId("project-ops-status").textContent = "正在执行…";
+  syncProjectOperationForm();
+  try {
+    const response = await fetch(
+      `/api/v2/projects/${encodeURIComponent(project.ref.item_id)}/docs/${operation}`,
+      {
+        method: "POST",
+        credentials: "same-origin",
+        headers: stateChangingHeaders(),
+        body: JSON.stringify(body),
+      },
+    );
+    const raw = await response.text();
+    let payload = null;
+    try { payload = raw ? JSON.parse(raw) : null; } catch (_error) { payload = null; }
+    if (!response.ok) {
+      if (response.status === 409 && payload?.code === "confirmation_required") {
+        const gitState = payload.git_state ? `（Git: ${payload.git_state}）` : "";
+        byId("project-ops-status").textContent = `需要本次确认 ${gitState}：勾选确认框后重试。`;
+        byId("project-ops-confirm").focus();
+        return;
+      }
+      throw new Error(payload?.error || raw || `HTTP ${response.status}`);
+    }
+    byId("project-ops-status").textContent = payload?.trash_path
+      ? `已移入 trash：${payload.trash_path}`
+      : `操作完成：${payload?.destination_path || payload?.relative_path || "已写入"}`;
+  } catch (error) {
+    byId("project-ops-status").textContent = `操作失败：${String(error.message || error)}`;
+  } finally {
+    state.projectOps.submitting = false;
+    syncProjectOperationForm();
+  }
+}
+
+function libraryCard(item) {
+  if (state.library === "papers") return resourceCard(item);
+  const card = node("article", "card");
+  const meta = node("div", "card-meta");
+  const type = item.tool_type || "project";
+  meta.append(node("span", "kind", type.replaceAll("-", " ")));
+  meta.append(node("span", "", item.enabled ? "已启用" : "已停用"));
+  card.append(meta);
+  card.append(node("h3", "", item.display_name || item.ref.item_id));
+  const capabilities = (item.capabilities || []).join(" · ") || "尚未声明能力";
+  card.append(node("p", "authors", capabilities));
+  const footer = node("div", "card-footer");
+  footer.append(node("span", "", item.source || item.ref.item_id));
+  if (state.library === "projects") {
+    footer.append(node("span", "", item.docs_available ? "docs 可用" : "docs 不可用"));
+    const operations = node("button", "preview-button", "文档操作");
+    operations.type = "button";
+    operations.disabled = !item.enabled || !item.docs_available || !state.directory?.operations?.bound;
+    operations.title = operations.disabled
+      ? (state.directory?.operations?.bound ? "项目 docs 当前不可用" : "绑定工作区后才可写入")
+      : "复制、粘贴或移入可恢复 trash";
+    operations.addEventListener("click", () => openProjectOperations(item));
+    footer.append(operations);
+  }
+  card.append(footer);
+  return card;
+}
+
 function renderResources() {
-  const query = state.query.trim().toLocaleLowerCase();
-  const resources = state.catalog.resources.filter((resource) => {
-    const topicMatch = state.topic === "all" || (resource.topic_ids || []).includes(state.topic);
-    const queryMatch = !query || resourceText(resource).includes(query);
+  const source = state.library === "papers" && state.topic !== "all"
+    ? state.catalog.resources
+      .filter((resource) => resource.kind === "paper")
+      .map((resource) => {
+        const zotero = resource.zotero || {};
+        const itemId = zotero.item_key || resource.resource_id;
+        return {
+          ...resource,
+          attachment_key: zotero.attachment_key || null,
+          ref: { library_id: "papers", item_type: "paper", item_id: itemId },
+        };
+      })
+    : state.libraryItems;
+  const normalizedQuery = state.query.trim().toLocaleLowerCase();
+  const resources = source.filter((resource) => {
+    const topicMatch = state.library !== "papers"
+      || state.topic === "all"
+      || (resource.topic_ids || []).includes(state.topic);
+    const queryMatch = !normalizedQuery
+      || JSON.stringify(resource).toLocaleLowerCase().includes(normalizedQuery);
     return topicMatch && queryMatch;
   });
   const grid = byId("resource-grid");
-  grid.replaceChildren(...resources.map(resourceCard));
+  grid.replaceChildren(...resources.map(libraryCard));
   byId("result-count").textContent = `${resources.length} 项`;
   byId("empty").hidden = resources.length !== 0;
 }
@@ -600,11 +939,12 @@ function syncPreviewControls() {
   byId("preview-edit").hidden = editing;
   byId("preview-save").hidden = !editing;
   byId("preview-cancel").hidden = !editing;
-  byId("preview-edit").disabled = state.preview.content === null;
+  const readOnly = !state.directory?.operations?.bound;
+  byId("preview-edit").disabled = state.preview.content === null || readOnly;
   byId("preview-save").disabled = !state.preview.dirty || state.preview.saving;
   byId("preview-cancel").disabled = state.preview.saving;
   const upload = byId("attachment-upload");
-  upload.disabled = state.preview.uploading || state.preview.artifact === null;
+  upload.disabled = readOnly || state.preview.uploading || state.preview.artifact === null;
   byId("attachment-upload-label").classList.toggle("disabled", upload.disabled);
   renderAttachments();
 }
@@ -667,10 +1007,7 @@ async function savePreview() {
       {
         method: "PUT",
         credentials: "same-origin",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Scholar-Hub-Token": state.csrfToken,
-        },
+        headers: stateChangingHeaders(),
         body: JSON.stringify({ content: proposed, base_revision: state.preview.revision }),
       },
     );
@@ -797,10 +1134,7 @@ async function uploadAttachments(files) {
         {
           method: "POST",
           credentials: "same-origin",
-          headers: {
-            "Content-Type": file.type || "application/octet-stream",
-            "X-Scholar-Hub-Token": state.csrfToken,
-          },
+          headers: stateChangingHeaders(file.type || "application/octet-stream"),
           body: file,
         },
       );
@@ -820,6 +1154,10 @@ async function uploadAttachments(files) {
 }
 
 function renderArtifacts() {
+  const showDocuments = state.library === "papers";
+  byId("document-heading").hidden = !showDocuments;
+  byId("artifact-list").hidden = !showDocuments;
+  if (!showDocuments) return;
   const query = state.query.trim().toLocaleLowerCase();
   const artifacts = state.catalog.artifacts.filter((artifact) => {
     const searchable = `${artifact.kind} ${artifact.vault_path} ${artifact.artifact_id}`.toLocaleLowerCase();
@@ -837,6 +1175,15 @@ function renderArtifacts() {
       preview.type = "button";
       preview.addEventListener("click", () => showPreview(artifact));
       controls.append(preview);
+      const landing = node("a", "preview-button", "稳定入口");
+      landing.href = `/hub/item?${new URLSearchParams({
+        library_id: "knowledge",
+        item_type: "artifact",
+        item_id: artifact.artifact_id,
+      })}`;
+      landing.target = "_blank";
+      landing.rel = "noopener";
+      controls.append(landing);
     }
     for (const action of state.actions[artifact.artifact_id] || []) {
       controls.append(actionButton(action));
@@ -849,18 +1196,21 @@ function renderArtifacts() {
 
 async function boot() {
   try {
-    const [catalogResponse, actionsResponse, sessionResponse, workspacesResponse] = await Promise.all([
-      fetch("/api/v1/catalog", { credentials: "same-origin" }),
+    const [directoryResponse, actionsResponse, sessionResponse, workspacesResponse] = await Promise.all([
+      fetch(directoryEndpoint(), { credentials: "same-origin" }),
       fetch("/api/v1/actions", { credentials: "same-origin" }),
       fetch("/api/v1/session", { credentials: "same-origin" }),
       fetch(workspaceEndpoint(), { credentials: "same-origin" }),
     ]);
-    if (!catalogResponse.ok || !actionsResponse.ok || !sessionResponse.ok) {
+    if (!directoryResponse.ok || !actionsResponse.ok || !sessionResponse.ok) {
       throw new Error("Hub API 暂时不可用");
     }
-    state.catalog = await catalogResponse.json();
+    state.directory = await directoryResponse.json();
+    state.catalog = state.directory.knowledge_catalog;
     state.actions = await actionsResponse.json();
     state.csrfToken = (await sessionResponse.json()).csrf_token;
+    syncLibraryQueryControls();
+    await loadLibraryPage(true);
     if (workspacesResponse.ok) {
       applyWorkspaceListing(await workspacesResponse.json());
     } else {
@@ -870,14 +1220,40 @@ async function boot() {
         capability_error: `cmux 工作区接口不可用（HTTP ${workspacesResponse.status}）`,
       });
     }
-    byId("paper-count").textContent = String(state.catalog.resources.length);
+    try {
+      await bindSelectedWorkspace();
+    } catch (error) {
+      state.cmux.capabilityError = `工作区绑定失败：${String(error.message || error)}`;
+      applyWorkspaceListing({
+        capabilities: state.cmux.capabilities,
+        workspaces: state.cmux.workspaces,
+        capability_error: state.cmux.capabilityError,
+      });
+    }
+    const papers = state.directory.libraries.find((library) => library.library_id === "papers");
+    byId("paper-count").textContent = String(papers?.total_count || 0);
     byId("topic-count").textContent = String(state.catalog.topics.length);
     byId("artifact-count").textContent = String(state.catalog.artifacts.length);
     byId("revision").textContent = `快照 ${state.catalog.revision.slice(0, 18)}…`;
+    syncOperationStatus();
+    renderLibraries();
     renderTopics();
     renderHubActions();
     renderResources();
     renderArtifacts();
+    const requestedArtifact = new URLSearchParams(window.location.search).get("artifact");
+    if (
+      requestedArtifact
+      && requestedArtifact.length <= 256
+      && ![...requestedArtifact].some((character) => character.charCodeAt(0) < 32)
+    ) {
+      const artifact = state.catalog.artifacts.find(
+        (entry) => entry.artifact_id === requestedArtifact,
+      );
+      if (artifact && ["markdown", "canvas"].includes(artifact.format)) {
+        await showPreview(artifact);
+      }
+    }
   } catch (error) {
     applyWorkspaceListing({
       capabilities: { workspace_actions: false },
@@ -891,16 +1267,47 @@ async function boot() {
 }
 
 document.querySelector('[data-view="all"]').addEventListener("click", () => selectTopic("all"));
+let librarySearchTimer = null;
 byId("search").addEventListener("input", (event) => {
   state.query = event.target.value;
-  renderResources();
-  renderArtifacts();
+  if (librarySearchTimer !== null) window.clearTimeout(librarySearchTimer);
+  librarySearchTimer = window.setTimeout(async () => {
+    await loadLibraryPage(true);
+    renderResources();
+    renderArtifacts();
+  }, 250);
 });
-byId("workspace-select").addEventListener("change", (event) => {
+byId("library-sort").addEventListener("change", async (event) => {
+  state.librarySort = event.target.value;
+  await loadLibraryPage(true);
+  renderResources();
+});
+byId("library-direction").addEventListener("change", async (event) => {
+  state.libraryDirection = event.target.value;
+  await loadLibraryPage(true);
+  renderResources();
+});
+byId("library-type").addEventListener("change", async (event) => {
+  state.libraryItemType = event.target.value;
+  await loadLibraryPage(true);
+  renderResources();
+});
+byId("workspace-select").addEventListener("change", async (event) => {
   state.cmux.selectedWorkspaceId = event.target.value || null;
+  try {
+    await bindSelectedWorkspace();
+  } catch (error) {
+    state.directory.operations.bound = false;
+    state.cmux.capabilityError = `工作区绑定失败：${String(error.message || error)}`;
+    syncOperationStatus();
+  }
   renderHubActions();
   renderResources();
   renderArtifacts();
+});
+byId("load-more").addEventListener("click", async () => {
+  await loadLibraryPage(false);
+  renderResources();
 });
 byId("preview-edit").addEventListener("click", beginEditing);
 byId("preview-save").addEventListener("click", savePreview);
@@ -927,6 +1334,18 @@ byId("preview-dialog").addEventListener("close", () => {
   }
   state.preview.requestId += 1;
   state.preview.artifact = null;
+});
+byId("project-ops-kind").addEventListener("change", syncProjectOperationForm);
+byId("project-ops-form").addEventListener("submit", submitProjectOperation);
+byId("project-ops-close").addEventListener("click", () => {
+  if (!state.projectOps.submitting) byId("project-ops-dialog").close();
+});
+byId("project-ops-dialog").addEventListener("cancel", (event) => {
+  if (state.projectOps.submitting) event.preventDefault();
+});
+byId("project-ops-dialog").addEventListener("close", () => {
+  state.projectOps.project = null;
+  byId("project-ops-status").textContent = "";
 });
 document.addEventListener("keydown", (event) => {
   if (!byId("preview-dialog").open || state.preview.mode !== "edit") return;

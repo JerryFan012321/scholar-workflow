@@ -10,8 +10,8 @@ import pytest
 
 from scholar_workflow.adapters.zotero_local import (
     MAX_UPLOAD_BYTES,
-    ZoteroLocalAdapter,
     ZoteroAuthorizationError,
+    ZoteroLocalAdapter,
     ZoteroLocalError,
     ZoteroLocalUnavailable,
 )
@@ -58,9 +58,11 @@ def test_rejects_non_loopback_base_url() -> None:
 
 
 def test_rejects_path_like_item_keys() -> None:
-    with make_adapter(lambda request: httpx.Response(500)) as adapter:
-        with pytest.raises(ValueError, match="invalid Zotero object key"):
-            adapter.get_item("../../secrets")
+    with (
+        make_adapter(lambda request: httpx.Response(500)) as adapter,
+        pytest.raises(ValueError, match="invalid Zotero object key"),
+    ):
+        adapter.get_item("../../secrets")
 
 
 def test_probe_reads_server_identity_and_api_version() -> None:
@@ -78,9 +80,13 @@ def test_probe_reads_server_identity_and_api_version() -> None:
 
 
 def test_probe_maps_disabled_local_api_to_unavailable() -> None:
-    with make_adapter(lambda request: httpx.Response(403, json={"disabled": True})) as adapter:
-        with pytest.raises(ZoteroLocalUnavailable, match="enable"):
-            adapter.probe()
+    with (
+        make_adapter(
+            lambda request: httpx.Response(403, json={"disabled": True})
+        ) as adapter,
+        pytest.raises(ZoteroLocalUnavailable, match="enable"),
+    ):
+        adapter.probe()
 
 
 def test_search_uses_local_quicksearch() -> None:
@@ -95,6 +101,53 @@ def test_search_uses_local_quicksearch() -> None:
         items = adapter.search_items("world model", qmode="everything", limit=25)
 
     assert items == [{"key": "ITEM1"}]
+
+
+def test_library_page_uses_zotero_start_limit_and_total_results() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/api/users/0/items/top"
+        assert request.url.params["start"] == "40"
+        assert request.url.params["limit"] == "20"
+        assert request.url.params["q"] == "world model"
+        assert request.url.params["qmode"] == "titleCreatorYear"
+        assert request.url.params["sort"] == "date"
+        assert request.url.params["direction"] == "desc"
+        assert request.url.params["itemType"] == "journalArticle"
+        return httpx.Response(
+            200,
+            headers={**server_headers(), "Total-Results": "73"},
+            json=[{"key": "ITEM1", "data": {"title": "World Model"}}],
+        )
+
+    with make_adapter(handler) as adapter:
+        page = adapter.list_items_page(
+            start=40,
+            limit=20,
+            query="world model",
+            sort="date",
+            direction="desc",
+            item_type="journalArticle",
+        )
+
+    assert page.start == 40
+    assert page.limit == 20
+    assert page.total == 73
+    assert page.items[0]["key"] == "ITEM1"
+
+
+def test_library_page_allows_bounded_server_side_item_type_union() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["itemType"] == "journalArticle || conferencePaper || preprint"
+        return httpx.Response(200, headers={"Total-Results": "0"}, json=[])
+
+    with make_adapter(handler) as adapter:
+        page = adapter.list_items_page(
+            start=0,
+            limit=20,
+            item_type="journalArticle || conferencePaper || preprint",
+        )
+
+    assert page.total == 0
 
 
 def test_search_can_omit_limit_for_complete_local_identity_scan() -> None:
@@ -203,9 +256,11 @@ def test_unauthorized_write_clears_rejected_remembered_key() -> None:
             return httpx.Response(200, headers=server_headers(), json={})
         return httpx.Response(401, headers=server_headers())
 
-    with make_adapter(handler, key_store) as adapter:
-        with pytest.raises(ZoteroAuthorizationError, match="rejected"):
-            adapter.create_item({"itemType": "journalArticle", "title": "Paper"})
+    with (
+        make_adapter(handler, key_store) as adapter,
+        pytest.raises(ZoteroAuthorizationError, match="rejected"),
+    ):
+        adapter.create_item({"itemType": "journalArticle", "title": "Paper"})
 
     assert key_store.deleted == "server-1"
 
@@ -218,9 +273,11 @@ def test_forbidden_write_is_not_misreported_as_bad_key() -> None:
             return httpx.Response(200, headers=server_headers(), json={})
         return httpx.Response(403, headers=server_headers(), text="file editing denied")
 
-    with make_adapter(handler, key_store) as adapter:
-        with pytest.raises(ZoteroLocalError, match="HTTP 403"):
-            adapter.create_item({"itemType": "journalArticle", "title": "Paper"})
+    with (
+        make_adapter(handler, key_store) as adapter,
+        pytest.raises(ZoteroLocalError, match="HTTP 403"),
+    ):
+        adapter.create_item({"itemType": "journalArticle", "title": "Paper"})
 
     assert key_store.deleted is None
 
@@ -350,9 +407,11 @@ def test_import_file_rejects_remote_upload_url(tmp_path: Path) -> None:
             },
         )
 
-    with make_adapter(handler, key_store) as adapter:
-        with pytest.raises(ZoteroLocalError, match="unsafe upload URL"):
-            adapter.import_file("ABCD2345", pdf)
+    with (
+        make_adapter(handler, key_store) as adapter,
+        pytest.raises(ZoteroLocalError, match="unsafe upload URL"),
+    ):
+        adapter.import_file("ABCD2345", pdf)
 
 
 def test_import_file_rejects_another_loopback_service(tmp_path: Path) -> None:
@@ -379,9 +438,11 @@ def test_import_file_rejects_another_loopback_service(tmp_path: Path) -> None:
             },
         )
 
-    with make_adapter(handler, MemoryKeyStore("local-write-key")) as adapter:
-        with pytest.raises(ZoteroLocalError, match="unsafe upload URL"):
-            adapter.import_file("ABCD2345", pdf)
+    with (
+        make_adapter(handler, MemoryKeyStore("local-write-key")) as adapter,
+        pytest.raises(ZoteroLocalError, match="unsafe upload URL"),
+    ):
+        adapter.import_file("ABCD2345", pdf)
 
 
 def test_import_file_rejects_oversized_attachment_before_network(tmp_path: Path) -> None:
@@ -392,6 +453,8 @@ def test_import_file_rejects_oversized_attachment_before_network(tmp_path: Path)
     def must_not_call(request: httpx.Request) -> httpx.Response:
         raise AssertionError("oversized files must fail before Local API access")
 
-    with make_adapter(must_not_call) as adapter:
-        with pytest.raises(ZoteroLocalError, match="exceeds"):
-            adapter.import_file("ABCD2345", pdf)
+    with (
+        make_adapter(must_not_call) as adapter,
+        pytest.raises(ZoteroLocalError, match="exceeds"),
+    ):
+        adapter.import_file("ABCD2345", pdf)

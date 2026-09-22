@@ -1,15 +1,17 @@
 """Core data models (Pydantic v2)."""
 from __future__ import annotations
-from enum import StrEnum
-from typing import Any
-from pydantic import BaseModel, Field
+
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from enum import StrEnum
+
+from pydantic import BaseModel, Field
 
 
 class ResourceKind(StrEnum):
     PAPER = "paper"
     TECHNICAL_DOCUMENT = "technical_document"
+    BLOG_POST = "blog_post"
     SNAPSHOT = "snapshot"
     DRAWIO = "drawio"
     IMAGE = "image"
@@ -79,5 +81,5 @@ class ActionPlan(BaseModel):
     tamper-checked plan — the CLI generates and consumes it in one call, and approval
     of destructive actions lives in the skill layer."""
     plan_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     actions: list[ActionItem] = Field(default_factory=list)

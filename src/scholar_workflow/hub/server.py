@@ -6,13 +6,16 @@ import mimetypes
 import os
 import re
 import secrets
+import sys
 import threading
 from dataclasses import dataclass, replace
+from html import escape
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib import resources
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, quote, unquote, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlencode, urlparse
 
 from scholar_workflow.hub.actions import (
     ActionKind,
@@ -20,17 +23,11 @@ from scholar_workflow.hub.actions import (
     CmuxArtifactLauncher,
     CmuxLauncher,
     CmuxResourceLauncher,
-    CodexLauncher,
     InvalidActionTarget,
     ObsidianLauncher,
     PublicAction,
     UnknownActionError,
     ZoteroLauncher,
-)
-from scholar_workflow.hub.catalog import (
-    CatalogProvider,
-    CatalogSnapshotStore,
-    StaticCatalogProvider,
 )
 from scholar_workflow.hub.artifact_manifest import VaultArtifactManifestProvider
 from scholar_workflow.hub.assets import (
@@ -42,28 +39,66 @@ from scholar_workflow.hub.assets import (
     VaultAssetManifestStore,
     VaultAssetStore,
 )
+from scholar_workflow.hub.catalog import (
+    CatalogProvider,
+    CatalogSnapshotStore,
+    StaticCatalogProvider,
+)
+from scholar_workflow.hub.cmux import CmuxControl, CmuxControlError, WorkspaceRegistry
 from scholar_workflow.hub.content import (
+    MAX_WRITE_REQUEST_BYTES,
     ArtifactContentStore,
     ArtifactEncodingError,
     ArtifactMissingError,
     ArtifactPathRejectedError,
     ArtifactTooLargeError,
     InvalidArtifactContentError,
-    MAX_WRITE_REQUEST_BYTES,
     RevisionConflictError,
     UnknownArtifactError,
     UnsupportedArtifactError,
 )
-from scholar_workflow.hub.cmux import CmuxControl, WorkspaceRegistry
+from scholar_workflow.hub.directory import (
+    HubDirectoryService,
+    LibraryProviderUnavailable,
+    OperationStatus,
+    ProjectRegistry,
+    RegistryError,
+    ToolRegistry,
+    TypedEntityRef,
+    UnknownLibraryError,
+    ZoteroPaperLibraryProvider,
+)
 from scholar_workflow.hub.links import LinkedCatalogProvider, ProjectionLinkStore
 from scholar_workflow.hub.models import AssetRole, HubAsset
+from scholar_workflow.hub.project_docs import (
+    DocumentCollisionError,
+    ProjectConfirmationRequired,
+    ProjectDocumentError,
+    ProjectDocumentMissingError,
+    ProjectDocumentService,
+    ProjectPathError,
+)
 from scholar_workflow.hub.vault import VaultCatalogProvider
-
+from scholar_workflow.hub.workspaces import (
+    WorkspaceBindingCoordinator,
+    WorkspaceBindingRegistry,
+    WorkspaceProfile,
+)
 
 _KEY_RE = re.compile(r"^[A-Z0-9]+$")
 _RANGE_RE = re.compile(r"^bytes=(\d*)-(\d*)$")
 _HUB_INSTANCE_RE = re.compile(r"^[A-Za-z0-9_-]{8,128}$")
 _CMUX_HUB_CAPABILITY = "cmux-workspace-actions-v1"
+_V2_CAPABILITIES = (
+    "hub-directory-v2",
+    "typed-library-pagination-v1",
+    "explicit-project-registry-v1",
+    "explicit-tool-registry-v1",
+    "project-documents-v1",
+    "workspace-binding-v1",
+    "task-contracts-v1",
+)
+_MAX_V2_WRITE_BYTES = 32 * 1024
 _STATIC_TYPES = {
     ".css": "text/css; charset=utf-8",
     ".js": "text/javascript; charset=utf-8",
@@ -103,6 +138,16 @@ class HubRuntime:
     content_store: ArtifactContentStore
     asset_store: VaultAssetStore
     action_service: Any | None = None
+    directory_service: HubDirectoryService | None = None
+    project_document_service: ProjectDocumentService | None = None
+    binding_registry: WorkspaceBindingRegistry | None = None
+    binding_coordinator: WorkspaceBindingCoordinator | None = None
+    service_generation: str = "unknown-generation"
+    owner_mode: str = "headless"
+    require_workspace_binding: bool = True
+    log_path: Path | None = None
+    state_root: Path | None = None
+    catalog_path: Path | None = None
 
 
 class _StaticActionService:
@@ -162,13 +207,26 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         path = parsed.path
         if path in {"/hub", "/hub/"}:
             self._serve_static("index.html")
+        elif path == "/hub/item":
+            self._handle_typed_item_landing(parsed.query)
         elif path.startswith("/hub/assets/"):
             self._serve_static(path.removeprefix("/hub/assets/"))
         elif path == "/api/v1/session":
             self._respond_json(200, {"csrf_token": self.server.runtime.session_token})
         elif path == "/api/v1/catalog":
-            catalog = self.server.runtime.catalog_provider.load()
+            service = self.server.runtime.directory_service
+            catalog = (
+                service.compatibility_catalog()
+                if service is not None
+                else self.server.runtime.catalog_provider.load()
+            )
             self._respond_json(200, catalog.model_dump(mode="json"))
+        elif path == "/api/v2/directory":
+            self._handle_v2_directory(parsed.query)
+        elif path.startswith("/api/v2/libraries/") and path.endswith("/items"):
+            self._handle_v2_library(path, parsed.query)
+        elif path == "/api/v2/health":
+            self._respond_json(200, self._v2_health_payload())
         elif path == "/api/v1/actions":
             service = self.server.runtime.action_service
             groups = service.public_actions() if service is not None else {}
@@ -212,6 +270,8 @@ class HubRequestHandler(BaseHTTPRequestHandler):
 
     def do_PUT(self) -> None:
         if not self._request_origin_allowed(require_origin=True):
+            return
+        if not self._legacy_write_binding_allowed():
             return
         path = urlparse(self.path).path
         artifact_id = self._artifact_content_id(path)
@@ -281,13 +341,27 @@ class HubRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
+        if path in {"/api/v2/workspaces/nonce", "/api/v2/workspaces/bind"}:
+            if not self._request_origin_allowed(require_origin=True):
+                return
+            self._handle_v2_workspace_binding(path)
+            return
+        if path.startswith("/api/v2/projects/") and "/docs/" in path:
+            if not self._request_origin_allowed(require_origin=True):
+                return
+            self._handle_v2_project_document_operation(path)
+            return
         artifact_id = self._artifact_assets_id(path)
         if artifact_id is not None:
             if not self._request_origin_allowed(require_origin=True):
                 return
+            if not self._legacy_write_binding_allowed():
+                return
             self._handle_asset_upload(artifact_id, parsed.query)
             return
         if not self._request_origin_allowed(require_origin=True):
+            return
+        if not self._legacy_write_binding_allowed():
             return
         if not path.startswith("/api/v1/actions/"):
             self._respond_text(404, "Not found")
@@ -355,7 +429,7 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         except InvalidActionTarget as exc:
             self._respond_json(400, {"ok": False, "error": str(exc)})
             return
-        except Exception as exc:  # boundary: convert launcher failures to visible HTTP errors
+        except Exception as exc:  # noqa: BLE001 - HTTP boundary for launcher plugins
             self._respond_json(503, {"ok": False, "error": str(exc)})
             return
         if hasattr(result, "model_dump"):
@@ -365,6 +439,494 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         else:
             payload = result
         self._respond_json(200, payload)
+
+    def _handle_v2_workspace_binding(self, path: str) -> None:
+        runtime = self.server.runtime
+        supplied_token = self.headers.get("X-Scholar-Hub-Token", "")
+        if not secrets.compare_digest(supplied_token, runtime.session_token):
+            self._respond_text(403, "Invalid session token")
+            return
+        if runtime.owner_mode != "cmux-visible":
+            self._respond_json(
+                409,
+                {
+                    "ok": False,
+                    "code": "headless_read_only",
+                    "error": "Headless Hub services cannot bind writable views",
+                },
+            )
+            return
+        instance_token = self.headers.get("X-Scholar-Hub-Instance", "")
+        if not _HUB_INSTANCE_RE.fullmatch(instance_token):
+            self._respond_text(400, "Invalid Hub instance token")
+            return
+        coordinator = runtime.binding_coordinator
+        if coordinator is None:
+            self._respond_text(503, "Workspace binding is unavailable")
+            return
+        try:
+            body = self._read_v2_json_body()
+        except (TypeError, ValueError) as exc:
+            self._respond_text(400, str(exc))
+            return
+        if body is None:
+            return
+        if path.endswith("/nonce"):
+            if body:
+                self._respond_text(400, "Workspace nonce request accepts no fields")
+                return
+            nonce = coordinator.issue_nonce(instance_token)
+            self._respond_json(
+                200,
+                {
+                    "nonce": nonce,
+                    "service_generation": runtime.service_generation,
+                    "expires_in_seconds": 120,
+                },
+            )
+            return
+        if set(body) != {"nonce", "profile_id", "workspace_id"}:
+            self._respond_text(400, "Expected nonce, profile_id, and workspace_id only")
+            return
+        try:
+            _require_string_fields(body, "nonce", "profile_id", "workspace_id")
+            lease = coordinator.bind(
+                instance_token=instance_token,
+                nonce=body["nonce"],
+                profile_id=body["profile_id"],
+                opaque_workspace_id=body["workspace_id"],
+            )
+        except (CmuxControlError, ValueError) as exc:
+            self._respond_json(409, {"ok": False, "code": "binding_rejected", "error": str(exc)})
+            return
+        self._respond_json(
+            200,
+            {
+                "ok": True,
+                "profile_id": lease.profile_id,
+                "lease_generation": lease.lease_generation,
+                "service_generation": lease.service_generation,
+                "expires_at": lease.expires_at.isoformat(),
+            },
+        )
+
+    def _handle_v2_directory(self, query: str) -> None:
+        service = self.server.runtime.directory_service
+        if service is None:
+            self._respond_text(503, "HubDirectory is unavailable")
+            return
+        parameters = parse_qs(query, keep_blank_values=True)
+        if set(parameters) - {"instance"}:
+            self._respond_text(400, "Only instance is accepted")
+            return
+        values = parameters.get("instance", [])
+        if len(values) > 1:
+            self._respond_text(400, "Expected at most one instance")
+            return
+        instance_token = values[0] if values else None
+        if instance_token is not None and not _HUB_INSTANCE_RE.fullmatch(instance_token):
+            self._respond_text(400, "Invalid Hub instance token")
+            return
+        try:
+            directory = service.load()
+        except (LibraryProviderUnavailable, OSError, ValueError, RegistryError):
+            self._respond_text(503, "HubDirectory provider failed")
+            return
+        directory = directory.model_copy(
+            update={"operations": self._operation_status(instance_token)}
+        )
+        self._respond_json(200, directory.model_dump(mode="json"))
+
+    def _handle_v2_library(self, path: str, query: str) -> None:
+        service = self.server.runtime.directory_service
+        if service is None:
+            self._respond_text(503, "HubDirectory is unavailable")
+            return
+        segments = path.strip("/").split("/")
+        if len(segments) != 5 or segments[:3] != ["api", "v2", "libraries"]:
+            self._respond_text(404, "Not found")
+            return
+        library_id = unquote(segments[3])
+        parameters = parse_qs(query, keep_blank_values=True)
+        if set(parameters) - {"cursor", "limit", "query", "sort", "direction", "type"}:
+            self._respond_text(400, "Unsupported library query field")
+            return
+        if any(len(values) != 1 for values in parameters.values()):
+            self._respond_text(400, "Library query fields may appear once")
+            return
+        cursor = parameters.get("cursor", [None])[0]
+        query_text = parameters.get("query", [None])[0]
+        try:
+            limit = int(parameters.get("limit", ["50"])[0])
+            page = service.list_items(
+                library_id,
+                cursor=cursor,
+                limit=limit,
+                query=query_text,
+                sort=parameters.get("sort", ["title"])[0],
+                direction=parameters.get("direction", ["asc"])[0],
+                item_type=parameters.get("type", [None])[0],
+            )
+        except UnknownLibraryError:
+            self._respond_text(404, "Unknown library")
+            return
+        except ValueError as exc:
+            self._respond_text(400, str(exc))
+            return
+        except (LibraryProviderUnavailable, OSError, RegistryError):
+            self._respond_text(503, "Library provider failed")
+            return
+        self._respond_json(200, page.model_dump(mode="json"))
+
+    def _v2_health_payload(self) -> dict[str, Any]:
+        runtime = self.server.runtime
+        try:
+            package_version = version("scholar-workflow")
+        except PackageNotFoundError:
+            package_version = "unknown"
+        provider_capabilities: dict[str, dict[str, Any]] = {
+            identifier: {
+                "available": False,
+                "authority": "unavailable",
+                "detail": "HubDirectory provider is not configured",
+            }
+            for identifier in ("papers", "projects", "tools")
+        }
+        if runtime.directory_service is not None:
+            try:
+                provider_capabilities = {
+                    row.library_id: {
+                        "available": row.available,
+                        "authority": row.authority,
+                        "detail": row.detail,
+                    }
+                    for row in runtime.directory_service.load().libraries
+                }
+            except (LibraryProviderUnavailable, OSError, ValueError, RegistryError):
+                provider_capabilities = {
+                    identifier: {
+                        "available": False,
+                        "authority": "unavailable",
+                        "detail": "Provider health check failed",
+                    }
+                    for identifier in ("papers", "projects", "tools")
+                }
+        cmux_fingerprint: str | None = None
+        cmux_detail = "Hub service is headless"
+        if runtime.owner_mode == "cmux-visible" and runtime.binding_coordinator is not None:
+            try:
+                cmux_fingerprint = (
+                    runtime.binding_coordinator.current_instance_fingerprint()
+                )
+                cmux_detail = None
+            except (CmuxControlError, ValueError):
+                cmux_detail = "Current cmux instance is unavailable"
+        instance_token = self.headers.get("X-Scholar-Hub-Instance", "")
+        workspace_bound = False
+        if instance_token and runtime.owner_mode == "cmux-visible":
+            try:
+                self._require_live_binding(instance_token)
+            except (CmuxControlError, ValueError):
+                pass
+            else:
+                workspace_bound = True
+        build_revision = None
+        log_path = str(runtime.log_path) if runtime.log_path is not None else None
+        return {
+            "status": "ok",
+            "service": {
+                "name": "scholar-workflow-hub",
+                "version": package_version,
+            },
+            "package": {
+                "name": "scholar-workflow",
+                "version": package_version,
+            },
+            "build": {
+                "version": package_version,
+                "revision": build_revision,
+                "detail": "Build revision is unavailable",
+            },
+            "protocol": {"name": "hub-http", "version": 2},
+            "hub_directory": {"schema_version": 2},
+            # Flat aliases remain temporarily for diagnostics consumers that
+            # predate the structured v2 health contract.
+            "service_name": "scholar-workflow-hub",
+            "service_version": package_version,
+            "protocol_version": 2,
+            "root_schema_version": 2,
+            "service_generation": runtime.service_generation,
+            "owner_mode": runtime.owner_mode,
+            "process": {
+                "pid": os.getpid(),
+                "executable": str(Path(sys.executable).resolve()),
+            },
+            "origin": (
+                f"http://{self.server.server_address[0]}:"
+                f"{self.server.server_address[1]}"
+            ),
+            "roots": {
+                "state": str(runtime.state_root) if runtime.state_root is not None else None,
+                "catalog": (
+                    str(runtime.catalog_path)
+                    if runtime.catalog_path is not None
+                    else None
+                ),
+                "vault": str(runtime.vault_root),
+                "storage": str(runtime.storage_root),
+            },
+            "capabilities": list(_V2_CAPABILITIES),
+            "provider_capabilities": provider_capabilities,
+            "providers": {
+                identifier: detail["available"]
+                for identifier, detail in provider_capabilities.items()
+            },
+            "worker_capabilities": {
+                "task_contracts": True,
+                "task_execution": False,
+                "detail": "Codex task worker is not enabled in this release",
+            },
+            "workspace_binding_required": runtime.require_workspace_binding,
+            "workspace_binding_available": (
+                runtime.owner_mode == "cmux-visible"
+                and runtime.binding_coordinator is not None
+            ),
+            "workspace_bound": workspace_bound,
+            "cmux_instance_fingerprint": cmux_fingerprint,
+            "cmux": {
+                "instance_fingerprint": cmux_fingerprint,
+                "detail": cmux_detail,
+            },
+            "task_execution": False,
+            "log_path": log_path,
+            "log": {
+                "path": log_path,
+                "detail": (
+                    None if log_path is not None else "Log location is unavailable"
+                ),
+            },
+        }
+
+    def _operation_status(self, instance_token: str | None) -> OperationStatus:
+        runtime = self.server.runtime
+        if runtime.owner_mode != "cmux-visible":
+            return OperationStatus(reason="Headless Hub service is read-only")
+        if instance_token is None:
+            return OperationStatus()
+        try:
+            self._require_live_binding(instance_token)
+        except (CmuxControlError, ValueError):
+            return OperationStatus()
+        return OperationStatus(
+            bound=True,
+            project_documents=runtime.project_document_service is not None,
+            workspace_actions=runtime.action_service is not None,
+            task_actions=False,
+            reason="Task worker execution is not enabled",
+        )
+
+    def _require_live_binding(self, instance_token: str):
+        runtime = self.server.runtime
+        if runtime.owner_mode != "cmux-visible":
+            raise ValueError("Headless Hub service is read-only")
+        coordinator = runtime.binding_coordinator
+        if coordinator is None:
+            raise ValueError("Workspace binding is unavailable")
+        return coordinator.require_current_binding(instance_token)
+
+    def _legacy_write_binding_allowed(self) -> bool:
+        runtime = self.server.runtime
+        if runtime.owner_mode != "cmux-visible":
+            self._respond_json(
+                409,
+                {
+                    "ok": False,
+                    "code": "headless_read_only",
+                    "error": "Headless Hub services are read-only",
+                },
+            )
+            return False
+        if not runtime.require_workspace_binding:
+            return True
+        instance_token = self.headers.get("X-Scholar-Hub-Instance", "")
+        if instance_token:
+            try:
+                self._require_live_binding(instance_token)
+            except (CmuxControlError, ValueError):
+                pass
+            else:
+                return True
+        self._respond_json(
+            409,
+            {
+                "ok": False,
+                "code": "workspace_unbound",
+                "error": "Hub view must be bound before state-changing operations",
+            },
+        )
+        return False
+
+    def _handle_v2_project_document_operation(self, path: str) -> None:
+        runtime = self.server.runtime
+        supplied_token = self.headers.get("X-Scholar-Hub-Token", "")
+        if not secrets.compare_digest(supplied_token, runtime.session_token):
+            self._respond_text(403, "Invalid session token")
+            return
+        if runtime.owner_mode != "cmux-visible":
+            self._respond_json(
+                409,
+                {
+                    "ok": False,
+                    "code": "headless_read_only",
+                    "error": "Headless Hub services are read-only",
+                },
+            )
+            return
+        instance_token = self.headers.get("X-Scholar-Hub-Instance", "")
+        try:
+            self._require_live_binding(instance_token)
+        except (CmuxControlError, ValueError):
+            self._respond_json(
+                409,
+                {
+                    "ok": False,
+                    "code": "workspace_unbound",
+                    "error": "Hub view must be bound before project document operations",
+                },
+            )
+            return
+        service = runtime.project_document_service
+        if service is None:
+            self._respond_text(503, "Project document operations are unavailable")
+            return
+        segments = path.strip("/").split("/")
+        if len(segments) != 6 or segments[:3] != ["api", "v2", "projects"] or segments[4] != "docs":
+            self._respond_text(404, "Not found")
+            return
+        project_id = unquote(segments[3])
+        operation = segments[5]
+        try:
+            body = self._read_v2_json_body()
+        except (TypeError, ValueError) as exc:
+            self._respond_text(400, str(exc))
+            return
+        if body is None:
+            return
+        try:
+            if operation == "copy":
+                if set(body) - {"source_path", "destination_path", "confirm_git"} or not {
+                    "source_path",
+                    "destination_path",
+                }.issubset(body):
+                    raise ValueError(
+                        "Expected source_path, destination_path, and optional confirm_git only"
+                    )
+                _require_string_fields(body, "source_path", "destination_path")
+                _require_optional_bool(body, "confirm_git")
+                result = service.copy_within(
+                    project_id,
+                    body["source_path"],
+                    body["destination_path"],
+                    confirm_git=body.get("confirm_git", False),
+                )
+            elif operation == "copy-knowledge":
+                if set(body) - {"artifact_id", "destination_path", "confirm_git"} or not {
+                    "artifact_id",
+                    "destination_path",
+                }.issubset(body):
+                    raise ValueError(
+                        "Expected artifact_id, destination_path, and optional confirm_git only"
+                    )
+                _require_string_fields(body, "artifact_id", "destination_path")
+                _require_optional_bool(body, "confirm_git")
+                result = service.copy_knowledge_artifact(
+                    project_id,
+                    body["artifact_id"],
+                    body["destination_path"],
+                    catalog_provider=runtime.catalog_provider,
+                    vault_root=runtime.vault_root,
+                    confirm_git=body.get("confirm_git", False),
+                )
+            elif operation == "paste":
+                if set(body) - {"destination_path", "content", "confirm_git"} or not {
+                    "destination_path",
+                    "content",
+                }.issubset(body):
+                    raise ValueError(
+                        "Expected destination_path, content, and optional confirm_git only"
+                    )
+                _require_string_fields(body, "destination_path")
+                if not isinstance(body["content"], str) or "\x00" in body["content"]:
+                    raise ValueError("content must be UTF-8 text without NUL bytes")
+                _require_optional_bool(body, "confirm_git")
+                result = service.paste_text(
+                    project_id,
+                    body["destination_path"],
+                    body["content"],
+                    confirm_git=body.get("confirm_git", False),
+                )
+            elif operation == "trash":
+                if set(body) - {"relative_path", "confirm_git"} or "relative_path" not in body:
+                    raise ValueError("Expected relative_path and optional confirm_git only")
+                _require_string_fields(body, "relative_path")
+                _require_optional_bool(body, "confirm_git")
+                result = service.trash(
+                    project_id,
+                    body["relative_path"],
+                    confirm_git=body.get("confirm_git", False),
+                )
+            else:
+                self._respond_text(404, "Unknown project document operation")
+                return
+        except ValueError as exc:
+            self._respond_text(400, str(exc))
+            return
+        except ProjectConfirmationRequired as exc:
+            self._respond_json(
+                409,
+                {
+                    "ok": False,
+                    "code": "confirmation_required",
+                    "error": str(exc),
+                    "git_state": exc.git_state,
+                    "path_role": exc.path_role,
+                },
+            )
+            return
+        except DocumentCollisionError as exc:
+            self._respond_json(409, {"ok": False, "code": "destination_exists", "error": str(exc)})
+            return
+        except ProjectPathError as exc:
+            self._respond_json(403, {"ok": False, "code": "path_rejected", "error": str(exc)})
+            return
+        except ProjectDocumentMissingError as exc:
+            self._respond_json(404, {"ok": False, "code": "document_missing", "error": str(exc)})
+            return
+        except ProjectDocumentError:
+            self._respond_text(503, "Project document operation failed")
+            return
+        self._respond_json(200, {"ok": True, **result.as_payload()})
+
+    def _read_v2_json_body(self) -> dict[str, Any] | None:
+        if self.headers.get("Content-Type", "").split(";", 1)[0] != "application/json":
+            self._respond_text(415, "Expected application/json")
+            return None
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError as exc:
+            raise ValueError("Invalid content length") from exc
+        if length < 0:
+            raise ValueError("Invalid content length")
+        if length > _MAX_V2_WRITE_BYTES:
+            self._respond_text(413, "Request body too large")
+            return None
+        try:
+            body = json.loads(self.rfile.read(length))
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            raise ValueError("Invalid JSON") from exc
+        if not isinstance(body, dict):
+            raise TypeError("Expected a JSON object")
+        return body
 
     def _request_origin_allowed(self, *, require_origin: bool = False) -> bool:
         host = self.headers.get("Host", "")
@@ -397,6 +959,101 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         if content_type is None:
             content_type = mimetypes.guess_type(relative_name)[0] or "application/octet-stream"
         self._respond_bytes(200, data, content_type)
+
+    def _handle_typed_item_landing(self, query: str) -> None:
+        parameters = parse_qs(query, keep_blank_values=True)
+        expected = {"library_id", "item_type", "item_id"}
+        if set(parameters) != expected or any(
+            len(parameters[name]) != 1 for name in expected
+        ):
+            self._respond_text(400, "Expected one complete typed entity reference")
+            return
+        try:
+            reference = TypedEntityRef(
+                library_id=parameters["library_id"][0],
+                item_type=parameters["item_type"][0],
+                item_id=parameters["item_id"][0],
+            )
+        except ValueError:
+            self._respond_text(400, "Invalid typed entity reference")
+            return
+        service = self.server.runtime.directory_service
+        if service is None:
+            self._respond_text(503, "HubDirectory is unavailable")
+            return
+        try:
+            item = service.resolve_item(reference)
+        except LibraryProviderUnavailable:
+            self._respond_text(503, "Authoritative provider is unavailable")
+            return
+        if item is None:
+            self._respond_text(404, "Typed item is unavailable")
+            return
+        title = escape(
+            str(
+                item.get("title")
+                or item.get("display_name")
+                or reference.item_id
+            )
+        )
+        identity = escape(
+            f"{reference.library_id}:{reference.item_type}:{reference.item_id}"
+        )
+        details = []
+        authors = item.get("authors")
+        if isinstance(authors, list) and authors:
+            details.append(f"<p>{escape(' · '.join(map(str, authors)))}</p>")
+        venue = item.get("venue")
+        if venue:
+            details.append(f"<p>{escape(str(venue))}</p>")
+        capabilities = item.get("capabilities")
+        if isinstance(capabilities, list) and capabilities:
+            details.append(
+                f"<p>Capabilities: {escape(' · '.join(map(str, capabilities)))}</p>"
+            )
+
+        entry = ""
+        attachment_key = item.get("attachment_key")
+        if reference.item_type == "paper":
+            if isinstance(attachment_key, str) and _KEY_RE.fullmatch(attachment_key):
+                attachment_query = urlencode(
+                    {
+                        "library_id": "papers",
+                        "item_type": "attachment",
+                        "item_id": attachment_key,
+                    }
+                )
+                entry = (
+                    f'<p><a href="/hub/item?{escape(attachment_query, quote=True)}">'
+                    "打开 PDF 附件落地页</a></p>"
+                )
+            else:
+                entry = "<p>当前没有可用 PDF 附件。</p>"
+        elif reference.item_type == "attachment":
+            if isinstance(attachment_key, str) and _KEY_RE.fullmatch(attachment_key):
+                entry = (
+                    f'<p><a href="/open/paper/{quote(attachment_key, safe="")}">'
+                    "阅读 PDF</a></p>"
+                )
+        elif reference.item_type == "artifact":
+            artifact_query = urlencode({"artifact": reference.item_id})
+            entry = (
+                f'<p><a href="/hub/?{escape(artifact_query, quote=True)}">在 Hub 中阅读</a></p>'
+            )
+            kind = item.get("kind")
+            vault_path = item.get("vault_path")
+            if kind:
+                details.append(f"<p>类型：{escape(str(kind))}</p>")
+            if vault_path:
+                details.append(f"<p>Vault 路径：{escape(str(vault_path))}</p>")
+        document = (
+            "<!doctype html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\">"
+            f"<title>{title} · Scholar Workflow</title></head><body>"
+            '<nav><a href="/hub/">返回 Hub</a></nav>'
+            f"<main><h1>{title}</h1>{''.join(details)}"
+            f"<p><code>{identity}</code></p>{entry}</main></body></html>"
+        ).encode()
+        self._respond_bytes(200, document, "text/html; charset=utf-8")
 
     def _handle_pdf(self, path: str, *, send_body: bool) -> None:
         segments = path.strip("/").split("/")
@@ -707,6 +1364,24 @@ def _action_workspace_policy(action: Any) -> str:
     return "required" if "cmux" in kind.split(".") else "none"
 
 
+def _require_string_fields(payload: dict[str, Any], *names: str) -> None:
+    for name in names:
+        value = payload.get(name)
+        if (
+            not isinstance(value, str)
+            or not value
+            or value != value.strip()
+            or len(value) > 1024
+            or "\x00" in value
+        ):
+            raise ValueError(f"{name} must be a non-empty bounded string")
+
+
+def _require_optional_bool(payload: dict[str, Any], name: str) -> None:
+    if name in payload and not isinstance(payload[name], bool):
+        raise ValueError(f"{name} must be a boolean")
+
+
 def _find_public_action(service: Any, action_id: str) -> Any | None:
     """Resolve only public action metadata; trusted targets remain service-private."""
     for actions in service.public_actions().values():
@@ -740,7 +1415,7 @@ def _workspace_listing_payload(
             listing = service.public_workspaces()
         else:
             listing = service.public_workspaces(instance_token=instance_token)
-    except Exception:
+    except Exception:  # noqa: BLE001 - compatibility boundary for injected services
         return {
             **unavailable,
             "capability_error": "cmux workspace discovery failed",
@@ -775,35 +1450,102 @@ def start_hub_server(
     storage_root: Path,
     vault_root: Path,
     catalog_provider: CatalogProvider | None = None,
+    knowledge_provider_state_root: Path | None = None,
     action_executor: Any | None = None,
     public_actions: dict[str, list[PublicAction]] | None = None,
     action_service: Any | None = None,
     codex_working_directory: Path | None = None,
+    directory_service: HubDirectoryService | None = None,
+    project_document_service: ProjectDocumentService | None = None,
+    binding_registry: WorkspaceBindingRegistry | None = None,
+    binding_coordinator: WorkspaceBindingCoordinator | None = None,
+    service_generation: str | None = None,
+    owner_mode: str = "headless",
+    require_workspace_binding: bool = True,
+    log_path: Path | None = None,
 ) -> HubHTTPServer:
     """Start the local Hub on loopback and return its server object."""
-    asset_manifest = VaultAssetManifestStore(vault_root)
-    if catalog_provider is None:
-        home = Path(
-            os.environ.get(
-                "SCHOLAR_WORKFLOW_HOME",
-                Path.home() / ".config" / "scholar-workflow",
-            )
+    if owner_mode not in {"headless", "cmux-visible"}:
+        raise ValueError("owner_mode must be headless or cmux-visible")
+    if catalog_provider is not None and knowledge_provider_state_root is not None:
+        raise ValueError(
+            "catalog_provider and knowledge_provider_state_root are mutually exclusive"
         )
-        provider = LinkedCatalogProvider(
-            VaultAssetCatalogProvider(
-                VaultArtifactManifestProvider(
-                    VaultCatalogProvider(
-                        CatalogSnapshotStore(home / "hub" / "catalog.json"),
+    home = Path(
+        os.environ.get(
+            "SCHOLAR_WORKFLOW_HOME",
+            Path.home() / ".config" / "scholar-workflow",
+        )
+    )
+    asset_manifest = VaultAssetManifestStore(vault_root)
+    use_live_zotero_paging = catalog_provider is None
+    resolved_catalog_path: Path | None = None
+    if catalog_provider is None:
+        provider_state_root = (
+            Path(knowledge_provider_state_root)
+            if knowledge_provider_state_root is not None
+            else home / "knowledge-provider"
+        )
+        provider_snapshot = provider_state_root / "knowledge-provider.snapshot.json"
+        if provider_snapshot.is_file():
+            from scholar_workflow.analysis.apply_changes import (
+                KnowledgeSnapshotCatalogProvider,
+            )
+
+            provider = KnowledgeSnapshotCatalogProvider(provider_state_root)
+            provider.load()
+            resolved_catalog_path = provider_snapshot
+        elif knowledge_provider_state_root is not None:
+            raise ValueError(
+                "explicit Knowledge provider state root has no provider snapshot"
+            )
+        else:
+            resolved_catalog_path = home / "hub" / "catalog.json"
+            provider = LinkedCatalogProvider(
+                VaultAssetCatalogProvider(
+                    VaultArtifactManifestProvider(
+                        VaultCatalogProvider(
+                            CatalogSnapshotStore(resolved_catalog_path),
+                            vault_root,
+                        ),
                         vault_root,
                     ),
-                    vault_root,
+                    asset_manifest,
                 ),
-                asset_manifest,
-            ),
-            ProjectionLinkStore(home / "hub" / "projection-links.json"),
-        )
+                ProjectionLinkStore(home / "hub" / "projection-links.json"),
+            )
     else:
         provider = catalog_provider
+    project_registry = ProjectRegistry(home / "hub" / "projects.json")
+    tool_registry = ToolRegistry(home / "hub" / "tools.json")
+    resolved_directory_service = directory_service or HubDirectoryService(
+        provider,
+        project_registry,
+        tool_registry,
+        paper_provider=ZoteroPaperLibraryProvider() if use_live_zotero_paging else None,
+    )
+    resolved_project_documents = project_document_service or ProjectDocumentService(
+        project_registry
+    )
+    if binding_coordinator is not None:
+        if binding_registry is not None and binding_coordinator.registry is not binding_registry:
+            raise ValueError("binding_coordinator and binding_registry must share state")
+        binding_registry = binding_coordinator.registry
+    if binding_registry is None:
+        resolved_generation = service_generation or f"service_{secrets.token_urlsafe(18)}"
+        resolved_bindings = WorkspaceBindingRegistry(
+            service_generation=resolved_generation,
+            profiles=[
+                WorkspaceProfile(profile_id="hub", role="hub"),
+                WorkspaceProfile(profile_id="runtime", role="runtime"),
+                WorkspaceProfile(profile_id="notion", role="notion"),
+            ],
+        )
+    else:
+        resolved_bindings = binding_registry
+        resolved_generation = binding_registry.service_generation
+        if service_generation is not None and service_generation != resolved_generation:
+            raise ValueError("service_generation does not match binding_registry")
     if action_service is not None and (
         action_executor is not None or public_actions is not None
     ):
@@ -833,6 +1575,16 @@ def start_hub_server(
             manifest_store=asset_manifest,
         ),
         action_service=resolved_action_service,
+        directory_service=resolved_directory_service,
+        project_document_service=resolved_project_documents,
+        binding_registry=resolved_bindings,
+        binding_coordinator=binding_coordinator,
+        service_generation=resolved_generation,
+        owner_mode=owner_mode,
+        require_workspace_binding=require_workspace_binding,
+        log_path=log_path,
+        state_root=home,
+        catalog_path=resolved_catalog_path,
     )
     server = HubHTTPServer(("127.0.0.1", port), runtime)
     if configure_default_actions:
@@ -861,16 +1613,9 @@ def start_hub_server(
             ActionKind.OBSIDIAN_NOTE: ObsidianLauncher(vault_root),
             ActionKind.ZOTERO_ITEM: ZoteroLauncher(),
         }
-        try:
-            if codex_working_directory is not None:
-                launchers[ActionKind.CODEX_SESSION] = CodexLauncher(
-                    codex_working_directory,
-                    workspaces,
-                    control=control,
-                )
-        except Exception:
-            server.server_close()
-            raise
+        # TaskRecipe/TaskRun contracts exist, but a secure long-lived Codex
+        # worker is not enabled yet.  Do not expose the legacy blank-session
+        # action as if Hub v2 task execution were available.
         resolved_action_service = CatalogActionService(
             provider,
             launchers,
@@ -879,6 +1624,12 @@ def start_hub_server(
         server.runtime = replace(
             runtime,
             action_service=resolved_action_service,
+            binding_coordinator=binding_coordinator
+            or WorkspaceBindingCoordinator(
+                resolved_bindings,
+                resolve_workspace=workspaces.resolve,
+                instance_fingerprint=workspaces.instance_fingerprint,
+            ),
         )
     threading.Thread(target=server.serve_forever, daemon=True, name="scholar-hub").start()
     return server
