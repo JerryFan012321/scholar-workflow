@@ -19,7 +19,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Documentation
 - **Complete Hub lifecycle.** Documented start, automatic binding confirmation, doctor fields,
-  direct-entry behavior, and foreground shutdown with `Ctrl-C` in both user guides.
+  direct-entry behavior, and foreground shutdown with `Ctrl-C` in both user guides. Recorded the
+  live cmux verification where one `open-hub` command produced a confirmed bound view.
 
 ## [0.28.0] — 2026-09-22
 
