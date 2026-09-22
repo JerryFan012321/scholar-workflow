@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholar-workflow.local/contracts/experiment-target.schema.json",
+  "title": "Scholar Workflow experiment target",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "target_id", "kind", "server_alias", "project_root",
+    "output_root", "executor", "environment_bindings"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "target_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"},
+    "kind": {"enum": ["local", "ssh"]},
+    "server_alias": {"type": ["string", "null"], "minLength": 1},
+    "project_root": {"type": "string", "minLength": 1},
+    "output_root": {"type": "string", "minLength": 1},
+    "executor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {"kind": {"enum": ["shell", "slurm"]}}
+    },
+    "environment_bindings": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "minLength": 1}
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"kind": {"const": "local"}}},
+      "then": {"properties": {"server_alias": {"type": "null"}}},
+      "else": {"properties": {"server_alias": {"type": "string", "minLength": 1}}}
+    }
+  ]
+}

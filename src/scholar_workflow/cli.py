@@ -1,15 +1,17 @@
 """CLI entry point."""
 from __future__ import annotations
+
 import http.client
 import json
 import os
 import re
 import secrets
 import subprocess
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
 from urllib.parse import urlencode
+
 import click
 
 from scholar_workflow import __version__
@@ -36,6 +38,12 @@ class PartialCompletionError(click.ClickException):
     """A recoverable write stopped mid-operation — maps to exit code 6."""
 
     exit_code = 6
+
+
+class SafetyRefusalError(click.ClickException):
+    """A filesystem or authorization boundary rejected the operation."""
+
+    exit_code = 7
 
 
 class ExternalServiceError(click.ClickException):
@@ -90,6 +98,11 @@ def _state_db_path() -> Path:
 def _hub_snapshot_path() -> Path:
     home = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME))
     return home / "hub" / "catalog.json"
+
+
+def _analysis_state_paths() -> tuple[Path, Path]:
+    home = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME)) / "analysis"
+    return home / "analysis.db", home / "stage"
 
 
 _HUB_INSTANCE_RE = re.compile(r"^[A-Za-z0-9_-]{16,128}$")
@@ -166,6 +179,45 @@ def _probe_hub_health(port: int) -> None:
         )
 
 
+def _probe_v2_hub_health(port: int) -> dict[str, object]:
+    """Return and validate the self-describing v2 health document."""
+    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2.0)
+    try:
+        connection.request("GET", "/api/v2/health")
+        response = connection.getresponse()
+        body = response.read(65537)
+    except OSError:
+        raise DependencyError(
+            f"Research Hub is not running at http://127.0.0.1:{port}."
+        ) from None
+    except http.client.HTTPException as exc:
+        raise ExternalServiceError(f"Research Hub v2 health probe failed: {exc}") from None
+    finally:
+        connection.close()
+    if response.status != 200:
+        raise ExternalServiceError(
+            f"Research Hub v2 health probe returned HTTP {response.status}"
+        )
+    if len(body) > 65536:
+        raise ExternalServiceError("Research Hub v2 health response was unexpectedly large")
+    try:
+        payload = json.loads(body)
+    except (TypeError, UnicodeDecodeError, json.JSONDecodeError):
+        raise ExternalServiceError("Research Hub v2 health response was not valid JSON") from None
+    if not isinstance(payload, dict) or payload.get("status") != "ok":
+        raise ExternalServiceError("Research Hub v2 health did not report status=ok")
+    protocol = payload.get("protocol")
+    directory = payload.get("hub_directory")
+    if not isinstance(protocol, dict) or protocol.get("version") != 2:
+        raise DependencyError("Research Hub does not implement protocol v2")
+    if not isinstance(directory, dict) or directory.get("schema_version") != 2:
+        raise DependencyError("Research Hub does not expose HubDirectory schema v2")
+    capabilities = payload.get("capabilities")
+    if not isinstance(capabilities, list) or "hub-directory-v2" not in capabilities:
+        raise DependencyError("Research Hub does not advertise HubDirectory v2")
+    return payload
+
+
 def _resolve_cmux_executable() -> Path:
     """Reuse the launcher's canonical config/PATH/app-bundle resolution order."""
     from scholar_workflow.hub.actions import CmuxLauncher
@@ -189,6 +241,23 @@ def _cmux_codex_working_directory() -> Path | None:
     if working_directory == Path(working_directory.anchor) or not working_directory.is_dir():
         return None
     return working_directory
+
+
+def _hub_owner_mode() -> str:
+    """Classify the service owner from a clean, complete cmux environment."""
+    workspace_id = os.environ.get("CMUX_WORKSPACE_ID", "")
+    socket_path = os.environ.get("CMUX_SOCKET_PATH", "")
+    values = (workspace_id, socket_path)
+    if not all(values):
+        return "headless"
+    if any(
+        value != value.strip()
+        or len(value) > 4096
+        or any(ord(character) < 32 for character in value)
+        for value in values
+    ):
+        return "headless"
+    return "cmux-visible"
 
 
 @click.group()
@@ -338,7 +407,7 @@ def zotero_update_cmd(item_key: str, input_file) -> None:
         if not isinstance(changes, dict) or not changes:
             raise ValueError("changes must be a non-empty object")
         if not isinstance(version, int) or isinstance(version, bool):
-            raise ValueError("version must be an integer from `zotero get`")
+            raise TypeError("version must be an integer from `zotero get`")
         forbidden = sorted(protected.intersection(changes))
         if forbidden:
             raise ValueError(f"protected fields cannot be patched: {', '.join(forbidden)}")
@@ -374,7 +443,7 @@ def zotero_ingest_cmd(input_file) -> None:
         collection_keys = payload.get("collection_keys") or []
         pdf_path = Path(payload["pdf_path"]).expanduser() if payload.get("pdf_path") else None
         if not isinstance(metadata, dict) or not isinstance(collection_keys, list):
-            raise ValueError("metadata must be an object and collection_keys must be a list")
+            raise TypeError("metadata must be an object and collection_keys must be a list")
     except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
         raise InputError(f"invalid Zotero ingest input: {exc}") from None
     try:
@@ -409,6 +478,8 @@ def config_init(vault: str, extras: tuple[str, ...]) -> None:
     Writes only version + the values you name — never a full dump of defaults. Idempotent:
     an identical re-init is a no-op; a differing existing file is refused (edit with
     `config set`)."""
+    from pydantic import ValidationError
+
     from scholar_workflow.config import ConfigError, init_config
 
     extra: dict[str, str] = {}
@@ -419,10 +490,8 @@ def config_init(vault: str, extras: tuple[str, ...]) -> None:
         extra[k.strip()] = v.strip()
     try:
         path = init_config(vault, extra)
-    except ConfigError as e:
-        raise InputError(str(e)) from None
-    except Exception as e:  # pydantic ValidationError -> clean exit 2
-        raise InputError(str(e)) from None
+    except (ConfigError, ValidationError) as exc:
+        raise InputError(str(exc)) from None
     click.echo(json.dumps({"config": str(path)}, ensure_ascii=False))
 
 
@@ -431,6 +500,8 @@ def config_init(vault: str, extras: tuple[str, ...]) -> None:
 @click.argument("value")
 def config_set(key: str, value: str) -> None:
     """Set one dotted KEY (e.g. notion.enabled) to VALUE, preserving comments."""
+    from pydantic import ValidationError
+
     from scholar_workflow.config import ConfigError, ConfigNotFound, set_config_value
 
     try:
@@ -439,10 +510,8 @@ def config_set(key: str, value: str) -> None:
         raise InputError(
             "no config.yml yet — run "
             "`scholar-workflow config init --research-vault-root PATH` first.") from None
-    except ConfigError as e:
-        raise InputError(str(e)) from None
-    except Exception as e:  # pydantic ValidationError -> clean exit 2
-        raise InputError(str(e)) from None
+    except (ConfigError, ValidationError) as exc:
+        raise InputError(str(exc)) from None
     click.echo(json.dumps({key: coerced}, ensure_ascii=False, default=str))
 
 
@@ -501,9 +570,9 @@ def apply(inputs: tuple[str, ...]) -> None:
     Resolve inputs into a deterministic download plan and download each arXiv PDF to
     `paper_inbox`. Run a Local API identity check before this command, then pass the
     downloaded path to `zotero ingest`. This command itself never writes to Zotero."""
+    from scholar_workflow.planning import generate_plan
     from scholar_workflow.resolver import resolve_many
     from scholar_workflow.state import StateStore
-    from scholar_workflow.planning import generate_plan
     from scholar_workflow.workflows.paper import run_paper_import
 
     resources = resolve_many(list(inputs))
@@ -531,6 +600,7 @@ def project_obsidian_cmd(input_file) -> None:
     arxiv, doi, synced}, ...]}. Content outside the managed markers is preserved;
     re-running the same input is idempotent (GOALS INV4/INV18)."""
     from pathlib import Path
+
     from scholar_workflow.adapters.obsidian import ObsidianAdapter
     from scholar_workflow.workflows.projection import project_obsidian
 
@@ -560,6 +630,7 @@ def project_tree_cmd(input_file, dry_run: bool) -> None:
     plus a 10-column paper table (direct papers). Content outside markers is preserved;
     re-running the same input is idempotent (INV4/INV18)."""
     from pathlib import Path
+
     from scholar_workflow.adapters.obsidian import ObsidianAdapter
     from scholar_workflow.workflows.hierarchy import plan_tree, project_tree
 
@@ -602,9 +673,13 @@ def project_literature_tree_cmd(input_file, dry_run: bool) -> None:
     `filename` then defaults to 01-Paperlist.md. Content outside markers is preserved;
     re-running the same input is idempotent (INV4/INV18/INV22)."""
     from pathlib import Path
+
     from scholar_workflow.adapters.obsidian import ObsidianAdapter
     from scholar_workflow.workflows.novelty_tree import (
-        plan_novelty_tree, project_novelty_tree, plan_paperlist, project_paperlist,
+        plan_novelty_tree,
+        plan_paperlist,
+        project_novelty_tree,
+        project_paperlist,
     )
 
     payload = json.load(input_file)
@@ -639,7 +714,6 @@ def project_literature_tree_cmd(input_file, dry_run: bool) -> None:
                               cfg.obsidian.managed_block_end)
     stats = applier(adapter)
     from scholar_workflow.hub.catalog import CatalogSnapshotStore
-    from scholar_workflow.hub.links import LinkedCatalogProvider, ProjectionLinkStore
     from scholar_workflow.workflows.hub_projection import (
         build_topic_catalog_patch,
         merge_catalog_patch,
@@ -668,9 +742,67 @@ def serve_links() -> None:
 
 
 @main.command(name="serve-hub")
-def serve_hub() -> None:
+@click.option(
+    "--port",
+    type=click.IntRange(0, 65535),
+    default=None,
+    help="Override the configured port; use 0 for an ephemeral canary port.",
+)
+@click.option(
+    "--canary",
+    is_flag=True,
+    help="Force a temporary headless/read-only owner; defaults to an ephemeral port.",
+)
+@click.option(
+    "--knowledge-provider-state-root",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    default=None,
+    help="Explicit Knowledge provider snapshot root; otherwise use the configured home if present.",
+)
+def serve_hub(
+    port: int | None,
+    canary: bool,
+    knowledge_provider_state_root: Path | None,
+) -> None:
     """Run the local research Hub (foreground, blocks until Ctrl-C)."""
-    _serve_hub_foreground()
+    options: dict[str, object] = {"port_override": port, "canary": canary}
+    if knowledge_provider_state_root is not None:
+        options["knowledge_provider_state_root"] = knowledge_provider_state_root
+    _serve_hub_foreground(**options)
+
+
+@main.command(name="hub-doctor")
+@click.option("--port", type=click.IntRange(1, 65535), default=None)
+@click.option("--json", "as_json", is_flag=True)
+def hub_doctor(port: int | None, as_json: bool) -> None:
+    """Validate one running Hub's v2 identity and capability report."""
+    selected_port = port if port is not None else _load_cfg().link_service.port
+    payload = _probe_v2_hub_health(selected_port)
+    if as_json:
+        click.echo(json.dumps(payload, ensure_ascii=False, sort_keys=True))
+        return
+    service = payload["service"]
+    protocol = payload["protocol"]
+    directory = payload["hub_directory"]
+    click.echo(
+        f"[ok] {service['name']} {service['version']} on 127.0.0.1:{selected_port}"
+    )
+    click.echo(
+        f"[ok] protocol={protocol['version']} HubDirectory={directory['schema_version']} "
+        f"owner={payload.get('owner_mode')}"
+    )
+    providers = payload.get("provider_capabilities", {})
+    if isinstance(providers, dict):
+        for name in ("papers", "projects", "tools"):
+            detail = providers.get(name, {})
+            available = isinstance(detail, dict) and detail.get("available") is True
+            click.echo(f"[{'ok' if available else 'warn'}] provider {name}")
+    worker = payload.get("worker_capabilities", {})
+    task_execution = isinstance(worker, dict) and worker.get("task_execution") is True
+    click.echo(
+        f"[{'ok' if task_execution else 'off'}] task execution "
+        f"{'enabled' if task_execution else 'disabled'}"
+    )
 
 
 @main.command(name="open-hub")
@@ -729,26 +861,49 @@ def open_hub(instance: str | None) -> None:
     click.echo("Opened Scholar Hub in the current cmux workspace.")
 
 
-def _serve_hub_foreground() -> None:
+def _serve_hub_foreground(
+    *,
+    port_override: int | None = None,
+    canary: bool = False,
+    knowledge_provider_state_root: Path | None = None,
+) -> None:
     """Serve the Web Hub and legacy PDF URLs on the same loopback listener.
 
     Serves GET /open/paper/<attachment-key> as an inline PDF from the Zotero
     storage folder and the human-facing Hub at /hub/. Explicit Hub editor saves
     are confined to registered Vault artifacts; never reaches MCP."""
     import threading as _t
+
     from scholar_workflow.hub.server import start_hub_server
 
     cfg = _load_cfg()
+    selected_port = 0 if canary and port_override is None else port_override
+    if selected_port is None:
+        selected_port = cfg.link_service.port
     server = start_hub_server(
-        port=cfg.link_service.port,
+        port=selected_port,
         storage_root=cfg.link_service.storage_root,
         vault_root=cfg.research_vault_root,
-        codex_working_directory=_cmux_codex_working_directory(),
+        knowledge_provider_state_root=knowledge_provider_state_root,
+        owner_mode="headless" if canary else _hub_owner_mode(),
+        require_workspace_binding=True,
     )
     host, port = server.server_address
+    if canary:
+        try:
+            payload = _probe_v2_hub_health(port)
+            if payload.get("owner_mode") != "headless":
+                raise ExternalServiceError(
+                    "Canary did not start in headless/read-only mode"
+                )
+        except Exception:
+            server.shutdown()
+            server.server_close()
+            raise
     click.echo(
         f"research-hub on http://{host}:{port}/hub/  "
-        f"(storage: {cfg.link_service.storage_root})  Ctrl-C to stop"
+        f"(storage: {cfg.link_service.storage_root})  "
+        f"{'CANARY · HEADLESS · READ-ONLY  ' if canary else ''}Ctrl-C to stop"
     )
     try:
         _t.Event().wait()
@@ -767,6 +922,7 @@ def install_service(load: bool) -> None:
     Idempotent: an existing agent is unloaded and replaced. macOS only."""
     import subprocess
     import sys
+
     from scholar_workflow.workflows.service import LABEL, plist_path, render_plist
 
     if sys.platform != "darwin":
@@ -798,6 +954,7 @@ def env_init(git_init: bool) -> None:
     never overwritten, so real records survive re-runs. The plugin owns no private data;
     the directory location is the only input, taken from config."""
     import subprocess
+
     from scholar_workflow.workflows.env_setup import scaffold
 
     cfg = _load_cfg()
@@ -811,6 +968,632 @@ def env_init(git_init: bool) -> None:
         {"root": str(result.root), "created": result.created,
          "skipped": result.skipped, "git_init": git_done},
         ensure_ascii=False, indent=2))
+
+
+def _experiment_result(value: object) -> None:
+    if hasattr(value, "model_dump"):
+        value = value.model_dump(mode="json")
+    click.echo(json.dumps(value, ensure_ascii=False, indent=2))
+
+
+def _experiment_error(exc: ValueError) -> InputError:
+    return InputError(str(exc))
+
+
+@main.group()
+def analysis() -> None:
+    """Render and enforce versioned paper-analysis result contracts."""
+
+
+@analysis.command(name="batch-run")
+@click.option(
+    "--request",
+    "request_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    required=True,
+    help="JSON document conforming to analysis-batch.schema.json.",
+)
+@click.option(
+    "--repair-request",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Optional second JSON request containing one targeted repaired IR per item.",
+)
+@click.option("--state-db", type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--stage-root", type=click.Path(file_okay=False, path_type=Path))
+def analysis_batch_run(
+    request_path: Path,
+    repair_request: Path | None,
+    state_db: Path | None,
+    stage_root: Path | None,
+) -> None:
+    """Stage and validate every paper independently before any canonical write."""
+    from pydantic import ValidationError
+
+    from scholar_workflow.analysis.batch import (
+        AnalysisBatchConflict,
+        AnalysisBatchRunner,
+        AnalysisBatchStore,
+    )
+    from scholar_workflow.analysis.models import AnalysisBatchRequest
+
+    default_db, default_stage = _analysis_state_paths()
+    try:
+        request = AnalysisBatchRequest.model_validate_json(
+            request_path.read_text(encoding="utf-8")
+        )
+        repaired_documents = None
+        if repair_request is not None:
+            repaired = AnalysisBatchRequest.model_validate_json(
+                repair_request.read_text(encoding="utf-8")
+            )
+            if repaired.batch_id != request.batch_id:
+                raise ValueError("repair request must use the original batch_id")
+            original_ids = [item.item_id for item in request.items]
+            repaired_ids = [item.item_id for item in repaired.items]
+            if repaired_ids != original_ids:
+                raise ValueError("repair request must contain the same ordered item IDs")
+            repaired_documents = {
+                item.document.artifact_id: item.document for item in repaired.items
+            }
+    except (OSError, UnicodeDecodeError, ValidationError, ValueError) as exc:
+        raise InputError(str(exc)) from None
+
+    store = AnalysisBatchStore(state_db or default_db)
+    try:
+        runner = AnalysisBatchRunner(store=store, stage_root=stage_root or default_stage)
+
+        def repair(document, _report):
+            assert repaired_documents is not None
+            try:
+                return repaired_documents[document.artifact_id]
+            except KeyError:
+                raise ValueError(
+                    f"repair request has no document for {document.artifact_id}"
+                ) from None
+
+        result = runner.run(
+            request,
+            repair=repair if repaired_documents is not None else None,
+        )
+    except AnalysisBatchConflict as exc:
+        raise IdentityConflictError(str(exc)) from None
+    finally:
+        store.close()
+    click.echo(json.dumps(result.model_dump(mode="json"), ensure_ascii=False, indent=2))
+    if result.state != "completed":
+        raise PartialCompletionError(
+            "one or more analysis items failed conformance; inspect the JSON result"
+        )
+
+
+@analysis.command(name="audit-batches")
+@click.option("--state-db", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+def analysis_audit_batches(state_db: Path | None) -> None:
+    """Read persisted batch state and report unfinished or retained failed stages."""
+    from scholar_workflow.analysis.audit import audit_analysis_batch_store
+    from scholar_workflow.analysis.batch import AnalysisBatchStore
+
+    default_db, _default_stage = _analysis_state_paths()
+    path = state_db or default_db
+    if not path.is_file():
+        raise DependencyError(f"analysis state database does not exist: {path}")
+    store = AnalysisBatchStore(path, readonly=True)
+    try:
+        report = audit_analysis_batch_store(store)
+    finally:
+        store.close()
+    click.echo(json.dumps(report.model_dump(mode="json"), ensure_ascii=False, indent=2))
+
+
+@analysis.command(name="commit-bundle")
+@click.option(
+    "--request",
+    "request_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    required=True,
+    help="JSON document conforming to analysis-commit-request.schema.json.",
+)
+@click.option(
+    "--vault-root",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    required=True,
+)
+@click.option("--state-db", type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option("--stage-root", type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--commit-state-root", type=click.Path(file_okay=False, path_type=Path))
+def analysis_commit_bundle(
+    request_path: Path,
+    vault_root: Path,
+    state_db: Path | None,
+    stage_root: Path | None,
+    commit_state_root: Path | None,
+) -> None:
+    """CAS-commit one validated staged Markdown/Canvas/sidecar bundle."""
+    from pydantic import ValidationError
+
+    from scholar_workflow.analysis.batch import AnalysisBatchStore
+    from scholar_workflow.analysis.commit import (
+        AnalysisCommitConflict,
+        AnalysisCommitError,
+        AnalysisCommitPartialError,
+        AnalysisCommitSafetyError,
+        commit_analysis_bundle,
+    )
+    from scholar_workflow.analysis.models import (
+        AnalysisBaseline,
+        AnalysisCommitRequest,
+        AnalysisState,
+    )
+    from scholar_workflow.analysis.rendering import AnalysisBundle
+
+    default_db, default_stage = _analysis_state_paths()
+    state_home = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME)) / "analysis"
+    try:
+        request = AnalysisCommitRequest.model_validate_json(
+            request_path.read_text(encoding="utf-8")
+        )
+    except (OSError, UnicodeDecodeError, ValidationError) as exc:
+        raise InputError(str(exc)) from None
+
+    store = AnalysisBatchStore(state_db or default_db, readonly=True)
+    try:
+        item = store.get_item(request.batch_id, request.item_id)
+    finally:
+        store.close()
+    if item is None:
+        raise DependencyError("analysis batch item does not exist")
+    if item.state not in {AnalysisState.VALIDATED, AnalysisState.REPAIRED}:
+        raise DependencyError("analysis bundle has not passed conformance")
+    if item.state.value != request.source_state:
+        raise IdentityConflictError("commit request source_state differs from batch state")
+    if item.stage_path is None:
+        raise DependencyError("validated analysis bundle has no staging receipt")
+
+    configured_stage = (stage_root or default_stage).absolute()
+    staged = Path(item.stage_path)
+    try:
+        stage_base = configured_stage.resolve(strict=True)
+        if configured_stage.is_symlink():
+            raise ValueError("analysis stage root cannot be a symlink")
+        current = stage_base
+        relative = staged.resolve(strict=True).relative_to(stage_base)
+        if relative.parts != (request.batch_id, request.item_id):
+            raise ValueError("staged bundle identity differs from commit request")
+        for part in relative.parts:
+            current /= part
+            if current.is_symlink():
+                raise ValueError("staged bundle cannot traverse a symlink")
+        markdown_path = staged / "analysis.md"
+        canvas_path = staged / "analysis.canvas"
+        baseline_path = staged / "analysis.baseline.json"
+        for path in (markdown_path, canvas_path, baseline_path):
+            if path.is_symlink() or not path.is_file():
+                raise ValueError("staged bundle must contain three regular files")
+        canvas = json.loads(canvas_path.read_text(encoding="utf-8"))
+        if not isinstance(canvas, dict):
+            raise TypeError("staged Canvas root must be an object")
+        bundle = AnalysisBundle(
+            markdown=markdown_path.read_text(encoding="utf-8"),
+            canvas=canvas,
+        )
+        baseline = AnalysisBaseline.model_validate_json(
+            baseline_path.read_text(encoding="utf-8")
+        )
+    except (
+        OSError,
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+        TypeError,
+        ValidationError,
+        ValueError,
+    ) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+
+    try:
+        receipt = commit_analysis_bundle(
+            vault_root=vault_root,
+            state_root=commit_state_root or state_home / "commit-state",
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+        )
+    except AnalysisCommitPartialError as exc:
+        raise PartialCompletionError(str(exc)) from None
+    except AnalysisCommitSafetyError as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    except AnalysisCommitConflict as exc:
+        raise IdentityConflictError(str(exc)) from None
+    except AnalysisCommitError as exc:
+        raise InputError(str(exc)) from None
+    click.echo(json.dumps(receipt.model_dump(mode="json"), ensure_ascii=False, indent=2))
+
+
+@analysis.command(name="apply-change-set")
+@click.option(
+    "--change-set",
+    "change_set_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    required=True,
+    help="Explicit JSON change conforming to knowledge-change-set.schema.json.",
+)
+@click.option(
+    "--provider-state-root",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    required=True,
+    help="Existing root containing the authoritative Knowledge provider snapshot.",
+)
+def analysis_apply_change_set(
+    change_set_path: Path,
+    provider_state_root: Path,
+) -> None:
+    """CAS-apply one explicit change to the provider manifest and catalog."""
+    from pydantic import ValidationError
+
+    from scholar_workflow.analysis.apply_changes import (
+        KnowledgeApplyConflict,
+        KnowledgeApplyError,
+        KnowledgeApplySafetyError,
+        apply_knowledge_change_set,
+    )
+    from scholar_workflow.analysis.models import KnowledgeChangeSet
+
+    try:
+        change_set = KnowledgeChangeSet.model_validate_json(
+            change_set_path.read_text(encoding="utf-8")
+        )
+    except (OSError, UnicodeDecodeError, ValidationError) as exc:
+        raise InputError(str(exc)) from None
+    try:
+        receipt = apply_knowledge_change_set(
+            state_root=provider_state_root,
+            change_set=change_set,
+        )
+    except KnowledgeApplySafetyError as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    except KnowledgeApplyConflict as exc:
+        raise IdentityConflictError(str(exc)) from None
+    except KnowledgeApplyError as exc:
+        raise InputError(str(exc)) from None
+    click.echo(json.dumps(receipt.model_dump(mode="json"), ensure_ascii=False, indent=2))
+
+
+@analysis.command(name="audit-knowledge")
+@click.option(
+    "--manifest",
+    "manifest_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    required=True,
+    help="Explicit no-discovery inventory conforming to knowledge-audit-manifest.schema.json.",
+)
+@click.option(
+    "--vault-root",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    required=True,
+)
+@click.option(
+    "--catalog-root",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    help="Optional explicit root for catalog_path; defaults to the Vault root.",
+)
+@click.option(
+    "--commit-state-root",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    help="Explicit root for analysis commit receipt paths in the audit manifest.",
+)
+def analysis_audit_knowledge(
+    manifest_path: Path,
+    vault_root: Path,
+    catalog_root: Path | None,
+    commit_state_root: Path | None,
+) -> None:
+    """Audit explicit Knowledge objects and projections without writing any source."""
+    from pydantic import ValidationError
+
+    from scholar_workflow.analysis.audit import audit_knowledge_manifest
+    from scholar_workflow.analysis.models import KnowledgeAuditManifest
+
+    try:
+        manifest = KnowledgeAuditManifest.model_validate_json(
+            manifest_path.read_text(encoding="utf-8")
+        )
+        report = audit_knowledge_manifest(
+            vault_root,
+            manifest,
+            catalog_root=catalog_root,
+            commit_state_root=commit_state_root,
+        )
+    except (OSError, UnicodeDecodeError, ValidationError, ValueError) as exc:
+        raise InputError(str(exc)) from None
+    click.echo(json.dumps(report.model_dump(mode="json"), ensure_ascii=False, indent=2))
+
+
+@main.group()
+def experiment() -> None:
+    """Create and validate local-first Run, Attempt, Target, and Artifact records."""
+
+
+@experiment.command(name="new-run")
+@click.option("--project-root", type=click.Path(path_type=Path), default=".", show_default=True)
+@click.option("--run-id", required=True)
+@click.option("--run-script", type=click.Path(path_type=Path), required=True)
+@click.option("--resolved-config", type=click.Path(path_type=Path), required=True)
+@click.option("--dataset-manifest", type=click.Path(path_type=Path), required=True)
+@click.option("--dataset-id", required=True)
+@click.option("--dataset-version", required=True)
+@click.option("--dataset-split", required=True)
+@click.option("--seed", type=int, required=True)
+@click.option("--environment-definition", type=click.Path(path_type=Path), required=True)
+def experiment_new_run(
+    project_root: Path,
+    run_id: str,
+    run_script: Path,
+    resolved_config: Path,
+    dataset_manifest: Path,
+    dataset_id: str,
+    dataset_version: str,
+    dataset_split: str,
+    seed: int,
+    environment_definition: Path,
+) -> None:
+    """Snapshot one machine-neutral recipe into a new Run."""
+    from scholar_workflow.project import ExperimentError, create_run
+
+    try:
+        result = create_run(
+            project_root,
+            run_id=run_id,
+            run_script=run_script,
+            resolved_config=resolved_config,
+            dataset_manifest=dataset_manifest,
+            dataset_id=dataset_id,
+            dataset_version=dataset_version,
+            dataset_split=dataset_split,
+            seed=seed,
+            environment_definition=environment_definition,
+        )
+    except ExperimentError as exc:
+        raise _experiment_error(exc) from None
+    _experiment_result(result)
+
+
+@experiment.command(name="target-add")
+@click.option("--project-root", type=click.Path(path_type=Path), default=".", show_default=True)
+@click.option("--spec", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True)
+def experiment_target_add(project_root: Path, spec: Path) -> None:
+    """Validate and register one explicit local or SSH Target profile."""
+    from scholar_workflow.project import ExperimentError, register_target
+
+    try:
+        result = register_target(project_root, spec)
+    except ExperimentError as exc:
+        raise _experiment_error(exc) from None
+    _experiment_result(result)
+
+
+@experiment.command(name="new-attempt")
+@click.option("--project-root", type=click.Path(path_type=Path), default=".", show_default=True)
+@click.option("--run-id", required=True)
+@click.option("--attempt-id", required=True)
+@click.option("--target-id", required=True)
+def experiment_new_attempt(
+    project_root: Path,
+    run_id: str,
+    attempt_id: str,
+    target_id: str,
+) -> None:
+    """Create an Attempt and freeze its Run recipe."""
+    from scholar_workflow.project import ExperimentError, create_attempt
+
+    try:
+        result = create_attempt(
+            project_root,
+            run_id=run_id,
+            attempt_id=attempt_id,
+            target_id=target_id,
+        )
+    except ExperimentError as exc:
+        raise _experiment_error(exc) from None
+    _experiment_result(result)
+
+
+@experiment.command(name="finalize-attempt")
+@click.option("--project-root", type=click.Path(path_type=Path), default=".", show_default=True)
+@click.option("--run-id", required=True)
+@click.option("--attempt-id", required=True)
+@click.option(
+    "--status",
+    type=click.Choice(["succeeded", "failed", "interrupted"]),
+    required=True,
+)
+@click.option("--exit-code", type=int, required=True)
+@click.option(
+    "--actual-json",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    required=True,
+)
+@click.option(
+    "--output-inventory",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+)
+def experiment_finalize_attempt(
+    project_root: Path,
+    run_id: str,
+    attempt_id: str,
+    status: str,
+    exit_code: int,
+    actual_json: Path,
+    output_inventory: Path | None,
+) -> None:
+    """Finalize an Attempt from an explicit observed-runtime JSON record."""
+    from scholar_workflow.project import ExperimentError, finalize_attempt
+
+    try:
+        actual = json.loads(actual_json.read_text(encoding="utf-8"))
+        if not isinstance(actual, dict):
+            raise TypeError("actual-json must contain one JSON object")
+        result = finalize_attempt(
+            project_root,
+            run_id=run_id,
+            attempt_id=attempt_id,
+            status=status,
+            exit_code=exit_code,
+            actual=actual,
+            output_inventory=output_inventory,
+        )
+    except (
+        OSError,
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+        ExperimentError,
+        TypeError,
+        ValueError,
+    ) as exc:
+        raise _experiment_error(exc) from None
+    _experiment_result(result)
+
+
+@experiment.command(name="start-attempt")
+@click.option("--project-root", type=click.Path(path_type=Path), default=".", show_default=True)
+@click.option("--run-id", required=True)
+@click.option("--attempt-id", required=True)
+def experiment_start_attempt(project_root: Path, run_id: str, attempt_id: str) -> None:
+    """Record the start time of a planned Attempt without launching it."""
+    from scholar_workflow.project import ExperimentError, start_attempt
+
+    try:
+        result = start_attempt(project_root, run_id=run_id, attempt_id=attempt_id)
+    except ExperimentError as exc:
+        raise _experiment_error(exc) from None
+    _experiment_result(result)
+
+
+@experiment.command(name="validate")
+@click.option("--project-root", type=click.Path(path_type=Path), default=".", show_default=True)
+def experiment_validate(project_root: Path) -> None:
+    """Validate every local Run, Attempt, Target, Artifact, and checksum."""
+    from scholar_workflow.project import ExperimentError, validate_project
+
+    try:
+        result = validate_project(project_root)
+    except ExperimentError as exc:
+        raise _experiment_error(exc) from None
+    _experiment_result(result)
+
+
+@experiment.command(name="promote")
+@click.option("--project-root", type=click.Path(path_type=Path), default=".", show_default=True)
+@click.option("--run-id", required=True)
+@click.option("--attempt-id", required=True)
+@click.option("--source", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True)
+@click.option("--destination", required=True)
+@click.option(
+    "--role",
+    type=click.Choice(
+        [
+            "report", "metrics", "parameters", "point-cloud", "image", "video",
+            "checkpoint", "log", "intermediate", "other",
+        ]
+    ),
+    required=True,
+)
+@click.option(
+    "--retention",
+    type=click.Choice(["local-required", "local-selected"]),
+    required=True,
+)
+@click.option("--remote-source")
+def experiment_promote(
+    project_root: Path,
+    run_id: str,
+    attempt_id: str,
+    source: Path,
+    destination: str,
+    role: str,
+    retention: str,
+    remote_source: str | None,
+) -> None:
+    """Copy and checksum one selected artifact; backup remains unverified."""
+    from scholar_workflow.project import ExperimentError, promote_artifact
+
+    try:
+        result = promote_artifact(
+            project_root,
+            run_id=run_id,
+            attempt_id=attempt_id,
+            source=source,
+            destination=destination,
+            role=role,
+            retention=retention,
+            remote_source=remote_source,
+        )
+    except ExperimentError as exc:
+        raise _experiment_error(exc) from None
+    _experiment_result(result)
+
+
+@experiment.command(name="record-remote")
+@click.option("--project-root", type=click.Path(path_type=Path), default=".", show_default=True)
+@click.option("--run-id", required=True)
+@click.option("--attempt-id", required=True)
+@click.option("--remote-source", required=True)
+@click.option(
+    "--role",
+    type=click.Choice(
+        [
+            "report", "metrics", "parameters", "point-cloud", "image", "video",
+            "checkpoint", "log", "intermediate", "other",
+        ]
+    ),
+    required=True,
+)
+def experiment_record_remote(
+    project_root: Path,
+    run_id: str,
+    attempt_id: str,
+    remote_source: str,
+    role: str,
+) -> None:
+    """Record a large remote artifact as manifest-only."""
+    from scholar_workflow.project import ExperimentError, record_manifest_only_artifact
+
+    try:
+        result = record_manifest_only_artifact(
+            project_root,
+            run_id=run_id,
+            attempt_id=attempt_id,
+            remote_source=remote_source,
+            role=role,
+        )
+    except ExperimentError as exc:
+        raise _experiment_error(exc) from None
+    _experiment_result(result)
+
+
+@experiment.command(name="index")
+@click.option("--project-root", type=click.Path(path_type=Path), default=".", show_default=True)
+def experiment_index(project_root: Path) -> None:
+    """Rebuild the optional experiment index from authoritative Run bundles."""
+    from scholar_workflow.project import ExperimentError, rebuild_index
+
+    try:
+        result = rebuild_index(project_root)
+    except ExperimentError as exc:
+        raise _experiment_error(exc) from None
+    _experiment_result(result)
+
+
+@experiment.command(name="migrate-plan")
+@click.option("--project-root", type=click.Path(path_type=Path), default=".", show_default=True)
+def experiment_migrate_plan(project_root: Path) -> None:
+    """Inspect legacy experiment directories without writing or moving anything."""
+    from scholar_workflow.project import ExperimentError
+    from scholar_workflow.project.experiments import legacy_migration_plan
+
+    try:
+        result = legacy_migration_plan(project_root)
+    except ExperimentError as exc:
+        raise _experiment_error(exc) from None
+    _experiment_result(result)
 
 
 @main.command()
@@ -859,14 +1642,15 @@ def report(job_id: str | None, fmt: str, active: bool, handoff: bool) -> None:
 
 def _handoff_snapshot(rows: list[dict]) -> dict:
     """Build a PreCompactSnapshot (contracts/handoff.schema.json) from active jobs."""
-    from datetime import datetime, timezone
+    from datetime import UTC, datetime
+
     return {
         "job_id": rows[0]["job_id"] if rows else "00000000-0000-0000-0000-000000000000",
         "plan_id": rows[0].get("plan_id") if rows else None,
         "from_agent": "precompact",
         "to_agent": "precompact",
         "last_success_state": rows[0]["state"] if rows else "received",
-        "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "created_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "artifacts": {"resource_ids": [r["resource_id"] for r in rows]},
     }
 

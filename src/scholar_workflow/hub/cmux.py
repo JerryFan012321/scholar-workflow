@@ -1,16 +1,18 @@
 """Runtime-only cmux capability and opaque workspace registry.
 
-The canonical HubCatalog never stores cmux identifiers.  Raw workspace IDs are
+The canonical HubDirectory never stores cmux identifiers. Raw workspace IDs are
 kept in this process and are exposed to the browser only through random opaque
 handles.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
 import secrets
 import shutil
+import stat
 import subprocess
 import threading
 from collections.abc import Callable, Iterator
@@ -18,7 +20,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
-
 
 DEFAULT_CMUX_PATH = Path("/Applications/cmux.app/Contents/Resources/bin/cmux")
 _INSTANCE_TOKEN_RE = re.compile(r"^[A-Za-z0-9_-]{8,128}$")
@@ -263,11 +264,38 @@ class WorkspaceRegistry:
     def resolve(self, opaque_id: str) -> str:
         if not isinstance(opaque_id, str) or not opaque_id:
             raise UnknownWorkspaceError("A workspace selection is required")
+        # Refresh from cmux for every resolution.  An opaque ID in the process
+        # map is only a cache; it is never proof that the workspace still lives.
+        listing = self.public_workspaces()
+        if listing.capability_error is not None:
+            raise UnknownWorkspaceError(listing.capability_error)
         with self._lock:
             try:
                 return self._opaque_to_raw[opaque_id]
             except KeyError as exc:
                 raise UnknownWorkspaceError("Unknown or expired cmux workspace") from exc
+
+    def instance_fingerprint(self) -> str:
+        """Return an opaque fingerprint for the server-owned cmux instance."""
+        socket_path = os.environ.get("CMUX_SOCKET_PATH")
+        if not socket_path:
+            raise CmuxControlError("cmux instance socket is unavailable")
+        try:
+            socket_stat = os.stat(socket_path, follow_symlinks=False)
+        except OSError as exc:
+            raise CmuxControlError("cmux instance socket is unavailable") from exc
+        if stat.S_ISLNK(socket_stat.st_mode):
+            raise CmuxControlError("cmux instance socket must not be a symlink")
+        identity = (
+            socket_stat.st_dev,
+            socket_stat.st_ino,
+            stat.S_IFMT(socket_stat.st_mode),
+            socket_stat.st_ctime_ns,
+            socket_stat.st_mtime_ns,
+            getattr(socket_stat, "st_birthtime", 0),
+        )
+        material = f"cmux-socket-v2\0{socket_path}\0{identity!r}".encode()
+        return "sha256:" + hashlib.sha256(material).hexdigest()
 
     def _allocate_id(self) -> str:
         for _ in range(32):

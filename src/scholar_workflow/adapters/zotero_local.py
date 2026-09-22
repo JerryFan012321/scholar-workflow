@@ -8,21 +8,23 @@ import mimetypes
 import os
 import re
 import subprocess
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Mapping, Protocol
+from typing import Any, Protocol, Self
 from urllib.parse import urlparse
 from uuid import uuid4
 
 import httpx
-
 
 DEFAULT_BASE_URL = "http://127.0.0.1:23119/api/"
 API_VERSION = "3"
 KEY_ENV_VAR = "SCHOLAR_WORKFLOW_ZOTERO_LOCAL_API_KEY"
 KEYCHAIN_SERVICE = "scholar-workflow.zotero-local"
 ZOTERO_KEY_RE = re.compile(r"^[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}$")
+_ITEM_TYPE_SEARCH_RE = re.compile(
+    r"^[A-Za-z][A-Za-z0-9]*(?: \|\| [A-Za-z][A-Za-z0-9]*)*$"
+)
 MAX_UPLOAD_BYTES = 4 * 1024 * 1024 * 1024 - 1
 UPLOAD_CHUNK_BYTES = 1024 * 1024
 
@@ -161,6 +163,16 @@ class Authorization:
     remember: bool
 
 
+@dataclass(frozen=True)
+class ZoteroItemPage:
+    """One server-paginated page from the Zotero Local API."""
+
+    items: tuple[dict[str, Any], ...]
+    start: int
+    limit: int
+    total: int | None
+
+
 def _is_loopback_url(url: str, *, api_root: bool = False) -> bool:
     parsed = urlparse(url)
     if parsed.scheme != "http" or not parsed.hostname or parsed.username or parsed.password:
@@ -172,9 +184,7 @@ def _is_loopback_url(url: str, *, api_root: bool = False) -> bool:
                 return False
         except ValueError:
             return False
-    if api_root and parsed.path.rstrip("/") != "/api":
-        return False
-    return True
+    return not api_root or parsed.path.rstrip("/") == "/api"
 
 
 def _validate_key(key: str) -> str:
@@ -207,7 +217,7 @@ class ZoteroLocalAdapter:
         self._server: ServerInfo | None = None
         self._authorization: Authorization | None = None
 
-    def __enter__(self) -> ZoteroLocalAdapter:
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *args: object) -> None:
@@ -345,6 +355,68 @@ class ZoteroLocalAdapter:
         if not isinstance(payload, list):
             raise ZoteroLocalError("Zotero search returned an unexpected response")
         return payload
+
+    def list_items_page(
+        self,
+        *,
+        start: int,
+        limit: int,
+        query: str | None = None,
+        qmode: str = "titleCreatorYear",
+        sort: str = "title",
+        direction: str = "asc",
+        item_type: str | None = None,
+    ) -> ZoteroItemPage:
+        """Read one top-level library page without materializing the whole library."""
+        if isinstance(start, bool) or start < 0:
+            raise ValueError("start must be a non-negative integer")
+        if isinstance(limit, bool) or not 1 <= limit <= 100:
+            raise ValueError("limit must be between 1 and 100")
+        if qmode not in {"titleCreatorYear", "everything"}:
+            raise ValueError("qmode must be titleCreatorYear or everything")
+        if sort not in {"title", "date", "dateAdded"}:
+            raise ValueError("unsupported Zotero page sort")
+        if direction not in {"asc", "desc"}:
+            raise ValueError("direction must be asc or desc")
+        if (
+            item_type is not None
+            and (len(item_type) > 1024 or not _ITEM_TYPE_SEARCH_RE.fullmatch(item_type))
+        ):
+            raise ValueError("invalid Zotero item type filter")
+        params: dict[str, str | int] = {
+            "start": start,
+            "limit": limit,
+            "sort": sort,
+            "direction": direction,
+        }
+        if item_type is not None:
+            params["itemType"] = item_type
+        if query:
+            if query != query.strip() or len(query) > 200:
+                raise ValueError("query must be clean text of at most 200 characters")
+            params.update({"q": query, "qmode": qmode})
+        response = self._request(
+            "GET",
+            "users/0/items/top",
+            headers={"Zotero-API-Version": API_VERSION},
+            params=params,
+        )
+        payload = response.json()
+        if not isinstance(payload, list) or any(not isinstance(row, dict) for row in payload):
+            raise ZoteroLocalError("Zotero library page returned an unexpected response")
+        total_header = response.headers.get("Total-Results")
+        try:
+            total = int(total_header) if total_header is not None else None
+        except ValueError as exc:
+            raise ZoteroLocalError("Zotero library page returned an invalid total") from exc
+        if total is not None and total < 0:
+            raise ZoteroLocalError("Zotero library page returned an invalid total")
+        return ZoteroItemPage(
+            items=tuple(payload),
+            start=start,
+            limit=limit,
+            total=total,
+        )
 
     def get_item(self, item_key: str) -> dict[str, Any]:
         item_key = _validate_key(item_key)

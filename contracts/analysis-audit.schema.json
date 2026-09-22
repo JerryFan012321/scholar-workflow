@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholar-workflow.local/contracts/analysis-audit.schema.json",
+  "title": "AnalysisAuditReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "ok", "checked_item_ids", "findings"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "ok": {"type": "boolean"},
+    "checked_item_ids": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "path", "message", "severity", "repairable"],
+        "properties": {
+          "code": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,95}$"},
+          "path": {"type": "string"},
+          "message": {"type": "string"},
+          "severity": {"enum": ["error", "warning"]},
+          "repairable": {"type": "boolean"}
+        }
+      }
+    }
+  }
+}

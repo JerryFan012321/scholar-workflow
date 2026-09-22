@@ -4,8 +4,9 @@
 
 ## 会创建什么
 
-- `assets/`、`configs/`、`dataset/`、`dataset_toolkits/`、`docs/`、`env/`、
-  `experiments/` 和 `src/` 下的固定项目结构。
+- `assets/`、`configs/`、`env/`、`src/`、`tools/` 和 `tests/` 下的共同源码结构。
+- 本地优先的 `dataset/`、`docs/` 和 `experiments/`。
+- 含稳定项目 UUID 和版本化 profile 选择的 `project-layout.json`。
 - 作为规则真源的 `AGENTS.md`。
 - 作为兼容入口的精简 `CLAUDE.md` 与 `AGENT.md`。
 - 最小化 `.gitignore`，以及用于保留空目录的 `.gitkeep`。
@@ -30,15 +31,21 @@ Skill 会先运行只读计划。已有文件一律保留；项目规则发生�
 ```bash
 python3 skills/init-project/scripts/init_project.py plan /path/to/project
 python3 skills/init-project/scripts/init_project.py apply /path/to/project
+python3 skills/init-project/scripts/init_project.py profiles
+python3 skills/init-project/scripts/init_project.py apply /path/to/project \
+  --source-profile multi-stage-3d --package my_project --addon native-kernels
 ```
 
 ## 结构约定
 
 - 本地标准命名是权威形式：使用 `docs/plan` 和 `docs/report`，不重复创建
   `docs/plans` 或 `docs/reports`。
-- `dataset/metadata` 与 `dataset/raw` 分开保存元数据和下载数据。
-- 每个 `experiments/<id>/` 自己保存完整复现实验所需的材料；registry 只能作为索引。
-- 原始数据和实验输出是否忽略，需要结合具体项目交互确认，不由骨架猜测。
+- 数据按 `dataset/<dataset-id>/` 聚合，数据准备源码进入 `src/utils/dataset_toolkit/`。
+- 六种显式 source profile 和六种正交 addon 可以扩展共同结构；普通 `apply` 不会改变已有选择。
+- 每个 `experiments/<run-id>/` 保存机器无关的 Run recipe；实际重试属于 Attempt，执行位置属于显式 Target。
+- `scholar-workflow experiment` 只负责建档、校验、索引和成果晋升；受信备份介质契约落地前，
+  不会写入 backup verified，也不启动训练。
+- 新项目默认不把数据、文档和实验档案纳入源码 Git；旧项目的 tracked 状态只诊断、不自动改变。
 
 本实现参考本地标准骨架，并对
 [sjh-skills/init-project](https://github.com/jiahao-shao1/sjh-skills/tree/main/skills/init-project)

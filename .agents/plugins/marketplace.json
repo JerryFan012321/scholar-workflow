@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "scholar-workflow",
-      "description": "Plan-first scholarly resource management with a local research Hub: manage papers through Zotero, maintain readable Obsidian and Notion projections, analyze papers, and route viewing through cmux.",
+      "description": "Human-first scholarly knowledge, reproducible research projects, and a typed local Hub control plane for Zotero, Obsidian, Codex, and cmux.",
       "source": {
         "source": "url",
         "url": "https://github.com/JerryFan012321/scholar-workflow.git",

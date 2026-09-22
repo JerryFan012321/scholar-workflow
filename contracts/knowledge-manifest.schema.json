@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholar-workflow.local/contracts/knowledge-manifest.schema.json",
+  "title": "Explicit Knowledge System object manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "atomic_resources", "core_documents", "supporting_documents"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "atomic_resources": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/atomic_resource"}
+    },
+    "core_documents": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/core_document"}
+    },
+    "supporting_documents": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/supporting_document"}
+    }
+  },
+  "$defs": {
+    "markdown_path": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\\\)(?!.*//).+\\.md$"
+    },
+    "vault_path": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*\\\\)(?!.*//).+$"
+    },
+    "atomic_resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resource_id", "kind", "title", "markdown_path"],
+      "properties": {
+        "resource_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "kind": {"enum": ["paper", "technical_document", "blog_post"]},
+        "title": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "markdown_path": {"$ref": "#/$defs/markdown_path"}
+      }
+    },
+    "core_document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["document_id", "kind", "title", "markdown_path"],
+      "properties": {
+        "document_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "kind": {"enum": ["charter", "survey", "catalog"]},
+        "title": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "markdown_path": {"$ref": "#/$defs/markdown_path"}
+      }
+    },
+    "supporting_document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["document_id", "kind", "title", "vault_path", "owner_id"],
+      "properties": {
+        "document_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "kind": {"enum": ["analysis", "analysis_canvas", "annotations", "reading_note", "attachment"]},
+        "title": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "vault_path": {"$ref": "#/$defs/vault_path"},
+        "owner_id": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    }
+  }
+}

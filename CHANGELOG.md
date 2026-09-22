@@ -5,6 +5,81 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.28.0] — 2026-09-22
+
+### Added
+- **Three-system v2 contracts.** Added accepted specifications for Project System v2, Knowledge
+  System v2, and Hub Control Plane v2, with one authority map and explicit rollout gates. The
+  investigation report remains evidence rather than an activated runtime specification.
+- **Validated paper-analysis projection.** Added versioned analysis profile/IR schemas,
+  deterministic human-readable Markdown and compact JSON Canvas renderers, inline evidence and
+  backlinks, a 40-node budget, and per-paper batch state with one bounded repair attempt and
+  isolated failure cleanup. Validated/repaired bundles now cross a three-file CAS commit with a
+  transaction journal, idempotent receipt and explicit KnowledgeChangeSet; the no-discovery weekly
+  audit reports object, template, raw-link and catalog drift without writing any source. Change sets
+  can be applied to one authoritative provider snapshot with base-revision CAS, atomic replacement
+  and content-bound idempotent receipts. Provider apply revalidates the state-root inode, enforces a
+  bidirectional manifest/catalog closure, rejects ID/path collisions and Project/Tool identities,
+  and is selected by `serve-hub` when an explicit provider snapshot is present.
+- **Project System v2 foundation.** Added a stable portable `project_id`, six source/config
+  profiles, checked-in ProjectLayout/Run/Attempt/Target/Artifact contracts, and deterministic
+  experiment records that keep promotion and independently verified backup status separate.
+- **HubDirectory and typed libraries.** Added one v2 root, typed Papers/Projects/Tools references,
+  explicit project/tool registries, paged library responses, provider diagnostics, derived v1
+  catalog compatibility, v2 health, workspace lease/binding contracts, and allowlisted TaskRecipe
+  command construction with an 8 KiB stdin brief. Paper, PDF attachment, and knowledge-artifact
+  landings now use distinct typed authority namespaces; the raw PDF byte URL remains internal to
+  the attachment landing.
+- **Registered project document operations.** Added a bound-only Operations UI plus `docs/`-confined
+  copy, paste, independent Knowledge-copy, and recoverable trash. Cross-process locks, exclusive
+  destinations/receipts, component-by-component `openat`/`O_NOFOLLOW`, parent-inode rebinding checks,
+  conditional cleanup, traversal/symlink/registration checks, Git-state confirmation, and
+  unbound-view guards preserve no-overwrite semantics under faults and races.
+- **Hub diagnostics and internal task runtime.** Added `hub-doctor`, an ephemeral headless/read-only
+  `serve-hub --canary --port 0` path, socket-instance fingerprints that change when the same cmux
+  path is recreated, and internal TaskStore/TaskWorker primitives for cross-process thread
+  exclusion, idempotency, heartbeat, cancel/timeout, and process-group recovery. Production task
+  HTTP and real Codex execution remain disabled.
+
+### Changed
+- **`analyze-paper` is human-first.** Replaced the field-heavy legacy analysis tree with the
+  observable task → input → ordered workflow → output → boundary contract. Evidence now stays with
+  its claim, Canvas nodes link back to the Markdown claim anchor, and batch outputs cannot be marked
+  successful before conformance passes. Canvas budgets and baselines own only deterministic renderer
+  nodes/edges; every generated node is a standard JSON Canvas `type: text` node, while focused updates
+  preserve valid user text/file/link/group nodes, edges and layout and keep generated-content conflicts
+  as explicit proposals.
+- **`init-project` uses the shared v2 base.** New projects receive the portable manifest and selected
+  profile without host paths, credentials, project agents, hooks, or implicit execution. Existing
+  identities are preserved on a safe rerun.
+- **Hub UI and API are Library-first.** The UI exposes Papers, Projects, Tools, Knowledge Contexts,
+  provider state, bound/unbound operation state, and guarded project-document operations. Raw
+  loopback URLs remain compatibility display details rather than object identity.
+- **Canvas writes share one standard boundary.** Analysis conformance/commit, Hub edits, and
+  Knowledge-to-Project copies now validate the JSON Canvas root, standard node types, positive
+  geometry, type-specific content, unique identities, and edge endpoints before mutation.
+  Renderer-owned node types also participate in focused-update conflict detection instead of
+  preserving a corrupted generated type.
+- **Repository governance.** Added G13/G14, INV40–INV46, NG13–NG16, WI-031–WI-041, updated the root
+  development rules and global Claude rules, and replaced the obsolete blank-session-only policy with
+  the bounded TaskRecipe policy.
+
+### Security
+- **No implicit discovery or cross-system ownership.** Projects and tools are never discovered by
+  scanning directories or `$PATH`; Knowledge/Project transfer is an explicit independent copy with
+  managed knowledge identity removed and no hidden synchronization or semantic provenance relation.
+- **Fail-closed control plane.** Browser input cannot supply shell commands, cwd, model, sandbox,
+  permission, arbitrary configuration, environment variables, or `--last`. Project writes require a
+  valid binding and cannot escape a registered project's `docs/` directory. Knowledge provider
+  replay rejects forged receipts, directory rename swaps, undeclared catalog objects and namespace or
+  path collisions instead of reporting a false idempotent success.
+- **Rollout remains gated.** This change does not migrate a real Vault/project, replace the existing
+  port-23128 LaunchAgent, execute a real Codex worker, publish a release, or mark backup as verified
+  without a chosen independent medium and restore exercise. Until WI-041 is unlocked, both the
+  runtime model and artifact schema reject `backup.state=verified`.
+
+## [0.27.2] — 2026-09-20
+
 ### Changed
 - **Research-project system v2 planning.** Added the implementation plan for a layered
   `init-project`: a stable common project contract, explicit source/config profiles, separate

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholar-workflow.local/contracts/source-profiles.schema.json",
+  "title": "Scholar Workflow source profile catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "common", "profiles", "addons"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "common": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tracked", "local"],
+      "properties": {
+        "tracked": {"$ref": "#/$defs/path_map"},
+        "local": {"$ref": "#/$defs/path_map"}
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/profile"}
+    },
+    "addons": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/addon"}
+    }
+  },
+  "$defs": {
+    "path_map": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9_.{}/-]+$"
+      },
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "description", "paths"],
+      "properties": {
+        "version": {"const": 1},
+        "description": {"type": "string", "minLength": 1},
+        "paths": {"$ref": "#/$defs/path_map"}
+      }
+    },
+    "addon": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "paths"],
+      "properties": {
+        "version": {"const": 1},
+        "paths": {"$ref": "#/$defs/path_map"}
+      }
+    }
+  }
+}

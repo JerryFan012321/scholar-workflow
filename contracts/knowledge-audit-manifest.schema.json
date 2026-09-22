@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholar-workflow.local/contracts/knowledge-audit-manifest.schema.json",
+  "title": "Explicit no-discovery weekly Knowledge audit input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "objects",
+    "analysis_targets",
+    "catalog_path",
+    "expected_catalog_revision"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["object_id", "object_class", "kind", "vault_path", "owner_id", "catalog_kind"],
+        "properties": {
+          "object_id": {"type": "string", "minLength": 1, "maxLength": 256},
+          "object_class": {"enum": ["atomic_resource", "core_document", "supporting_document"]},
+          "kind": {"type": "string", "minLength": 1, "maxLength": 64},
+          "vault_path": {"type": "string", "minLength": 1},
+          "owner_id": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+          "catalog_kind": {"type": ["string", "null"], "enum": ["resource", "artifact", null]}
+        }
+      }
+    },
+    "analysis_targets": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/analysis_target"}
+    },
+    "catalog_path": {"type": ["string", "null"]},
+    "expected_catalog_revision": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  },
+  "$defs": {
+    "analysis_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "item_id",
+        "note_stem",
+        "markdown_path",
+        "canvas_path",
+        "sidecar_path",
+        "receipt_path",
+        "document"
+      ],
+      "properties": {
+        "item_id": {"type": "string", "minLength": 1},
+        "note_stem": {"type": "string", "minLength": 1},
+        "markdown_path": {"type": "string", "minLength": 1},
+        "canvas_path": {"type": "string", "minLength": 1},
+        "sidecar_path": {"type": ["string", "null"]},
+        "receipt_path": {"type": ["string", "null"]},
+        "document": {"$ref": "analysis-ir.schema.json"}
+      }
+    }
+  }
+}

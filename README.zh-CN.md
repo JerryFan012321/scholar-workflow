@@ -1,9 +1,8 @@
 # scholar-workflow
 
-面向 Claude Code 与 Codex 的学术资源管理插件。发现并导入论文、保持 Obsidian 索引与 Notion 投影
-同步、构建文献 novelty tree、从四个源推荐每日论文、撰写论文详细分析 —— 由确定性 CLI 承担
-可测试的文件操作,宿主 LLM 负责理解、推荐与判断。插件还可初始化由 Git 管理的研究项目骨架,
-并在多个 agent 运行时之间协调边界清楚的任务。
+面向 Claude Code 与 Codex 的学术资源管理插件。它把人类优先的知识系统、可复现实验项目档案和
+本机 typed Hub 控制面组合在一起：发现并导入论文、维护 Obsidian/Notion 投影、构建文献树、推荐
+论文、生成经校验的 Markdown/Canvas 分析、初始化 Git 项目，并在多个 agent 运行时之间协调有界任务。
 
 [English](./README.md)
 
@@ -16,6 +15,20 @@ Zotero 操作。Zotero 适配器只连接 Zotero 10+ 的回环 Local API;其他�
 Local API。主题召回由 Local API 全字段/全文 quicksearch 加宿主模型排序完成,不需要 MCP server
 或本地向量库。破坏性动作仍需批准。**Obsidian** 保存知识笔记与派生索引;**Notion** 保存可选投影。
 
+### 三系统边界
+
+- **Knowledge System** 以人类可读 Markdown 为正文。论文、重要技术文档和 Blog 是原子资源；
+  分析、Canvas 和附件是显式归属的附属产物。全文分析固定覆盖任务、输入、分步流程、输出和边界，
+  Evidence 与对应论点放在一起。
+- **Project System** 保存稳定 `project_id`、宿主中立的源码/config profile，以及彼此分离的
+  Run、Attempt、Target、成果 promotion 和备份记录。没有独立校验过的第二份副本就不能称为备份完成。
+- **Hub Control Plane** 只提供一个 `HubDirectory` 根，聚合 Papers、Projects、Tools 三个 typed
+  Library 与 Knowledge Contexts；Zotero、Vault、项目 manifest、显式主机 registry 和 Codex
+  仍分别持有权威状态。
+
+知识文档与项目文档之间只能显式复制。副本移除源系统的 `sw_*` 托管身份，获得目标系统身份后独立
+演化；系统不建立隐藏同步或托管 provenance 关系。
+
 ### 本地研究 Hub
 
 Hub 默认以 cmux 为运行与查看环境。在一个 cmux terminal 中启动服务，再从同一 workspace 的
@@ -25,22 +38,34 @@ Hub 默认以 cmux 为运行与查看环境。在一个 cmux terminal 中启动�
 scholar-workflow serve-hub
 # 在另一个 cmux terminal surface 中
 scholar-workflow open-hub
+# 核验当前实际运行构建以及 provider/worker capability
+scholar-workflow hub-doctor --json
+# 可选：临时端口、headless/只读 canary，不占用 23128
+scholar-workflow serve-hub --canary --port 0
+# 仅对已显式初始化的 provider 做 canary；不会创建或迁移 provider
+scholar-workflow serve-hub --canary --port 0 \
+  --knowledge-provider-state-root /path/to/provider-state
 ```
 
-顶部 workspace 选择器可把 PDF、Markdown/Canvas 与 Notion 打开到 Hub 所在 workspace 或人工
-选择的其他 workspace。独立按钮分别把 Vault 文档交给 Obsidian、把论文条目交给 Zotero 原生编辑。
-经确认的 Codex 按钮只在所选 workspace 新建一个空白、可见的 native agent-session，绝不接受
-浏览器传入的 prompt、command、model、权限或工作目录。若服务不是从 cmux 启动，workspace 动作会
-明确显示不可用，但 Hub 内建阅读与受控 Vault 编辑仍可使用。
+v2 API 在 `/api/v2/directory` 提供唯一目录，在 `/api/v2/libraries/` 下分页返回各库内容，并由
+`/api/v2/health` 报告可诊断运行状态。旧 `/api/v1/catalog` 只从
+`HubDirectory.knowledge_catalog` 派生，不形成第二份状态。空 Library 仍可见并说明 provider 状态；
+Projects 与 Tools 只能来自显式 registry，不扫描磁盘或 `$PATH`。
+若 `$SCHOLAR_WORKFLOW_HOME/knowledge-provider/knowledge-provider.snapshot.json` 已存在，Hub 会在启动时
+校验并读取它；否则继续使用旧只读兼容 provider。启动 Hub 不会创建 snapshot 或迁移 Vault。
 
-Hub 在 `http://127.0.0.1:23128/hub/` 提供统一的人类入口：搜索论文、流式读取只读 Zotero PDF、
-即时预览受 Catalog 管理的 Markdown/Canvas，也可在版本冲突保护下显式编辑已有 Vault 文档并实时
-预览。标准 JSON Canvas 不注入私有字段，而通过 `.scholar-workflow/artifacts.yml` 显式登记。文档
-图片、数据与补充文件从默认折叠的附件区新增，字节仍在 Vault，关系记录在可人工检查的 manifest；
-Notion 不会静默切到 Safari。HubCatalog 约束三种投影的机器身份；Obsidian 仍保留原有可读
-Markdown 正文，Hub 只增加薄的 `sw_*` frontmatter。
-详细接口见 [`references/hub-contract.md`](references/hub-contract.md)。既有 `serve-links` 命令与
-`/open/paper/<attachment-key>` 链接继续兼容。
+所有 mutation 都依赖有效 workspace binding：unbound/headless Hub 仍能读 Library、文档、PDF 和
+诊断，但不能写项目文件或运行任务。项目文件 API 只接受已注册 `project_id` 与 `docs/` 相对路径，
+拒绝重名覆盖、越界和符号链接逃逸；删除只移入项目 trash。Projects Library 仅在 binding 有效时
+显示复制、粘贴、Knowledge 副本和 trash 操作。论文、PDF 附件和分析文档都使用 typed landing；
+raw `/open/paper/...` 字节路由只出现在附件落地页内部。任务契约只接受预登记 recipe、typed
+target、最多 8 KiB 的 brief 和 `fast`/`standard`/`deep` effort；cwd、model、sandbox、permission、
+固定 argv 与明确 thread ID 都由服务端决定，拒绝原始命令和 `--last`。
+
+当前源码已经包含 v2 契约与 canary-safe runtime，但不会静默替换现存 23128 服务、迁移真实 Vault/
+项目、启动真实 Codex worker，或把未验证介质称为备份；这些动作各自受 rollout 门禁约束。
+详细接口见 [`references/hub-contract.md`](references/hub-contract.md)。既有 `serve-links` 与
+`/open/paper/<attachment-key>` 仍是兼容入口。
 
 ## Skills
 
@@ -66,8 +91,8 @@ Markdown 正文，Hub 只增加薄的 `sw_*` frontmatter。
 - **Claude Code 或 Codex**(Codex CLI / Codex app;IDE extension 不加载插件)。
 - **Python ≥ 3.11** —— 确定性 CLI 是一个 Python 包。
 - **Git** —— `init-project` 创建或核验项目骨架时需要。
-- **cmux** —— workspace 定向的 PDF/文档/Notion 查看和空白 Codex 会话按钮需要。没有 live cmux
-  socket 时，目录、已登记 Vault 文档阅读和 Obsidian/Zotero 编辑跳转仍可用；cmux 专属动作会明确禁用。
+- **cmux** —— workspace 定向查看、受绑定保护的 mutation 与任何受控 Codex worker 都需要它。
+  没有有效 workspace binding 时，Library 与文档仍可读，但 workspace、项目写入和任务动作均禁用。
 - **Zotero 10+ 且启用 Local API** —— 权威主库。在 Zotero 的
   **设置 → 高级**中启用;不再需要 Zotero 插件或 MCP server。Codex 在沙箱中运行时可能还需
   放行 localhost/网络权限才能访问 23119;在把 exit 3 判断为 Zotero 离线前,应带该权限重试。
@@ -161,8 +186,11 @@ scholar-workflow`)。你的 `config.yml` 与凭证在仓库之外,更新不受�
 - **Zotero 10.0.2 实机已跑通:** Local API 已完成 probe、search、collections、持久写授权、
   条目创建、imported PDF 上传、精确 DOI 复用与附件复用。同一 ingest payload 重跑会返回原
   item/attachment，不重复上传。
-- **cmux 实机已跑通:** `open-hub` 已在调用者 workspace 新建 Hub browser surface，选择器能识别
-  Hub 所在 workspace；确认 Codex 动作后在同一 workspace 新建了空白 native agent-session，未发送 prompt。
+- **v0.27 cmux 兼容链路已实机跑通:** `open-hub` 能创建 Hub browser surface，旧 action 能创建空白
+  native agent-session。v2 lease/binding 与 bounded TaskRecipe 契约已有测试，但本次源码变更不会启用
+  真实 worker，也不会切换 23128。
+- **v2 知识/项目契约只经 fixture 验证，尚未迁移真实数据:** 既有 Vault 与项目保持不动；首个知识
+  pilot 仍是 JEPA，首个真实项目仍等待用户决定。
 - **已实现但尚未真实端到端跑通:** `build-literature-tree` 的 CLI 渲染路径(尤其第四层
   `module` 和落盘到 vault 的挑战洞见树)、`recommend-papers` 的 NotebookLM 略读层、
   `check-consistency`。

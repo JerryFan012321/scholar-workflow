@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "common": {
+    "tracked": {
+      ".agents/skills": "Project-scoped, host-neutral skills",
+      "assets": "Publishable README and project assets",
+      "configs/components": "Reusable machine-neutral configuration components",
+      "configs/recipes": "Complete reusable configuration recipes",
+      "env": "Machine-neutral environment definitions and build scripts",
+      "src/utils/dataset_toolkit": "Dataset download, conversion, and preprocessing programs",
+      "tools": "Thin human and CLI entry points into src",
+      "tests": "Tests for source and project contracts"
+    },
+    "local": {
+      "dataset": "Host-local datasets grouped by dataset ID",
+      "docs/notes": "Local project notes and preserved human observations",
+      "docs/plan": "Local project plans and strategy",
+      "docs/report": "Local project reports and external-report drafts",
+      "experiments/profiles/targets": "Local execution-target profiles without credentials"
+    }
+  },
+  "profiles": {
+    "paper-method": {
+      "version": 1,
+      "description": "Single-paper or single-method implementation",
+      "paths": {
+        "src/{package}/method": "Core method implementation",
+        "src/{package}/data": "Training and evaluation data interfaces",
+        "src/{package}/evaluation": "Evaluation implementation",
+        "configs/train": "Training recipes",
+        "configs/inference": "Inference recipes",
+        "configs/evaluation": "Evaluation recipes"
+      }
+    },
+    "multi-stage-3d": {
+      "version": 1,
+      "description": "Multi-stage 3D or Gaussian-splatting system",
+      "paths": {
+        "src/{package}/datasets": "Runtime datasets and loaders",
+        "src/{package}/modules": "Reusable project modules",
+        "src/{package}/models": "Model definitions",
+        "src/{package}/representations": "Scene and geometry representations",
+        "src/{package}/renderers": "Rendering implementations",
+        "src/{package}/trainers": "Training orchestration",
+        "src/{package}/pipelines": "End-to-end pipelines",
+        "configs/components/data": "Data configuration components",
+        "configs/components/model": "Model configuration components",
+        "configs/components/representation": "Representation components",
+        "configs/components/renderer": "Renderer components",
+        "configs/components/trainer": "Trainer components",
+        "configs/recipes/train": "Training recipes",
+        "configs/recipes/inference": "Inference recipes",
+        "configs/recipes/evaluation": "Evaluation recipes"
+      }
+    },
+    "research-framework": {
+      "version": 1,
+      "description": "Long-lived research framework",
+      "paths": {
+        "src/{package}/config": "Framework configuration API",
+        "src/{package}/data": "Data interfaces",
+        "src/{package}/structures": "Shared data structures",
+        "src/{package}/layers": "Reusable layers",
+        "src/{package}/modeling": "Models and model composition",
+        "src/{package}/engine": "Training and inference engine",
+        "src/{package}/optimization": "Optimization components",
+        "src/{package}/evaluation": "Evaluation implementation",
+        "src/{package}/checkpoint": "Checkpoint I/O",
+        "src/{package}/export": "Model export",
+        "configs/common": "Shared framework configuration",
+        "configs/tasks": "Task configurations",
+        "configs/datasets": "Dataset configurations"
+      }
+    },
+    "foundation-model": {
+      "version": 1,
+      "description": "Foundation-model inference and training package",
+      "paths": {
+        "src/{package}/modeling": "Model implementation",
+        "src/{package}/predictors": "Inference predictors",
+        "src/{package}/builders": "Model and runtime builders",
+        "src/{package}/training": "Training implementation",
+        "configs/training": "Training recipes",
+        "configs/inference": "Inference recipes",
+        "configs/evaluation": "Evaluation recipes"
+      }
+    },
+    "world-model": {
+      "version": 1,
+      "description": "World-model or reinforcement-learning system",
+      "paths": {
+        "src/{package}/method/agent": "Agent implementation",
+        "src/{package}/method/world_model": "World-model implementation",
+        "src/{package}/method/policy": "Policy implementation",
+        "src/{package}/runtime/envs": "Runtime environments",
+        "src/{package}/runtime/replay": "Replay buffers",
+        "src/{package}/runtime/drivers": "Environment drivers",
+        "src/{package}/runtime/runners": "Experiment runners",
+        "src/{package}/runtime/logging": "Runtime logging",
+        "src/{package}/runtime/backends": "Execution backends",
+        "configs/recipes/train": "Training recipes",
+        "configs/recipes/evaluation": "Evaluation recipes"
+      }
+    },
+    "training-platform": {
+      "version": 1,
+      "description": "Distributed training platform",
+      "paths": {
+        "src/{package}/components": "Training components",
+        "src/{package}/models": "Model integrations",
+        "src/{package}/distributed": "Distributed runtime",
+        "src/{package}/observability": "Metrics and observability",
+        "src/{package}/protocols": "Stable platform protocols",
+        "src/{package}/training_engine": "Training engine",
+        "recipes": "Composable Python recipes"
+      }
+    }
+  },
+  "addons": {
+    "native-kernels": {
+      "version": 1,
+      "paths": {
+        "src/{package}/csrc": "Native kernels",
+        "tests/hardware": "Hardware-specific tests"
+      }
+    },
+    "interactive-app": {
+      "version": 1,
+      "paths": {"apps": "Interactive applications"}
+    },
+    "notebooks": {
+      "version": 1,
+      "paths": {"notebooks": "Exploratory notebooks"}
+    },
+    "benchmarks": {
+      "version": 1,
+      "paths": {"benchmarks": "Benchmark programs and small reference fixtures"}
+    },
+    "viewer": {
+      "version": 1,
+      "paths": {"apps/viewer": "Interactive project viewer"}
+    },
+    "research-extensions": {
+      "version": 1,
+      "paths": {"extensions": "Research extensions outside the stable package core"}
+    }
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholar-workflow.local/contracts/experiment-artifact.schema.json",
+  "title": "Scholar Workflow experiment artifact manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "artifacts"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "run_id": {"type": "string", "pattern": "^[0-9]{8}-[0-9]{4}-[a-z0-9][a-z0-9-]{0,47}$"},
+    "artifacts": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/artifact"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id", "role", "retention", "source_attempt_id", "relative_path",
+        "size", "sha256", "remote_source", "promoted_at", "backup"
+      ],
+      "properties": {
+        "artifact_id": {"type": "string", "pattern": "^art_[0-9a-f]{16}$"},
+        "role": {
+          "enum": [
+            "report", "metrics", "parameters", "point-cloud", "image", "video",
+            "checkpoint", "log", "intermediate", "other"
+          ]
+        },
+        "retention": {"enum": ["local-required", "local-selected", "manifest-only"]},
+        "source_attempt_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"},
+        "relative_path": {"type": ["string", "null"], "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"},
+        "size": {"type": ["integer", "null"], "minimum": 0},
+        "sha256": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]},
+        "remote_source": {"type": ["string", "null"]},
+        "promoted_at": {"type": ["string", "null"], "format": "date-time"},
+        "backup": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "verified_at", "location", "sha256"],
+          "properties": {
+            "state": {"const": "not-verified"},
+            "verified_at": {"type": "null"},
+            "location": {"type": "null"},
+            "sha256": {"type": "null"}
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"retention": {"const": "manifest-only"}}},
+          "then": {
+            "properties": {
+              "relative_path": {"type": "null"},
+              "size": {"type": "null"},
+              "sha256": {"type": "null"},
+              "promoted_at": {"type": "null"},
+              "remote_source": {"type": "string", "minLength": 1}
+            }
+          },
+          "else": {
+            "properties": {
+              "relative_path": {"type": "string", "minLength": 1},
+              "size": {"type": "integer", "minimum": 0},
+              "sha256": {"$ref": "#/$defs/sha256"},
+              "promoted_at": {"type": "string", "format": "date-time"}
+            }
+          }
+        }
+      ]
+    }
+  }
+}

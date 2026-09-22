@@ -13,11 +13,14 @@
           <span class="brand-mark">SW</span>
           <div><strong>Scholar Workflow</strong><small>本地研究中枢</small></div>
         </div>
-        <nav aria-label="研究主题">
-          <button class="nav-item active" type="button" data-view="all">全部资料</button>
+        <nav aria-label="Hub 目录">
+          <p class="nav-heading">Libraries</p>
+          <div id="library-nav"></div>
+          <p class="nav-heading">Knowledge Contexts</p>
+          <button class="nav-item" type="button" data-view="all">全部知识</button>
           <div id="topic-nav"></div>
         </nav>
-        <div class="status"><span class="status-dot"></span><span>仅本机</span></div>
+        <div class="status"><span class="status-dot"></span><span id="operation-status">正在读取服务状态</span></div>
       </aside>
       <main>
         <header class="topbar">
@@ -25,6 +28,11 @@
             <h1 id="view-title">全部资料</h1>
           </div>
           <div class="topbar-tools">
+            <div class="library-query-controls" aria-label="Library 排序与筛选">
+              <label>排序<select id="library-sort"><option value="title">标题</option></select></label>
+              <label>方向<select id="library-direction"><option value="asc">升序</option><option value="desc">降序</option></select></label>
+              <label>类型<select id="library-type"><option value="">全部类型</option></select></label>
+            </div>
             <div class="workspace-target">
               <label for="workspace-select">cmux 查看位置</label>
               <select id="workspace-select" aria-describedby="cmux-status" disabled>
@@ -46,14 +54,15 @@
           <p id="revision">正在载入…</p>
         </section>
         <section class="content">
-          <div class="section-heading"><h2>资料</h2><span id="result-count"></span></div>
+          <div class="section-heading"><h2 id="resource-heading">资料</h2><span id="result-count"></span></div>
           <div id="resource-grid" class="resource-grid" aria-live="polite"></div>
+          <button id="load-more" class="load-more" type="button" hidden>载入更多</button>
           <div id="empty" class="empty" hidden>
             <div class="empty-icon">⌁</div>
             <h2>这里还没有可显示的资料</h2>
-            <p>Hub 只读取受 HubCatalog 管理的索引；你的 Markdown 正文仍由 Obsidian 保存并保持可读。</p>
+            <p>Hub 只读取已登记 provider 与 manifest；你的 Markdown 正文仍由 Obsidian 保存并保持可读。</p>
           </div>
-          <div class="section-heading document-heading"><h2>可读文档</h2><span id="document-count"></span></div>
+          <div id="document-heading" class="section-heading document-heading"><h2>可读文档</h2><span id="document-count"></span></div>
           <div id="artifact-list" class="artifact-list" aria-live="polite"></div>
         </section>
       </main>
@@ -98,6 +107,43 @@
           </div>
         </details>
       </div>
+    </dialog>
+    <dialog id="project-ops-dialog" class="project-ops-dialog" aria-labelledby="project-ops-title">
+      <form id="project-ops-form" method="dialog">
+        <div class="preview-header">
+          <div class="preview-heading">
+            <h2 id="project-ops-title">项目文档操作</h2>
+            <p id="project-ops-project" class="preview-path"></p>
+          </div>
+          <button id="project-ops-close" class="close-button" type="button" aria-label="关闭项目文档操作">×</button>
+        </div>
+        <p class="project-ops-boundary">所有路径都相对于已注册项目的 <code>docs/</code>；不接受绝对路径，不会覆盖同名文件，删除会进入项目 trash。</p>
+        <label>操作
+          <select id="project-ops-kind">
+            <option value="copy">复制项目文档</option>
+            <option value="copy-knowledge">复制知识文档到项目</option>
+            <option value="paste">粘贴新文本</option>
+            <option value="trash">移入 trash</option>
+          </select>
+        </label>
+        <label id="project-ops-source-row">源相对路径
+          <input id="project-ops-source" type="text" maxlength="1024" autocomplete="off" placeholder="notes/source.md">
+        </label>
+        <label id="project-ops-artifact-row" hidden>知识文档
+          <select id="project-ops-artifact"></select>
+        </label>
+        <label id="project-ops-destination-row">目标相对路径
+          <input id="project-ops-destination" type="text" maxlength="1024" autocomplete="off" placeholder="knowledge/copied.md">
+        </label>
+        <label id="project-ops-content-row" hidden>正文
+          <textarea id="project-ops-content" maxlength="32768" placeholder="人类可读 Markdown"></textarea>
+        </label>
+        <label class="project-ops-confirm"><input id="project-ops-confirm" type="checkbox"> 我已确认本次操作涉及 Git tracked/dirty 文件</label>
+        <p id="project-ops-status" class="preview-status" role="status" aria-live="polite"></p>
+        <div class="project-ops-actions">
+          <button id="project-ops-submit" class="preview-action primary" type="submit">执行受控操作</button>
+        </div>
+      </form>
     </dialog>
     <script src="/hub/assets/hub.js" defer></script>
   </body>

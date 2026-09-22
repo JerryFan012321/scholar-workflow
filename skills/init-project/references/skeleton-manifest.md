@@ -2,43 +2,60 @@
 
 Read this reference before planning or applying initialization.
 
-## Directories
+## Portable manifest
+
+Every project receives project-layout.json with schema version 2 and a canonical UUIDv4
+project_id. The ID is generated once on first apply and preserved on reruns, moves, and copies.
+The manifest records only Python package and source-profile selection; host registration belongs
+to the Hub-side registry.
+
+## Common tracked source directories
 
 | Path | Required role |
 |---|---|
-| `.agents/skills/` | Project-scoped, host-neutral skills |
-| `assets/` | Images, videos, and other assets used by README or reports |
-| `configs/` | Pipeline parameter files, normally JSON |
-| `dataset/metadata/` | Dataset indexes, provenance, checksums, and split metadata |
-| `dataset/raw/` | Downloaded or materialized dataset content |
-| `dataset_toolkits/` | Dataset download and preprocessing programs |
-| `docs/notes/` | Human experiment notes; preserve them |
-| `docs/plan/` | Project strategy, schedule, and plans |
-| `docs/report/` | Material prepared for external reporting |
-| `env/server/` | Per-server setup notes and known environment issues |
-| `experiments/` | One self-contained reproducibility bundle per experiment |
-| `src/pipeline/` | End-to-end pipeline integration; multiple pipelines are allowed |
+| .agents/skills/ | Project-scoped, host-neutral skills |
+| assets/ | Publishable README and project assets |
+| configs/components/ | Reusable machine-neutral configuration components |
+| configs/recipes/ | Complete reusable configuration recipes |
+| env/ | Machine-neutral environment definitions and build scripts |
+| src/utils/dataset_toolkit/ | Dataset download, conversion, and preprocessing programs |
+| tools/ | Thin human and CLI entry points |
+| tests/ | Tests for source and project contracts |
 
-Each intentionally empty leaf directory receives `.gitkeep` so Git can retain the layout.
-The initializer never copies folder instruction notes or `.DS_Store` from a source template.
+Selected paths from source-profiles.json extend this tracked source layout. Empty tracked
+directories receive .gitkeep.
+
+## Common local-first directories
+
+| Path | Required role |
+|---|---|
+| dataset/ | Host-local data grouped under dataset/<dataset-id>/ |
+| docs/notes/ | Human project and experiment notes |
+| docs/plan/ | Project strategy and plans |
+| docs/report/ | Project reports and external-report drafts |
+| experiments/profiles/targets/ | Credential-free execution Target profiles |
+
+New projects ignore dataset/, docs/, and experiments/ in source Git and do not place .gitkeep
+inside them. Existing tracked directories are preserved and reported; initialization never
+untracks them.
 
 ## Baseline files
 
 | Path | Behavior |
 |---|---|
-| `AGENTS.md` | Canonical project instructions; create only when absent |
-| `CLAUDE.md` | Thin `@AGENTS.md` import; accept an existing file only when it imports the canonical file |
-| `AGENT.md` | Compatibility pointer to `AGENTS.md`; a different existing file is a conflict |
-| `.gitignore` | Minimal universal ignores; preserve an existing file unchanged |
-
-The baseline `.gitignore` covers operating-system metadata, local environment files, and common
-Python caches. It deliberately does not guess whether `dataset/raw/`, experiment outputs, logs,
-or figures belong in Git.
+| project-layout.json | Portable identity and versioned profile selection; create only when absent |
+| AGENTS.md | Canonical project instructions; create only when absent |
+| CLAUDE.md | Thin @AGENTS.md import |
+| AGENT.md | Compatibility pointer to AGENTS.md |
+| .gitignore | Minimal universal and local-first ignores; preserve an existing file unchanged |
 
 ## Application contract
 
-- `plan` performs no writes.
-- `apply` aborts on a directory/symlink collision or incompatible instruction topology.
+- plan, profiles, and migrate-plan perform no writes.
+- apply performs a complete preflight and aborts on any collision or incompatible instruction or
+  manifest topology.
 - Existing regular files are preserved.
+- Profile selection is never inferred. A mismatch with an existing manifest requires a migration
+  plan.
 - Git is initialized only when neither the target nor an ancestor already manages it.
-- No content is staged, committed, or pushed.
+- No content is staged, committed, pushed, moved, deleted, renamed, or untracked.

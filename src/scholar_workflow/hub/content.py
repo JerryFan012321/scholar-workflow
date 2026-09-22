@@ -14,9 +14,9 @@ from pathlib import Path, PurePosixPath
 from ruamel.yaml import YAML
 
 from scholar_workflow.adapters.obsidian import VaultPathError, safe_vault_path
+from scholar_workflow.canvas import CanvasValidationError, validate_canvas_payload
 from scholar_workflow.hub.catalog import CatalogProvider
 from scholar_workflow.hub.models import ArtifactFormat, HubArtifact
-
 
 MAX_ARTIFACT_BYTES = 2 * 1024 * 1024
 MAX_WRITE_REQUEST_BYTES = MAX_ARTIFACT_BYTES + 64 * 1024
@@ -235,8 +235,10 @@ def _validate_format_content(artifact: HubArtifact, content: str) -> None:
         )
     except (json.JSONDecodeError, ValueError) as exc:
         raise InvalidArtifactContentError("Canvas content must be valid JSON") from exc
-    if not isinstance(value, dict):
-        raise InvalidArtifactContentError("Canvas content must be a JSON object")
+    try:
+        validate_canvas_payload(value)
+    except CanvasValidationError as exc:
+        raise InvalidArtifactContentError(str(exc)) from exc
 
 
 def _prepare_write_content(
@@ -278,14 +280,14 @@ def _managed_markdown_fields(content: str) -> tuple[dict[str, object], re.Match 
 
 
 __all__ = [
+    "MAX_ARTIFACT_BYTES",
+    "MAX_WRITE_REQUEST_BYTES",
     "ArtifactContentStore",
     "ArtifactEncodingError",
     "ArtifactMissingError",
     "ArtifactPathRejectedError",
     "ArtifactTooLargeError",
     "InvalidArtifactContentError",
-    "MAX_ARTIFACT_BYTES",
-    "MAX_WRITE_REQUEST_BYTES",
     "RevisionConflictError",
     "UnknownArtifactError",
     "UnsupportedArtifactError",

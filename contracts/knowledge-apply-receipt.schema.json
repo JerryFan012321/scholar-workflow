@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholar-workflow.local/contracts/knowledge-apply-receipt.schema.json",
+  "title": "Knowledge provider apply receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "receipt_id",
+    "change_id",
+    "change_fingerprint",
+    "source_receipt",
+    "before_catalog_revision",
+    "after_catalog_revision",
+    "applied_at",
+    "applied_artifact_ids"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "receipt_id": {
+      "type": "string",
+      "pattern": "^knowledge-apply:[0-9a-f]{64}$"
+    },
+    "change_id": {"type": "string", "pattern": "^change:[0-9a-f]{64}$"},
+    "change_fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "source_receipt": {"type": "string", "minLength": 1, "maxLength": 256},
+    "before_catalog_revision": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "after_catalog_revision": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "applied_at": {"type": "string", "format": "date-time"},
+    "applied_artifact_ids": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1, "maxLength": 256},
+      "uniqueItems": true
+    }
+  }
+}
