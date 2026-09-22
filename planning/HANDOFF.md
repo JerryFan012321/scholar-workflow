@@ -4,8 +4,8 @@
 > `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-09-22。
 >
 > Scholar Workflow 三系统联合改造 v2 已以 `0.28.0` 发布：实现提交 `f4364ad` 与 runtime release
-> 提交 `ce1712d` 均已推送，Codex 的 `scholar-workflow@jerry-plugins` 与独立 PATH CLI
-> 均已更新到 `0.28.0`。23128 仍由旧 `0.18.0` venv 服务持有；本批没有
+> 提交 `ce1712d` 均已推送，Codex 与 Claude Code 的 `scholar-workflow@jerry-plugins`
+> 以及独立 PATH CLI 均已更新到 `0.28.0`。23128 仍由旧 `0.18.0` venv 服务持有；本批没有
 > 迁移真实 Vault/JEPA、没有改造任何真实项目、没有切换 LaunchAgent/23128、没有运行真实
 > Codex task，也没有把 promotion 记成 verified backup。
 
@@ -435,8 +435,8 @@ cmux E2E。正式 23128 仍由 0.18.0 `serve-links` LaunchAgent 占用，统一 
 2. **保持外部状态门禁**：WI-024/WI-030 只能在 fixture 上生成迁移计划；WI-041 等待备份介质、
    retention 和恢复演练；不切换 23128、不修改 LaunchAgent、不迁移真实项目/Vault、不运行真实
    Codex task，也不把 promotion 标成 verified backup。
-3. **保持实际运行版本可证明**：源码、两个宿主 manifests、Codex 插件和独立 PATH CLI 当前均为
-   0.28.0；23128 listener 仍是明确保留的旧 0.18.0 服务。后续必须先完成正式 canary 和回滚基线，
+3. **保持实际运行版本可证明**：源码、两个宿主 manifests、Codex/Claude Code 插件和独立 PATH CLI
+   当前均为 0.28.0；23128 listener 仍是明确保留的旧 0.18.0 服务。后续必须先完成正式 canary 和回滚基线，
    经单独批准后才能切换 listener，不能因为插件/CLI 已更新就宣称 HubService 已升级。
 4. **Phase 3 文献树更多真实主题端到端实盘**:世界模型已手搭双树(39 篇、技术树 + 挑战树,见
    `0-inbox/世界模型调研经验_20260804.md`),验证了 v0.17.0 的四类 novelty / module 层 / 挑战树同构 /
