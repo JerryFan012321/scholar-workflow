@@ -1,9 +1,10 @@
 # 科研知识系统 v2 — 改造计划
 
-> 状态：Accepted 0.2，2026-09-22。用户已授权实施知识对象、分析结果接口与批量 conformance；
-> 现有 Vault、JEPA 真实产物和 23128 服务仍不得在本批静默迁移或切换。
+> 状态：Accepted 0.3，2026-09-23。用户已授权实施知识对象、分析结果接口、批量 conformance，以及
+> Hub v3 的动态 Source/Field、PdfRef、ZotFlow/AnnotationIR 接口；真实 Field 写入仍须先展示预览并按
+> Field 取得确认，其他 Vault、真实项目与 Obsidian 版本不得静默迁移或升级。
 >
-> 本文与 `project-system-v2.md`、`hub-control-plane-v2.md` 是并列规格：项目系统管理项目源码、数据、
+> 本文与 `project-system-v2.md`、`hub-control-plane-v3.md` 是并列规格：项目系统管理项目源码、数据、
 > 环境与实验档案；知识系统管理跨项目复用的知识对象和阅读产物；Hub 负责聚合与受控操作。Knowledge
 > 与 Project 只通过人或 agent 显式复制内容衔接，副本获得目标系统身份并独立演化。
 
@@ -18,7 +19,8 @@
 3. **解析树把 schema 逐字段绘制成图**：Canvas 有 194 个文本节点、193 条边，边界约为
    `2220 × 35940`；25 个独立 Evidence 节点重复正文已有证据，5 个“对应挑战 / 贡献”节点并非原图要求，
    方法步骤也被逐字段拆散。Fit-to-content 后文字必然过小。
-4. **入口与服务身份不清**：三个主题级目录文档共硬编码 122 个
+4. **入口与服务身份不清**：初次审计在三个主题级目录文档中发现 122 个固定链接；v3 实施前的完整
+   扫描已扩大为 168 个
    `127.0.0.1:23128/open/paper/...` 链接；审计时占用正式端口的是旧版 `serve-links` 常驻服务，
    旧 PDF 路由可用而 `/hub/` 与 Hub API 不可用。当前源码已有统一 Hub，但服务升级和所有权没有收口。
 
@@ -57,8 +59,8 @@
 
 | 对象 | 权威存储 | 说明 |
 |---|---|---|
-| 论文 library/work identity、书目信息、PDF、正式批注 | Zotero | DOI / title+authors 决定 work 判重，item/attachment key 指向库内对象 |
-| Vault 原生技术文档、Blog 快照、人类知识正文、Canvas | Obsidian Vault | 原始 Web URL 保留为来源；归档版本记录抓取时间与哈希 |
+| 论文 library/work identity、书目信息、PDF、正式批注 | Zotero | DOI / title+authors 决定 work 判重，item/attachment key 指向库内对象；agent 经 Local API 读取批注 |
+| Vault 原生技术文档、Blog 快照、人类知识正文、Canvas | 显式登记的 Obsidian Source | 原始 Web URL 保留为来源；归档版本记录抓取时间与哈希；一个 Source 可包含多个 Field |
 | 稳定投影 ID 与映射 | 版本化 manifest / registration | 现有 `resource_id` 是离线投影/命名 ID，不是 Zotero 判重身份；显式映射到 item key 与 artifact ID |
 | 跨知识对象关系声明 | 版本化 Vault manifest/provider | workflow payload 只是校验过的 transport；持久声明原子落盘后 knowledge catalog 才能汇编，不拥有关系真源 |
 | Notion | 单向简化投影 | 不成为正文或文件真源 |
@@ -150,6 +152,24 @@ ID mapping 或关系，必须先以原子替换写入版本化 manifest/registra
 identity、kind、authority、locator 与 owner 字段一致时才能合并，并只 union 可多值的 relations。
 任一来源给出冲突的 work/item mapping、kind、authority mode、locator、owner 或 artifact role 时，整次
 catalog build 停止并报告 ID、字段和所有声明来源；绝不按输入顺序、时间或 incoming-wins 静默择一。
+
+### 4.5 动态 Source 与 Field（Hub v3 接口）
+
+Knowledge Space 在 Hub 中投影为动态 Field，不再依赖一个全局固定 `research_vault_root` 或硬编码领域枚举。
+
+- 主机层以 `KnowledgeSourceRegistration(source_id, provider=obsidian, folder_id, enabled, capabilities)`
+  登记整个 Vault 或显式选择的子目录；`folder_id` 由可信 host registry 解析，浏览器不接触绝对路径。
+- 便携身份与导航写入 Source 根的 `.scholar-workflow/fields.yml`；一个 Source 可以包含多个 Field，
+  `source_id`、`field_id` 都是稳定 UUID，`relative_root` 和 `home` 只允许 Source 内相对路径。
+- Field navigation 由自身 manifest 自由命名和排序。`home/resource/support` 等对象角色继续承担 owner、
+  模板与校验职责，但不成为公共筛选器或全局固定分类树。
+- 无 manifest 时必须先零写入 preview，展示候选 Field、入口、导航、重名、忽略项、模板变化、未映射
+  正文和链接改写；已有 manifest 时也要发现尚未登记的同级候选。用户从预览中明确选择一个 Field，
+  CAS 与根 inode 复核通过后才可逐 Field 创建或追加，不因选择整个 Vault 而批量登记其他候选。
+- 旧 `research_vault_root` 仅用于生成迁移候选，不再是知识系统启动的必填唯一根。
+
+Field 首页直接显示 manifest navigation 与所选 Markdown 正文；不再增加文档 landing 中间页。内部对象
+模型仍保持核心文档—原子资源—附属产物三层，不因 UI 简化而丢失 owner 或 conformance。
 
 ## 5. 推荐 Vault 投影
 
@@ -272,38 +292,62 @@ Canvas 不再逐字段复制 Markdown，而是让人快速理解论文：
 JSON Canvas 1.0 没有可移植的 `font-size` 字段。首版通过 heading、节点尺寸、文本密度与布局解决字号，
 不把私有 CSS 设为必需依赖；若仍不足，再单独决定是否提供可选受管 CSS。
 
-## 8. Hub、PDF 与资源入口
+## 8. Hub、PDF、ZotFlow 与资源入口
 
-### 8.1 稳定入口不是端口 URL
+### 8.1 稳定身份与直接动作
 
-长期契约只保存稳定资源/产物身份和安全 locator：Zotero item/attachment key、Vault artifact ID 与
-canonical Web URL。Project identity 属于 Projects Library，不进入知识关系或知识 locator。
-具体打开方式由服务端在运行时派生：
+长期契约只保存稳定资源/产物身份和安全 locator：Zotero item/attachment key、Vault artifact ID、
+Field/Source ID 与 canonical Web URL。论文 PDF 使用：
 
-- 论文条目与本机 PDF：Zotero 原生动作；
-- 浏览器 PDF 预览：Hub 从 attachment key 注册 opaque action；
-- Vault Markdown/Canvas：Obsidian 原生动作或 Hub 安全预览；
-- Blog/Web article：只从 catalog 中已登记的 canonical HTTPS URL 生成 allowlisted action；
-- Notion：Web Source 用于跨设备；本机入口只指向带稳定 resource/artifact ID 的 Hub
-  landing route，不把 raw PDF endpoint 或 opaque action handle 当知识身份。
+```text
+PdfRef {
+  provider: "zotero",
+  library_id,
+  attachment_key,
+  content_hash
+}
+```
 
-opaque action ID 是单个 Hub 进程内的短期 capability，禁止写入 Markdown、manifest、Notion 或其他
-持久投影。landing route 打开后，服务端用稳定 ID 回读当前 catalog、重新校验 locator，再为本次进程
-生成动作。Hub 重启后旧 opaque action 必须失效，但持久 landing 仍能解析并获得新动作；landing 的
-origin/port 是可刷新部署投影，不进入资源 identity 字段。
+Zotero Local API 的 parent/child 关系负责实时解析附件；不得猜测 `Zotero/storage/<key>/*.pdf`。
+Hub 根据实体和 capability 生成进程内 opaque action，论文卡片直接提供 ZotFlow、Zotero、cmux 阅读、
+系统阅读器、分析与批注笔记动作，不经过人类可见 paper/attachment landing。opaque action ID、动态端口、
+绝对路径和 loopback URL 均禁止进入 Markdown、manifest、Notion 或关系字段。
 
-现有 `/open/paper/<attachment-key>` 保留为兼容路由和内部预览能力，但新正文不再把
-`127.0.0.1:<port>` 作为规范资源标识批量写入。
+旧 `/hub/item` 与 `/open/paper/<attachment-key>` 只保留一个版本周期用于兼容解析；新 UI 和新文档不再
+产生它们。现有 raw 链接在经批准的 Field 迁移中改为稳定 `zotero://open-pdf/...`；ZotFlow 管理内容
+可以使用其 `obsidian://zotflow?...` 动作协议；机器关系只存 `PdfRef`。
 
-### 8.2 Hub 接口边界
+### 8.2 Zotero 批注权威与 ZotFlow 投影
 
-服务 owner、Library、workspace、TaskRecipe、Projects/Tools registry 和 UI 属于
-`hub-control-plane-v2.md`。知识系统只提供版本化 `knowledge_catalog` provider，并要求：
+- Zotero 是正式批注唯一权威；ZotFlow 是首选人工编辑界面，Hub 不实现第二套浏览器批注器。
+- 只有 ZotFlow 可以持有 Zotero Web API 读写密钥，且密钥只能留在 Obsidian SecretStorage；Hub、CLI、
+  agent、配置、环境、日志和诊断均不得读取或请求它。
+- 该独占规则只约束云端 Web API 密钥；Scholar Workflow 既有的 Zotero Local API 写密钥继续存于
+  macOS Keychain，并只服务受安全策略约束的入库能力。
+- Agent 经 Zotero Local API 读取 highlight/comment/underline 等批注并投影只读 `AnnotationIR`；IR 不是
+  新事实源。`export-annotations` 不再直接读 `zotero.sqlite`。
+- `ZotFlowReaderAdapter` 使用 `obsidian://zotflow?type=open-attachment...` 与 `open-annotation`，调用前
+  检查 Obsidian、ZotFlow 版本、`minAppVersion` 与启用状态。版本不兼容时只报告升级条件，不自动升级。
+- ZotFlow Source Note 是“来源与批注投影”，不能冒充 Field 首页或 Scholar 深度分析真源。
+  ZotFlow、Better Notes 与 Scholar Workflow 必须使用互不重叠的 writer/path 前缀。
 
-- `HubDirectory` 是唯一公共根；旧 `HubCatalog` 只是 `knowledge_catalog` 的兼容投影；
-- knowledge provider 汇编论文、Vault-native 技术文档、Blog、核心文档和显式 manifest，不读取项目正文；
-- Canvas 如果不在 Hub 图形化渲染，就交给 Obsidian 原生视图，不能把 raw JSON 称为人类预览；
-- 旧常驻服务只作为迁移 fixture；本知识规格不负责停止、替换或升级它。
+Zotero 原生批注位于数据库而非原 PDF。Preview、Acrobat 等阅读器只能消费显式生成的独立带批注
+snapshot；snapshot 记录 `source_pdf_hash + annotation_set_hash`，永不覆盖原附件、不自动导回 Zotero，
+对 snapshot 的编辑也不参与同步。highlight、note、underline、ink/image 必须逐类型验证，无法无损表示时
+明确报告并拒绝伪装成完整导出。
+
+### 8.3 Hub v3 接口边界
+
+服务 lifecycle、Destination、ExecutionTarget、Action/Task、Projects/Tools registry 与 UI 属于
+`hub-control-plane-v3.md`。知识系统只提供 Papers 映射、动态 Field provider、版本化 manifest 和
+人类正文，并要求：
+
+- `HubDirectory` schema 3 是唯一公共根；v1/v2 只能是派生只读兼容响应；
+- 文档 Libraries 只有 Papers 与 Fields；Projects/Tools 是平级根对象；
+- cmux Destination 只路由窗口，不改变 Vault/项目的文件授权；
+- Field provider 汇编核心文档、原子资源和附属产物，不读取项目正文；
+- Canvas 若未在 Hub 图形化渲染，就交给 Obsidian 原生视图，不能把 raw JSON 称为人类预览；
+- 旧固定端口服务与 landing 只作为迁移 fixture，不能进入新知识入口。
 
 ## 9. 与科研项目系统 v2 的接口
 
@@ -319,13 +363,19 @@ origin/port 是可刷新部署投影，不进入资源 identity 字段。
 ## 10. 迁移原则
 
 - 先扫描、再输出 migration plan；默认零写入。
+- 首个 Source 固定为当前 `02-科研技术文档` Vault，首个 Field 固定为“世界模型”，JEPA/V-JEPA 是首个
+  真实验收样本。一次只处理一个 Field；预览必须展示入口、导航、模板变化、重名、未映射正文、忽略项
+  和链接改写，取得用户确认后才写入。
+- 写入前在 Scholar 状态目录创建 recovery snapshot，但它不是独立介质上的 verified backup；失败只回滚
+  当前 Field。无法映射的原文按原顺序进入“保留内容”，不得丢弃。
 - 旧 Markdown、Canvas、布局、自建节点和现有链接原样保留，迁移生成新版本或显式 patch。
 - 扫描同一 work/resource 在多个 topic 下的 analysis/Canvas 副本：content hash 相同只提出 alias/dedup
   计划，仍不自动删除；hash 不同则标记 unresolved，逐份保留，并提出“一份 canonical + 其余
   topic-owned context artifact”的候选拆分。canonical 选择、重命名、合并或删除必须逐项由用户确认，
   绝不按时间、路径、mtime 或输入顺序自动择一或覆盖。
-- 先用临时 fixture 验证，再把 V-JEPA 2 作为首个真实 golden case；其他主题逐个确认。
-- `paper_assets/`、`01-Paperlist.md` 与旧 raw port 链接只在用户批准后迁移，不批量机械替换。
+- 先用临时 fixture 验证，再把 V-JEPA 2 作为首个真实 golden case；其他 Field 逐个确认。
+- `paper_assets/`、`01-Paperlist.md` 与现有 168 条 raw port 链接只在对应 Field 获批后迁移，不跨 Field
+  批量机械替换；新文档 raw loopback URL 数量必须为零。
 - 新 runtime 发布与真实 Vault 迁移分开记账；通过测试不等于用户数据已迁移。
 
 ## 11. 实施阶段与退出条件
@@ -354,12 +404,12 @@ origin/port 是可刷新部署投影，不进入资源 identity 字段。
 
 退出：JEPA golden case 满足节点预算和截图验收；无独立 Evidence 节点、无“对应挑战 / 贡献”。
 
-### K-E — knowledge catalog provider 与稳定入口
+### K-E — 动态 Field provider 与稳定入口
 
-交付：版本化 `knowledge_catalog` provider、统一资源身份与 landing/action 映射、旧 HubCatalog 兼容投影。
+交付：Source registry、Field manifest/preview、PdfRef、统一资源身份与直接 action 映射、旧响应兼容投影。
 
 退出：新投影不持久化 raw loopback URL，Hub 重启后可从稳定 identity 重建 action；PDF Range/HEAD、
-Vault 冲突保护和 opaque action 安全测试不回归。服务生命周期由 Hub Control Plane v2 验收。
+Vault 冲突保护和 opaque action 安全测试不回归。服务生命周期由 Hub v3 验收。
 
 ### K-F — 批量 conformance 与维护审计
 
@@ -404,14 +454,21 @@ CHANGELOG 清楚区分规划、实现和数据迁移。
 - JEPA golden Canvas 不超过 40 个生成内容节点，无独立 Evidence 节点和“对应挑战 / 贡献”。
 - Obsidian 截图在默认主题、常用窗口下标题可读、节点不重叠、Method 连续。
 - 技术文档和 Blog 能进入 `knowledge_catalog` 并获得 allowlisted 打开动作。
+- 一个显式 Source 可暴露多个 Field；整个 Vault 与子目录均可 preview，无 manifest 时任何初始化写入都被拒绝。
+- Field navigation 顺序来自 manifest，内部 owner role 不成为公开分类；Field 首页直接显示导航和 Markdown。
+- Zotero 附件必须经 Local API 关系解析为 PdfRef，不使用 storage glob；新 UI 不访问可见 landing。
+- ZotFlow 版本/启用状态不满足时动作禁用并给出精确诊断；Hub/CLI/agent/config/log 中没有 Web API 密钥。
+- AnnotationIR 只由 Local API 批注生成；ZotFlow Source Note、Better Notes 与 Scholar 分析路径无 writer 重叠。
+- 带批注 snapshot 不覆盖 Zotero 附件，内容变化后失效；不支持的批注类型明确失败。
 - Knowledge→Project 显式复制只选择人类产物及明确 owned assets，剥离 `sw_*`/sidecar/managed relation；
   同名目标拒绝，复制后不产生同步或托管来源关系。Project→Knowledge 归档创建新 identity。
 - whole-paper profile 覆盖五个角色；focused profile 只更新声明子集。
 - batch item 逐项经历 queued/running/validated/failed/repaired，失败至多修复一次，失败临时产物被清理且
   不能影响其他 item。
-- 新投影不持久化 raw loopback URL 作为资源身份；legacy `/open/paper/` 仍兼容。
-- 持久 Hub landing 只含稳定 ID；Hub 重启后仍可从 catalog 解析并生成新 opaque action。旧 action handle
-  必须失效，且 Markdown/manifest/Notion 中从未出现进程内 action ID。
+- 新投影不持久化 raw loopback URL 作为资源身份；legacy `/hub/item` 与 `/open/paper/` 仅在一个版本
+  周期内兼容解析且不出现在正常 UI。
+- Hub 重启后仍可从 EntityRef/PdfRef 生成新 opaque action；旧 action handle 必须失效，且
+  Markdown/manifest/Notion 中从未出现进程内 action ID。
 - Hub service status 能识别正确版本、旧版本、错误 capability、端口冲突和多个 owner。
 - 旧服务切换不破坏 PDF HEAD/Range、Vault 原子保存、CSRF/Origin 与 opaque action 边界。
 - migration plan 零写入，未确认时 JEPA 和其他 Vault 文件逐字节不变。
@@ -426,8 +483,8 @@ CHANGELOG 清楚区分规划、实现和数据迁移。
 | K2 | 人类正文与机器状态的真源 | 人类正文优先已锁定 | Markdown 为必备正文；复杂身份、hash 与 edge 移入 manifest/sidecar；Canvas 不是第二份正文 |
 | K3 | 证据与反链 | 证据内联、不独立列已锁定 | 主张内短锚点/脚注；脚注回跳 + Canvas 到 claim block link；不生成 Evidence 节点 |
 | K4 | Canvas 拓扑与字号 | 连续流程、删对应挑战/贡献、增大可读性已锁定 | 任务/输入/分步流程/输出/边界 + 语义节点；heading/大节点/低密度/截图验收；首版不依赖私有 CSS |
-| K5 | Hub 接口 | 已冻结 | 输出版本化 `knowledge_catalog`；唯一根、service owner 和启动体验由 Hub Control Plane v2 决定 |
-| K6 | 首个真实迁移对象 | 外部决策门 | 临时 fixture 后用 V-JEPA 2 作为 golden case；确认 patch 后才改真实 Vault |
+| K5 | Hub 接口 | 已冻结为 v3 | 输出动态 Source/Field provider 与 PdfRef；唯一根、direct actions、service lifecycle 和 Destination/Target 分离由 Hub v3 决定 |
+| K6 | 首个真实迁移对象 | 预览门 | 当前 `02-科研技术文档` Source 的“世界模型”Field，V-JEPA 2 为 golden case；展示完整 preview 并确认后才写真实 Vault |
 | K7 | 批量校验与维护 | 已冻结 | 每篇独立校验、最多一次修复、失败隔离；周期审计默认只读并生成计划 |
 
 项目系统接口门 **P-D10** 已冻结为显式独立复制：不登记托管链接，不维持同步或强制 provenance。
@@ -442,7 +499,8 @@ CHANGELOG 清楚区分规划、实现和数据迁移。
    机器状态不淹没正文；
 4. 解析树是可读概览，不是字段 schema 的逐格绘图；
 5. 证据与主张共处并可反向导航；
-6. PDF/文档从稳定资源身份打开，用户无需理解或维护 raw 端口 URL；
+6. PDF/文档从稳定资源身份一跳打开 ZotFlow、Zotero、cmux、系统阅读器或分析产物，用户无需理解或维护 raw 端口 URL；
 7. 单篇和批量输出都必须通过相同 conformance gate，失败不能被记作成功；
-8. Hub 能从稳定 identity 消费 knowledge provider，而 knowledge 系统不承担 service/workspace/task 所有权；
-9. 既有 Vault 未经逐主题确认不移动、不覆盖、不批量改写。
+8. Hub 能从稳定 identity 消费动态 Source/Field provider，而知识系统不承担 service/Destination/task 所有权；
+9. Zotero 是批注唯一权威；ZotFlow 独占 Web API 密钥，agent 只经 Local API 读取并投影；
+10. 既有 Vault 未经逐 Field 预览与确认不移动、不覆盖、不批量改写。

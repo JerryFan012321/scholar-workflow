@@ -1,5 +1,5 @@
 {
-  "description": "Outcome eval — end-to-end acceptance criteria from DESIGN.md §18.2",
+  "description": "Outcome eval — end-to-end acceptance criteria linked to the living planning/GOALS.md IDs; historical compatibility cases are explicitly marked and do not assert v3 release readiness",
   "cases": [
     {
       "id": "dedup-same-doi",
@@ -23,7 +23,7 @@
     },
     {
       "id": "papers-root-remap",
-      "description": "link_service.storage_root 改变后 link-service 重新解析路径，不需改代码",
+      "description": "历史 link-service 兼容验证：旧 link_service.storage_root 改变后仍可重新解析路径，不需改代码；v3 PDF 使用 Zotero attachment key/Local API locator，不依赖此根或固定端口",
       "status": "pending"
     },
     {
@@ -48,7 +48,7 @@
     },
     {
       "id": "pdf-link-inline-local",
-      "description": "投影里的 PDF 链接经本机 loopback service 按附件 key 解析并内联返回原始 PDF；非法 key 被拒不触碰文件系统",
+      "description": "历史 loopback PDF 入口兼容验证：旧链接仍可按附件 key 内联读取原始 PDF，非法 key 拒绝；v3 新投影保存稳定 PdfRef/Zotero URI，动态服务 URL 只是当前设备的阅读动作而非持久身份",
       "status": "pending"
     },
     {
@@ -128,7 +128,7 @@
     },
     {
       "id": "hub-catalog-and-cmux-notion",
-      "description": "INV28 本机 Hub：HubCatalog 是可重建关系快照；HTTP 仅绑定 loopback，保留 PDF URL 并支持 HEAD/Range；Notion page ID 只在服务端转成 allowlisted URL 和 opaque action，严格通过 cmux argv 打开，失败不回落 Safari；长驻服务按 catalog revision 刷新 action registry。由 test_hub_catalog.py、test_hub_http.py、test_hub_actions.py、test_hub_links.py 守护",
+      "description": "INV28 的 0.27/0.28 历史兼容基线：HubCatalog 是可重建投影而非 v3 事实根；旧 PDF 兼容入口仍仅绑定 loopback 并支持 HEAD/Range；Notion page ID 只在服务端转成 allowlisted URL 和 opaque action，cmux 打开失败不静默回落 Safari。由 test_hub_catalog.py、test_hub_http.py、test_hub_actions.py、test_hub_links.py 守护；本 pass 不声明 v3 发布完成",
       "status": "pass"
     },
     {
@@ -143,8 +143,33 @@
     },
     {
       "id": "hub-cmux-workspace-actions",
-      "description": "INV31/INV44 cmux-first Hub：运行时 workspace 不进入 HubDirectory，客户端只见 opaque workspace/action ID；只读浏览和已登记资源打开能力通过 contract tests 守护，cmux 无权限、无 socket、未绑定或 headless 时 Hub 阅读仍可用而受控写入关闭。旧空白 native agent-session 已移除；TaskRecipe worker 与任务执行尚未发布，不作为本结果的通过项",
+      "description": "INV31/INV44 的 0.28.1 历史兼容基线：旧 nonce/lease 和 workspace-aware action 的 fail-closed 行为由兼容 contract tests 守护；当时未绑定即禁用受控写入的结果已被真实使用否定，不得当作 v3 授权规则或当前发布验收。v3 Destination/Target 分离另由 hub-v3-destination-target-separation 评测",
       "status": "pass"
+    },
+    {
+      "id": "hub-v3-directory-and-dynamic-fields",
+      "description": "G15/INV48/NG19：唯一 schema-3 HubDirectory 只列 Papers 与动态 Fields 两个文档 Libraries，Projects/Tools 为平级集合；Zotero 负责 Papers，显式 Source registry 与便携 fields.yml 负责 Fields。整个 Vault 先零写入 preview，每次只确认一个候选 Field，第二个 Field 可在同一 Source 后续追加；现有 manifest 新主机登记保留身份。由 test_hub_v3.py、test_hub_v3_field_registration.py 和真实 World Models 逐 Field 验收守护；未验收真实迁移前保持 pending",
+      "status": "pending"
+    },
+    {
+      "id": "hub-v3-destination-target-separation",
+      "description": "G15/INV47/NG17：open-hub 在 cmux 中登记默认打开位置且可逐动作覆盖；workspace 关闭只禁用依赖它的 launch。相同 Vault/项目文档操作在有无 Destination 时授权结果不变；Codex/CLI terminal 的 cwd 只来自已登记 ExecutionTarget。由 test_hub_v3.py、test_hub_task_runtime.py、test_hub_execution_runtime.py 与真实 cmux/Codex canary 守护；实机执行未通过前保持 pending",
+      "status": "pending"
+    },
+    {
+      "id": "hub-v3-direct-resource-actions",
+      "description": "G15/INV49/NG19：论文卡片由稳定 EntityRef/PdfRef 直接打开 ZotFlow、Zotero、cmux、系统阅读器或分析/批注笔记，Fields 首页同屏给 manifest 导航和 Markdown 正文；正常 UI 无人类可见 landing、固定端口链接或固定公开分类树。由 test_hub_v3.py、test_hub_actions.py 和最终安装包的 UI/PDF/ZotFlow canary 守护；实际应用往返与最终构建仍待验收",
+      "status": "pending"
+    },
+    {
+      "id": "hub-v3-zotero-annotation-authority",
+      "description": "G15/INV50/NG18：正式批注只以 Zotero 为权威；只有 ZotFlow 在 Obsidian SecretStorage 持有 Web API 密钥，Scholar Workflow 的 agent/CLI/Hub 只经 Local API 读取 AnnotationIR；Source Note、Better Notes 和 Scholar 分析路径无 writer 重叠；带批注 PDF 是独立 hash-bound 快照。由 test_zotero_local.py、test_hub_v3_fields_zotflow.py、test_annotations.py 与真实 ZotFlow 双向同步及独立阅读器测试守护；实机往返未完成前保持 pending",
+      "status": "pending"
+    },
+    {
+      "id": "hub-v3-installed-service-lifecycle",
+      "description": "G15/INV51：安装包驱动 open-hub/start/status/stop/restart/doctor，动态 loopback 端口与 mode-0600 discovery 自证 executable/build/PID/generation/log，未知监听器或 PID 不得被终止；不依赖源码目录。由 test_hub_lifecycle.py、test_hub_lifecycle_cli.py、最终 wheel/sdist 边界检查与已安装版本 canary 守护；0.29.0 尚未发布或更新用户安装前保持 pending",
+      "status": "pending"
     }
   ]
 }

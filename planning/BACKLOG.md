@@ -283,13 +283,13 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Related**: G14, INV43-INV46, WI-034-WI-040
 
 ### WI-034: Hub service identity, diagnostics and temporary-port canary
-- **Status**: in-progress
+- **Status**: deferred
 - **Priority**: p1
 - **Type**: code-change
 - **Context**: The user explicitly stopped and disabled the old 0.18.0 LaunchAgent. Port 23128 is now held by a manually started cmux-visible Hub; 0.28.1 makes `open-hub` wait for a verified binding instead of returning after page creation. A managed, self-identifying start/stop lifecycle is still absent.
 - **Blocker**: decide the durable managed owner and explicit start/status/stop mechanism; the old LaunchAgent must not be silently revived
-- **Next action**: Keep the current cmux foreground lifecycle documented and observable, then design a managed replacement with explicit stop/restart semantics and rollback evidence before enabling it.
-- **Related**: INV39, INV44, WI-040
+- **Next action**: No further v2 lifecycle work. Preserve its health/canary evidence as a compatibility baseline; the unfinished managed lifecycle moves to WI-043/WI-049.
+- **Related**: INV39, INV44, INV51, WI-043, WI-049
 
 ### WI-035: HubDirectory, Papers Library and v1 compatibility
 - **Status**: done
@@ -319,13 +319,13 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Related**: INV43, NG13, WI-039
 
 ### WI-038: WorkspaceProfile, Lease and HubViewBinding
-- **Status**: done
+- **Status**: done (v0.28.0; superseded as an authorization model by WI-044)
 - **Priority**: p1
 - **Type**: code-change
 - **Context**: Existing opaque workspace mappings are process-local but do not express service generation, lease expiry or cmux instance identity. Executable views need exactly one verified primary binding.
 - **Blocker**: WI-034 service identity
-- **Next action**: Validate the implemented nonce/generation/socket-instance invalidation against the formal cmux canary before cutover.
-- **Related**: INV44, WI-034, WI-039
+- **Next action**: Keep nonce/generation/socket-instance tests only for v1/v2 compatibility. Do not extend the lease into v3 file authorization; migrate window routing to CmuxDestination in WI-044.
+- **Related**: INV44, INV47, WI-034, WI-039, WI-044
 
 ### WI-039: TaskRecipe, LogicalTask, TaskRun and Codex worker
 - **Status**: in-progress
@@ -333,17 +333,17 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Type**: code-change
 - **Context**: Replace blank-session-only action with server-registered recipes, bounded brief/effort and explicit Codex thread IDs while preserving the prohibition on browser commands, paths and security configuration.
 - **Blocker**: WI-036–WI-038 contracts
-- **Next action**: Internal schemas/store/worker, explicit-thread parsing, cross-process locks, cancel/timeout and process-group recovery are implemented with fake-worker tests. Next is a separately gated production worker manager/HTTP surface and real capability canary; do not launch a real task in this batch.
-- **Related**: INV31, INV45, NG15
+- **Next action**: The v2 schemas/store/worker safety foundation now feeds the v3 task API and long-lived cmux worker path in WI-044. Verify create/resume/fork, cancellation and interruption through an installed-package real-task canary before closing this work item; do not treat the older fake-worker tests as production evidence.
+- **Related**: INV31, INV45, NG15, WI-044, WI-049
 
 ### WI-040: Library-first UI, compatibility rollout and 23128 cutover gate
-- **Status**: in-progress
+- **Status**: deferred
 - **Priority**: p1
 - **Type**: code-change
 - **Context**: The Hub UI currently assumes a whole catalog loaded client-side. It must navigate Libraries, Knowledge Contexts and Operations, with server pagination and visible disabled actions when unbound.
 - **Blocker**: WI-035–WI-039; live cutover additionally needs explicit user approval
-- **Next action**: Library/Knowledge/Operations UI and fixture canary are implemented. Run the formal release-artifact canary and compatibility baseline, then stop for explicit approval before replacing 23128.
-- **Related**: G14, INV43-INV45, WI-034-WI-039
+- **Next action**: Preserve the shipped Library/Knowledge/Operations UI and fixture canary as the v2 compatibility baseline. The unfinished direct-action UI, dynamic service rollout and old-listener retirement move to WI-046/WI-049.
+- **Related**: G14, G15, INV43-INV45, INV48-INV51, WI-034-WI-039, WI-046, WI-049
 
 ### WI-041: Verified backup backend and retention policy
 - **Status**: blocked
@@ -353,6 +353,78 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Blocker**: user choice of backup medium/frequency/retention
 - **Next action**: Keep promotion receipts at backup-pending; implement verified transitions only after the decision.
 - **Related**: INV35, WI-023
+
+### WI-042: Hub v3 umbrella contract and planning consistency
+- **Status**: in-progress
+- **Priority**: p0
+- **Type**: planning
+- **Context**: Real use of 0.28.1 disproved the global workspace-binding authorization model. The accepted v3 contract separates cmux window destinations from trusted file/execution targets, reduces document Libraries to Papers/Fields, promotes Projects/Tools to root collections, and replaces visible landing pages with direct actions.
+- **Blocker**: none
+- **Next action**: The v3 specification, root/global rules, GOALS, manuals and runtime policy now describe the Destination/Target separation. Finish the final code/contract audit before marking this planning work complete; retain v2 only as a compatibility baseline.
+- **Related**: G15, INV47-INV51, NG17-NG19, `planning/hub-control-plane-v3.md`
+
+### WI-043: Installed-package Hub lifecycle, dynamic port and discovery
+- **Status**: in-progress
+- **Priority**: p0
+- **Type**: code-change
+- **Context**: Replace the manual cmux foreground/fixed-23128 source-tree lifecycle with `hub start/status/stop/restart/doctor` and one-command `open-hub`. The managed service runs from the installed package, chooses a loopback dynamic port, and publishes mode-0600 discovery with executable/build/protocol/PID/generation/log evidence.
+- **Blocker**: none; unknown processes must remain untouched
+- **Next action**: Source-runtime lifecycle and dynamic discovery have passed isolated start/restart/status/doctor/stop checks. Repeat the same checks with the proposed installed 0.29.0 package, including stale-record handling; only identity-proven Scholar Workflow processes may be restarted.
+- **Related**: INV39, INV51, NG12, WI-034, WI-049
+
+### WI-044: CmuxDestination, ExecutionTarget and Action/Task routing
+- **Status**: in-progress
+- **Priority**: p0
+- **Type**: refactor
+- **Context**: Workspace is only a browser/terminal launch location. File and cwd authorization comes from registered folder/project targets. The browser may submit opaque action/destination/target IDs plus bounded brief/effort, but never URL, command, cwd, model, sandbox, permission or environment.
+- **Blocker**: WI-042 contract; implementation may proceed in the same capability batch
+- **Next action**: The v3 server, trusted target commands, task API, destination routing, task control and long-lived terminal worker path are implemented in the development tree. Complete the real cmux/Codex terminal canary and confirm that destination changes never alter file authorization.
+- **Related**: INV31, INV44, INV45, INV47, NG15, NG17, WI-038, WI-047
+
+### WI-045: Obsidian Source registry, Field manifest and preview initialization
+- **Status**: in-progress
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: Knowledge libraries must be extensible without hard-coded fields or one mandatory `research_vault_root`. A registered Vault or selected subdirectory supplies one or more Fields through `.scholar-workflow/fields.yml`; browsers receive only one-use candidate tokens.
+- **Blocker**: none for registry/preview; real Field writes require the preview acceptance gate
+- **Next action**: Whole-Vault/subdirectory selection, bounded candidate tokens, preview/confirm, Field manifest, CAS and symlink checks are implemented. Preserve the read-only World Models preview for review; actual confirmation of that Field belongs to WI-048.
+- **Related**: INV37, INV42, INV48, NG19, WI-025, WI-048
+
+### WI-046: Simplified information architecture and direct-action UI
+- **Status**: in-progress
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: Libraries contain only Papers/Fields; Projects/Tools are peers. Paper and Field workflows should expose useful actions immediately, with no normal paper/attachment/document landing page and no global read-only overlay.
+- **Blocker**: WI-044, WI-045 and WI-047 interfaces
+- **Next action**: The development UI exposes Papers/Fields with peer Projects/Tools, direct paper actions, Field navigation and selected Markdown, five public paper types, per-capability diagnostics and a Codex task panel. Finish browser-level visual/action checks and compatibility tests in the proposed installed build.
+- **Related**: G10, G15, INV48, INV49, NG19, WI-040
+
+### WI-047: ZotFlow adapter, AnnotationIR, Source Note isolation and annotated snapshot
+- **Status**: in-progress
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: Zotero remains the sole formal-annotation authority and ZotFlow the preferred editor. Only ZotFlow may hold the Zotero Web API key in Obsidian SecretStorage. Scholar Workflow reads annotations through the Local API and must keep ZotFlow Source Notes, Better Notes and Scholar analysis paths under separate writers.
+- **Blocker**: none for adapter/runtime; the 2026-09-23 host probe found Obsidian 1.13.7 and ZotFlow 1.6.5 (minimum 1.13.4). A real round-trip still waits for an approved registered Source and must never auto-upgrade the app.
+- **Next action**: Version/enablement probes, direct open protocols, Local-API AnnotationIR/export and explicit hash-bound PDF snapshots are implemented. Validate the annotation-type matrix in independent PDF readers, then perform a real ZotFlow ↔ Zotero round-trip after the Source/Field preview is accepted; do not acquire the Web API key in Scholar Workflow.
+- **Related**: INV8, INV16, INV24, INV50, NG18, WI-044
+
+### WI-048: Current research Vault Field migration and legacy-link cleanup
+- **Status**: blocked
+- **Priority**: p1
+- **Type**: planning
+- **Context**: The first Source is the current `02-科研技术文档` Vault; the first Field is 世界模型, with JEPA/V-JEPA as the acceptance sample. Existing content includes 168 fixed `127.0.0.1:23128/open/paper/...` links. Each Field must be previewed and transacted independently with preserved unmapped prose.
+- **Blocker**: user acceptance of the exact Field preview after WI-045-WI-047; recovery snapshot is not verified backup
+- **Next action**: A zero-write preview identifies 世界模型 and its proposed entrance/navigation; all 168 old links remain untouched. The development tree now has a single-Field, digest-approved CLI for manifest-owned Markdown/Canvas link replacement, but not JEPA template normalization or crash-atomic multi-file commit. A separate V-JEPA 2 Canvas topology candidate reduces 194 nodes to 20, but remains non-conformant and incomplete as a full analysis. Present the exact refreshed preview, missing-text mapping and proposed changes for user acceptance; only then register and migrate one Field, preserving unmapped content and using the unverified snapshot solely for recovery.
+- **Related**: INV38-INV42, INV48-INV50, WI-030, WI-045-WI-047
+
+### WI-049: Real canary, 0.29.0 release, installed update and old-service retirement
+- **Status**: blocked
+- **Priority**: p0
+- **Type**: code-change
+- **Context**: Hub v3 becomes the supported runtime only after the release artifact proves lifecycle/discovery, direct actions, destination routing, Field preview, ZotFlow diagnostics and compatibility behavior. Fixed 23128 and the old listener do not remain in the long-term architecture.
+- **Blocker**: WI-043, WI-044, WI-046 and approved WI-048 canary evidence
+- **Next action**: Full tests (710 passed), runtime-path/secret scan, rebuilt wheel/sdist, and isolated installed-wheel lifecycle/Directory/Papers/UI canary have passed; temporary service/state were stopped and removed. Complete actual cmux destination + Codex worker + ZotFlow round-trip and independent PDF-reader checks; obtain WI-048 approval for the World Models Field before any real Vault write. Do not report 0.29.0 as released or installed until release and cache-update evidence exists; unknown/legacy processes are never stopped by assumption.
+- **Related**: G15, INV49, INV51, WI-041, WI-043-WI-048
 
 ## Completed
 

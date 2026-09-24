@@ -86,7 +86,7 @@ def test_cmux_instance_fingerprint_rejects_symlinked_socket_path(tmp_path, monke
     socket_path.symlink_to(target)
     monkeypatch.setenv("CMUX_SOCKET_PATH", str(socket_path))
 
-    with pytest.raises(CmuxControlError, match="must not be a symlink"):
+    with pytest.raises(CmuxControlError, match="trusted Unix socket"):
         WorkspaceRegistry(CmuxControl()).instance_fingerprint()
 
 
@@ -135,6 +135,9 @@ def test_registry_exposes_workspace_policy_but_keeps_target_opaque():
         "label": "Open in cmux",
         "kind": ActionKind.NOTION_CMUX,
         "workspace_policy": WorkspacePolicy.REQUIRED,
+        "available": True,
+        "reason": None,
+        "primary": False,
     }
     assert registry.resolve(view.id).target == NOTION_URL
 
@@ -686,7 +689,7 @@ def test_catalog_resource_view_action_is_opaque_and_uses_fixed_hub_origin(tmp_pa
     assert calls[-1][0] == [
         str(executable),
         "open",
-        "http://127.0.0.1:23128/open/paper/ABCD2345",
+        "http://127.0.0.1:23128/api/v3/pdfs/zotero/ABCD2345/content",
         "--workspace",
         "workspace-raw",
         "--focus",
@@ -938,3 +941,51 @@ def test_catalog_action_service_registers_only_configured_kinds_and_global_codex
         for group in actions.values()
         for action in group
     )
+
+
+def test_live_paper_actions_link_analysis_and_annotation_notes_directly():
+    catalog = HubCatalog(
+        generated_at=datetime(2026, 9, 23, tzinfo=UTC),
+        resources=[
+            HubResource(
+                resource_id="paper:one",
+                kind="paper",
+                zotero={"item_key": "ABCD2345"},
+                artifact_ids=["analysis:one", "annotations:one"],
+            )
+        ],
+        artifacts=[
+            HubArtifact(
+                artifact_id="analysis:one",
+                kind=ArtifactKind.PAPER_ANALYSIS,
+                format=ArtifactFormat.MARKDOWN,
+                vault_path="analysis/paper.md",
+                resource_id="paper:one",
+            ),
+            HubArtifact(
+                artifact_id="annotations:one",
+                kind=ArtifactKind.ANNOTATION_NOTE,
+                format=ArtifactFormat.MARKDOWN,
+                vault_path="annotations/paper.md",
+                resource_id="paper:one",
+            ),
+        ],
+    )
+
+    class Provider:
+        def load(self):
+            return catalog
+
+    service = CatalogActionService(
+        Provider(),
+        {
+            ActionKind.OBSIDIAN_NOTE: object(),
+            ActionKind.ZOTERO_ITEM: object(),
+        },
+    )
+
+    actions = service.paper_actions({"zotero_item_key": "ABCD2345"})
+
+    labels = [action.label for action in actions]
+    assert "查看分析" in labels
+    assert "打开批注笔记" in labels

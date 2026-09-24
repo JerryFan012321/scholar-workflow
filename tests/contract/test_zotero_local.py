@@ -185,6 +185,34 @@ def test_get_children_uses_item_children_endpoint() -> None:
     assert children == [{"key": "BCDE3456"}]
 
 
+def test_annotations_use_paginated_local_children_endpoint() -> None:
+    calls: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/api/users/0/items/ABCD2345/children"
+        assert request.url.params["itemType"] == "annotation"
+        assert request.url.params["limit"] == "100"
+        start = int(request.url.params["start"])
+        calls.append(start)
+        if start == 0:
+            return httpx.Response(
+                200,
+                headers={"Total-Results": "101"},
+                json=[{"key": "BCDE3456"}] * 100,
+            )
+        return httpx.Response(
+            200,
+            headers={"Total-Results": "101"},
+            json=[{"key": "CDEF4567"}],
+        )
+
+    with make_adapter(handler) as adapter:
+        rows = adapter.get_annotations("ABCD2345")
+
+    assert calls == [0, 100]
+    assert len(rows) == 101
+
+
 def test_item_template_uses_local_schema_endpoint() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.url.path == "/api/items/new"

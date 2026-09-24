@@ -11,7 +11,10 @@ validation and file writes.
 ## Commands
 
 - First run:
-  `scholar-workflow config init --research-vault-root PATH [KEY=VALUE ...]`.
+  `scholar-workflow config init [KEY=VALUE ...]`.
+- Record an old singleton Vault only when it is needed as a migration candidate:
+  `scholar-workflow config init --research-vault-root PATH`, or set it later with
+  `scholar-workflow config set research_vault_root PATH`.
 - Change one value:
   `scholar-workflow config set KEY VALUE`.
 - Inspect:
@@ -29,6 +32,8 @@ comments.
 - Secrets never enter config or Git. Use environment variables; the Notion token is
   `SCHOLAR_WORKFLOW_NOTION_TOKEN`.
 - This skill covers core `config.yml`, not `recommend.yml`.
+- Dynamic Knowledge Sources/Fields are registered in the Hub; they are not mirrored into
+  the optional legacy `research_vault_root` setting.
 - `config init` never overwrites a different existing file. Use `config set` for an
   existing configuration.
 - Zotero, web, and projection work belongs to their owning skills.

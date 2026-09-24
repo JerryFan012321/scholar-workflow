@@ -26,6 +26,7 @@ from scholar_workflow.analysis.models import (
     EvidenceKind,
     KnowledgeAuditManifest,
     KnowledgeAuditObject,
+    KnowledgeRelation,
     ProfileKind,
 )
 from scholar_workflow.analysis.rendering import render_analysis
@@ -370,6 +371,13 @@ def test_weekly_audit_requires_and_verifies_sidecar_and_commit_receipt(
         document=document,
         paths=paths,
         base_revisions={path: None for path in paths.as_list()},
+        relations=[
+            KnowledgeRelation(
+                from_id="paper:audit",
+                relation="has-analysis",
+                to_id=document.artifact_id,
+            )
+        ],
     )
     commit_analysis_bundle(
         vault_root=vault,

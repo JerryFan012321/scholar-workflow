@@ -2,8 +2,7 @@
 
 const state = {
   directory: null,
-  catalog: null,
-  library: "papers",
+  view: "papers",
   libraryItems: [],
   libraryNextCursor: null,
   libraryLoading: false,
@@ -11,15 +10,35 @@ const state = {
   librarySort: "title",
   libraryDirection: "asc",
   libraryItemType: "",
-  topic: "all",
   query: "",
   actions: {},
   csrfToken: null,
-  cmux: {
-    capabilities: { workspace_actions: false },
-    workspaces: [],
-    selectedWorkspaceId: null,
-    capabilityError: "正在读取 cmux 工作区",
+  destinations: {
+    items: [],
+    selectedId: null,
+    capabilityError: "正在读取 cmux 打开位置",
+  },
+  tasks: {
+    actions: [],
+    targets: [],
+    selectedActionId: null,
+    selectedTargetId: null,
+    selectedEffort: null,
+    capabilityError: null,
+    loading: true,
+    submitting: false,
+    statusMessage: null,
+    statusKind: "",
+    activeRunId: null,
+    activeDestinationName: null,
+    pollTimer: null,
+  },
+  selectedField: null,
+  artifacts: [],
+  fieldRegistration: {
+    preview: null,
+    busy: false,
+    selectedFieldId: null,
   },
   preview: {
     artifact: null,
@@ -40,6 +59,7 @@ const state = {
 };
 const byId = (id) => document.getElementById(id);
 let previewRenderFrame = null;
+let taskFallbackSequence = 0;
 
 function node(tag, className, text) {
   const element = document.createElement(tag);
@@ -53,9 +73,13 @@ function hubInstance() {
 }
 
 function directoryEndpoint() {
+  return "/api/v3/directory";
+}
+
+function destinationsEndpoint() {
   const instance = hubInstance();
-  if (instance === null) return "/api/v2/directory";
-  return `/api/v2/directory?${new URLSearchParams({ instance }).toString()}`;
+  if (instance === null) return "/api/v3/destinations";
+  return `/api/v3/destinations?${new URLSearchParams({ instance }).toString()}`;
 }
 
 function stateChangingHeaders(contentType = "application/json") {
@@ -376,46 +400,58 @@ function scheduleLivePreview(content) {
   });
 }
 
+function documentLibraries() {
+  const libraries = state.directory?.libraries || {};
+  return ["papers", "fields"]
+    .map((libraryId) => libraries[libraryId])
+    .filter(Boolean);
+}
+
+function descriptorFor(view) {
+  return documentLibraries().find((library) => library.library_id === view) || null;
+}
+
+function isDocumentLibrary(view = state.view) {
+  return ["papers", "fields"].includes(view);
+}
+
 function renderLibraries() {
   const nav = byId("library-nav");
-  nav.replaceChildren(...state.directory.libraries.map((library) => {
+  nav.replaceChildren(...documentLibraries().map((library) => {
     const count = library.available ? library.total_count : "!";
     const button = node("button", "nav-item", `${library.label} · ${count}`);
     button.type = "button";
-    button.dataset.libraryId = library.library_id;
+    button.dataset.view = library.library_id;
     button.title = library.detail || library.authority;
-    button.classList.toggle("active", state.library === library.library_id);
-    button.addEventListener("click", () => selectLibrary(library.library_id));
+    button.classList.toggle("active", state.view === library.library_id);
+    button.addEventListener("click", () => selectView(library.library_id));
     return button;
   }));
+  byId("project-nav-count").textContent = String(state.directory?.projects?.length || 0);
+  byId("tool-nav-count").textContent = String(state.directory?.tools?.length || 0);
+  for (const button of document.querySelectorAll("[data-view]")) {
+    button.classList.toggle("active", button.dataset.view === state.view);
+  }
 }
 
 const LIBRARY_TYPE_OPTIONS = {
   papers: [
-    ["", "全部论文类型"],
-    ["journalArticle", "期刊论文"],
-    ["conferencePaper", "会议论文"],
-    ["preprint", "预印本"],
-    ["report", "报告"],
-    ["thesis", "学位论文"],
-    ["book", "书籍"],
-    ["webpage", "网页"],
+    ["", "全部类型"],
+    ["Paper", "Paper"],
+    ["Report", "Report"],
+    ["Book", "Book"],
+    ["Webpage", "Webpage"],
+    ["Other", "Other"],
   ],
-  projects: [["", "全部项目"], ["project", "项目"]],
-  tools: [
-    ["", "全部工具"],
-    ["scholar-workflow", "Scholar Workflow"],
-    ["codex", "Codex"],
-    ["cmux", "cmux"],
-    ["zotero", "Zotero"],
-    ["obsidian", "Obsidian"],
-    ["external", "外部工具"],
-  ],
+  fields: [["", "全部 Fields"]],
 };
 
 function syncLibraryQueryControls() {
+  const controls = document.querySelector(".library-query-controls");
+  controls.hidden = !isDocumentLibrary();
+  if (!isDocumentLibrary()) return;
   const sort = byId("library-sort");
-  const allowedSorts = state.library === "papers"
+  const allowedSorts = state.view === "papers"
     ? [["title", "标题"], ["year", "年份"], ["id", "标识符"]]
     : [["title", "名称"], ["id", "标识符"]];
   if (!allowedSorts.some(([value]) => value === state.librarySort)) {
@@ -429,7 +465,7 @@ function syncLibraryQueryControls() {
   sort.value = state.librarySort;
 
   const type = byId("library-type");
-  const typeOptions = LIBRARY_TYPE_OPTIONS[state.library] || [["", "全部类型"]];
+  const typeOptions = LIBRARY_TYPE_OPTIONS[state.view] || [["", "全部类型"]];
   if (!typeOptions.some(([value]) => value === state.libraryItemType)) {
     state.libraryItemType = "";
   }
@@ -442,28 +478,36 @@ function syncLibraryQueryControls() {
   byId("library-direction").value = state.libraryDirection;
 }
 
-async function selectLibrary(libraryId) {
-  state.library = libraryId;
-  state.topic = "all";
+async function selectView(view) {
+  state.view = view;
   state.libraryItemType = "";
-  for (const item of document.querySelectorAll(".nav-item")) {
-    item.classList.toggle("active", item.dataset.libraryId === libraryId);
-  }
-  const library = state.directory.libraries.find((entry) => entry.library_id === libraryId);
-  byId("view-title").textContent = library ? library.label : libraryId;
-  byId("resource-heading").textContent = library ? library.label : "资料";
+  state.selectedField = null;
+  const descriptor = descriptorFor(view);
+  const labels = {
+    projects: "Projects",
+    tools: "Tools",
+  };
+  const title = descriptor?.label || labels[view] || view;
+  byId("view-title").textContent = title;
+  byId("resource-heading").textContent = title;
   syncLibraryQueryControls();
-  await loadLibraryPage(true);
+  if (isDocumentLibrary()) {
+    await loadLibraryPage(true);
+  } else {
+    state.libraryItems = Array.isArray(state.directory?.[view])
+      ? [...state.directory[view]]
+      : [];
+    state.libraryNextCursor = null;
+    byId("load-more").hidden = true;
+  }
+  renderLibraries();
   renderResources();
-  renderArtifacts();
+  renderFieldDetail();
+  syncFieldRegisterButton();
 }
 
 async function loadLibraryPage(reset = false) {
-  if (state.library === "papers" && state.topic !== "all") {
-    state.libraryNextCursor = null;
-    byId("load-more").hidden = true;
-    return;
-  }
+  if (!isDocumentLibrary()) return;
   if (state.libraryLoading && !reset) return;
   if (!reset && !state.libraryNextCursor) return;
   const requestId = reset ? state.libraryRequestId + 1 : state.libraryRequestId;
@@ -479,7 +523,7 @@ async function loadLibraryPage(reset = false) {
     if (state.libraryItemType) query.set("type", state.libraryItemType);
     if (!reset && state.libraryNextCursor) query.set("cursor", state.libraryNextCursor);
     const response = await fetch(
-      `/api/v2/libraries/${encodeURIComponent(state.library)}/items?${query}`,
+      `/api/v3/libraries/${encodeURIComponent(state.view)}/items?${query}`,
       { credentials: "same-origin" },
     );
     if (!response.ok) throw new Error(await responseMessage(response));
@@ -487,6 +531,12 @@ async function loadLibraryPage(reset = false) {
     if (requestId !== state.libraryRequestId) return;
     state.libraryItems = reset ? page.items : [...state.libraryItems, ...page.items];
     state.libraryNextCursor = page.next_cursor;
+    state.artifacts = state.libraryItems.flatMap((item) => (
+      Array.isArray(item.artifacts) ? item.artifacts : []
+    ));
+    if (state.view === "fields" && reset) {
+      state.selectedField = state.libraryItems.find((item) => item.available !== false) || null;
+    }
   } catch (error) {
     if (requestId !== state.libraryRequestId) return;
     state.libraryItems = reset ? [] : state.libraryItems;
@@ -500,220 +550,614 @@ async function loadLibraryPage(reset = false) {
   }
 }
 
-function renderTopics() {
-  const nav = byId("topic-nav");
-  nav.replaceChildren();
-  for (const topic of state.catalog.topics) {
-    const button = node("button", "nav-item", topic.name);
-    button.type = "button";
-    button.dataset.topicId = topic.topic_id;
-    button.addEventListener("click", () => selectTopic(topic.topic_id));
-    nav.append(button);
-  }
+function actionUsesDestination(action) {
+  return action.destination_required === true
+    || ["required", "selectable"].includes(action.workspace_policy);
 }
 
-async function selectTopic(topicId) {
-  const libraryChanged = state.library !== "papers";
-  state.library = "papers";
-  state.topic = topicId;
-  for (const item of document.querySelectorAll(".nav-item")) {
-    item.classList.toggle("active", topicId === "all" ? item.dataset.view === "all" : item.dataset.topicId === topicId);
-  }
-  const topic = state.catalog.topics.find((entry) => entry.topic_id === topicId);
-  byId("view-title").textContent = topic ? topic.name : "全部资料";
-  byId("resource-heading").textContent = "Papers";
-  if (libraryChanged && topicId === "all") await loadLibraryPage(true);
-  byId("load-more").hidden = topicId !== "all" || !state.libraryNextCursor;
-  renderResources();
-  renderArtifacts();
+function selectedDestinationId() {
+  return state.destinations.selectedId;
 }
 
-function actionUsesWorkspace(action) {
-  return ["required", "selectable"].includes(action.workspace_policy);
+function unavailableDestinationReason() {
+  return state.destinations.capabilityError
+    ? "当前无法连接 cmux；请从 cmux 中运行 scholar-workflow open-hub 后选择打开位置"
+    : "没有可用的 cmux 打开位置";
 }
 
-function selectedWorkspaceId() {
-  if (!state.cmux.capabilities.workspace_actions) return null;
-  return state.cmux.selectedWorkspaceId;
-}
-
-function unavailableWorkspaceReason() {
-  return state.cmux.capabilityError || "没有可用的 cmux 工作区";
-}
-
-function workspaceEndpoint() {
-  const instance = new URLSearchParams(window.location.search).get("instance");
-  if (instance === null) return "/api/v1/cmux/workspaces";
-  const query = new URLSearchParams({ instance });
-  return `/api/v1/cmux/workspaces?${query.toString()}`;
-}
-
-function applyWorkspaceListing(payload) {
-  const capabilities = payload && payload.capabilities;
-  const workspaces = payload && Array.isArray(payload.workspaces) ? payload.workspaces : [];
-  const available = Boolean(capabilities && capabilities.workspace_actions);
-  state.cmux.capabilities = { workspace_actions: available };
-  state.cmux.workspaces = workspaces.filter((workspace) => (
-    workspace && typeof workspace.id === "string" && workspace.id
+function applyDestinations(payload) {
+  const items = Array.isArray(payload)
+    ? payload
+    : (payload && Array.isArray(payload.destinations) ? payload.destinations : []);
+  state.destinations.items = items.filter((destination) => (
+    destination && typeof destination.destination_id === "string"
+      && destination.destination_id
   ));
-  state.cmux.capabilityError = payload && payload.capability_error
-    ? String(payload.capability_error)
+  state.destinations.capabilityError = payload && !Array.isArray(payload)
+    ? (payload.capability_error || payload.reason || null)
     : null;
 
-  const previous = state.cmux.selectedWorkspaceId;
-  const preferred = state.cmux.workspaces.find((workspace) => workspace.id === previous)
-    || state.cmux.workspaces.find((workspace) => workspace.contains_hub)
-    || state.cmux.workspaces.find((workspace) => workspace.is_current)
-    || state.cmux.workspaces[0];
-  state.cmux.selectedWorkspaceId = available && preferred ? preferred.id : null;
+  const previous = state.destinations.selectedId;
+  const preferred = state.destinations.items.find(
+    (destination) => destination.destination_id === previous,
+  ) || state.destinations.items.find((destination) => destination.is_default)
+    || state.destinations.items[0];
+  state.destinations.selectedId = preferred?.destination_id || null;
 
   const select = byId("workspace-select");
-  if (state.cmux.workspaces.length === 0) {
-    select.replaceChildren(node("option", "", "无可用工作区"));
+  if (state.destinations.items.length === 0) {
+    select.replaceChildren(node("option", "", "未选择 cmux 位置"));
   } else {
-    select.replaceChildren(...state.cmux.workspaces.map((workspace) => {
-      const suffix = workspace.contains_hub
-        ? " · Hub 所在"
-        : (workspace.is_current ? " · 当前" : "");
-      const option = node("option", "", `${workspace.label}${suffix}`);
-      option.value = workspace.id;
+    select.replaceChildren(...state.destinations.items.map((destination) => {
+      const suffix = destination.is_default ? " · 默认" : "";
+      const option = node("option", "", `${destination.display_name}${suffix}`);
+      option.value = destination.destination_id;
       return option;
     }));
   }
-  const hasBindingInstance = Boolean(hubInstance());
-  select.disabled = !available || !state.cmux.selectedWorkspaceId || !hasBindingInstance;
-  select.value = state.cmux.selectedWorkspaceId || "";
+  select.disabled = state.destinations.items.length === 0;
+  select.value = state.destinations.selectedId || "";
 
   const status = byId("cmux-status");
-  if (!hasBindingInstance) {
-    status.textContent = "只读入口；请在 cmux 终端运行 scholar-workflow open-hub";
-    status.className = "cmux-status error";
-  } else if (state.cmux.capabilityError) {
-    status.textContent = state.cmux.capabilityError;
-    status.className = "cmux-status error";
-  } else if (!state.cmux.selectedWorkspaceId) {
-    status.textContent = "没有可选择的 cmux 工作区";
-    status.className = "cmux-status error";
+  if (state.destinations.capabilityError) {
+    status.textContent = "当前无法连接 cmux；阅读与文件操作不受影响。需要打开窗口时，请在 cmux 中运行 scholar-workflow open-hub。";
+    status.className = "cmux-status";
+  } else if (!state.destinations.selectedId) {
+    status.textContent = "仅 cmux 打开动作不可用；阅读与文件能力不受影响";
+    status.className = "cmux-status";
   } else {
-    status.textContent = "已选择工作区；任务执行尚未启用";
+    status.textContent = "只决定浏览器、终端和 Codex 窗口在哪里出现";
     status.className = "cmux-status";
   }
 }
 
-function syncOperationStatus() {
-  const bound = Boolean(state.directory?.operations?.bound);
-  let label = "只读 · 未绑定工作区";
-  if (bound) label = "已绑定工作区";
-  else if (!hubInstance()) label = "只读 · 请运行 scholar-workflow open-hub";
-  byId("operation-status").textContent = label;
-  document.querySelector(".status-dot").classList.toggle("readonly", !bound);
+function capability(name) {
+  const value = state.directory?.capabilities?.[name];
+  return value && typeof value.available === "boolean"
+    ? value
+    : { available: false, reason: "服务未报告此能力" };
 }
 
-async function bindSelectedWorkspace() {
-  const instance = hubInstance();
-  const workspaceId = selectedWorkspaceId();
-  if (!instance || !workspaceId || !state.csrfToken) return false;
-  const nonceResponse = await fetch("/api/v2/workspaces/nonce", {
-    method: "POST",
-    credentials: "same-origin",
-    headers: stateChangingHeaders(),
-    body: "{}",
+const CAPABILITY_LABELS = {
+  vault_writes: "Vault 保存",
+  project_document_writes: "项目文档",
+  cmux_launches: "cmux 打开",
+  codex_tasks: "Codex 任务",
+  zotflow_annotations: "ZotFlow 标注",
+  zotero_local_api: "Zotero Local API",
+};
+
+function renderCapabilities() {
+  const container = byId("capability-matrix");
+  const rows = Object.entries(CAPABILITY_LABELS).map(([name, label]) => {
+    const status = capability(name);
+    const chip = node("div", `capability-chip ${status.available ? "available" : "unavailable"}`);
+    chip.append(node("span", "capability-dot"));
+    const copy = node("div", "capability-copy");
+    copy.append(node("strong", "", label));
+    copy.append(node("small", "", status.available ? "可用" : (status.reason || "不可用")));
+    chip.append(copy);
+    return chip;
   });
-  if (!nonceResponse.ok) throw new Error(await responseMessage(nonceResponse));
-  const noncePayload = await nonceResponse.json();
-  const bindResponse = await fetch("/api/v2/workspaces/bind", {
-    method: "POST",
-    credentials: "same-origin",
-    headers: stateChangingHeaders(),
-    body: JSON.stringify({
-      nonce: noncePayload.nonce,
-      profile_id: "runtime",
-      workspace_id: workspaceId,
-    }),
+  container.replaceChildren(...rows);
+  const available = Object.keys(CAPABILITY_LABELS).filter(
+    (name) => capability(name).available,
+  ).length;
+  byId("operation-status").textContent = `服务就绪 · ${available}/${rows.length} 项能力可用`;
+  document.querySelector(".status-dot").classList.toggle(
+    "warning",
+    state.directory?.diagnostics?.some((entry) => entry.level === "error"),
+  );
+}
+
+const TASK_EFFORT_LABELS = {
+  fast: "快速",
+  standard: "标准",
+  deep: "深入",
+};
+const TASK_FINAL_STATES = new Set([
+  "succeeded",
+  "failed",
+  "interrupted",
+  "cancelled",
+  "timed_out",
+  "recovery_required",
+]);
+
+function selectedTaskAction() {
+  return state.tasks.actions.find(
+    (action) => action.action_id === state.tasks.selectedActionId,
+  ) || null;
+}
+
+function taskTargetsFor(action) {
+  if (!action) return [];
+  const allowed = Array.isArray(action.allowed_target_ids)
+    ? new Set(action.allowed_target_ids)
+    : null;
+  return state.tasks.targets.filter((target) => (
+    target
+      && typeof target.target_id === "string"
+      && (!allowed || allowed.has(target.target_id))
+  ));
+}
+
+function readableTaskTarget(target, index) {
+  for (const field of ["display_name", "title", "label", "name"]) {
+    if (typeof target[field] === "string" && target[field].trim()) {
+      return target[field].trim();
+    }
+  }
+  if (target.kind === "project") {
+    const project = (state.directory?.projects || []).find((candidate) => {
+      const identities = [candidate.project_id, candidate.ref?.entity_id].filter(Boolean);
+      return identities.some((identity) => (
+        target.target_id === identity || target.target_id.endsWith(`:${identity}`)
+      ));
+    });
+    if (project?.display_name) return project.display_name;
+  }
+  const kind = {
+    project: "项目目标",
+    vault: "Vault 目标",
+    folder: "文件夹目标",
+  }[target.kind] || "受信任目标";
+  return `${kind} ${index + 1}`;
+}
+
+function currentDestination() {
+  return state.destinations.items.find(
+    (destination) => destination.destination_id === selectedDestinationId(),
+  ) || null;
+}
+
+function taskBriefSize() {
+  return new TextEncoder().encode(byId("task-brief").value).length;
+}
+
+function taskIdempotencyKey() {
+  const cryptoApi = globalThis.crypto;
+  if (cryptoApi && typeof cryptoApi.randomUUID === "function") {
+    return cryptoApi.randomUUID();
+  }
+  if (cryptoApi && typeof cryptoApi.getRandomValues === "function") {
+    const values = new Uint32Array(4);
+    cryptoApi.getRandomValues(values);
+    return `task-${Array.from(values, (value) => value.toString(16).padStart(8, "0")).join("")}`;
+  }
+  taskFallbackSequence += 1;
+  return `task-${Date.now().toString(36)}-${taskFallbackSequence.toString(36)}`;
+}
+
+function setTaskStatus(message, kind = "") {
+  state.tasks.statusMessage = message;
+  state.tasks.statusKind = kind;
+}
+
+function defaultTaskStatus() {
+  if (state.tasks.loading) return ["正在读取 Codex 任务能力…", ""];
+  if (state.tasks.capabilityError) return [state.tasks.capabilityError, "error"];
+  const availableActions = state.tasks.actions.filter(
+    (action) => action && action.available !== false,
+  );
+  if (availableActions.length === 0) {
+    const reason = state.tasks.actions.find((action) => action && action.reason)?.reason
+      || capability("codex_tasks").reason
+      || "当前没有可用的 Codex 任务";
+    return [reason, "error"];
+  }
+  if (!selectedTaskAction()) return ["请选择任务用途", ""];
+  if (taskTargetsFor(selectedTaskAction()).length === 0) {
+    return ["此任务没有可用的已登记目标", "error"];
+  }
+  if (!selectedDestinationId()) {
+    return ["请先在页面上方选择 cmux 默认打开位置；阅读与文件操作不受影响", "error"];
+  }
+  return ["工作目录只从所选受信任目标解析；cmux 选项只决定终端出现位置", ""];
+}
+
+function renderTaskPanel() {
+  const actionSelect = byId("task-action");
+  const targetSelect = byId("task-target");
+  const effortSelect = byId("task-effort");
+  const brief = byId("task-brief");
+  const submit = byId("task-submit");
+
+  const validActions = state.tasks.actions.filter(
+    (action) => action && typeof action.action_id === "string" && action.action_id,
+  );
+  const availableActions = validActions.filter((action) => action.available !== false);
+  if (!availableActions.some((action) => action.action_id === state.tasks.selectedActionId)) {
+    state.tasks.selectedActionId = availableActions[0]?.action_id || null;
+  }
+  const actionOptions = validActions.map((action) => {
+    const unavailable = action.available === false;
+    const option = node(
+      "option",
+      "",
+      `${action.title || "未命名任务"}${unavailable ? " · 不可用" : ""}`,
+    );
+    option.value = action.action_id;
+    option.disabled = unavailable;
+    if (unavailable && action.reason) option.title = action.reason;
+    return option;
   });
-  if (!bindResponse.ok) throw new Error(await responseMessage(bindResponse));
-  const directoryResponse = await fetch(directoryEndpoint(), { credentials: "same-origin" });
-  if (!directoryResponse.ok) throw new Error(await responseMessage(directoryResponse));
-  state.directory = await directoryResponse.json();
-  state.catalog = state.directory.knowledge_catalog;
-  syncOperationStatus();
-  return true;
+  if (actionOptions.length === 0) {
+    actionOptions.push(node("option", "", "没有可用任务"));
+  }
+  actionSelect.replaceChildren(...actionOptions);
+  actionSelect.value = state.tasks.selectedActionId || "";
+
+  const action = selectedTaskAction();
+  const targets = taskTargetsFor(action);
+  if (!targets.some((target) => target.target_id === state.tasks.selectedTargetId)) {
+    state.tasks.selectedTargetId = targets[0]?.target_id || null;
+  }
+  const targetOptions = targets.map((target, index) => {
+    const option = node("option", "", readableTaskTarget(target, index));
+    option.value = target.target_id;
+    return option;
+  });
+  if (targetOptions.length === 0) {
+    targetOptions.push(node("option", "", "没有可用目标"));
+  }
+  targetSelect.replaceChildren(...targetOptions);
+  targetSelect.value = state.tasks.selectedTargetId || "";
+
+  const efforts = (Array.isArray(action?.allowed_efforts) ? action.allowed_efforts : [])
+    .filter((effort) => Object.hasOwn(TASK_EFFORT_LABELS, effort));
+  if (!efforts.includes(state.tasks.selectedEffort)) {
+    state.tasks.selectedEffort = efforts.includes("standard") ? "standard" : (efforts[0] || null);
+  }
+  const effortOptions = efforts.map((effort) => {
+    const option = node("option", "", TASK_EFFORT_LABELS[effort]);
+    option.value = effort;
+    return option;
+  });
+  if (effortOptions.length === 0) {
+    effortOptions.push(node("option", "", "此任务未开放强度选项"));
+  }
+  effortSelect.replaceChildren(...effortOptions);
+  effortSelect.value = state.tasks.selectedEffort || "";
+
+  const destination = currentDestination();
+  byId("task-destination").textContent = destination
+    ? `运行窗口：${destination.display_name}`
+    : "运行窗口：尚未选择 cmux 位置";
+
+  const bytes = taskBriefSize();
+  const size = byId("task-brief-limit");
+  size.textContent = `${bytes} / 8192 字节`;
+  size.classList.toggle("error", bytes > 8192);
+  const trimmedBrief = brief.value.trim();
+  const hasSelection = Boolean(
+    action
+      && state.tasks.selectedTargetId
+      && state.tasks.selectedEffort
+      && selectedDestinationId(),
+  );
+  const unavailable = state.tasks.loading || Boolean(state.tasks.capabilityError);
+  actionSelect.disabled = state.tasks.submitting || unavailable || availableActions.length === 0;
+  targetSelect.disabled = state.tasks.submitting || unavailable || targets.length === 0;
+  effortSelect.disabled = state.tasks.submitting || unavailable || efforts.length === 0;
+  brief.disabled = state.tasks.submitting || unavailable || !action;
+  submit.disabled = state.tasks.submitting
+    || unavailable
+    || !state.csrfToken
+    || !hasSelection
+    || !trimmedBrief
+    || bytes > 8192;
+  submit.textContent = state.tasks.submitting ? "正在提交…" : "运行任务";
+
+  const [defaultMessage, defaultKind] = defaultTaskStatus();
+  const status = byId("task-status");
+  status.textContent = state.tasks.statusMessage || defaultMessage;
+  status.className = `task-status ${state.tasks.statusMessage ? state.tasks.statusKind : defaultKind}`.trim();
+}
+
+async function loadTaskSurface() {
+  try {
+    const [actionsResponse, targetsResponse] = await Promise.all([
+      fetch("/api/v3/task-actions", { credentials: "same-origin" }),
+      fetch("/api/v3/execution-targets", { credentials: "same-origin" }),
+    ]);
+    if (!actionsResponse.ok || !targetsResponse.ok) {
+      const status = !actionsResponse.ok ? actionsResponse.status : targetsResponse.status;
+      throw new Error(`Codex 任务接口不可用（HTTP ${status}）`);
+    }
+    const [actionPayload, targetPayload] = await Promise.all([
+      actionsResponse.json(),
+      targetsResponse.json(),
+    ]);
+    if (!Array.isArray(actionPayload.actions) || !Array.isArray(targetPayload.targets)) {
+      throw new Error("Codex 任务接口返回了无效数据");
+    }
+    state.tasks.actions = actionPayload.actions;
+    state.tasks.targets = targetPayload.targets;
+    state.tasks.capabilityError = null;
+  } catch (error) {
+    state.tasks.actions = [];
+    state.tasks.targets = [];
+    state.tasks.capabilityError = String(error.message || error);
+  } finally {
+    state.tasks.loading = false;
+    renderTaskPanel();
+  }
+}
+
+function normalizedTaskStatus(payload) {
+  const run = payload && typeof payload.run === "object" ? payload.run : payload;
+  return {
+    runId: run?.run_id || payload?.run_id || null,
+    state: run?.state || payload?.state || "queued",
+    terminalRouted: payload?.terminal_routed === true || run?.terminal_routed === true,
+  };
+}
+
+function taskStatusMessage(payload) {
+  const status = normalizedTaskStatus(payload);
+  const labels = {
+    queued: "任务已排队",
+    running: "Codex 正在运行",
+    succeeded: "任务已完成",
+    failed: "任务执行失败",
+    interrupted: "任务已中断",
+    cancelled: "任务已取消",
+    timed_out: "任务执行超时",
+    recovery_required: "任务需要恢复处理",
+  };
+  let message = labels[status.state] || `任务状态：${status.state}`;
+  const destinationName = state.tasks.activeDestinationName
+    || currentDestination()?.display_name
+    || null;
+  if (["queued", "running"].includes(status.state) && destinationName) {
+    message += status.terminalRouted
+      ? `；终端已路由到“${destinationName}”`
+      : `；运行窗口为“${destinationName}”`;
+  }
+  return [message, status];
+}
+
+function clearTaskPoll() {
+  if (state.tasks.pollTimer !== null) {
+    window.clearTimeout(state.tasks.pollTimer);
+    state.tasks.pollTimer = null;
+  }
+}
+
+async function pollTaskRun(runId) {
+  if (!runId || state.tasks.activeRunId !== runId) return;
+  try {
+    const response = await fetch(
+      `/api/v3/task-runs/${encodeURIComponent(runId)}`,
+      { credentials: "same-origin" },
+    );
+    if (!response.ok) throw new Error(await responseMessage(response));
+    if (state.tasks.activeRunId !== runId) return;
+    const payload = await response.json();
+    const [message, status] = taskStatusMessage(payload);
+    setTaskStatus(message, status.state === "succeeded" ? "success" : (
+      TASK_FINAL_STATES.has(status.state) ? "error" : ""
+    ));
+    renderTaskPanel();
+    if (!TASK_FINAL_STATES.has(status.state)) {
+      state.tasks.pollTimer = window.setTimeout(() => pollTaskRun(runId), 1400);
+    }
+  } catch (error) {
+    if (state.tasks.activeRunId !== runId) return;
+    setTaskStatus(`任务已提交，但状态刷新失败：${String(error.message || error)}`, "error");
+    renderTaskPanel();
+  }
+}
+
+async function submitTask(event) {
+  event.preventDefault();
+  if (state.tasks.submitting) return;
+  const action = selectedTaskAction();
+  const destinationId = selectedDestinationId();
+  const destinationName = currentDestination()?.display_name || null;
+  const brief = byId("task-brief").value.trim();
+  if (!action || !state.tasks.selectedTargetId || !state.tasks.selectedEffort) {
+    setTaskStatus("请选择可用的任务、目标和思考强度", "error");
+    renderTaskPanel();
+    return;
+  }
+  if (!destinationId) {
+    setTaskStatus("请先在页面上方选择 cmux 默认打开位置", "error");
+    renderTaskPanel();
+    return;
+  }
+  if (!brief || new TextEncoder().encode(brief).length > 8192) {
+    setTaskStatus("任务说明必须为 1–8192 字节", "error");
+    renderTaskPanel();
+    return;
+  }
+  state.tasks.submitting = true;
+  setTaskStatus("正在安全提交任务…");
+  renderTaskPanel();
+  try {
+    const response = await fetch("/api/v3/tasks", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: stateChangingHeaders(),
+      body: JSON.stringify({
+        action_id: action.action_id,
+        destination_id: destinationId,
+        target_id: state.tasks.selectedTargetId,
+        brief,
+        effort: state.tasks.selectedEffort,
+        idempotency_key: taskIdempotencyKey(),
+      }),
+    });
+    if (!response.ok) throw new Error(await responseMessage(response));
+    const payload = await response.json();
+    state.tasks.activeDestinationName = destinationName;
+    const [message, status] = taskStatusMessage(payload);
+    clearTaskPoll();
+    state.tasks.activeRunId = status.runId;
+    setTaskStatus(message, status.state === "succeeded" ? "success" : (
+      TASK_FINAL_STATES.has(status.state) ? "error" : ""
+    ));
+    if (status.runId && !TASK_FINAL_STATES.has(status.state)) {
+      state.tasks.pollTimer = window.setTimeout(() => pollTaskRun(status.runId), 900);
+    }
+  } catch (error) {
+    setTaskStatus(`任务提交失败：${String(error.message || error)}`, "error");
+  } finally {
+    state.tasks.submitting = false;
+    renderTaskPanel();
+  }
+}
+
+function actionsFor(item) {
+  if (Array.isArray(item.actions)) return item.actions;
+  const entityId = item.ref?.entity_id;
+  const resourceId = item.resource_id;
+  return state.actions[entityId] || state.actions[resourceId] || [];
 }
 
 function renderHubActions() {
   const container = byId("hub-actions");
-  container.replaceChildren(...(state.actions["__hub__"] || []).map(actionButton));
+  container.replaceChildren(...(state.actions.__hub__ || []).map(actionButton));
 }
 
 function actionButton(action) {
-  const button = node("button", "action-button", action.label);
+  const className = action.primary ? "action-button primary" : "action-button";
+  const button = node("button", className, action.label);
   button.type = "button";
-  const requiresWorkspace = actionUsesWorkspace(action);
-  if (!state.directory?.operations?.bound || (requiresWorkspace && !selectedWorkspaceId())) {
-    button.disabled = true;
-    button.title = !state.directory?.operations?.bound
-      ? "Hub 当前未绑定工作区，只读模式"
-      : unavailableWorkspaceReason();
-  }
+  const requiresDestination = actionUsesDestination(action);
+  const unavailable = action.available === false;
+  const syncDisabled = () => {
+    button.disabled = unavailable || (requiresDestination && !selectedDestinationId());
+    button.title = unavailable
+      ? (action.reason || "此动作当前不可用")
+      : (requiresDestination && !selectedDestinationId() ? unavailableDestinationReason() : "");
+  };
+  syncDisabled();
   button.addEventListener("click", async () => {
-    const workspaceId = requiresWorkspace ? selectedWorkspaceId() : null;
-    if (requiresWorkspace && !workspaceId) return;
+    const destinationId = requiresDestination ? selectedDestinationId() : null;
+    if (unavailable || (requiresDestination && !destinationId)) return;
     button.disabled = true;
     const original = button.textContent;
     button.textContent = "正在打开…";
     try {
-      const response = await fetch(`/api/v1/actions/${encodeURIComponent(action.id)}`, {
+      const response = await fetch(
+        `/api/v3/actions/${encodeURIComponent(action.id)}/invoke`, {
         method: "POST",
         credentials: "same-origin",
         headers: stateChangingHeaders(),
-        body: JSON.stringify(workspaceId ? { workspace_id: workspaceId } : {}),
+        body: JSON.stringify(destinationId ? { destination_id: destinationId } : {}),
       });
-      if (!response.ok) {
-        throw new Error(await responseMessage(response));
-      }
+      if (!response.ok) throw new Error(await responseMessage(response));
       button.textContent = "已打开";
     } catch (error) {
       button.textContent = `失败：${String(error.message || error)}`;
     } finally {
       window.setTimeout(() => {
         button.textContent = original;
-        button.disabled = !state.directory?.operations?.bound
-          || (requiresWorkspace && !selectedWorkspaceId());
+        syncDisabled();
       }, 2800);
     }
   });
   return button;
 }
-
 function resourceCard(resource) {
-  const card = node("article", "card");
+  const card = node("article", "card paper-card");
   const meta = node("div", "card-meta");
-  meta.append(node("span", "kind", resourceKindLabel(resource.kind)));
+  meta.append(node("span", "kind", resource.paper_type || "Other"));
   meta.append(node("span", "", resource.year ? String(resource.year) : "未标年份"));
   card.append(meta);
   card.append(node("h3", "", resource.title || "未命名资料"));
-  card.append(node("p", "authors", (resource.authors || []).join(" · ") || "作者信息由 Zotero 提供"));
+  card.append(node(
+    "p",
+    "authors",
+    (resource.authors || []).join(" · ") || "作者信息由 Zotero 提供",
+  ));
   const footer = node("div", "card-footer");
-  footer.append(node("span", "", resource.venue || resource.resource_id));
+  footer.append(node("span", "card-source", resource.venue || "Zotero"));
   const controls = node("div", "card-actions");
-  if (resource.ref && resource.ref.item_id) {
-    const landing = node("a", "open-pdf", resource.attachment_key ? "论文落地页" : "查看资料");
-    const query = new URLSearchParams({
-      library_id: resource.ref.library_id,
-      item_type: resource.ref.item_type,
-      item_id: resource.ref.item_id,
-    });
-    landing.href = resource.landing_path || `/hub/item?${query}`;
-    landing.target = "_blank";
-    landing.rel = "noopener";
-    controls.append(landing);
-  }
-  for (const action of state.actions[resource.resource_id] || []) {
-    controls.append(actionButton(action));
+  for (const action of actionsFor(resource)) controls.append(actionButton(action));
+  if (!controls.hasChildNodes()) {
+    controls.append(node("span", "action-diagnostic", "暂无可执行动作"));
   }
   footer.append(controls);
   card.append(footer);
   return card;
+}
+
+function fieldCard(field) {
+  const card = node("article", "card field-card");
+  const meta = node("div", "card-meta");
+  meta.append(node("span", "kind", "Field"));
+  meta.append(node("span", "", field.available === false ? "不可用" : "已登记"));
+  card.append(meta);
+  card.append(node("h3", "", field.title || "未命名 Field"));
+  const groupCount = Array.isArray(field.navigation) ? field.navigation.length : 0;
+  card.append(node(
+    "p",
+    "authors",
+    field.available === false
+      ? (field.detail || "Field 来源当前不可用")
+      : `${groupCount} 个导航分组 · 首页 ${field.home || "未设置"}`,
+  ));
+  const footer = node("div", "card-footer");
+  footer.append(node("span", "card-source", field.relative_root || "."));
+  const open = node("button", "preview-button", "打开 Field");
+  open.type = "button";
+  open.disabled = field.available === false;
+  open.addEventListener("click", () => {
+    selectInitialFieldDocument(field);
+    state.selectedField = field;
+    renderResources();
+    renderFieldDetail();
+    byId("field-detail").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  footer.append(open);
+  card.classList.toggle(
+    "selected",
+    state.selectedField?.ref?.entity_id === field.ref?.entity_id,
+  );
+  card.append(footer);
+  return card;
+}
+
+function selectInitialFieldDocument(field) {
+  if (!field || typeof field.home !== "string") return;
+  if (typeof field.selected_document_path === "string") return;
+  field.selected_document_path = field.home;
+  field.selected_document_content = field.home_content;
+  field.selected_document_revision = field.home_revision;
+}
+
+async function loadFieldDocument(field, relativePath) {
+  const fieldId = field?.field_id || field?.ref?.entity_id;
+  if (typeof fieldId !== "string" || typeof relativePath !== "string") return;
+  field.selected_document_path = relativePath;
+  field.selected_document_content = null;
+  field.selected_document_revision = null;
+  renderFieldDetail();
+  try {
+    const query = new URLSearchParams({ relative_path: relativePath });
+    const response = await fetch(
+      `/api/v3/fields/${encodeURIComponent(fieldId)}/documents?${query.toString()}`,
+      { credentials: "same-origin" },
+    );
+    if (!response.ok) throw new Error(await responseMessage(response));
+    const payload = await response.json();
+    if (state.selectedField !== field || field.selected_document_path !== relativePath) return;
+    field.selected_document_content = payload.content;
+    field.selected_document_revision = payload.revision;
+    if (relativePath === field.home) {
+      field.home_content = payload.content;
+      field.home_revision = payload.revision;
+    }
+    renderFieldDetail();
+  } catch (error) {
+    if (state.selectedField !== field || field.selected_document_path !== relativePath) return;
+    field.selected_document_content = `> 读取失败：${String(error.message || error)}`;
+    field.selected_document_revision = null;
+    renderFieldDetail();
+  }
 }
 
 function syncProjectOperationForm() {
@@ -722,21 +1166,23 @@ function syncProjectOperationForm() {
   byId("project-ops-artifact-row").hidden = kind !== "copy-knowledge";
   byId("project-ops-destination-row").hidden = !["copy", "copy-knowledge", "paste"].includes(kind);
   byId("project-ops-content-row").hidden = kind !== "paste";
+  byId("project-ops-artifact").disabled = state.artifacts.length === 0;
   byId("project-ops-submit").disabled = state.projectOps.submitting
-    || !state.directory?.operations?.bound;
+    || !capability("project_document_writes").available;
 }
 
 function openProjectOperations(project) {
-  if (!state.directory?.operations?.bound || !project.enabled || !project.docs_available) return;
+  if (!capability("project_document_writes").available
+      || !project.enabled || !project.docs_available) return;
   state.projectOps.project = project;
   state.projectOps.submitting = false;
-  byId("project-ops-project").textContent = `${project.display_name} · ${project.ref.item_id}`;
+  byId("project-ops-project").textContent = `${project.display_name} · ${project.project_id}`;
   byId("project-ops-source").value = "";
   byId("project-ops-destination").value = "";
   byId("project-ops-content").value = "";
   byId("project-ops-confirm").checked = false;
   byId("project-ops-status").textContent = "";
-  const artifacts = state.catalog.artifacts.filter(
+  const artifacts = state.artifacts.filter(
     (artifact) => ["markdown", "canvas"].includes(artifact.format),
   );
   byId("project-ops-artifact").replaceChildren(...artifacts.map((artifact) => {
@@ -751,7 +1197,8 @@ function openProjectOperations(project) {
 async function submitProjectOperation(event) {
   event.preventDefault();
   const project = state.projectOps.project;
-  if (!project || state.projectOps.submitting || !state.directory?.operations?.bound) return;
+  if (!project || state.projectOps.submitting
+      || !capability("project_document_writes").available) return;
   const operation = byId("project-ops-kind").value;
   const source = byId("project-ops-source").value.trim();
   const destination = byId("project-ops-destination").value.trim();
@@ -781,7 +1228,7 @@ async function submitProjectOperation(event) {
   syncProjectOperationForm();
   try {
     const response = await fetch(
-      `/api/v2/projects/${encodeURIComponent(project.ref.item_id)}/docs/${operation}`,
+      `/api/v3/projects/${encodeURIComponent(project.project_id)}/docs/${operation}`,
       {
         method: "POST",
         credentials: "same-origin",
@@ -795,7 +1242,8 @@ async function submitProjectOperation(event) {
     if (!response.ok) {
       if (response.status === 409 && payload?.code === "confirmation_required") {
         const gitState = payload.git_state ? `（Git: ${payload.git_state}）` : "";
-        byId("project-ops-status").textContent = `需要本次确认 ${gitState}：勾选确认框后重试。`;
+        byId("project-ops-status").textContent =
+          `需要本次确认 ${gitState}：勾选确认框后重试。`;
         byId("project-ops-confirm").focus();
         return;
       }
@@ -805,33 +1253,37 @@ async function submitProjectOperation(event) {
       ? `已移入 trash：${payload.trash_path}`
       : `操作完成：${payload?.destination_path || payload?.relative_path || "已写入"}`;
   } catch (error) {
-    byId("project-ops-status").textContent = `操作失败：${String(error.message || error)}`;
+    byId("project-ops-status").textContent =
+      `操作失败：${String(error.message || error)}`;
   } finally {
     state.projectOps.submitting = false;
     syncProjectOperationForm();
   }
 }
 
-function libraryCard(item) {
-  if (state.library === "papers") return resourceCard(item);
+function projectToolCard(item) {
   const card = node("article", "card");
   const meta = node("div", "card-meta");
-  const type = item.tool_type || "project";
-  meta.append(node("span", "kind", type.replaceAll("-", " ")));
+  const type = state.view === "projects" ? "Project" : (item.tool_type || "Tool");
+  meta.append(node("span", "kind", type));
   meta.append(node("span", "", item.enabled ? "已启用" : "已停用"));
   card.append(meta);
-  card.append(node("h3", "", item.display_name || item.ref.item_id));
-  const capabilities = (item.capabilities || []).join(" · ") || "尚未声明能力";
-  card.append(node("p", "authors", capabilities));
+  card.append(node("h3", "", item.display_name || item.project_id || item.tool_id));
+  const declared = (item.capabilities || []).join(" · ") || "尚未声明能力";
+  card.append(node("p", "authors", declared));
   const footer = node("div", "card-footer");
-  footer.append(node("span", "", item.source || item.ref.item_id));
-  if (state.library === "projects") {
-    footer.append(node("span", "", item.docs_available ? "docs 可用" : "docs 不可用"));
+  footer.append(node(
+    "span",
+    "card-source",
+    state.view === "projects" ? item.project_id : (item.source || item.tool_id),
+  ));
+  if (state.view === "projects") {
     const operations = node("button", "preview-button", "文档操作");
     operations.type = "button";
-    operations.disabled = !item.enabled || !item.docs_available || !state.directory?.operations?.bound;
+    operations.disabled = !item.enabled || !item.docs_available
+      || !capability("project_document_writes").available;
     operations.title = operations.disabled
-      ? (state.directory?.operations?.bound ? "项目 docs 当前不可用" : "绑定工作区后才可写入")
+      ? (capability("project_document_writes").reason || "项目 docs 当前不可用")
       : "复制、粘贴或移入可恢复 trash";
     operations.addEventListener("click", () => openProjectOperations(item));
     footer.append(operations);
@@ -840,44 +1292,321 @@ function libraryCard(item) {
   return card;
 }
 
+function libraryCard(item) {
+  if (state.view === "papers") return resourceCard(item);
+  if (state.view === "fields") return fieldCard(item);
+  return projectToolCard(item);
+}
+
 function renderResources() {
-  const source = state.library === "papers" && state.topic !== "all"
-    ? state.catalog.resources
-      .filter((resource) => resource.kind === "paper")
-      .map((resource) => {
-        const zotero = resource.zotero || {};
-        const itemId = zotero.item_key || resource.resource_id;
-        return {
-          ...resource,
-          attachment_key: zotero.attachment_key || null,
-          ref: { library_id: "papers", item_type: "paper", item_id: itemId },
-        };
-      })
-    : state.libraryItems;
   const normalizedQuery = state.query.trim().toLocaleLowerCase();
-  const resources = source.filter((resource) => {
-    const topicMatch = state.library !== "papers"
-      || state.topic === "all"
-      || (resource.topic_ids || []).includes(state.topic);
-    const queryMatch = !normalizedQuery
-      || JSON.stringify(resource).toLocaleLowerCase().includes(normalizedQuery);
-    return topicMatch && queryMatch;
-  });
+  const resources = state.libraryItems.filter((item) => (
+    !normalizedQuery
+    || JSON.stringify(item).toLocaleLowerCase().includes(normalizedQuery)
+  ));
   const grid = byId("resource-grid");
   grid.replaceChildren(...resources.map(libraryCard));
   byId("result-count").textContent = `${resources.length} 项`;
   byId("empty").hidden = resources.length !== 0;
 }
 
-function artifactMatchesTopic(artifact) {
-  if (state.topic === "all" || artifact.topic_id === state.topic) return true;
-  if (!artifact.resource_id) return false;
-  const resource = state.catalog.resources.find((row) => row.resource_id === artifact.resource_id);
-  return Boolean(resource && (resource.topic_ids || []).includes(state.topic));
+function fieldHomeArtifact(field) {
+  if (field?.home_artifact && typeof field.home_artifact === "object") {
+    return field.home_artifact;
+  }
+  const fieldId = field?.field_id || field?.ref?.entity_id;
+  selectInitialFieldDocument(field);
+  const relativePath = field?.selected_document_path;
+  const content = field?.selected_document_content;
+  const revision = field?.selected_document_revision;
+  if (typeof fieldId !== "string" || typeof relativePath !== "string"
+      || typeof content !== "string" || typeof revision !== "string") return null;
+  return {
+    artifact_id: `field:${fieldId}:${relativePath}`,
+    field_id: fieldId,
+    field_document: true,
+    relative_path: relativePath,
+    content,
+    revision,
+    title: `${field.title} · ${relativePath}`,
+    kind: "technical-document",
+    format: "markdown",
+    vault_path: relativePath,
+  };
+}
+
+function renderFieldDetail() {
+  const section = byId("field-detail");
+  const field = state.view === "fields" ? state.selectedField : null;
+  section.hidden = !field;
+  if (!field) return;
+  selectInitialFieldDocument(field);
+  const navigation = byId("field-navigation");
+  const groups = Array.isArray(field.navigation) ? field.navigation : [];
+  navigation.replaceChildren(...groups.map((group) => {
+    const wrapper = node("section", "field-navigation-group");
+    wrapper.append(node("h3", "", group.label || "导航"));
+    const list = node("ul");
+    for (const item of group.items || []) {
+      const entry = node("li");
+      const openDocument = node("button", "field-navigation-item", item);
+      openDocument.type = "button";
+      openDocument.classList.toggle("selected", field.selected_document_path === item);
+      openDocument.addEventListener("click", () => loadFieldDocument(field, item));
+      entry.append(openDocument);
+      list.append(entry);
+    }
+    wrapper.append(list);
+    return wrapper;
+  }));
+  if (!navigation.hasChildNodes()) {
+    navigation.append(node("p", "action-diagnostic", "该 Field 尚未声明导航分组"));
+  }
+
+  byId("field-document-title").textContent = field.title || "Field";
+  byId("field-document-path").textContent = field.selected_document_path || field.home || "";
+  const content = typeof field.selected_document_content === "string"
+    ? field.selected_document_content
+    : (field.detail ? `> ${field.detail}` : "正在读取文档…");
+  renderReadable(
+    byId("field-document-content"),
+    { format: "markdown" },
+    content,
+  );
+  const artifact = fieldHomeArtifact(field);
+  const edit = byId("field-document-edit");
+  edit.hidden = !artifact;
+  edit.disabled = !capability("vault_writes").available;
+  edit.title = edit.disabled ? (capability("vault_writes").reason || "Vault 保存不可用") : "";
+  edit.onclick = artifact ? () => showPreview(artifact) : null;
+}
+
+function syncFieldRegisterButton() {
+  const button = byId("field-register");
+  button.hidden = state.view !== "fields";
+  button.disabled = state.fieldRegistration.busy;
+}
+
+function previewListSection(title, values, tone = "") {
+  const section = node("section", `field-preview-section${tone ? ` ${tone}` : ""}`);
+  section.append(node("h3", "", title));
+  if (!Array.isArray(values) || values.length === 0) {
+    section.append(node("p", "action-diagnostic", "无"));
+    return section;
+  }
+  const list = node("ul");
+  for (const value of values) list.append(node("li", "", String(value)));
+  section.append(list);
+  return section;
+}
+
+function renderFieldRegistrationPreview() {
+  const target = byId("field-register-preview");
+  const preview = state.fieldRegistration.preview;
+  if (!preview) {
+    target.replaceChildren(node("p", "markdown-empty", "请在系统文件选择器中选择 Vault 或目录…"));
+    byId("field-register-confirm").disabled = true;
+    return;
+  }
+  const summary = node("div", "field-preview-summary");
+  summary.append(node(
+    "strong",
+    "",
+    preview.registration_only
+      ? "检测到可携带的 Field manifest；本机尚未登记 Source"
+      : (preview.existing_manifest ? "检测到现有 Field manifest" : "将创建 Field manifest"),
+  ));
+  summary.append(node(
+    "small",
+    "",
+    preview.registration_only
+      ? `确认后将在本机启用 manifest 已有的全部 ${preview.registered_fields?.length || 0} 个 Fields · source ${preview.source_id}`
+      : `${preview.fields?.length || 0} 个待初始化 · ${preview.registered_fields?.length || 0} 个已登记 · source ${preview.source_id}`,
+  ));
+  const fields = node("section", "field-preview-section");
+  fields.append(node("h3", "", "请选择本次要初始化的一个 Field"));
+  const fieldCards = node("div", "field-preview-candidates");
+  for (const field of preview.fields || []) {
+    const card = node("label", "field-preview-candidate selectable");
+    const input = node("input");
+    input.type = "radio";
+    input.name = "field-register-choice";
+    input.value = field.field_id;
+    input.checked = state.fieldRegistration.selectedFieldId === field.field_id;
+    input.addEventListener("change", () => {
+      state.fieldRegistration.selectedFieldId = field.field_id;
+      renderFieldRegistrationPreview();
+    });
+    const detail = node("span", "field-preview-candidate-detail");
+    detail.append(node("strong", "", field.title));
+    detail.append(node("small", "", `${field.relative_root} · 首页 ${field.home}`));
+    const groups = (field.navigation || []).map((group) => group.label).join(" · ");
+    detail.append(node("span", "", groups || "无导航分组"));
+    card.append(input, detail);
+    fieldCards.append(card);
+  }
+  if (!fieldCards.hasChildNodes()) {
+    fieldCards.append(node("p", "action-diagnostic", "没有找到可初始化的 Markdown Field"));
+  }
+  fields.append(fieldCards);
+  const registered = (preview.registered_fields || []).map((field) => (
+    `${field.title} · ${field.relative_root}`
+  ));
+  const selected = (preview.fields || []).find(
+    (field) => field.field_id === state.fieldRegistration.selectedFieldId,
+  );
+  const linkChanges = (preview.legacy_link_changes || []).filter((change) => (
+    preview.registration_only || (selected && (selected.relative_root === "."
+      || change.relative_path.startsWith(`${selected.relative_root}/`))
+    )
+  )).map((change) => (
+    `${change.relative_path} · ${change.occurrences} 处 · `
+    + `${change.attachment_key} → ${change.replacement}`
+  ));
+  target.replaceChildren(
+    summary,
+    ...(preview.registration_only ? [] : [fields]),
+    previewListSection(
+      preview.registration_only
+        ? "现有 manifest 的全部 Fields（确认后在本机可见，文件不修改）"
+        : "已登记 Fields（本次不会修改）",
+      registered,
+    ),
+    previewListSection("冲突", preview.conflicts, "error"),
+    previewListSection("将发生的模板变更", preview.template_changes),
+    previewListSection("未映射 Markdown", preview.unmapped_markdown),
+    previewListSection(
+      preview.registration_only
+        ? "现有 Source 的旧 23128 链接（本次不改写）"
+        : "所选 Field 的旧 23128 链接（本次不改写）",
+      linkChanges,
+    ),
+    previewListSection("忽略文件", preview.ignored_files),
+  );
+  const confirm = byId("field-register-confirm");
+  confirm.textContent = preview.registration_only
+    ? `登记现有 Source（${preview.registered_fields?.length || 0} 个 Fields）`
+    : "初始化所选 Field";
+  confirm.disabled = state.fieldRegistration.busy || !preview.candidate_token
+    || (!preview.registration_only && !selected)
+    || (preview.conflicts || []).length !== 0;
+}
+
+function setFieldRegistrationStatus(message, tone = "") {
+  const status = byId("field-register-status");
+  status.textContent = message;
+  status.className = `preview-status${tone ? ` ${tone}` : ""}`;
+}
+
+async function openFieldRegistration() {
+  if (state.fieldRegistration.busy) return;
+  const dialog = byId("field-register-dialog");
+  state.fieldRegistration = { preview: null, busy: true, selectedFieldId: null };
+  syncFieldRegisterButton();
+  renderFieldRegistrationPreview();
+  setFieldRegistrationStatus("正在等待系统文件选择器…");
+  if (!dialog.open) dialog.showModal();
+  try {
+    const response = await fetch("/api/v3/fields/select", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: stateChangingHeaders(),
+      body: "{}",
+    });
+    if (!response.ok) throw new Error(await responseMessage(response));
+    const payload = await response.json();
+    state.fieldRegistration.preview = payload.preview;
+    setFieldRegistrationStatus(
+      payload.preview.registration_only
+        ? "预览未写入所选目录；确认后只登记本机 Source，原 manifest 与全部 Field ID 保持不变。"
+        : "预览不会写入所选目录；请选择一个 Field 后确认。",
+      "success",
+    );
+  } catch (error) {
+    setFieldRegistrationStatus(`无法生成预览：${String(error.message || error)}`, "error");
+  } finally {
+    state.fieldRegistration.busy = false;
+    syncFieldRegisterButton();
+    renderFieldRegistrationPreview();
+  }
+}
+
+async function confirmFieldRegistration() {
+  const preview = state.fieldRegistration.preview;
+  const fieldId = state.fieldRegistration.selectedFieldId;
+  const registerExistingSource = preview?.registration_only === true;
+  if (!preview?.candidate_token || state.fieldRegistration.busy
+      || (!registerExistingSource && (!fieldId
+        || !(preview.fields || []).some((field) => field.field_id === fieldId)))
+      || (preview.conflicts || []).length !== 0) return;
+  state.fieldRegistration.busy = true;
+  syncFieldRegisterButton();
+  renderFieldRegistrationPreview();
+  setFieldRegistrationStatus(
+    registerExistingSource ? "正在登记现有 Source；不会改写 manifest…" : "正在初始化选定的一个 Field…",
+  );
+  let confirmationAccepted = false;
+  try {
+    const response = await fetch("/api/v3/fields/confirm", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: stateChangingHeaders(),
+      body: JSON.stringify(registerExistingSource
+        ? { candidate_token: preview.candidate_token, source_id: preview.source_id }
+        : { candidate_token: preview.candidate_token, field_id: fieldId }),
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      const error = new Error(payload?.error || `HTTP ${response.status}`);
+      error.commitUncertain = payload?.code === "field_registration_commit_uncertain";
+      throw error;
+    }
+    confirmationAccepted = true;
+    await response.json();
+    const directoryResponse = await fetch(directoryEndpoint(), { credentials: "same-origin" });
+    if (!directoryResponse.ok) throw new Error(await responseMessage(directoryResponse));
+    state.directory = await directoryResponse.json();
+    await loadLibraryPage(true);
+    const fields = descriptorFor("fields");
+    byId("field-count").textContent = String(fields?.total_count || 0);
+    renderCapabilities();
+    renderLibraries();
+    renderResources();
+    renderFieldDetail();
+    state.fieldRegistration.preview = null;
+    state.fieldRegistration.selectedFieldId = null;
+    setFieldRegistrationStatus(
+      registerExistingSource
+        ? "现有 Source 已在本机登记；全部原有 Fields 可见，manifest 未改动。"
+        : "所选 Field 已初始化；其他候选未改变。",
+      "success",
+    );
+    window.setTimeout(() => byId("field-register-dialog").close(), 600);
+  } catch (error) {
+    state.fieldRegistration.preview = null;
+    state.fieldRegistration.selectedFieldId = null;
+    const detail = String(error.message || error);
+    if (confirmationAccepted) {
+      setFieldRegistrationStatus(
+        `登记已成功，但列表刷新失败：${detail}。请重载 Hub 页面查看，不要重复确认。`, "error",
+      );
+    } else if (error.commitUncertain) {
+      setFieldRegistrationStatus(
+        `登记状态尚不能确认：${detail}。请先重载并检查 Fields，勿立即重试。`, "error",
+      );
+    } else {
+      setFieldRegistrationStatus(`登记失败：${detail}。请关闭后重新选择并预览。`, "error");
+    }
+  } finally {
+    state.fieldRegistration.busy = false;
+    syncFieldRegisterButton();
+    renderFieldRegistrationPreview();
+  }
 }
 
 async function showPreview(artifact) {
   const dialog = byId("preview-dialog");
+  const isFieldDocument = artifact.field_document === true;
   const requestId = state.preview.requestId + 1;
   if (previewRenderFrame !== null) {
     window.cancelAnimationFrame(previewRenderFrame);
@@ -885,21 +1614,26 @@ async function showPreview(artifact) {
   }
   state.preview = {
     artifact,
-    content: null,
-    revision: null,
+    content: isFieldDocument ? artifact.content : null,
+    revision: isFieldDocument ? artifact.revision : null,
     mode: "read",
     dirty: false,
     saving: false,
     assets: [],
-    assetsLoading: true,
+    assetsLoading: !isFieldDocument,
     uploading: false,
     requestId,
   };
-  byId("preview-title").textContent = artifactLabel(artifact.kind);
+  dialog.classList.toggle("field-document-preview", isFieldDocument);
+  byId("preview-title").textContent = artifact.title || artifactLabel(artifact.kind);
   byId("preview-path").textContent = artifact.vault_path;
-  byId("preview-content").replaceChildren(
-    node("p", "markdown-empty", "正在读取 Vault 文件…"),
-  );
+  if (isFieldDocument) {
+    renderReadable(byId("preview-content"), artifact, artifact.content);
+  } else {
+    byId("preview-content").replaceChildren(
+      node("p", "markdown-empty", "正在读取 Vault 文件…"),
+    );
+  }
   byId("preview-live-content").replaceChildren();
   byId("preview-editor").value = "";
   byId("attachment-count").textContent = "0";
@@ -908,6 +1642,7 @@ async function showPreview(artifact) {
   setPreviewStatus("");
   syncPreviewControls();
   if (!dialog.open) dialog.showModal();
+  if (isFieldDocument) return;
   loadAttachments(artifact, requestId);
   try {
     const response = await fetch(
@@ -944,12 +1679,13 @@ function syncPreviewControls() {
   byId("preview-edit").hidden = editing;
   byId("preview-save").hidden = !editing;
   byId("preview-cancel").hidden = !editing;
-  const readOnly = !state.directory?.operations?.bound;
-  byId("preview-edit").disabled = state.preview.content === null || readOnly;
+  const vaultWrites = capability("vault_writes").available;
+  byId("preview-edit").disabled = state.preview.content === null || !vaultWrites;
   byId("preview-save").disabled = !state.preview.dirty || state.preview.saving;
   byId("preview-cancel").disabled = state.preview.saving;
   const upload = byId("attachment-upload");
-  upload.disabled = readOnly || state.preview.uploading || state.preview.artifact === null;
+  upload.disabled = !vaultWrites || state.preview.uploading
+    || state.preview.artifact === null || state.preview.artifact.field_document === true;
   byId("attachment-upload-label").classList.toggle("disabled", upload.disabled);
   renderAttachments();
 }
@@ -1007,13 +1743,24 @@ async function savePreview() {
   setPreviewStatus("正在保存…");
   syncPreviewControls();
   try {
+    const fieldDocument = artifact.field_document === true;
+    const endpoint = fieldDocument
+      ? `/api/v3/fields/${encodeURIComponent(artifact.field_id)}/documents`
+      : `/api/v1/artifacts/${encodeURIComponent(artifact.artifact_id)}/content`;
+    const requestBody = fieldDocument
+      ? {
+        relative_path: artifact.relative_path,
+        content: proposed,
+        base_revision: state.preview.revision,
+      }
+      : { content: proposed, base_revision: state.preview.revision };
     const response = await fetch(
-      `/api/v1/artifacts/${encodeURIComponent(artifact.artifact_id)}/content`,
+      endpoint,
       {
         method: "PUT",
         credentials: "same-origin",
         headers: stateChangingHeaders(),
-        body: JSON.stringify({ content: proposed, base_revision: state.preview.revision }),
+        body: JSON.stringify(requestBody),
       },
     );
     if (response.status === 409) {
@@ -1022,12 +1769,31 @@ async function savePreview() {
     }
     if (!response.ok) throw new Error(await responseMessage(response));
     const payload = await response.json();
-    state.preview.content = payload.content;
+    const savedContent = typeof payload.content === "string" ? payload.content : proposed;
+    state.preview.content = savedContent;
     state.preview.revision = payload.revision;
     state.preview.mode = "read";
     state.preview.dirty = false;
-    renderReadable(byId("preview-content"), artifact, payload.content);
-    byId("preview-editor").value = payload.content;
+    renderReadable(byId("preview-content"), artifact, savedContent);
+    byId("preview-editor").value = savedContent;
+    if (fieldDocument) {
+      const field = state.libraryItems.find((item) => (
+        (item.field_id || item.ref?.entity_id) === artifact.field_id
+      ));
+      if (field) {
+        field.selected_document_path = artifact.relative_path;
+        field.selected_document_content = savedContent;
+        field.selected_document_revision = payload.revision;
+        if (artifact.relative_path === field.home) {
+          field.home_content = savedContent;
+          field.home_revision = payload.revision;
+        }
+        artifact.content = savedContent;
+        artifact.revision = payload.revision;
+        state.selectedField = field;
+        renderFieldDetail();
+      }
+    }
     setPreviewStatus("已保存", "success");
     setAttachmentStatus("");
   } catch (error) {
@@ -1158,161 +1924,141 @@ async function uploadAttachments(files) {
   }
 }
 
-function renderArtifacts() {
-  const showDocuments = state.library === "papers";
-  byId("document-heading").hidden = !showDocuments;
-  byId("artifact-list").hidden = !showDocuments;
-  if (!showDocuments) return;
-  const query = state.query.trim().toLocaleLowerCase();
-  const artifacts = state.catalog.artifacts.filter((artifact) => {
-    const searchable = `${artifact.kind} ${artifact.vault_path} ${artifact.artifact_id}`.toLocaleLowerCase();
-    return artifactMatchesTopic(artifact) && (!query || searchable.includes(query));
-  });
-  const list = byId("artifact-list");
-  list.replaceChildren(...artifacts.map((artifact) => {
-    const row = node("article", "artifact-row");
-    const copy = node("div", "artifact-copy");
-    copy.append(node("strong", "", artifactLabel(artifact.kind)));
-    copy.append(node("small", "", artifact.vault_path));
-    const controls = node("div", "artifact-controls");
-    if (["markdown", "canvas"].includes(artifact.format)) {
-      const preview = node("button", "preview-button", "阅读");
-      preview.type = "button";
-      preview.addEventListener("click", () => showPreview(artifact));
-      controls.append(preview);
-      const landing = node("a", "preview-button", "稳定入口");
-      landing.href = `/hub/item?${new URLSearchParams({
-        library_id: "knowledge",
-        item_type: "artifact",
-        item_id: artifact.artifact_id,
-      })}`;
-      landing.target = "_blank";
-      landing.rel = "noopener";
-      controls.append(landing);
-    }
-    for (const action of state.actions[artifact.artifact_id] || []) {
-      controls.append(actionButton(action));
-    }
-    row.append(copy, controls);
-    return row;
-  }));
-  byId("document-count").textContent = `${artifacts.length} 个文档`;
-}
-
 async function boot() {
   try {
-    const [directoryResponse, actionsResponse, sessionResponse, workspacesResponse] = await Promise.all([
-      fetch(directoryEndpoint(), { credentials: "same-origin" }),
-      fetch("/api/v1/actions", { credentials: "same-origin" }),
-      fetch("/api/v1/session", { credentials: "same-origin" }),
-      fetch(workspaceEndpoint(), { credentials: "same-origin" }),
-    ]);
+    const [directoryResponse, actionsResponse, sessionResponse, destinationsResponse] =
+      await Promise.all([
+        fetch(directoryEndpoint(), { credentials: "same-origin" }),
+        fetch("/api/v3/actions", { credentials: "same-origin" }),
+        fetch("/api/v1/session", { credentials: "same-origin" }),
+        fetch(destinationsEndpoint(), { credentials: "same-origin" }),
+        loadTaskSurface(),
+      ]);
     if (!directoryResponse.ok || !actionsResponse.ok || !sessionResponse.ok) {
-      throw new Error("Hub API 暂时不可用");
+      throw new Error("Hub v3 API 暂时不可用");
     }
     state.directory = await directoryResponse.json();
-    state.catalog = state.directory.knowledge_catalog;
-    state.actions = await actionsResponse.json();
+    if (state.directory.schema_version !== 3) {
+      throw new Error("HubDirectory 不是 schema 3");
+    }
+    const actionPayload = await actionsResponse.json();
+    state.actions = actionPayload.actions || actionPayload;
     state.csrfToken = (await sessionResponse.json()).csrf_token;
-    syncLibraryQueryControls();
-    if (workspacesResponse.ok) {
-      applyWorkspaceListing(await workspacesResponse.json());
+    if (destinationsResponse.ok) {
+      applyDestinations(await destinationsResponse.json());
     } else {
-      applyWorkspaceListing({
-        capabilities: { workspace_actions: false },
-        workspaces: [],
-        capability_error: `cmux 工作区接口不可用（HTTP ${workspacesResponse.status}）`,
+      applyDestinations({
+        destinations: [],
+        capability_error: `cmux 打开位置不可用（HTTP ${destinationsResponse.status}）`,
       });
     }
-    try {
-      await bindSelectedWorkspace();
-    } catch (error) {
-      state.cmux.capabilityError = `工作区绑定失败：${String(error.message || error)}`;
-      applyWorkspaceListing({
-        capabilities: state.cmux.capabilities,
-        workspaces: state.cmux.workspaces,
-        capability_error: state.cmux.capabilityError,
-      });
-    }
+    syncLibraryQueryControls();
     await loadLibraryPage(true);
-    const papers = state.directory.libraries.find((library) => library.library_id === "papers");
+    const papers = descriptorFor("papers");
+    const fields = descriptorFor("fields");
     byId("paper-count").textContent = String(papers?.total_count || 0);
-    byId("topic-count").textContent = String(state.catalog.topics.length);
-    byId("artifact-count").textContent = String(state.catalog.artifacts.length);
-    byId("revision").textContent = `快照 ${state.catalog.revision.slice(0, 18)}…`;
-    syncOperationStatus();
+    byId("field-count").textContent = String(fields?.total_count || 0);
+    byId("project-count").textContent = String(state.directory.projects?.length || 0);
+    byId("tool-count").textContent = String(state.directory.tools?.length || 0);
+    byId("revision").textContent = "HubDirectory schema 3 · 实时 provider 投影";
+    renderCapabilities();
     renderLibraries();
-    renderTopics();
     renderHubActions();
     renderResources();
-    renderArtifacts();
-    const requestedArtifact = new URLSearchParams(window.location.search).get("artifact");
-    if (
-      requestedArtifact
-      && requestedArtifact.length <= 256
-      && ![...requestedArtifact].some((character) => character.charCodeAt(0) < 32)
-    ) {
-      const artifact = state.catalog.artifacts.find(
-        (entry) => entry.artifact_id === requestedArtifact,
-      );
-      if (artifact && ["markdown", "canvas"].includes(artifact.format)) {
-        await showPreview(artifact);
-      }
-    }
+    renderFieldDetail();
+    syncFieldRegisterButton();
+    renderTaskPanel();
   } catch (error) {
-    applyWorkspaceListing({
-      capabilities: { workspace_actions: false },
-      workspaces: [],
-      capability_error: "cmux 工作区暂不可用",
+    applyDestinations({
+      destinations: [],
+      capability_error: "cmux 打开位置暂不可用",
     });
-    byId("revision").textContent = "Hub 暂时无法读取目录";
+    byId("revision").textContent = "Hub 暂时无法读取 v3 目录";
     byId("empty").hidden = false;
     byId("empty").querySelector("p").textContent = String(error);
+    renderTaskPanel();
   }
 }
 
-document.querySelector('[data-view="all"]').addEventListener("click", () => selectTopic("all"));
+for (const button of document.querySelectorAll("[data-view]")) {
+  button.addEventListener("click", () => selectView(button.dataset.view));
+}
 let librarySearchTimer = null;
 byId("search").addEventListener("input", (event) => {
   state.query = event.target.value;
   if (librarySearchTimer !== null) window.clearTimeout(librarySearchTimer);
   librarySearchTimer = window.setTimeout(async () => {
-    await loadLibraryPage(true);
+    if (isDocumentLibrary()) await loadLibraryPage(true);
     renderResources();
-    renderArtifacts();
+    renderFieldDetail();
   }, 250);
 });
 byId("library-sort").addEventListener("change", async (event) => {
   state.librarySort = event.target.value;
   await loadLibraryPage(true);
   renderResources();
+  renderFieldDetail();
 });
 byId("library-direction").addEventListener("change", async (event) => {
   state.libraryDirection = event.target.value;
   await loadLibraryPage(true);
   renderResources();
+  renderFieldDetail();
 });
 byId("library-type").addEventListener("change", async (event) => {
   state.libraryItemType = event.target.value;
   await loadLibraryPage(true);
   renderResources();
+  renderFieldDetail();
 });
-byId("workspace-select").addEventListener("change", async (event) => {
-  state.cmux.selectedWorkspaceId = event.target.value || null;
-  try {
-    await bindSelectedWorkspace();
-  } catch (error) {
-    state.directory.operations.bound = false;
-    state.cmux.capabilityError = `工作区绑定失败：${String(error.message || error)}`;
-    syncOperationStatus();
-  }
+byId("workspace-select").addEventListener("change", (event) => {
+  state.destinations.selectedId = event.target.value || null;
   renderHubActions();
   renderResources();
-  renderArtifacts();
+  setTaskStatus(null);
+  renderTaskPanel();
+});
+byId("task-action").addEventListener("change", (event) => {
+  state.tasks.selectedActionId = event.target.value || null;
+  state.tasks.selectedTargetId = null;
+  state.tasks.selectedEffort = null;
+  setTaskStatus(null);
+  renderTaskPanel();
+});
+byId("task-target").addEventListener("change", (event) => {
+  state.tasks.selectedTargetId = event.target.value || null;
+  setTaskStatus(null);
+  renderTaskPanel();
+});
+byId("task-effort").addEventListener("change", (event) => {
+  state.tasks.selectedEffort = event.target.value || null;
+  setTaskStatus(null);
+  renderTaskPanel();
+});
+byId("task-brief").addEventListener("input", () => {
+  setTaskStatus(null);
+  renderTaskPanel();
+});
+byId("task-form").addEventListener("submit", submitTask);
+byId("field-register").addEventListener("click", openFieldRegistration);
+byId("field-register-confirm").addEventListener("click", confirmFieldRegistration);
+for (const id of ["field-register-close", "field-register-cancel"]) {
+  byId(id).addEventListener("click", () => {
+    if (!state.fieldRegistration.busy) byId("field-register-dialog").close();
+  });
+}
+byId("field-register-dialog").addEventListener("cancel", (event) => {
+  if (state.fieldRegistration.busy) event.preventDefault();
+});
+byId("field-register-dialog").addEventListener("close", () => {
+  state.fieldRegistration.preview = null;
+  setFieldRegistrationStatus("");
+  renderFieldRegistrationPreview();
 });
 byId("load-more").addEventListener("click", async () => {
   await loadLibraryPage(false);
   renderResources();
+  renderFieldDetail();
 });
 byId("preview-edit").addEventListener("click", beginEditing);
 byId("preview-save").addEventListener("click", savePreview);
@@ -1339,6 +2085,7 @@ byId("preview-dialog").addEventListener("close", () => {
   }
   state.preview.requestId += 1;
   state.preview.artifact = null;
+  byId("preview-dialog").classList.remove("field-document-preview");
 });
 byId("project-ops-kind").addEventListener("change", syncProjectOperationForm);
 byId("project-ops-form").addEventListener("submit", submitProjectOperation);

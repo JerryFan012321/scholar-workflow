@@ -5,12 +5,13 @@ import subprocess
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-import pytest
 from click.testing import CliRunner
 
 from scholar_workflow import cli
 from scholar_workflow.cli import main
+from scholar_workflow.hub import lifecycle
 from scholar_workflow.hub.actions import CmuxUnavailable
+from scholar_workflow.hub.cmux import CmuxControl
 
 
 def _configured_home(tmp_path: Path, *, port: int = 24680) -> Path:
@@ -44,20 +45,87 @@ def _completed(returncode: int = 0, stderr: str = "") -> subprocess.CompletedPro
     return subprocess.CompletedProcess([], returncode, stdout="", stderr=stderr)
 
 
+def test_cmux_terminal_worker_uses_server_owned_command_and_target_cwd(tmp_path):
+    cmux = tmp_path / "cmux"
+    cmux.write_text("", encoding="utf-8")
+    cmux.chmod(0o755)
+    target = tmp_path / "registered-target"
+    target.mkdir()
+    calls: list[tuple[list[str], dict[str, object]]] = []
+
+    def runner(argv, **kwargs):
+        calls.append((argv, kwargs))
+        return _completed()
+
+    control = CmuxControl(configured_path=cmux, runner=runner)
+    control.new_terminal_worker(
+        workspace_id="workspace:7",
+        working_directory=target,
+        command="/installed/python -m scholar_workflow.hub.terminal_worker --slot slot_A",
+    )
+
+    assert len(calls) == 1
+    argv, kwargs = calls[0]
+    assert argv == [
+        str(cmux),
+        "new-surface",
+        "--type",
+        "terminal",
+        "--working-directory",
+        str(target.resolve()),
+        "--workspace",
+        "workspace:7",
+        "--command",
+        "/installed/python -m scholar_workflow.hub.terminal_worker --slot slot_A",
+        "--focus",
+        "true",
+    ]
+    assert kwargs["shell"] is False
+    assert kwargs["check"] is False
+    assert kwargs["capture_output"] is True
+    assert kwargs["text"] is True
+
+
+def _managed_record(tmp_path: Path, *, port: int = 45678):
+    return lifecycle.HubDiscoveryRecord(
+        schema_version=1,
+        service_name="scholar-workflow-hub",
+        pid=4242,
+        port=port,
+        executable="/installed/python",
+        package_version="0.29.0",
+        build_hash="sha256:" + "a" * 64,
+        protocol_version=3,
+        service_generation="service_1234567890abcdef",
+        started_at="2026-09-23T00:00:00Z",
+        log_path=str((tmp_path / "hub.log").resolve()),
+    )
+
+
+def _use_managed_record(monkeypatch, record):
+    monkeypatch.setattr(
+        lifecycle,
+        "HubServiceManager",
+        lambda: type("Manager", (), {"ensure_running": lambda self: record})(),
+    )
+
+
 def test_open_hub_uses_exact_cmux_argv_and_no_shell(tmp_path, monkeypatch):
     home = _configured_home(tmp_path)
+    record = _managed_record(tmp_path)
+    _use_managed_record(monkeypatch, record)
     cmux = tmp_path / "cmux"
     cmux.write_text("", encoding="utf-8")
     cmux.chmod(0o755)
     calls: list[tuple[list[str], dict[str, object]]] = []
-    probes: list[int] = []
-    bindings: list[tuple[int, str]] = []
-
-    monkeypatch.setattr(cli, "_probe_hub_health", lambda port: probes.append(port))
+    destinations: list[tuple[int, str, str]] = []
     monkeypatch.setattr(
         cli,
-        "_wait_for_hub_binding",
-        lambda port, instance: bindings.append((port, instance)),
+        "_register_default_destination",
+        lambda port, instance, workspace: destinations.append(
+            (port, instance, workspace)
+        )
+        or True,
     )
     monkeypatch.setattr(cli, "_resolve_cmux_executable", lambda: cmux)
 
@@ -73,12 +141,11 @@ def test_open_hub_uses_exact_cmux_argv_and_no_shell(tmp_path, monkeypatch):
     )
 
     expected_url = (
-        "http://127.0.0.1:24680/hub/?instance=instance_A234567890abcdef"
+        "http://127.0.0.1:45678/hub/?instance=instance_A234567890abcdef"
     )
     assert result.exit_code == 0, result.output
-    assert probes == [24680]
-    assert bindings == [(24680, "instance_A234567890abcdef")]
-    assert "opened and bound" in result.output
+    assert destinations == [(45678, "instance_A234567890abcdef", "workspace:7")]
+    assert "default opening place" in result.output
     assert len(calls) == 1
     argv, kwargs = calls[0]
     assert argv == [
@@ -103,13 +170,17 @@ def test_open_hub_uses_exact_cmux_argv_and_no_shell(tmp_path, monkeypatch):
 
 def test_open_hub_generates_a_url_safe_opaque_instance(tmp_path, monkeypatch):
     home = _configured_home(tmp_path)
+    record = _managed_record(tmp_path)
+    _use_managed_record(monkeypatch, record)
     calls: list[list[str]] = []
-    bindings: list[tuple[int, str]] = []
-    monkeypatch.setattr(cli, "_probe_hub_health", lambda _port: None)
+    destinations: list[tuple[int, str, str]] = []
     monkeypatch.setattr(
         cli,
-        "_wait_for_hub_binding",
-        lambda port, instance: bindings.append((port, instance)),
+        "_register_default_destination",
+        lambda port, instance, workspace: destinations.append(
+            (port, instance, workspace)
+        )
+        or True,
     )
     monkeypatch.setattr(cli, "_resolve_cmux_executable", lambda: Path("/safe/cmux"))
 
@@ -125,90 +196,15 @@ def test_open_hub_generates_a_url_safe_opaque_instance(tmp_path, monkeypatch):
     instance = parse_qs(parsed.query)["instance"][0]
     assert parsed.scheme == "http"
     assert parsed.hostname == "127.0.0.1"
-    assert parsed.port == 24680
+    assert parsed.port == 45678
     assert parsed.path == "/hub/"
     assert instance.startswith("hub_")
     assert len(instance) >= 24
     assert all(char.isalnum() or char in "_-" for char in instance)
-    assert bindings == [(24680, instance)]
+    assert destinations == [(45678, instance, "workspace:7")]
 
 
-def test_wait_for_hub_binding_polls_until_browser_reports_bound(monkeypatch):
-    payloads = [
-        b'{"bound":false}',
-        b'{"bound":true}',
-    ]
-    paths: list[str] = []
-
-    class Response:
-        status = 200
-
-        def read(self, _limit):
-            return payloads.pop(0)
-
-    class Connection:
-        def __init__(self, host: str, port: int, timeout: float) -> None:
-            assert (host, port, timeout) == ("127.0.0.1", 23128, 1.0)
-
-        def request(self, method: str, path: str) -> None:
-            assert method == "GET"
-            paths.append(path)
-
-        @staticmethod
-        def getresponse():
-            return Response()
-
-        @staticmethod
-        def close() -> None:
-            pass
-
-    ticks = iter([0.0, 0.0, 0.1])
-    monkeypatch.setattr(cli.http.client, "HTTPConnection", Connection)
-    monkeypatch.setattr(cli.time, "monotonic", lambda: next(ticks))
-    monkeypatch.setattr(cli.time, "sleep", lambda _seconds: None)
-
-    cli._wait_for_hub_binding(23128, "instance_A234567890abcdef")
-
-    assert paths == [
-        "/api/v2/workspaces/status?instance=instance_A234567890abcdef",
-        "/api/v2/workspaces/status?instance=instance_A234567890abcdef",
-    ]
-
-
-def test_wait_for_hub_binding_fails_when_browser_never_binds(monkeypatch):
-    class Response:
-        status = 200
-
-        @staticmethod
-        def read(_limit):
-            return b'{"bound":false}'
-
-    class Connection:
-        def __init__(self, *_args, **_kwargs) -> None:
-            pass
-
-        @staticmethod
-        def request(_method: str, _path: str) -> None:
-            pass
-
-        @staticmethod
-        def getresponse():
-            return Response()
-
-        @staticmethod
-        def close() -> None:
-            pass
-
-    ticks = iter([0.0, 0.0, 8.0])
-    monkeypatch.setattr(cli.http.client, "HTTPConnection", Connection)
-    monkeypatch.setattr(cli.time, "monotonic", lambda: next(ticks))
-    monkeypatch.setattr(cli.time, "sleep", lambda _seconds: None)
-
-    with pytest.raises(cli.ExternalServiceError, match="did not complete"):
-        cli._wait_for_hub_binding(23128, "instance_A234567890abcdef")
-
-
-def test_serve_hub_canary_routes_to_ephemeral_read_only_mode(monkeypatch):
+def test_serve_hub_canary_routes_to_ephemeral_mode(monkeypatch):
     calls = []
     monkeypatch.setattr(
         cli,
@@ -222,13 +218,12 @@ def test_serve_hub_canary_routes_to_ephemeral_read_only_mode(monkeypatch):
     assert calls == [{"port_override": 0, "canary": True}]
 
 
-def test_open_hub_requires_a_cmux_runtime_context(tmp_path, monkeypatch):
+def test_open_hub_outside_cmux_remains_readable(tmp_path, monkeypatch):
     home = _configured_home(tmp_path)
-    monkeypatch.setattr(
-        cli,
-        "_probe_hub_health",
-        lambda _port: (_ for _ in ()).throw(AssertionError("must not probe")),
-    )
+    record = _managed_record(tmp_path)
+    _use_managed_record(monkeypatch, record)
+    opened: list[str] = []
+    monkeypatch.setattr(cli.webbrowser, "open", lambda url, new=0: opened.append(url) or True)
 
     result = CliRunner().invoke(
         main,
@@ -240,27 +235,28 @@ def test_open_hub_requires_a_cmux_runtime_context(tmp_path, monkeypatch):
         },
     )
 
-    assert result.exit_code == 3
-    assert "inside a cmux workspace" in result.output
+    assert result.exit_code == 0, result.output
+    assert len(opened) == 1
+    assert opened[0].startswith("http://127.0.0.1:45678/hub/?instance=hub_")
+    assert "choose a cmux destination" in result.output
 
 
-def test_open_hub_reports_stopped_hub_without_starting_it(tmp_path, monkeypatch):
+def test_open_hub_starts_managed_service_automatically(tmp_path, monkeypatch):
     home = _configured_home(tmp_path)
+    record = _managed_record(tmp_path)
+    starts: list[bool] = []
+    monkeypatch.setattr(
+        lifecycle,
+        "HubServiceManager",
+        lambda: type(
+            "Manager",
+            (),
+            {"ensure_running": lambda self: starts.append(True) or record},
+        )(),
+    )
     calls: list[list[str]] = []
-    health_calls: list[tuple[str, int, float]] = []
-
-    class UnavailableConnection:
-        def __init__(self, host: str, port: int, timeout: float) -> None:
-            health_calls.append((host, port, timeout))
-
-        def request(self, method: str, path: str) -> None:
-            assert (method, path) == ("GET", "/api/v1/health")
-            raise ConnectionRefusedError
-
-        def close(self) -> None:
-            pass
-
-    monkeypatch.setattr(cli.http.client, "HTTPConnection", UnavailableConnection)
+    monkeypatch.setattr(cli, "_register_default_destination", lambda *_args: True)
+    monkeypatch.setattr(cli, "_resolve_cmux_executable", lambda: Path("/safe/cmux"))
     monkeypatch.setattr(
         cli.subprocess,
         "run",
@@ -269,78 +265,15 @@ def test_open_hub_reports_stopped_hub_without_starting_it(tmp_path, monkeypatch)
 
     result = CliRunner().invoke(main, ["open-hub"], env=_cmux_env(home))
 
-    assert result.exit_code == 3
-    assert "serve-hub" in result.output
-    assert health_calls == [("127.0.0.1", 24680, 1.5)]
-    assert calls == []
-
-
-def test_health_probe_rejects_an_old_hub_without_cmux_capability(monkeypatch):
-    class OldResponse:
-        status = 200
-
-        @staticmethod
-        def read(_limit):
-            return b'{"status":"ok","schema_version":1}'
-
-    class OldHubConnection:
-        def __init__(self, host: str, port: int, timeout: float) -> None:
-            assert (host, port, timeout) == ("127.0.0.1", 23128, 1.5)
-
-        @staticmethod
-        def request(method: str, path: str) -> None:
-            assert (method, path) == ("GET", "/api/v1/health")
-
-        @staticmethod
-        def getresponse():
-            return OldResponse()
-
-        @staticmethod
-        def close() -> None:
-            pass
-
-    monkeypatch.setattr(cli.http.client, "HTTPConnection", OldHubConnection)
-
-    with pytest.raises(cli.DependencyError, match="Restart it"):
-        cli._probe_hub_health(23128)
-
-
-def test_health_probe_rejects_pre_0281_hub_without_verified_binding(monkeypatch):
-    class PreviousResponse:
-        status = 200
-
-        @staticmethod
-        def read(_limit):
-            return (
-                b'{"status":"ok","schema_version":1,'
-                b'"capabilities":["cmux-workspace-actions-v1"]}'
-            )
-
-    class PreviousHubConnection:
-        def __init__(self, host: str, port: int, timeout: float) -> None:
-            assert (host, port, timeout) == ("127.0.0.1", 23128, 1.5)
-
-        @staticmethod
-        def request(method: str, path: str) -> None:
-            assert (method, path) == ("GET", "/api/v1/health")
-
-        @staticmethod
-        def getresponse():
-            return PreviousResponse()
-
-        @staticmethod
-        def close() -> None:
-            pass
-
-    monkeypatch.setattr(cli.http.client, "HTTPConnection", PreviousHubConnection)
-
-    with pytest.raises(cli.DependencyError, match="verified workspace binding"):
-        cli._probe_hub_health(23128)
+    assert result.exit_code == 0, result.output
+    assert starts == [True]
+    assert calls[0][2].startswith("http://127.0.0.1:45678/hub/")
 
 
 def test_open_hub_maps_missing_cmux_to_dependency_error(tmp_path, monkeypatch):
     home = _configured_home(tmp_path)
-    monkeypatch.setattr(cli, "_probe_hub_health", lambda _port: None)
+    _use_managed_record(monkeypatch, _managed_record(tmp_path))
+    monkeypatch.setattr(cli, "_register_default_destination", lambda *_args: True)
 
     def missing():
         raise CmuxUnavailable("cmux CLI was not found")
@@ -356,8 +289,9 @@ def test_open_hub_maps_cmux_failure_to_external_service_without_fallback(
     tmp_path, monkeypatch
 ):
     home = _configured_home(tmp_path)
+    _use_managed_record(monkeypatch, _managed_record(tmp_path))
     calls: list[list[str]] = []
-    monkeypatch.setattr(cli, "_probe_hub_health", lambda _port: None)
+    monkeypatch.setattr(cli, "_register_default_destination", lambda *_args: True)
     monkeypatch.setattr(cli, "_resolve_cmux_executable", lambda: Path("/safe/cmux"))
 
     def runner(argv, **_kwargs):
@@ -374,13 +308,8 @@ def test_open_hub_maps_cmux_failure_to_external_service_without_fallback(
     assert "/usr/bin/open" not in calls[0]
 
 
-def test_open_hub_rejects_non_opaque_instance_before_probe(tmp_path, monkeypatch):
+def test_open_hub_rejects_non_opaque_instance_before_probe(tmp_path):
     home = _configured_home(tmp_path)
-    monkeypatch.setattr(
-        cli,
-        "_probe_hub_health",
-        lambda _port: (_ for _ in ()).throw(AssertionError("must not probe")),
-    )
 
     result = CliRunner().invoke(
         main,
@@ -390,30 +319,3 @@ def test_open_hub_rejects_non_opaque_instance_before_probe(tmp_path, monkeypatch
 
     assert result.exit_code == 2
     assert "URL-safe opaque identifier" in result.output
-
-
-def test_codex_working_directory_is_enabled_only_for_cmux_terminal(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.delenv("CMUX_WORKSPACE_ID", raising=False)
-    monkeypatch.delenv("CMUX_SOCKET_PATH", raising=False)
-
-    assert cli._cmux_codex_working_directory() is None
-
-    monkeypatch.setenv("CMUX_WORKSPACE_ID", "workspace:7")
-    monkeypatch.setenv("CMUX_SOCKET_PATH", "/tmp/cmux-session/socket")
-    assert cli._cmux_codex_working_directory() == tmp_path.resolve()
-
-
-def test_hub_owner_mode_requires_a_complete_clean_cmux_environment(monkeypatch):
-    monkeypatch.delenv("CMUX_WORKSPACE_ID", raising=False)
-    monkeypatch.delenv("CMUX_SOCKET_PATH", raising=False)
-    assert cli._hub_owner_mode() == "headless"
-
-    monkeypatch.setenv("CMUX_WORKSPACE_ID", "workspace:7")
-    assert cli._hub_owner_mode() == "headless"
-
-    monkeypatch.setenv("CMUX_SOCKET_PATH", "/tmp/cmux-session/socket")
-    assert cli._hub_owner_mode() == "cmux-visible"
-
-    monkeypatch.setenv("CMUX_WORKSPACE_ID", "workspace:7\nforged")
-    assert cli._hub_owner_mode() == "headless"

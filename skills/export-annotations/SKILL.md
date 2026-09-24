@@ -8,11 +8,12 @@ description: Export one paper's Zotero highlights and comments to a separate Obs
 ## Steps
 
 1. Run the read-only extractor:
-   `python3 ${CLAUDE_PLUGIN_ROOT}/bin/zotero-annotations.py "<title fragment>"`.
-2. If several items match, ask for the item and rerun with `--item <id>`. If there is
+   `scholar-workflow zotero annotations "<title fragment>" --json`.
+2. If several items match, ask for the item and rerun with `--item <item-key> --json`. If there is
    no PDF attachment, report it and stop.
-3. Resolve a destination under `research_vault_root`; ask for the topic subfolder only
-   when it is not inferable.
+3. Resolve a destination inside a registered Knowledge Source/Field. The legacy
+   `research_vault_root`, when configured, is only a migration candidate; ask for the
+   target Field when it is not inferable.
 4. Create a separate annotations note. Never overwrite an analysis or human-authored
    note; cross-link related notes through frontmatter `related`.
 5. Write frontmatter with title, arXiv id, source item ID, annotation counts, and related
@@ -27,8 +28,9 @@ description: Export one paper's Zotero highlights and comments to a separate Obs
 
 ## Constraints
 
-- The extractor reads Zotero with `mode=ro&immutable=1` and never writes
-  `zotero.sqlite`. A just-created annotation may be absent until Zotero commits it.
+- The extractor reads Zotero annotations only through the loopback Local API and emits a
+  read-only `AnnotationIR` projection. It never opens a SQLite database and never requests
+  a Zotero Web API key. A just-created annotation may be absent until Zotero commits it.
 - Strip `🔤…🔤` Translate-plugin output.
 - Never paraphrase or drop user comments. Model additions must not be presented as the
   user's words or the paper's text.

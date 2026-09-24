@@ -3,9 +3,10 @@
 通过 CLI 配置插件的非密钥设置，并在全新安装时初始化 `config.yml`——这样无需手写 YAML，
 直接对话即可完成设置。
 
-- **首次配置** —— `scholar-workflow config init --research-vault-root PATH` 创建
-  `config.yml`，写入知识库路径以及你指定的 `KEY=VALUE` 附加项。只写你设置的内容，
-  不会倾倒全部默认值；若已存在内容不同的文件则拒绝覆盖。
+- **首次配置** —— `scholar-workflow config init` 创建最小 `config.yml`，并写入你指定的
+  `KEY=VALUE` 附加项。只写你设置的内容，不会倾倒全部默认值；若已存在内容不同的文件则拒绝覆盖。
+- **旧配置迁移候选** —— 仅当旧投影命令仍需单一 Vault 时添加
+  `--research-vault-root PATH`；动态 Source 与 Field 改由 Hub 登记。
 - **修改某项** —— `scholar-workflow config set KEY VALUE` 设置单个点分键
   （如 `notion.enabled`、`link_service.port`），并保留文件中的注释。
 - **查看** —— `config show`（生效值）、`config show --raw`（文件原文）、

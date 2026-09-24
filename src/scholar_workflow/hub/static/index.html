@@ -16,11 +16,12 @@
         <nav aria-label="Hub 目录">
           <p class="nav-heading">Libraries</p>
           <div id="library-nav"></div>
-          <p class="nav-heading">Knowledge Contexts</p>
-          <button class="nav-item" type="button" data-view="all">全部知识</button>
-          <div id="topic-nav"></div>
+          <p class="nav-heading">Projects</p>
+          <button class="nav-item" type="button" data-view="projects">全部项目 <span id="project-nav-count">0</span></button>
+          <p class="nav-heading">Tools</p>
+          <button class="nav-item" type="button" data-view="tools">全部工具 <span id="tool-nav-count">0</span></button>
         </nav>
-        <div class="status"><span class="status-dot"></span><span id="operation-status">正在读取服务状态</span></div>
+        <div class="status"><span class="status-dot"></span><span id="operation-status">正在读取能力状态</span></div>
       </aside>
       <main>
         <header class="topbar">
@@ -34,24 +35,59 @@
               <label>类型<select id="library-type"><option value="">全部类型</option></select></label>
             </div>
             <div class="workspace-target">
-              <label for="workspace-select">cmux 查看位置</label>
+              <label for="workspace-select">默认打开位置</label>
               <select id="workspace-select" aria-describedby="cmux-status" disabled>
                 <option value="">正在读取工作区…</option>
               </select>
               <small id="cmux-status" role="status" aria-live="polite"></small>
             </div>
             <div id="hub-actions" class="hub-actions" aria-label="工作区操作"></div>
+            <button id="field-register" class="action-button" type="button" hidden>选择 Vault / 目录</button>
             <label class="search">
               <span>⌕</span>
               <input id="search" type="search" placeholder="搜索标题、作者或标识符" autocomplete="off">
             </label>
           </div>
         </header>
-        <section class="summary" aria-label="资料概况">
-          <div><strong id="paper-count">0</strong><span>论文与资源</span></div>
-          <div><strong id="topic-count">0</strong><span>研究主题</span></div>
-          <div><strong id="artifact-count">0</strong><span>可读文档</span></div>
-          <p id="revision">正在载入…</p>
+        <section class="summary" aria-label="资源概况">
+          <div><strong id="paper-count">0</strong><span>Papers</span></div>
+          <div><strong id="field-count">0</strong><span>Fields</span></div>
+          <div><strong id="project-count">0</strong><span>Projects</span></div>
+          <div><strong id="tool-count">0</strong><span>Tools</span></div>
+          <p id="revision">正在载入 v3 目录…</p>
+        </section>
+        <section id="capability-matrix" class="capability-matrix" aria-label="独立能力状态"></section>
+        <section id="task-panel" class="task-panel" aria-labelledby="task-panel-title">
+          <div class="task-panel-heading">
+            <div>
+              <h2 id="task-panel-title">Codex 任务</h2>
+              <p>选择受控任务与目标；工作目录由已登记目标解析，窗口位置由上方 cmux 选项决定。</p>
+            </div>
+            <span id="task-destination" class="task-destination">正在读取打开位置…</span>
+          </div>
+          <form id="task-form" class="task-form">
+            <label>任务用途
+              <select id="task-action" disabled>
+                <option value="">正在读取任务…</option>
+              </select>
+            </label>
+            <label>目标文件夹 / 项目
+              <select id="task-target" disabled>
+                <option value="">正在读取目标…</option>
+              </select>
+            </label>
+            <label>思考强度
+              <select id="task-effort" disabled>
+                <option value="">由任务决定</option>
+              </select>
+            </label>
+            <label class="task-brief">任务说明
+              <textarea id="task-brief" rows="3" maxlength="8192" autocomplete="off" placeholder="说明希望 Codex 在所选目标中完成什么"></textarea>
+              <small id="task-brief-limit">0 / 8192 字节</small>
+            </label>
+            <button id="task-submit" class="action-button primary task-submit" type="submit" disabled>运行任务</button>
+          </form>
+          <p id="task-status" class="task-status" role="status" aria-live="polite">正在读取 Codex 任务能力…</p>
         </section>
         <section class="content">
           <div class="section-heading"><h2 id="resource-heading">资料</h2><span id="result-count"></span></div>
@@ -62,11 +98,37 @@
             <h2>这里还没有可显示的资料</h2>
             <p>Hub 只读取已登记 provider 与 manifest；你的 Markdown 正文仍由 Obsidian 保存并保持可读。</p>
           </div>
-          <div id="document-heading" class="section-heading document-heading"><h2>可读文档</h2><span id="document-count"></span></div>
-          <div id="artifact-list" class="artifact-list" aria-live="polite"></div>
+          <section id="field-detail" class="field-detail" hidden aria-live="polite">
+            <aside id="field-navigation" class="field-navigation" aria-label="Field 导航"></aside>
+            <article class="field-document">
+              <div class="field-document-heading">
+                <div>
+                  <h2 id="field-document-title"></h2>
+                  <p id="field-document-path"></p>
+                </div>
+                <button id="field-document-edit" class="preview-button" type="button" hidden>编辑正文</button>
+              </div>
+              <div id="field-document-content" class="markdown-view"></div>
+            </article>
+          </section>
         </section>
       </main>
     </div>
+    <dialog id="field-register-dialog" class="field-register-dialog" aria-labelledby="field-register-title">
+      <div class="preview-header">
+        <div class="preview-heading">
+          <h2 id="field-register-title">添加 Knowledge Source</h2>
+          <p class="preview-path">选择过程使用系统文件选择器；浏览器不会接收或提交绝对路径。</p>
+        </div>
+        <button id="field-register-close" class="close-button" type="button" aria-label="关闭 Field 预览">×</button>
+      </div>
+      <p id="field-register-status" class="preview-status" role="status" aria-live="polite"></p>
+      <div id="field-register-preview" class="field-register-preview"></div>
+      <div class="field-register-actions">
+        <button id="field-register-cancel" class="preview-action" type="button">取消</button>
+        <button id="field-register-confirm" class="preview-action primary" type="button" disabled>初始化所选 Field</button>
+      </div>
+    </dialog>
     <dialog id="preview-dialog" class="preview-dialog" aria-labelledby="preview-title" aria-describedby="preview-path">
       <div class="preview-header">
         <div class="preview-heading">

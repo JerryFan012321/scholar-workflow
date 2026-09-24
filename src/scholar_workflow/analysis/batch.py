@@ -418,9 +418,16 @@ class AnalysisBatchRunner:
             return current
 
         stage_dir = self.stage_root / batch_id / item.item_id
+        claimed = False
         try:
-            self._assert_safe_stage_path(stage_dir)
+            # A missing/rebound shared root is a batch-wide failure and must be
+            # detected before this item transitions to running.  Item-local
+            # components are checked only after the atomic claim, so a safety
+            # failure can be recorded for this item without racing another owner.
+            self._assert_stage_root()
             self.store.claim_item(batch_id, item.item_id)
+            claimed = True
+            self._assert_safe_stage_path(stage_dir)
             self._clear_owned_stage(stage_dir)
             bundle = self.renderer(item.document, item.note_stem)
             self._write_stage(stage_dir, bundle)
@@ -500,10 +507,22 @@ class AnalysisBatchRunner:
             # A state-database failure or loss of the configured root invalidates
             # the whole run; do not misreport it as one paper's conformance result.
             raise
+        except AnalysisBatchConflict:
+            # Another runner owns or has already completed this item.  Do not
+            # mutate its state or clean its shared stage; return the fresh row so
+            # this runner can continue with independent siblings.
+            concurrent = self.store.get_item(batch_id, item.item_id)
+            if concurrent is None:
+                raise
+            return concurrent
         except Exception as exc:  # noqa: BLE001 - isolate per-item safety/model failures
             cleanup_detail = ""
             current = self.store.get_item(batch_id, item.item_id)
             assert current is not None
+            if not claimed and current.state is not AnalysisState.QUEUED:
+                # A claim failure that coincides with another owner must never
+                # downgrade that owner's row or remove its staged files.
+                return current
             diagnostic = ConformanceFinding(
                 code="batch-item-error",
                 path=f"items/{item.item_id}",
@@ -522,10 +541,11 @@ class AnalysisBatchRunner:
                     else None
                 ),
             )
-            try:
-                self._clear_owned_stage(stage_dir)
-            except (OSError, AnalysisStageSafetyError) as cleanup_exc:
-                cleanup_detail = f"; staging cleanup also failed: {cleanup_exc}"
+            if claimed:
+                try:
+                    self._clear_owned_stage(stage_dir)
+                except (OSError, AnalysisStageSafetyError) as cleanup_exc:
+                    cleanup_detail = f"; staging cleanup also failed: {cleanup_exc}"
             current = self.store.get_item(batch_id, item.item_id)
             assert current is not None
             if cleanup_detail:

@@ -58,7 +58,9 @@ def _safe_note_stem(note_stem: str) -> None:
         raise ValueError("note_stem must be a plain filename stem")
 
 
-def _node_id(artifact_id: str, path: str) -> str:
+def canvas_node_id(artifact_id: str, path: str) -> str:
+    """Return the stable ID that explicitly claims one renderer-owned Canvas node."""
+
     return sha256(f"{artifact_id}\n{path}".encode()).hexdigest()[:16]
 
 
@@ -129,7 +131,7 @@ def _render_canvas(document: AnalysisDocument, note_stem: str) -> dict[str, list
     nodes: list[dict[str, Any]] = []
     edges: list[dict[str, Any]] = []
     root_path = "root"
-    root_id = _node_id(document.artifact_id, root_path)
+    root_id = canvas_node_id(document.artifact_id, root_path)
     root = {
         "id": root_id,
         "type": "text",
@@ -144,7 +146,7 @@ def _render_canvas(document: AnalysisDocument, note_stem: str) -> dict[str, list
     band_y = 0
     for role in document.profile.roles:
         role_path = f"role/{role.value}"
-        role_id = _node_id(document.artifact_id, role_path)
+        role_id = canvas_node_id(document.artifact_id, role_path)
         role_node = {
             "id": role_id,
             "type": "text",
@@ -176,7 +178,7 @@ def _render_canvas(document: AnalysisDocument, note_stem: str) -> dict[str, list
         next_vertical_y = band_y
         for index, claim in enumerate(claims):
             claim_path = f"{role_path}/{claim.claim_id}"
-            claim_id = _node_id(document.artifact_id, claim_path)
+            claim_id = canvas_node_id(document.artifact_id, claim_path)
             text = claim_canvas_text(claim, note_stem)
             height = _node_height(text, minimum=160)
             if role is AnalysisRole.WORKFLOW:

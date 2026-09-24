@@ -340,6 +340,38 @@ def test_two_stores_cannot_claim_the_same_batch_item(tmp_path: Path) -> None:
     second.close()
 
 
+def test_concurrent_claim_keeps_owner_state_and_continues_sibling(
+    tmp_path: Path,
+) -> None:
+    database = tmp_path / "analysis.db"
+    owner = AnalysisBatchStore(database)
+    contender = AnalysisBatchStore(database)
+    request = AnalysisBatchRequest(
+        batch_id="concurrent-siblings",
+        items=[_item("paper-a", "Paper A"), _item("paper-b", "Paper B")],
+    )
+    owner.ensure_batch(request)
+    for item in request.items:
+        owner.ensure_item(request.batch_id, item)
+    owner.claim_item(request.batch_id, "paper-a")
+
+    result = AnalysisBatchRunner(
+        store=contender,
+        stage_root=tmp_path / "stage",
+    ).run(request)
+
+    states = {item.item_id: item.state for item in result.items}
+    assert states == {
+        "paper-a": AnalysisState.RUNNING,
+        "paper-b": AnalysisState.VALIDATED,
+    }
+    persisted = owner.get_item(request.batch_id, "paper-a")
+    assert persisted is not None and persisted.state is AnalysisState.RUNNING
+    assert not (tmp_path / "stage" / request.batch_id / "paper-a").exists()
+    owner.close()
+    contender.close()
+
+
 def test_batch_rejects_duplicate_zotero_identity() -> None:
     first = _item("paper-a", "Paper A")
     second = _item("paper-b", "Paper B").model_copy(

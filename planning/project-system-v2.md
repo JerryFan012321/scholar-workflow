@@ -1,6 +1,6 @@
 # 科研项目系统 v2 — 改造计划
 
-> 状态：Accepted 0.3，2026-09-22。用户已授权按本文实施 `init-project`、项目身份和实验档案；
+> 状态：Accepted 0.4，2026-09-23。用户已授权按本文实施 `init-project`、项目身份和实验档案；
 > 真实项目迁移、正式备份后端和既有项目的 destructive/untrack 操作仍不在授权范围内。
 >
 > 本文使用三种标记：**已锁定**表示用户已经确认的上位规则；**推荐**表示本计划给出的实现选择；
@@ -96,6 +96,16 @@ dataset/
 - 两个副本独立演化；系统不建立实时同步、托管 project-reference 或必须维护的语义 provenance。
 - Run/Attempt 报告继续属于实验档案。复制或归档其人类可读内容不会改变 recipe、retention、promotion
   或 backup 状态。
+
+Hub v3 只为该接口增加主机定位与动作路由，不改变 Project System v2：
+
+- `project-layout.json` 中稳定 `project_id` 仍是项目便携身份；主机 registry 只把它映射到可信根与能力。
+- `ExecutionTarget(kind=project, registered_root_id=project_id)` 可以为预登记 CLI/Codex recipe 提供 cwd，
+  但浏览器不能提交路径，Target 也不能改变 Run/Attempt/Target 的实验语义。
+- cmux `CmuxDestination` 只决定终端或浏览器窗口在哪个 workspace 出现，不授予项目文件权限。
+- Hub 项目文件操作继续只接受 `project_id + docs 相对路径`，并执行 no-overwrite、CAS、symlink 防护、
+  Git 风险提示与可恢复 trash；workspace 是否存在不得改变授权结果。
+- Projects 在 HubDirectory v3 中是与 Libraries 平级的根集合，不是文档 Library，也不进入 Field 关系。
 
 ## 4. 目标结构
 

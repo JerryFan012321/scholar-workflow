@@ -5,10 +5,11 @@ from __future__ import annotations
 import fcntl
 import json
 import os
+import secrets
 import stat
-import tempfile
 from collections.abc import Callable
 from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
@@ -47,6 +48,8 @@ class AnalysisCommitPartialError(AnalysisCommitError):
 
 FaultInjector = Callable[[str], None]
 FileIdentity = dict[str, int]
+DirectoryIdentity = tuple[int, int]
+_IDENTITY_KEYS = ("device", "inode", "size", "mtime_ns", "ctime_ns")
 
 
 def _sha256_bytes(payload: bytes) -> str:
@@ -69,34 +72,62 @@ def _request_fingerprint(request: AnalysisCommitRequest) -> str:
     return _sha256_bytes(payload)
 
 
-def _assert_no_symlink_components(path: Path) -> None:
+def _anchored_directory_path(
+    path: Path,
+    *,
+    label: str,
+    create: bool,
+) -> Path:
+    """Resolve a directory lexically while refusing symlinks at every component."""
+
     absolute = path.absolute()
-    current = Path(absolute.anchor)
-    for part in absolute.parts[1:]:
-        current /= part
-        if current.is_symlink():
-            raise AnalysisCommitSafetyError(f"path cannot traverse a symlink: {current}")
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptors: list[int] = []
+    try:
+        descriptor = os.open(absolute.anchor, flags)
+        descriptors.append(descriptor)
+        for part in absolute.parts[1:]:
+            if create:
+                try:
+                    os.mkdir(part, mode=0o700, dir_fd=descriptor)
+                except FileExistsError:
+                    pass
+            child = os.open(part, flags, dir_fd=descriptor)
+            descriptors.append(child)
+            opened = os.fstat(child)
+            named = os.stat(part, dir_fd=descriptor, follow_symlinks=False)
+            if (
+                not stat.S_ISDIR(opened.st_mode)
+                or not stat.S_ISDIR(named.st_mode)
+                or (opened.st_dev, opened.st_ino) != (named.st_dev, named.st_ino)
+            ):
+                raise AnalysisCommitSafetyError(f"{label} contains a rebound component")
+            descriptor = child
+        opened_final = os.fstat(descriptors[-1])
+        named_final = os.stat(absolute, follow_symlinks=False)
+        if (
+            not stat.S_ISDIR(named_final.st_mode)
+            or (opened_final.st_dev, opened_final.st_ino)
+            != (named_final.st_dev, named_final.st_ino)
+        ):
+            raise AnalysisCommitSafetyError(f"{label} was rebound during validation")
+        return absolute
+    except AnalysisCommitSafetyError:
+        raise
+    except OSError as exc:
+        requirement = "cannot be created" if create else "must already exist"
+        raise AnalysisCommitSafetyError(f"{label} {requirement}: {exc}") from exc
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
 
 
 def _existing_root(path: Path, *, label: str) -> Path:
-    _assert_no_symlink_components(path)
-    try:
-        root = path.resolve(strict=True)
-    except OSError as exc:
-        raise AnalysisCommitSafetyError(f"{label} must already exist: {exc}") from exc
-    if not root.is_dir():
-        raise AnalysisCommitSafetyError(f"{label} must be a directory")
-    return root
+    return _anchored_directory_path(path, label=label, create=False)
 
 
 def _state_root(path: Path) -> Path:
-    _assert_no_symlink_components(path)
-    try:
-        path.mkdir(parents=True, exist_ok=True)
-    except OSError as exc:
-        raise AnalysisCommitSafetyError(f"cannot create commit state root: {exc}") from exc
-    _assert_no_symlink_components(path)
-    return path.resolve(strict=True)
+    return _anchored_directory_path(path, label="commit state root", create=True)
 
 
 def _safe_target(root: Path, relative_path: str) -> Path:
@@ -124,122 +155,594 @@ def _safe_target(root: Path, relative_path: str) -> Path:
     return candidate
 
 
-def _safe_state_path(root: Path, *parts: str, directory: bool = False) -> Path:
-    current = root
-    for part in parts:
-        if not part or part in {".", ".."} or Path(part).name != part:
-            raise AnalysisCommitSafetyError("unsafe analysis commit state component")
-        current /= part
-        if current.is_symlink():
-            raise AnalysisCommitSafetyError("analysis commit state cannot traverse a symlink")
-    if directory:
-        current.mkdir(parents=True, exist_ok=True)
-        if current.is_symlink() or not current.is_dir():
-            raise AnalysisCommitSafetyError("analysis commit state directory is unsafe")
-    elif current.exists() and (current.is_symlink() or not current.is_file()):
-        raise AnalysisCommitSafetyError("analysis commit state file is unsafe")
-    if not current.resolve(strict=False).is_relative_to(root):
-        raise AnalysisCommitSafetyError("analysis commit state escaped its root")
-    return current
+def _identity_from_stat(metadata: os.stat_result) -> FileIdentity:
+    return {
+        "device": metadata.st_dev,
+        "inode": metadata.st_ino,
+        "size": metadata.st_size,
+        "mtime_ns": metadata.st_mtime_ns,
+        "ctime_ns": metadata.st_ctime_ns,
+    }
 
 
-def _read_regular(path: Path) -> bytes:
-    if path.is_symlink() or not path.is_file():
-        raise AnalysisCommitSafetyError(f"expected a regular file: {path}")
+def _directory_identity(metadata: os.stat_result) -> DirectoryIdentity:
+    return metadata.st_dev, metadata.st_ino
+
+
+def _path_directory_identity(path: Path) -> DirectoryIdentity:
     try:
-        return path.read_bytes()
+        metadata = os.stat(path, follow_symlinks=False)
     except OSError as exc:
-        raise AnalysisCommitSafetyError(f"cannot read managed file: {exc}") from exc
+        raise AnalysisCommitSafetyError(f"managed directory is unavailable: {exc}") from exc
+    if not stat.S_ISDIR(metadata.st_mode):
+        raise AnalysisCommitSafetyError("managed directory must be a real directory")
+    return _directory_identity(metadata)
 
 
-def _current_hash(path: Path) -> str | None:
-    if not path.exists():
-        if path.is_symlink():
-            raise AnalysisCommitSafetyError("managed path is a dangling symlink")
-        return None
-    return _sha256_bytes(_read_regular(path))
+def _validate_state_component(component: str) -> str:
+    if not component or component in {".", ".."} or Path(component).name != component:
+        raise AnalysisCommitSafetyError("unsafe analysis commit state component")
+    return component
 
 
-def _file_identity(path: Path) -> FileIdentity | None:
-    """Return the regular file identity without following the final component."""
-    if not path.exists():
-        if path.is_symlink():
-            raise AnalysisCommitSafetyError("managed path is a dangling symlink")
-        return None
-    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+def _open_or_create_directory_at(parent_descriptor: int, name: str) -> int:
+    name = _validate_state_component(name)
     try:
-        descriptor = os.open(path, flags)
+        os.mkdir(name, mode=0o700, dir_fd=parent_descriptor)
+    except FileExistsError:
+        pass
     except OSError as exc:
-        raise AnalysisCommitSafetyError(f"cannot open managed file: {exc}") from exc
+        raise AnalysisCommitSafetyError(
+            f"cannot create analysis commit state directory: {exc}"
+        ) from exc
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(name, flags, dir_fd=parent_descriptor)
+    except OSError as exc:
+        raise AnalysisCommitSafetyError(
+            f"analysis commit state directory is missing, rebound, or unsafe: {exc}"
+        ) from exc
     try:
         metadata = os.fstat(descriptor)
-        if not stat.S_ISREG(metadata.st_mode):
-            raise AnalysisCommitSafetyError("managed path must be a regular file")
-        current = os.stat(path, follow_symlinks=False)
-        if (current.st_dev, current.st_ino) != (metadata.st_dev, metadata.st_ino):
-            raise AnalysisCommitConflict("managed file identity changed while inspecting it")
-        return {
-            "device": metadata.st_dev,
-            "inode": metadata.st_ino,
-            "size": metadata.st_size,
-        }
-    finally:
+        named = os.stat(name, dir_fd=parent_descriptor, follow_symlinks=False)
+        if (
+            not stat.S_ISDIR(metadata.st_mode)
+            or not stat.S_ISDIR(named.st_mode)
+            or _directory_identity(metadata) != _directory_identity(named)
+        ):
+            raise AnalysisCommitSafetyError(
+                "analysis commit state directory was rebound"
+            )
+    except Exception:
         os.close(descriptor)
+        raise
+    return descriptor
 
 
-def _identity_matches(path: Path, expected: FileIdentity | None) -> bool:
-    return _file_identity(path) == expected
-
-
-def _fsync_directory(path: Path) -> None:
-    descriptor = os.open(path, os.O_RDONLY)
-    try:
-        os.fsync(descriptor)
-    finally:
-        os.close(descriptor)
-
-
-def _atomic_write(
-    path: Path,
-    payload: bytes,
-    *,
-    expected_sha256: str | None | object = ...,
-    expected_identity: FileIdentity | None | object = ...,
+def _assert_directory_binding(
+    parent_descriptor: int,
+    name: str,
+    child_descriptor: int,
 ) -> None:
-    if path.is_symlink():
-        raise AnalysisCommitSafetyError("atomic target cannot be a symlink")
-    descriptor, temporary_name = tempfile.mkstemp(
-        prefix=f".{path.name}.",
-        suffix=".tmp",
-        dir=path.parent,
+    try:
+        named = os.stat(name, dir_fd=parent_descriptor, follow_symlinks=False)
+        opened = os.fstat(child_descriptor)
+    except OSError as exc:
+        raise AnalysisCommitSafetyError(
+            f"analysis commit state directory binding changed: {exc}"
+        ) from exc
+    if (
+        not stat.S_ISDIR(named.st_mode)
+        or not stat.S_ISDIR(opened.st_mode)
+        or _directory_identity(named) != _directory_identity(opened)
+    ):
+        raise AnalysisCommitSafetyError("analysis commit state directory was rebound")
+
+
+@dataclass(frozen=True)
+class _StateLayout:
+    root_path: Path
+    root_descriptor: int
+    commits_descriptor: int
+    journals_descriptor: int
+    receipts_descriptor: int
+    backups_descriptor: int
+    backup_directory_name: str
+    journal_name: str
+    receipt_name: str
+
+    def assert_bound(self) -> None:
+        try:
+            named_root = os.stat(self.root_path, follow_symlinks=False)
+            opened_root = os.fstat(self.root_descriptor)
+        except OSError as exc:
+            raise AnalysisCommitSafetyError(
+                f"analysis commit state root binding changed: {exc}"
+            ) from exc
+        if (
+            not stat.S_ISDIR(named_root.st_mode)
+            or not stat.S_ISDIR(opened_root.st_mode)
+            or _directory_identity(named_root) != _directory_identity(opened_root)
+        ):
+            raise AnalysisCommitSafetyError("analysis commit state root was rebound")
+        _assert_directory_binding(
+            self.root_descriptor,
+            "analysis-commits",
+            self.commits_descriptor,
+        )
+        _assert_directory_binding(
+            self.commits_descriptor,
+            "journals",
+            self.journals_descriptor,
+        )
+        _assert_directory_binding(
+            self.commits_descriptor,
+            "receipts",
+            self.receipts_descriptor,
+        )
+        _assert_directory_binding(
+            self.journals_descriptor,
+            self.backup_directory_name,
+            self.backups_descriptor,
+        )
+
+
+@contextmanager
+def _open_state_layout(root: Path, commit_id: str):
+    """Keep every state directory pinned to its original inode for this commit."""
+
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptors: list[int] = []
+    try:
+        root_descriptor = os.open(root, flags)
+        descriptors.append(root_descriptor)
+        if _directory_identity(os.fstat(root_descriptor)) != _path_directory_identity(root):
+            raise AnalysisCommitSafetyError("analysis commit state root was rebound")
+        commits_descriptor = _open_or_create_directory_at(
+            root_descriptor,
+            "analysis-commits",
+        )
+        descriptors.append(commits_descriptor)
+        journals_descriptor = _open_or_create_directory_at(
+            commits_descriptor,
+            "journals",
+        )
+        descriptors.append(journals_descriptor)
+        receipts_descriptor = _open_or_create_directory_at(
+            commits_descriptor,
+            "receipts",
+        )
+        descriptors.append(receipts_descriptor)
+        backup_directory_name = f"{_validate_state_component(commit_id)}.files"
+        backups_descriptor = _open_or_create_directory_at(
+            journals_descriptor,
+            backup_directory_name,
+        )
+        descriptors.append(backups_descriptor)
+        layout = _StateLayout(
+            root_path=root,
+            root_descriptor=root_descriptor,
+            commits_descriptor=commits_descriptor,
+            journals_descriptor=journals_descriptor,
+            receipts_descriptor=receipts_descriptor,
+            backups_descriptor=backups_descriptor,
+            backup_directory_name=backup_directory_name,
+            journal_name=f"{commit_id}.json",
+            receipt_name=f"{commit_id}.json",
+        )
+        layout.assert_bound()
+        yield layout
+    except AnalysisCommitSafetyError:
+        raise
+    except OSError as exc:
+        raise AnalysisCommitSafetyError(
+            f"cannot anchor analysis commit state directories: {exc}"
+        ) from exc
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+
+
+def _validate_target_parts(relative_path: str) -> tuple[str, ...]:
+    parts = tuple(relative_path.split("/"))
+    if (
+        not parts
+        or any(part in {"", ".", ".."} for part in parts)
+        or any("/" in part or "\\" in part for part in parts)
+    ):
+        raise AnalysisCommitSafetyError("unsafe canonical target path")
+    return parts
+
+
+def _assert_vault_binding(vault_root: Path, vault_descriptor: int) -> None:
+    try:
+        opened_root = os.fstat(vault_descriptor)
+        named_root = os.stat(vault_root, follow_symlinks=False)
+    except OSError as exc:
+        raise AnalysisCommitSafetyError(
+            f"canonical Vault root binding changed: {exc}"
+        ) from exc
+    if (
+        not stat.S_ISDIR(opened_root.st_mode)
+        or not stat.S_ISDIR(named_root.st_mode)
+        or _directory_identity(opened_root) != _directory_identity(named_root)
+    ):
+        raise AnalysisCommitSafetyError("canonical Vault root was rebound")
+
+
+def _assert_target_parent_binding(
+    vault_root: Path,
+    vault_descriptor: int,
+    relative_path: str,
+    parent_descriptor: int,
+) -> None:
+    """Verify that the pinned parent is still named by the canonical Vault path."""
+
+    parts = _validate_target_parts(relative_path)
+    _assert_vault_binding(vault_root, vault_descriptor)
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptors: list[int] = []
+    try:
+        descriptor = os.dup(vault_descriptor)
+        descriptors.append(descriptor)
+        for part in parts[:-1]:
+            descriptor = os.open(part, flags, dir_fd=descriptor)
+            descriptors.append(descriptor)
+        if _directory_identity(os.fstat(descriptors[-1])) != _directory_identity(
+            os.fstat(parent_descriptor)
+        ):
+            raise AnalysisCommitSafetyError("canonical target parent was rebound")
+    except AnalysisCommitSafetyError:
+        raise
+    except OSError as exc:
+        raise AnalysisCommitSafetyError(
+            f"canonical target parent binding changed: {exc}"
+        ) from exc
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+
+
+@contextmanager
+def _open_target_parent(
+    vault_root: Path,
+    vault_descriptor: int,
+    relative_path: str,
+):
+    """Open a canonical parent from the locked Vault inode without following links."""
+
+    parts = _validate_target_parts(relative_path)
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptors: list[int] = []
+    try:
+        _assert_vault_binding(vault_root, vault_descriptor)
+        descriptor = os.dup(vault_descriptor)
+        descriptors.append(descriptor)
+        for part in parts[:-1]:
+            descriptor = os.open(part, flags, dir_fd=descriptor)
+            descriptors.append(descriptor)
+            metadata = os.fstat(descriptor)
+            if not stat.S_ISDIR(metadata.st_mode):
+                raise AnalysisCommitSafetyError(
+                    "canonical target parent must remain a directory"
+                )
+        yield descriptors[-1], parts[-1]
+        _assert_target_parent_binding(
+            vault_root,
+            vault_descriptor,
+            relative_path,
+            descriptors[-1],
+        )
+    except AnalysisCommitSafetyError:
+        raise
+    except OSError as exc:
+        raise AnalysisCommitSafetyError(
+            f"canonical target parent is missing, rebound, or unsafe: {exc}"
+        ) from exc
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+
+
+def _snapshot_at(
+    parent_descriptor: int,
+    name: str,
+    *,
+    include_payload: bool = False,
+) -> tuple[str, FileIdentity, bytes | None] | None:
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(name, flags, dir_fd=parent_descriptor)
+    except FileNotFoundError:
+        return None
+    except OSError as exc:
+        raise AnalysisCommitSafetyError(
+            f"canonical target is not a safe regular file: {exc}"
+        ) from exc
+    try:
+        before = os.fstat(descriptor)
+        if not stat.S_ISREG(before.st_mode):
+            raise AnalysisCommitSafetyError("canonical target must be a regular file")
+        chunks: list[bytes] = []
+        digest = sha256()
+        while True:
+            chunk = os.read(descriptor, 1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+            if include_payload:
+                chunks.append(chunk)
+        after = os.fstat(descriptor)
+        named = os.stat(name, dir_fd=parent_descriptor, follow_symlinks=False)
+        before_identity = _identity_from_stat(before)
+        after_identity = _identity_from_stat(after)
+        named_identity = _identity_from_stat(named)
+        if (
+            before_identity != after_identity
+            or after_identity != named_identity
+            or not stat.S_ISREG(named.st_mode)
+        ):
+            raise AnalysisCommitConflict(
+                "canonical target changed while its revision was inspected"
+            )
+        payload = b"".join(chunks) if include_payload else None
+        return "sha256:" + digest.hexdigest(), after_identity, payload
+    finally:
+        os.close(descriptor)
+
+
+def _state_snapshot(
+    layout: _StateLayout,
+    directory_descriptor: int,
+    name: str,
+    *,
+    include_payload: bool = False,
+) -> tuple[str, FileIdentity, bytes | None] | None:
+    _validate_state_component(name)
+    layout.assert_bound()
+    snapshot = _snapshot_at(
+        directory_descriptor,
+        name,
+        include_payload=include_payload,
     )
-    temporary = Path(temporary_name)
+    layout.assert_bound()
+    return snapshot
+
+
+def _state_file_exists(
+    layout: _StateLayout,
+    directory_descriptor: int,
+    name: str,
+) -> bool:
+    return _state_snapshot(layout, directory_descriptor, name) is not None
+
+
+def _load_state_json(
+    layout: _StateLayout,
+    directory_descriptor: int,
+    name: str,
+) -> dict[str, Any]:
+    snapshot = _state_snapshot(
+        layout,
+        directory_descriptor,
+        name,
+        include_payload=True,
+    )
+    if snapshot is None or snapshot[2] is None:
+        raise AnalysisCommitSafetyError(f"commit state file is missing: {name}")
+    try:
+        value = json.loads(snapshot[2])
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise AnalysisCommitSafetyError(f"invalid commit state JSON: {name}") from exc
+    if not isinstance(value, dict):
+        raise AnalysisCommitSafetyError(f"commit state JSON must be an object: {name}")
+    return value
+
+
+def _atomic_write_state(
+    layout: _StateLayout,
+    directory_descriptor: int,
+    name: str,
+    payload: bytes,
+) -> FileIdentity:
+    """Atomically replace one state file without resolving its parent by path."""
+
+    _validate_state_component(name)
+    layout.assert_bound()
+    temporary_name = f".{name}.{secrets.token_hex(12)}.tmp"
+    flags = (
+        os.O_WRONLY
+        | os.O_CREAT
+        | os.O_EXCL
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    try:
+        descriptor = os.open(
+            temporary_name,
+            flags,
+            0o600,
+            dir_fd=directory_descriptor,
+        )
+    except OSError as exc:
+        raise AnalysisCommitSafetyError(f"cannot create commit state file: {exc}") from exc
     temporary_identity: FileIdentity | None = None
     try:
         with os.fdopen(descriptor, "wb") as handle:
             handle.write(payload)
             handle.flush()
             os.fsync(handle.fileno())
-        temporary_identity = _file_identity(temporary)
-        if path.is_symlink():
-            raise AnalysisCommitSafetyError("atomic target became a symlink")
-        if expected_sha256 is not ... and _current_hash(path) != expected_sha256:
+            temporary_identity = _identity_from_stat(os.fstat(handle.fileno()))
+        layout.assert_bound()
+        _snapshot_at(directory_descriptor, name)
+        os.replace(
+            temporary_name,
+            name,
+            src_dir_fd=directory_descriptor,
+            dst_dir_fd=directory_descriptor,
+        )
+        os.fsync(directory_descriptor)
+        layout.assert_bound()
+        written = _snapshot_at(directory_descriptor, name)
+        if (
+            written is None
+            or temporary_identity is None
+            or (written[1]["device"], written[1]["inode"])
+            != (temporary_identity["device"], temporary_identity["inode"])
+            or written[0] != _sha256_bytes(payload)
+        ):
             raise AnalysisCommitConflict(
-                f"base revision changed immediately before replace: {path.name}"
+                f"commit state file changed immediately after replace: {name}"
             )
-        if expected_identity is not ... and not _identity_matches(path, expected_identity):
-            raise AnalysisCommitConflict(
-                f"file identity changed immediately before replace: {path.name}"
-            )
-        os.replace(temporary, path)
-        _fsync_directory(path.parent)
+        return written[1]
     finally:
-        if temporary_identity is not None and temporary.exists():
-            _unlink_if_owned(temporary, expected_identity=temporary_identity)
+        try:
+            temporary = os.stat(
+                temporary_name,
+                dir_fd=directory_descriptor,
+                follow_symlinks=False,
+            )
+        except FileNotFoundError:
+            pass
+        else:
+            if (
+                temporary_identity is not None
+                and _identity_from_stat(temporary) == temporary_identity
+            ):
+                os.unlink(temporary_name, dir_fd=directory_descriptor)
+
+
+def _target_snapshot(
+    vault_root: Path,
+    vault_descriptor: int,
+    relative_path: str,
+    *,
+    include_payload: bool = False,
+) -> tuple[str, FileIdentity, bytes | None] | None:
+    with _open_target_parent(
+        vault_root,
+        vault_descriptor,
+        relative_path,
+    ) as (parent_descriptor, name):
+        return _snapshot_at(
+            parent_descriptor,
+            name,
+            include_payload=include_payload,
+        )
+
+
+def _target_hash(
+    vault_root: Path,
+    vault_descriptor: int,
+    relative_path: str,
+) -> str | None:
+    snapshot = _target_snapshot(vault_root, vault_descriptor, relative_path)
+    return None if snapshot is None else snapshot[0]
+
+
+def _read_target_regular(
+    vault_root: Path,
+    vault_descriptor: int,
+    relative_path: str,
+) -> bytes:
+    snapshot = _target_snapshot(
+        vault_root,
+        vault_descriptor,
+        relative_path,
+        include_payload=True,
+    )
+    if snapshot is None or snapshot[2] is None:
+        raise AnalysisCommitSafetyError("expected an existing canonical regular file")
+    return snapshot[2]
+
+
+def _atomic_write_target(
+    vault_root: Path,
+    vault_descriptor: int,
+    relative_path: str,
+    payload: bytes,
+    *,
+    expected_sha256: str | None,
+    expected_identity: FileIdentity | None,
+) -> FileIdentity:
+    """Replace one target through an anchored dirfd and return the written inode."""
+
+    with _open_target_parent(
+        vault_root,
+        vault_descriptor,
+        relative_path,
+    ) as (parent_descriptor, name):
+        temporary_name = f".{name}.{secrets.token_hex(12)}.tmp"
+        flags = (
+            os.O_WRONLY
+            | os.O_CREAT
+            | os.O_EXCL
+            | getattr(os, "O_NOFOLLOW", 0)
+        )
+        descriptor = os.open(temporary_name, flags, 0o600, dir_fd=parent_descriptor)
+        temporary_identity: FileIdentity | None = None
+        try:
+            with os.fdopen(descriptor, "wb") as handle:
+                handle.write(payload)
+                handle.flush()
+                os.fsync(handle.fileno())
+                temporary_identity = _identity_from_stat(os.fstat(handle.fileno()))
+            current = _snapshot_at(parent_descriptor, name)
+            current_hash = None if current is None else current[0]
+            current_identity = None if current is None else current[1]
+            if current_hash != expected_sha256 or current_identity != expected_identity:
+                raise AnalysisCommitConflict(
+                    f"base revision or inode changed immediately before replace: {name}"
+                )
+            _assert_target_parent_binding(
+                vault_root,
+                vault_descriptor,
+                relative_path,
+                parent_descriptor,
+            )
+            os.replace(
+                temporary_name,
+                name,
+                src_dir_fd=parent_descriptor,
+                dst_dir_fd=parent_descriptor,
+            )
+            os.fsync(parent_descriptor)
+            _assert_target_parent_binding(
+                vault_root,
+                vault_descriptor,
+                relative_path,
+                parent_descriptor,
+            )
+            written = _snapshot_at(parent_descriptor, name)
+            if (
+                written is None
+                or temporary_identity is None
+                or (written[1]["device"], written[1]["inode"])
+                != (temporary_identity["device"], temporary_identity["inode"])
+                or written[0] != _sha256_bytes(payload)
+            ):
+                raise AnalysisCommitConflict(
+                    f"canonical target changed immediately after replace: {name}"
+                )
+            return written[1]
+        finally:
+            try:
+                temporary = os.stat(
+                    temporary_name,
+                    dir_fd=parent_descriptor,
+                    follow_symlinks=False,
+                )
+            except FileNotFoundError:
+                pass
+            else:
+                if (
+                    temporary_identity is not None
+                    and _identity_from_stat(temporary) == temporary_identity
+                ):
+                    os.unlink(temporary_name, dir_fd=parent_descriptor)
 
 
 @contextmanager
-def _commit_lock(root: Path):
+def _commit_lock(root: Path, expected_identity: DirectoryIdentity):
     """Serialize canonical writes on the Vault inode, independent of state_root."""
     flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
     try:
@@ -247,28 +750,33 @@ def _commit_lock(root: Path):
     except OSError as exc:
         raise AnalysisCommitSafetyError(f"cannot lock canonical Vault root: {exc}") from exc
     try:
-        opened = os.fstat(descriptor)
-        current = os.stat(root, follow_symlinks=False)
-        if (opened.st_dev, opened.st_ino) != (current.st_dev, current.st_ino):
+        try:
+            opened = os.fstat(descriptor)
+            current = os.stat(root, follow_symlinks=False)
+        except OSError as exc:
+            raise AnalysisCommitSafetyError(
+                f"canonical Vault root changed before locking: {exc}"
+            ) from exc
+        if (
+            not stat.S_ISDIR(opened.st_mode)
+            or not stat.S_ISDIR(current.st_mode)
+            or _directory_identity(opened) != expected_identity
+            or _directory_identity(current) != expected_identity
+        ):
             raise AnalysisCommitSafetyError("canonical Vault root changed before locking")
         fcntl.flock(descriptor, fcntl.LOCK_EX)
-        current = os.stat(root, follow_symlinks=False)
-        if (opened.st_dev, opened.st_ino) != (current.st_dev, current.st_ino):
+        try:
+            current = os.stat(root, follow_symlinks=False)
+        except OSError as exc:
+            raise AnalysisCommitSafetyError(
+                f"canonical Vault root changed while locking: {exc}"
+            ) from exc
+        if _directory_identity(current) != expected_identity:
             raise AnalysisCommitSafetyError("canonical Vault root changed while locking")
-        yield
+        yield descriptor
     finally:
         fcntl.flock(descriptor, fcntl.LOCK_UN)
         os.close(descriptor)
-
-
-def _load_json(path: Path) -> dict[str, Any]:
-    try:
-        value = json.loads(_read_regular(path))
-    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-        raise AnalysisCommitSafetyError(f"invalid commit state JSON: {path.name}") from exc
-    if not isinstance(value, dict):
-        raise AnalysisCommitSafetyError(f"commit state JSON must be an object: {path.name}")
-    return value
 
 
 def _canonical_payloads(
@@ -349,11 +857,15 @@ def _make_change_set(
 
 def _verify_receipt_targets(
     vault_root: Path,
+    vault_descriptor: int,
     receipt: AnalysisCommitReceipt,
 ) -> None:
     for record in receipt.files:
-        target = _safe_target(vault_root, record.path)
-        if _current_hash(target) != record.after_sha256:
+        _safe_target(vault_root, record.path)
+        if (
+            _target_hash(vault_root, vault_descriptor, record.path)
+            != record.after_sha256
+        ):
             raise AnalysisCommitConflict(
                 f"canonical file changed after receipt: {record.path}"
             )
@@ -413,62 +925,144 @@ def _verify_receipt_for_request(
         )
 
 
-def _write_journal(path: Path, journal: dict[str, Any]) -> None:
-    _atomic_write(path, _json_bytes(journal))
+def _verify_journal_for_request(
+    journal: dict[str, Any],
+    *,
+    request: AnalysisCommitRequest,
+    fingerprint: str,
+    after_hashes: dict[str, str],
+    receipt: AnalysisCommitReceipt,
+) -> None:
+    """Bind recovery metadata to the same request before any rollback action."""
+
+    expected_keys = {
+        "schema_version",
+        "commit_id",
+        "request_fingerprint",
+        "status",
+        "files",
+        "rollback_conflicts",
+        "receipt",
+    }
+    if set(journal) != expected_keys:
+        raise AnalysisCommitSafetyError("commit journal has an unexpected shape")
+    if (
+        journal.get("schema_version") != 1
+        or journal.get("commit_id") != request.commit_id
+        or journal.get("request_fingerprint") != fingerprint
+        or journal.get("status") not in {"committing", "committed"}
+        or journal.get("receipt") != receipt.model_dump(mode="json")
+    ):
+        raise AnalysisCommitSafetyError("commit journal does not match the request")
+    rollback_conflicts = journal.get("rollback_conflicts")
+    if not isinstance(rollback_conflicts, list) or any(
+        not isinstance(item, str) for item in rollback_conflicts
+    ):
+        raise AnalysisCommitSafetyError("commit journal rollback conflicts are invalid")
+
+    files = journal.get("files")
+    expected_files = _expected_file_records(request, after_hashes)
+    if not isinstance(files, list) or len(files) != len(expected_files):
+        raise AnalysisCommitSafetyError("commit journal does not bind three files")
+    for index, (entry, expected) in enumerate(zip(files, expected_files, strict=True)):
+        if not isinstance(entry, dict) or set(entry) != {
+            "path",
+            "before_sha256",
+            "after_sha256",
+            "action",
+            "backup_name",
+            "before_identity",
+            "after_identity",
+        }:
+            raise AnalysisCommitSafetyError("commit journal file entry is invalid")
+        try:
+            record = AnalysisCommitFile.model_validate(
+                {
+                    key: entry[key]
+                    for key in ("path", "before_sha256", "after_sha256", "action")
+                }
+            )
+        except ValidationError as exc:
+            raise AnalysisCommitSafetyError(
+                f"commit journal file record is invalid: {exc}"
+            ) from exc
+        if record != expected:
+            raise AnalysisCommitSafetyError(
+                "commit journal file record does not match the request"
+            )
+        expected_backup = f"{index}.before" if expected.action == "replaced" else None
+        if entry["backup_name"] != expected_backup:
+            raise AnalysisCommitSafetyError("commit journal backup identity is invalid")
+        before_identity = _journal_identity(entry["before_identity"])
+        after_identity = _journal_identity(entry["after_identity"])
+        if (expected.before_sha256 is None) != (before_identity is None):
+            raise AnalysisCommitSafetyError(
+                "commit journal base identity does not match its revision"
+            )
+        if expected.action == "unchanged" and after_identity is not None:
+            raise AnalysisCommitSafetyError(
+                "unchanged journal files cannot claim a written inode"
+            )
+
+
+def _write_journal(layout: _StateLayout, journal: dict[str, Any]) -> None:
+    _atomic_write_state(
+        layout,
+        layout.journals_descriptor,
+        layout.journal_name,
+        _json_bytes(journal),
+    )
 
 
 def _journal_identity(value: object) -> FileIdentity | None:
     if value is None:
         return None
-    if not isinstance(value, dict) or set(value) != {"device", "inode", "size"}:
+    if not isinstance(value, dict) or set(value) != set(_IDENTITY_KEYS):
         raise AnalysisCommitSafetyError("commit journal contains an invalid file identity")
     if any(not isinstance(value[key], int) or value[key] < 0 for key in value):
         raise AnalysisCommitSafetyError("commit journal file identity must use nonnegative integers")
-    return {key: value[key] for key in ("device", "inode", "size")}
+    return {key: value[key] for key in _IDENTITY_KEYS}
 
 
-def _unlink_if_owned(
-    target: Path,
+def _unlink_target_if_owned(
+    vault_root: Path,
+    vault_descriptor: int,
+    relative_path: str,
     *,
+    expected_sha256: str,
     expected_identity: FileIdentity,
 ) -> bool:
-    """Unlink only the inode written by this commit, using the parent dirfd."""
-    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
-    try:
-        parent_descriptor = os.open(target.parent, flags)
-    except OSError as exc:
-        raise AnalysisCommitSafetyError(f"cannot open canonical parent directory: {exc}") from exc
-    try:
-        try:
-            before = os.stat(target.name, dir_fd=parent_descriptor, follow_symlinks=False)
-        except FileNotFoundError:
+    """Unlink only the exact canonical inode/revision through an anchored dirfd."""
+
+    with _open_target_parent(
+        vault_root,
+        vault_descriptor,
+        relative_path,
+    ) as (parent_descriptor, name):
+        snapshot = _snapshot_at(parent_descriptor, name)
+        if snapshot is None:
             return True
-        identity = {
-            "device": before.st_dev,
-            "inode": before.st_ino,
-            "size": before.st_size,
-        }
-        if not stat.S_ISREG(before.st_mode) or identity != expected_identity:
+        if snapshot[0] != expected_sha256 or snapshot[1] != expected_identity:
             return False
-        # Recheck through the same directory descriptor immediately before unlink.
-        after = os.stat(target.name, dir_fd=parent_descriptor, follow_symlinks=False)
-        if (after.st_dev, after.st_ino, after.st_size) != (
-            before.st_dev,
-            before.st_ino,
-            before.st_size,
-        ):
+        named = os.stat(name, dir_fd=parent_descriptor, follow_symlinks=False)
+        if _identity_from_stat(named) != expected_identity:
             return False
-        os.unlink(target.name, dir_fd=parent_descriptor)
+        _assert_target_parent_binding(
+            vault_root,
+            vault_descriptor,
+            relative_path,
+            parent_descriptor,
+        )
+        os.unlink(name, dir_fd=parent_descriptor)
         os.fsync(parent_descriptor)
         return True
-    finally:
-        os.close(parent_descriptor)
 
 
 def _rollback(
     *,
     vault_root: Path,
-    backup_dir: Path,
+    vault_descriptor: int,
+    state_layout: _StateLayout,
     journal: dict[str, Any],
 ) -> list[str]:
     conflicts: list[str] = []
@@ -484,8 +1078,17 @@ def _rollback(
         if not isinstance(relative_path, str) or not isinstance(after_sha256, str):
             conflicts.append("journal-entry-invalid")
             continue
-        target = _safe_target(vault_root, relative_path)
-        current = _current_hash(target)
+        try:
+            _safe_target(vault_root, relative_path)
+            snapshot = _target_snapshot(
+                vault_root,
+                vault_descriptor,
+                relative_path,
+            )
+        except (AnalysisCommitConflict, AnalysisCommitSafetyError, OSError):
+            conflicts.append(relative_path)
+            continue
+        current = None if snapshot is None else snapshot[0]
         if current == before_sha256:
             continue
         if current != after_sha256:
@@ -496,12 +1099,18 @@ def _rollback(
         except AnalysisCommitSafetyError:
             conflicts.append(relative_path)
             continue
-        if after_identity is None or not _identity_matches(target, after_identity):
+        if after_identity is None or snapshot is None or snapshot[1] != after_identity:
             conflicts.append(relative_path)
             continue
         if before_sha256 is None:
             try:
-                removed = _unlink_if_owned(target, expected_identity=after_identity)
+                removed = _unlink_target_if_owned(
+                    vault_root,
+                    vault_descriptor,
+                    relative_path,
+                    expected_sha256=after_sha256,
+                    expected_identity=after_identity,
+                )
             except (AnalysisCommitConflict, AnalysisCommitSafetyError, OSError):
                 removed = False
             if not removed:
@@ -511,14 +1120,28 @@ def _rollback(
         if not isinstance(backup_name, str):
             conflicts.append(relative_path)
             continue
-        backup = _safe_state_path(backup_dir, backup_name)
-        payload = _read_regular(backup)
+        try:
+            _validate_state_component(backup_name)
+            backup_snapshot = _snapshot_at(
+                state_layout.backups_descriptor,
+                backup_name,
+                include_payload=True,
+            )
+        except (AnalysisCommitConflict, AnalysisCommitSafetyError, OSError):
+            conflicts.append(relative_path)
+            continue
+        if backup_snapshot is None or backup_snapshot[2] is None:
+            conflicts.append(relative_path)
+            continue
+        payload = backup_snapshot[2]
         if _sha256_bytes(payload) != before_sha256:
             conflicts.append(relative_path)
             continue
         try:
-            _atomic_write(
-                target,
+            _atomic_write_target(
+                vault_root,
+                vault_descriptor,
+                relative_path,
                 payload,
                 expected_sha256=after_sha256,
                 expected_identity=after_identity,
@@ -545,37 +1168,49 @@ def commit_analysis_bundle(
     """
 
     root = _existing_root(vault_root, label="Vault root")
+    root_identity = _path_directory_identity(root)
     state = _state_root(state_root)
     payloads = _canonical_payloads(request, bundle, baseline)
     fingerprint = _request_fingerprint(request)
     after_hashes = {path: _sha256_bytes(payload) for path, payload in payloads.items()}
     target_paths = {path: _safe_target(root, path) for path in request.paths.as_list()}
 
-    commits_root = _safe_state_path(state, "analysis-commits", directory=True)
-    journal_root = _safe_state_path(commits_root, "journals", directory=True)
-    receipt_root = _safe_state_path(commits_root, "receipts", directory=True)
-    journal_path = _safe_state_path(journal_root, f"{request.commit_id}.json")
-    receipt_path = _safe_state_path(receipt_root, f"{request.commit_id}.json")
-    backup_dir = _safe_state_path(
-        journal_root,
-        f"{request.commit_id}.files",
-        directory=True,
-    )
-
-    with _commit_lock(root):
-        if receipt_path.exists():
-            receipt = _load_receipt(_load_json(receipt_path), source="commit receipt")
+    with (
+        _open_state_layout(state, request.commit_id) as state_layout,
+        _commit_lock(root, root_identity) as vault_descriptor,
+    ):
+        if _state_file_exists(
+            state_layout,
+            state_layout.receipts_descriptor,
+            state_layout.receipt_name,
+        ):
+            receipt = _load_receipt(
+                _load_state_json(
+                    state_layout,
+                    state_layout.receipts_descriptor,
+                    state_layout.receipt_name,
+                ),
+                source="commit receipt",
+            )
             _verify_receipt_for_request(
                 receipt,
                 request=request,
                 fingerprint=fingerprint,
                 after_hashes=after_hashes,
             )
-            _verify_receipt_targets(root, receipt)
+            _verify_receipt_targets(root, vault_descriptor, receipt)
             return receipt
 
-        if journal_path.exists():
-            previous = _load_json(journal_path)
+        if _state_file_exists(
+            state_layout,
+            state_layout.journals_descriptor,
+            state_layout.journal_name,
+        ):
+            previous = _load_state_json(
+                state_layout,
+                state_layout.journals_descriptor,
+                state_layout.journal_name,
+            )
             if previous.get("request_fingerprint") != fingerprint:
                 raise AnalysisCommitConflict("commit_id was reused for different input")
             status = previous.get("status")
@@ -594,33 +1229,55 @@ def commit_analysis_bundle(
                     fingerprint=fingerprint,
                     after_hashes=after_hashes,
                 )
+                _verify_journal_for_request(
+                    previous,
+                    request=request,
+                    fingerprint=fingerprint,
+                    after_hashes=after_hashes,
+                    receipt=receipt,
+                )
                 current_hashes = {
-                    path: _current_hash(target) for path, target in target_paths.items()
+                    path: _target_hash(root, vault_descriptor, path)
+                    for path in target_paths
                 }
                 if all(current_hashes[path] == after_hashes[path] for path in payloads):
-                    _atomic_write(receipt_path, _json_bytes(receipt.model_dump(mode="json")))
+                    _atomic_write_state(
+                        state_layout,
+                        state_layout.receipts_descriptor,
+                        state_layout.receipt_name,
+                        _json_bytes(receipt.model_dump(mode="json")),
+                    )
                     previous["status"] = "committed"
-                    _write_journal(journal_path, previous)
+                    _write_journal(state_layout, previous)
                     return receipt
                 conflicts = _rollback(
                     vault_root=root,
-                    backup_dir=backup_dir,
+                    vault_descriptor=vault_descriptor,
+                    state_layout=state_layout,
                     journal=previous,
                 )
                 previous["status"] = "failed_partial" if conflicts else "rolled_back"
                 previous["rollback_conflicts"] = conflicts
-                _write_journal(journal_path, previous)
+                _write_journal(state_layout, previous)
                 if conflicts:
                     raise AnalysisCommitPartialError(
                         "interrupted commit cannot be rolled back without overwriting edits: "
                         + ", ".join(conflicts)
                     )
+            elif status != "rolled_back":
+                raise AnalysisCommitSafetyError("commit journal has an unknown status")
 
+        before_snapshots = {
+            path: _target_snapshot(root, vault_descriptor, path)
+            for path in target_paths
+        }
         before_hashes = {
-            path: _current_hash(target) for path, target in target_paths.items()
+            path: None if snapshot is None else snapshot[0]
+            for path, snapshot in before_snapshots.items()
         }
         before_identities = {
-            path: _file_identity(target) for path, target in target_paths.items()
+            path: None if snapshot is None else snapshot[1]
+            for path, snapshot in before_snapshots.items()
         }
         for relative_path, expected in request.base_revisions.items():
             if before_hashes[relative_path] != expected:
@@ -635,8 +1292,12 @@ def commit_analysis_bundle(
             backup_name: str | None = None
             if record.action == "replaced":
                 backup_name = f"{index}.before"
-                backup_path = _safe_state_path(backup_dir, backup_name)
-                _atomic_write(backup_path, _read_regular(target_paths[relative_path]))
+                _atomic_write_state(
+                    state_layout,
+                    state_layout.backups_descriptor,
+                    backup_name,
+                    _read_target_regular(root, vault_descriptor, relative_path),
+                )
             journal_files.append(
                 {
                     **record.model_dump(mode="json"),
@@ -664,7 +1325,7 @@ def commit_analysis_bundle(
             "rollback_conflicts": [],
             "receipt": receipt.model_dump(mode="json"),
         }
-        _write_journal(journal_path, journal)
+        _write_journal(state_layout, journal)
         if fault_inject is not None:
             fault_inject("after-journal")
 
@@ -673,42 +1334,48 @@ def commit_analysis_bundle(
                 record = next(item for item in file_records if item.path == relative_path)
                 if record.action == "unchanged":
                     continue
-                if _current_hash(target_paths[relative_path]) != record.before_sha256:
+                if (
+                    _target_hash(root, vault_descriptor, relative_path)
+                    != record.before_sha256
+                ):
                     raise AnalysisCommitConflict(
                         f"base revision changed during commit for {relative_path}"
                     )
                 if fault_inject is not None:
                     fault_inject(f"before-replace:{relative_path}")
-                _atomic_write(
-                    target_paths[relative_path],
+                identity = _atomic_write_target(
+                    root,
+                    vault_descriptor,
+                    relative_path,
                     payloads[relative_path],
                     expected_sha256=record.before_sha256,
                     expected_identity=before_identities[relative_path],
                 )
-                identity = _file_identity(target_paths[relative_path])
-                if identity is None:
-                    raise AnalysisCommitSafetyError(
-                        f"canonical target disappeared after replace: {relative_path}"
-                    )
                 journal_entry = next(
                     item for item in journal_files if item["path"] == relative_path
                 )
                 journal_entry["after_identity"] = identity
-                _write_journal(journal_path, journal)
+                _write_journal(state_layout, journal)
                 if fault_inject is not None:
                     fault_inject(f"after-replace:{relative_path}")
             if fault_inject is not None:
                 fault_inject("before-receipt")
-            _atomic_write(receipt_path, _json_bytes(receipt.model_dump(mode="json")))
+            _atomic_write_state(
+                state_layout,
+                state_layout.receipts_descriptor,
+                state_layout.receipt_name,
+                _json_bytes(receipt.model_dump(mode="json")),
+            )
         except Exception:
             conflicts = _rollback(
                 vault_root=root,
-                backup_dir=backup_dir,
+                vault_descriptor=vault_descriptor,
+                state_layout=state_layout,
                 journal=journal,
             )
             journal["status"] = "failed_partial" if conflicts else "rolled_back"
             journal["rollback_conflicts"] = conflicts
-            _write_journal(journal_path, journal)
+            _write_journal(state_layout, journal)
             if conflicts:
                 raise AnalysisCommitPartialError(
                     "conditional rollback refused to overwrite concurrent edits: "
@@ -717,5 +1384,5 @@ def commit_analysis_bundle(
             raise
 
         journal["status"] = "committed"
-        _write_journal(journal_path, journal)
+        _write_journal(state_layout, journal)
         return receipt

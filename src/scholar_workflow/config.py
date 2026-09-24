@@ -1,10 +1,12 @@
 """Configuration loading and validation."""
 from __future__ import annotations
-from pathlib import Path
-from typing import Any, Union, get_args, get_origin
+
 import io
 import os
 import types
+from pathlib import Path
+from typing import Any, Union, get_args, get_origin
+
 import yaml
 from pydantic import BaseModel, field_validator
 from ruamel.yaml import YAML
@@ -93,7 +95,9 @@ class RecommendConfig(BaseModel):
 class Config(BaseModel):
     version: int = 1
     paper_inbox: Path = DEFAULT_PAPER_INBOX
-    research_vault_root: Path
+    # v3 knowledge Sources are registered independently.  This legacy singleton is
+    # retained only as an optional migration candidate for pre-v3 projection commands.
+    research_vault_root: Path | None = None
     env_records_root: Path = DEFAULT_ENV_RECORDS_ROOT
     # Where a paper's code repo is saved when the user asks to KEEP it (persist mode).
     # Reading code is opt-in and ephemeral by default; this path only matters on persist.
@@ -106,7 +110,9 @@ class Config(BaseModel):
     @field_validator("paper_inbox", "research_vault_root", "env_records_root",
                      "code_repo_root", mode="before")
     @classmethod
-    def expand_path(cls, v: Any) -> Path:
+    def expand_path(cls, v: Any) -> Path | None:
+        if v is None:
+            return None
         return Path(os.path.expandvars(str(v))).expanduser().resolve()
 
 
@@ -206,13 +212,18 @@ def _atomic_write(cfg_path: Path, payload: bytes) -> None:
     os.replace(tmp, cfg_path)
 
 
-def init_config(research_vault_root: str, extra: dict[str, str] | None = None,
+def init_config(research_vault_root: str | None = None, extra: dict[str, str] | None = None,
                 path: Path | None = None) -> Path:
-    """Write a minimal config.yml (version + vault + explicit extras only, never all
-    defaults). Idempotent: identical re-init is a no-op; a differing existing file is
-    an error (no --force). Validates the candidate before an atomic replace."""
+    """Write a minimal config.yml (version + explicit values only).
+
+    ``research_vault_root`` is an optional pre-v3 migration candidate.  Dynamic
+    Knowledge Sources are registered by the Hub and do not belong in this singleton
+    setting.  Identical re-init is a no-op; a differing existing file is an error.
+    """
     cfg_path = path or config_path()
-    data: dict[str, Any] = {"version": 1, "research_vault_root": research_vault_root}
+    data: dict[str, Any] = {"version": 1}
+    if research_vault_root is not None:
+        data["research_vault_root"] = research_vault_root
     for k, raw in (extra or {}).items():
         if _is_secret_key(k):
             raise ConfigError(_secret_msg(k))

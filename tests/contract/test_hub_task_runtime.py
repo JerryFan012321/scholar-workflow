@@ -12,6 +12,7 @@ from pathlib import Path
 
 import jsonschema
 import pytest
+from pydantic import ValidationError
 
 from scholar_workflow.hub.directory import ProjectRegistry
 from scholar_workflow.hub.tasks import (
@@ -76,13 +77,13 @@ class Identifiers:
 
 def _registry_payload(*, model: str = "gpt-5.6-codex") -> dict:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "recipes": [
             {
                 "recipe_id": "research-task",
                 "title": "Research task",
                 "project_required": False,
-                "allowed_library_ids": ["papers", "tools"],
+                "allowed_provider_ids": ["zotero", "tool-registry"],
                 "allowed_project_ids": None,
                 "allowed_tool_ids": ["zotero-local"],
                 "context_policy_id": "selected-only",
@@ -190,6 +191,8 @@ def test_explicit_recipe_registry_and_checked_in_schema(tmp_path):
         (ROOT / "contracts" / "task-recipe-registry.schema.json").read_text()
     )
     jsonschema.validate(registry.load().model_dump(mode="json"), schema)
+    registry.save(registry.load())
+    assert (registry_path.stat().st_mode & 0o777) == 0o600
     invalid = _registry_payload()
     invalid["recipes"][0]["safety_policy_id"] = "missing-policy"
     registry_path.write_text(json.dumps(invalid), encoding="utf-8")
@@ -246,6 +249,39 @@ def test_command_is_fixed_by_server_policy_and_continuation_order_is_valid(tmp_p
         builder.build_new(unknown_policy, request)
 
 
+def test_task_context_uses_v3_provider_entity_reference(tmp_path):
+    _, registry, _, _, builder, _ = _harness(tmp_path)
+    recipe = registry.get("research-task")
+    request = TaskRequest.model_validate(
+        {
+            **_request().model_dump(mode="json"),
+            "entity_refs": [
+                {
+                    "provider_id": "zotero",
+                    "entity_type": "paper",
+                    "entity_id": "PAPR2345",
+                }
+            ],
+        }
+    )
+
+    invocation = builder.build_new(recipe, request)
+    assert invocation.recipe_id == "research-task"
+    with pytest.raises(ValidationError):
+        TaskRequest.model_validate(
+            {
+                **_request().model_dump(mode="json"),
+                "entity_refs": [
+                    {
+                        "library_id": "papers",
+                        "item_type": "paper",
+                        "item_id": "PAPR2345",
+                    }
+                ],
+            }
+        )
+
+
 def test_capability_probe_fails_closed_when_a_builder_flag_is_missing(tmp_path):
     def incomplete_runner(argv, **_kwargs):
         return subprocess.CompletedProcess(argv, 0, stdout="--json --cd", stderr="")
@@ -285,6 +321,62 @@ def test_store_persists_hashes_not_brief_or_transcript_and_idempotency_is_durabl
 
     schema = json.loads((ROOT / "contracts" / "task-store.schema.json").read_text())
     jsonschema.validate(store.snapshot().model_dump(mode="json"), schema)
+
+
+@pytest.mark.parametrize("mode", ["create", "resume", "fork"])
+def test_command_build_failure_terminates_reservation_and_replay_skips_builder(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mode: str
+) -> None:
+    _, _, store, clock, builder, coordinator = _harness(tmp_path)
+    request = _request(
+        key=f"request-{mode}-build-failure",
+        brief="BRIEF THAT MUST NOT BE PERSISTED",
+    )
+    if mode == "create":
+        action = lambda: coordinator.create(request, title="New task")
+        builder_method = "build_new"
+    else:
+        source = coordinator.create(_request(), title="Source task")
+        store.start(source.run.run_id, now=clock(), timeout_seconds=30)
+        store.finish(
+            source.run.run_id,
+            state=TaskRunState.SUCCEEDED,
+            now=clock(),
+            codex_thread_id=THREAD_ID,
+        )
+        if mode == "resume":
+            action = lambda: coordinator.resume(source.task.task_id, request)
+        else:
+            action = lambda: coordinator.fork(
+                source.task.task_id, request, title="Forked task"
+            )
+        builder_method = "build_continuation"
+
+    calls: list[int] = []
+
+    def reject_invocation(*_args, **_kwargs):
+        calls.append(1)
+        raise ValueError("registered target changed before command build")
+
+    monkeypatch.setattr(builder, builder_method, reject_invocation)
+    with pytest.raises(ValueError, match="registered target changed"):
+        action()
+
+    snapshot = store.snapshot()
+    failed = next(
+        run for run in snapshot.runs if run.idempotency_key == request.idempotency_key
+    )
+    assert failed.state == TaskRunState.FAILED
+    assert failed.result_summary == "Task command preparation failed before launch"
+    assert all(run.state != TaskRunState.QUEUED for run in snapshot.runs)
+    assert request.brief not in store.path.read_text(encoding="utf-8")
+
+    replay = action()
+    assert replay.reused is True
+    assert replay.invocation is None
+    assert replay.run.run_id == failed.run_id
+    assert replay.run.state == TaskRunState.FAILED
+    assert len(calls) == 1
 
 
 def test_lockfile_symlink_fails_closed(tmp_path):
@@ -504,6 +596,51 @@ def test_resume_configuration_is_immutable_thread_is_mutexed_and_fork_is_new_tas
     ).execute(fork, timeout_seconds=30)
     assert forked.codex_thread_id == FORK_THREAD_ID
     assert store.get_task(fork.task.task_id).codex_thread_id == FORK_THREAD_ID
+
+
+@pytest.mark.parametrize(
+    "terminal_state",
+    [
+        TaskRunState.FAILED,
+        TaskRunState.CANCELLED,
+        TaskRunState.TIMED_OUT,
+        TaskRunState.INTERRUPTED,
+    ],
+)
+def test_unsuccessful_resume_reaches_terminal_state_without_a_new_thread(
+    tmp_path: Path, terminal_state: TaskRunState
+) -> None:
+    _, _, store, clock, _, coordinator = _harness(tmp_path)
+    created = coordinator.create(_request(), title="Long task")
+    store.start(created.run.run_id, now=clock(), timeout_seconds=30)
+    store.finish(
+        created.run.run_id,
+        state=TaskRunState.SUCCEEDED,
+        now=clock(),
+        codex_thread_id=THREAD_ID,
+    )
+    resumed = coordinator.resume(
+        created.task.task_id,
+        _request(key="request-resume", brief="A new follow-up brief"),
+    )
+    store.start(resumed.run.run_id, now=clock(), timeout_seconds=30)
+    with pytest.raises(TaskContractError, match="different Codex thread"):
+        store.finish(
+            resumed.run.run_id,
+            state=TaskRunState.SUCCEEDED,
+            now=clock(),
+            codex_thread_id=FORK_THREAD_ID,
+        )
+
+    finished = store.finish(
+        resumed.run.run_id,
+        state=terminal_state,
+        now=clock(),
+        result_summary="The continuation did not complete",
+    )
+    assert finished.state == terminal_state
+    assert finished.codex_thread_id is None
+    assert store.get_task(created.task.task_id).codex_thread_id == THREAD_ID
 
 
 def test_policy_change_invalidates_resume_configuration(tmp_path):

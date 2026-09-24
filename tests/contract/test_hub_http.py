@@ -11,7 +11,18 @@ from types import SimpleNamespace
 
 import pytest
 
+from scholar_workflow.adapters.zotero_local import (
+    ServerInfo,
+    ZoteroAttachmentLocator,
+)
 from scholar_workflow.hub.actions import ActionExecutor, ActionKind, ActionRegistry
+from scholar_workflow.hub.fields import (
+    FieldService,
+    FolderRegistration,
+    KnowledgeSourceRegistration,
+    KnowledgeSourceRegistry,
+    KnowledgeSourceRegistryDocument,
+)
 from scholar_workflow.hub.models import (
     ArtifactFormat,
     ArtifactKind,
@@ -34,6 +45,28 @@ def hub_server(tmp_path):
         topics=[],
         artifacts=[],
     )
+
+    class FakeZotero:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def probe(self):
+            return ServerInfo(server_id="test", api_version="3", schema_version="1")
+
+        def resolve_attachment_locator(self, key: str):
+            assert key == "S6LZUS6S"
+            pdf = storage / key / "论文.pdf"
+            return ZoteroAttachmentLocator(
+                attachment_key=key,
+                library_id="1",
+                content_hash="sha256:" + "a" * 64,
+                path=pdf,
+                filename=pdf.name,
+            )
+
     server = start_hub_server(
         port=0,
         storage_root=storage,
@@ -41,6 +74,7 @@ def hub_server(tmp_path):
         catalog_provider=StaticCatalogProvider(catalog),
         owner_mode="cmux-visible",
         require_workspace_binding=False,
+        zotero_adapter_factory=FakeZotero,
     )
     yield server, server.server_address[1]
     server.shutdown()
@@ -77,14 +111,11 @@ def test_hub_shell_and_catalog_are_served_with_security_headers(hub_server):
     assert "Access-Control-Allow-Origin" not in response.headers
 
     health = json.loads(_request(port, "/api/v1/health").read())
-    assert health == {
-        "status": "ok",
-        "schema_version": 1,
-        "capabilities": [
-            "cmux-workspace-actions-v1",
-            "open-hub-verified-binding-v1",
-        ],
-    }
+    assert health["status"] == "ok"
+    assert health["protocol"]["version"] == 3
+    assert health["hub_directory"]["schema_version"] == 3
+    assert "cmux-destinations-v1" in health["capabilities"]
+    assert "open-hub-verified-binding-v1" not in health["capabilities"]
 
 
 def test_hub_static_ui_keeps_editing_and_attachments_secondary(hub_server):
@@ -102,22 +133,32 @@ def test_hub_static_ui_keeps_editing_and_attachments_secondary(hub_server):
     assert 'node("strong")' in script
 
 
-def test_hub_static_ui_exposes_workspace_target_without_eager_actions(hub_server):
+def test_hub_static_ui_exposes_destination_without_global_binding(hub_server):
     _server, port = hub_server
     html = _request(port, "/hub/").read().decode("utf-8")
     script = _request(port, "/hub/assets/hub.js").read().decode("utf-8")
 
     assert 'id="workspace-select"' in html
+    assert "默认打开位置" in html
     assert 'id="cmux-status"' in html
     assert 'id="hub-actions"' in html
-    assert "/api/v1/cmux/workspaces" in script
-    assert 'state.actions["__hub__"]' in script
+    assert "/api/v3/destinations" in script
+    assert "/api/v3/actions/" in script
+    assert "/api/v3/fields/" in script
+    assert "/api/v3/fields/select" in script
+    assert "/api/v3/fields/confirm" in script
+    assert "home_revision" in script
+    assert "relative_path" in script
+    assert 'body: "{}"' in script
+    assert "candidate_token: preview.candidate_token" in script
+    assert "浏览器不会接收或提交绝对路径" in html
+    assert "state.actions.__hub__" in script
     assert "window.confirm" in script
     assert "启动空白 Codex" not in script
-    assert "查看和 Codex 将在所选工作区打开" not in script
-    assert "任务执行尚未启用" in script
-    assert "/api/v2/workspaces/nonce" in script
-    assert "/api/v2/workspaces/bind" in script
+    assert "只决定浏览器、终端和 Codex 窗口在哪里出现" in script
+    assert "/api/v2/workspaces/nonce" not in script
+    assert "/api/v2/workspaces/bind" not in script
+    assert "operations.bound" not in script
     assert "pdfLink" not in script
 
 
@@ -615,11 +656,31 @@ def _editable_hub(tmp_path, *, artifact_format=ArtifactFormat.MARKDOWN, suffix="
         topics=[],
         artifacts=[artifact],
     )
+    source_registry = KnowledgeSourceRegistry(tmp_path / "sources.json")
+    source_registry.save(
+        KnowledgeSourceRegistryDocument(
+            folders=[
+                FolderRegistration(
+                    folder_id="test-vault",
+                    root=vault,
+                    capabilities=["read", "write"],
+                )
+            ],
+            sources=[
+                KnowledgeSourceRegistration(
+                    source_id="00000000-0000-4000-8000-000000000001",
+                    folder_id="test-vault",
+                    capabilities=["read", "write"],
+                )
+            ],
+        )
+    )
     server = start_hub_server(
         port=0,
         storage_root=storage,
         vault_root=vault,
         catalog_provider=StaticCatalogProvider(catalog),
+        field_service=FieldService(source_registry),
         owner_mode="cmux-visible",
         require_workspace_binding=False,
     )
@@ -666,6 +727,52 @@ def test_registered_markdown_can_be_saved_verbatim_with_revision_check(tmp_path)
         assert payload["content"] == updated
         assert payload["revision"].startswith("sha256:")
         assert payload["revision"] != before["revision"]
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_legacy_artifact_write_is_denied_without_registered_source(tmp_path):
+    storage = tmp_path / "storage"
+    vault = tmp_path / "vault"
+    storage.mkdir()
+    vault.mkdir()
+    note = vault / "note.md"
+    note.write_text("original\n", encoding="utf-8")
+    artifact = HubArtifact(
+        artifact_id="artifact:unregistered",
+        kind=ArtifactKind.PAPER_ANALYSIS,
+        format=ArtifactFormat.MARKDOWN,
+        vault_path="note.md",
+    )
+    catalog = HubCatalog(
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
+        resources=[],
+        topics=[],
+        artifacts=[artifact],
+    )
+    server = start_hub_server(
+        port=0,
+        storage_root=storage,
+        vault_root=vault,
+        catalog_provider=StaticCatalogProvider(catalog),
+    )
+    try:
+        port = server.server_address[1]
+        encoded = urllib.parse.quote(artifact.artifact_id, safe="")
+        before = json.loads(
+            _request(port, f"/api/v1/artifacts/{encoded}/content").read()
+        )
+        token = json.loads(_request(port, "/api/v1/session").read())["csrf_token"]
+        with pytest.raises(urllib.error.HTTPError) as error:
+            _put_content(
+                port,
+                artifact.artifact_id,
+                {"content": "changed\n", "base_revision": before["revision"]},
+                token=token,
+            )
+        assert error.value.code == 403
+        assert note.read_text(encoding="utf-8") == "original\n"
     finally:
         server.shutdown()
         server.server_close()
@@ -1106,6 +1213,71 @@ def test_vault_asset_upload_list_and_read_are_bound_to_registered_artifact(tmp_p
         head = _request(port, first["content_url"], method="HEAD")
         assert head.headers["Content-Length"] == str(len(b"png-one"))
         assert head.read() == b""
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_legacy_asset_upload_rejects_subdirectory_only_source(tmp_path):
+    storage = tmp_path / "storage"
+    vault = tmp_path / "vault"
+    source_root = vault / "field"
+    storage.mkdir()
+    source_root.mkdir(parents=True)
+    note = source_root / "analysis.md"
+    note.write_text("# Analysis\n", encoding="utf-8")
+    artifact = HubArtifact(
+        artifact_id="artifact:subdir",
+        kind=ArtifactKind.PAPER_ANALYSIS,
+        format=ArtifactFormat.MARKDOWN,
+        vault_path="field/analysis.md",
+    )
+    catalog = HubCatalog(
+        generated_at=datetime(2026, 9, 18, tzinfo=UTC),
+        resources=[],
+        topics=[],
+        artifacts=[artifact],
+    )
+    source_registry = KnowledgeSourceRegistry(tmp_path / "sources.json")
+    source_registry.save(
+        KnowledgeSourceRegistryDocument(
+            folders=[
+                FolderRegistration(
+                    folder_id="field-only",
+                    root=source_root,
+                    capabilities=["read", "write"],
+                )
+            ],
+            sources=[
+                KnowledgeSourceRegistration(
+                    source_id="00000000-0000-4000-8000-000000000002",
+                    folder_id="field-only",
+                    capabilities=["read", "write"],
+                )
+            ],
+        )
+    )
+    server = start_hub_server(
+        port=0,
+        storage_root=storage,
+        vault_root=vault,
+        catalog_provider=StaticCatalogProvider(catalog),
+        field_service=FieldService(source_registry),
+    )
+    try:
+        port = server.server_address[1]
+        token = json.loads(_request(port, "/api/v1/session").read())["csrf_token"]
+        with pytest.raises(urllib.error.HTTPError) as error:
+            _post_asset(
+                port,
+                artifact.artifact_id,
+                "blocked.txt",
+                b"must not escape the registered source",
+                token=token,
+            )
+        assert error.value.code == 403
+        assert not (vault / "attachments").exists()
+        assert not (vault / ".scholar-workflow" / "assets.yml").exists()
     finally:
         server.shutdown()
         server.server_close()

@@ -148,6 +148,28 @@ def _analysis_document() -> AnalysisDocument:
     )
 
 
+def test_analysis_commit_requires_explicit_resource_ownership_relation() -> None:
+    document = _analysis_document()
+    paths = AnalysisCanonicalPaths(
+        markdown="topic/Owner分析.md",
+        canvas="topic/Owner解析树.canvas",
+        sidecar="topic/Owner分析.analysis.json",
+    )
+
+    with pytest.raises(ValidationError, match="has-analysis ownership relation"):
+        AnalysisCommitRequest(
+            commit_id="owner-commit",
+            batch_id="owner-batch",
+            item_id="owner-item",
+            source_state=AnalysisState.VALIDATED,
+            resource_id="paper:owner",
+            note_stem="Owner分析",
+            document=document,
+            paths=paths,
+            base_revisions={path: None for path in paths.as_list()},
+        )
+
+
 def test_checked_in_commit_and_change_schemas_accept_runtime_models() -> None:
     document = _analysis_document()
     paths = AnalysisCanonicalPaths(

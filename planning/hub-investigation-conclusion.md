@@ -1,7 +1,9 @@
 # Hub 调查结论：原子库、cmux workspace 与 Codex CLI
 
-> 状态：调查证据，2026-09-22；不是运行期规格。已确认方向与决策门由
-> `planning/hub-control-plane-v2.md` 正式承接，后续实现以 GOALS 和正式规格为准。
+> 状态：调查证据，2026-09-22；不是运行期规格。它最初由
+> `planning/hub-control-plane-v2.md` 承接；真实使用随后否定了 v2 的全局 workspace binding 与固定
+> Library 信息架构。当前正式目标规格是 `planning/hub-control-plane-v3.md`，后续实现以 GOALS 与 v3
+> 为准。本文保留原调查判断，不追写成已生效契约。
 >
 > 本文只记录当前证据、架构判断、推荐边界与待确认决策。它不是已激活规格，不授权修改
 > Hub runtime、23128 服务、Vault、`GOALS.md` 或全局 `CLAUDE.md`。除新增本文外，本轮不实施。

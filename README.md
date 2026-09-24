@@ -30,9 +30,11 @@ derived indexes; **Notion** holds an optional cross-device projection.
 - **Project System** keeps a stable `project_id`, host-neutral source/config profiles, and
   separate Run, Attempt, Target, artifact-promotion, and backup records. A promoted artifact
   is not called a verified backup without an independently checked copy.
-- **Hub Control Plane** exposes one `HubDirectory` root with typed Papers, Projects, and Tools
-  libraries plus knowledge contexts. Zotero, the Vault, project manifests, explicit host
-  registries, and Codex remain the authoritative stores.
+- **Hub Control Plane v3** exposes one `HubDirectory` root. Document Libraries contain only
+  Zotero Papers and dynamic Obsidian Fields; Projects and Tools are peer entries. cmux routes
+  browser/terminal windows, while registered folders and projects independently authorize files
+  and cwd. Zotero, Field manifests, project manifests, explicit registries, and Codex remain the
+  authoritative stores.
 
 Knowledge and project documents cross the boundary only through an explicit copy. The copy
 receives the destination system's identity, drops managed `sw_*` identity, and then evolves
@@ -40,64 +42,123 @@ independently; there is no hidden synchronization or managed provenance relation
 
 ### Local research Hub
 
-The Hub is cmux-first. Start it from a cmux terminal, then open it from another terminal
-surface in the same workspace:
+For normal use, one command is enough:
 
 ```bash
-scholar-workflow serve-hub
-# in another cmux terminal surface
 scholar-workflow open-hub
-# inspect the actual running build and provider/worker capabilities
-scholar-workflow hub-doctor --json
-# optional temporary-port, headless/read-only canary; never occupies 23128
-scholar-workflow serve-hub --canary --port 0
-# canary an already initialized provider; this never creates or migrates one
-scholar-workflow serve-hub --canary --port 0 \
-  --knowledge-provider-state-root /path/to/provider-state
 ```
 
-For normal use, keep `serve-hub` in the foreground and press `Ctrl-C` in that terminal to stop
-it. `open-hub` identifies the caller's current cmux workspace, opens a page with an opaque
-one-time view identity, and completes the nonce/lease binding automatically. It exits successfully
-only after the service confirms that binding and prints:
+`open-hub` verifies the installed build, starts or safely restarts Scholar Workflow's managed
+loopback service, discovers its dynamic port, and opens the Hub. It never needs a source checkout,
+`CODE_REPO_ROOT`, a fixed port, nonce, or lease. Run it inside cmux to remember that workspace as
+the page's default open location; outside cmux, reading and authorized file operations still work,
+while cmux-only actions ask you to choose a destination.
 
-```text
-[ok] Hub opened and bound to the current cmux workspace
+Service controls are explicit and idempotent:
+
+```bash
+scholar-workflow hub start
+scholar-workflow hub status
+scholar-workflow hub restart
+scholar-workflow hub doctor
+scholar-workflow hub stop
 ```
 
-No manual workspace selection is required for the initial binding. A manually entered
-`http://127.0.0.1:23128/hub/` is an explicit read-only entry point, not a writable Hub view; the
-page directs the user to run `scholar-workflow open-hub` from a cmux terminal. If automatic
-binding fails, the command exits non-zero with a diagnostic instead of reporting success while the
-page remains read-only. In `scholar-workflow hub-doctor --json`, `owner_mode=cmux-visible` and
-`workspace_binding_available=true` mean that the service can bind views; the successful
-`open-hub` receipt confirms the binding for that specific browser view.
+`status` reports the real executable, plugin/package/service build, protocol, PID, dynamic port,
+generation, start time, and log. `stop` affects only a process whose discovery record and live
+identity handshake prove that Scholar Workflow owns it; an unknown listener is never terminated.
 
-The v2 API exposes the canonical directory at `/api/v2/directory`, paged library items below
-`/api/v2/libraries/`, and self-describing health at `/api/v2/health`. The old
-`/api/v1/catalog` response is derived from `HubDirectory.knowledge_catalog`; it is not a
-second state root. Empty libraries remain visible with provider diagnostics, and Projects and
-Tools come only from explicit registries rather than disk or `$PATH` scans.
-If `$SCHOLAR_WORKFLOW_HOME/knowledge-provider/knowledge-provider.snapshot.json` already exists,
-the Hub validates and reads it at startup; otherwise it retains the legacy read-only compatibility
-provider. Starting the Hub never creates a snapshot or migrates the Vault.
+The page is organized as `Libraries → Papers / Fields`, plus peer `Projects` and `Tools` entries.
+There is no global “workspace bound/read-only” mode. Capabilities such as Vault writes, project
+document writes, cmux launches, Codex tasks, ZotFlow annotations, and Zotero Local API are reported
+independently. A closed cmux workspace disables only launches routed to it.
 
-Workspace-bound mutations are fail-closed: an unbound or headless Hub can still read
-libraries, documents, PDFs, and diagnostics, but cannot write project files or run tasks.
-Project file operations accept only a registered `project_id` plus a relative path under
-`docs/`; collisions and symlink escapes are rejected, and deletion moves content to the
-project trash. The Projects Library exposes these copy, paste, Knowledge-copy, and trash
-operations only while the view has a live binding. Paper, PDF attachment, and analysis links
-use typed landing pages; the raw `/open/paper/...` byte route stays inside the attachment
-landing page. Task contracts accept only a registered recipe, typed targets, an 8 KiB brief,
-and `fast`/`standard`/`deep` effort. The service owns cwd, model, sandbox, permissions, argv,
-and explicit Codex thread IDs; raw commands and `--last` are rejected.
+To add a research field:
 
-The current source tree contains the v2 contracts and canary-safe runtime. It does not
-silently replace an existing port-23128 service, migrate a Vault/project, execute a real Codex
-worker, or claim a backup medium is verified. Those actions require their separate rollout
-gates. See [`references/hub-contract.md`](references/hub-contract.md). The `serve-links`
-command and `/open/paper/<attachment-key>` URLs remain compatibility routes.
+1. Open **Fields → 选择 Vault / 目录** (Select Vault/Folder).
+2. Choose an Obsidian Vault or a subdirectory in the system picker. The browser never receives its
+   absolute path.
+3. Review the zero-write preview: proposed Fields, home page, navigation order, collisions,
+   template rewrites, ignored files, unmapped prose, and link changes.
+4. Confirm only the Field you want to initialize. One Source may contain multiple Fields, and each
+   Field defines its own navigation labels.
+
+If the selected Vault already has a portable Field manifest but is not registered on this host,
+the preview instead offers **Register existing Source**. It shows all existing Fields and IDs;
+confirmation registers the Source locally without editing that manifest or its documents.
+
+The legacy `research_vault_root` is only offered as a migration candidate. It is not the one
+required knowledge root. Field pages show manifest navigation and selected Markdown together,
+without a document landing page.
+
+Paper cards act directly. The primary action is **Annotate in ZotFlow**; secondary actions open
+Zotero, read in the selected cmux workspace, use the system PDF reader, show the analysis, or open
+the annotation note. If ZotFlow is missing, disabled, or incompatible, the primary action falls
+back to Zotero and explains why. Zotero remains the annotation authority. Only ZotFlow may hold a
+Zotero Web API key, in Obsidian SecretStorage; Scholar Workflow reads annotations through the Local
+API and never requests that key. The legacy `/hub/item` and `/open/paper/...` routes remain only for
+one-cycle compatibility and are not emitted by the normal UI.
+
+Notion and other Web tools open through registered URL recipes in a selected cmux browser surface.
+CLI and Codex recipes open a terminal surface there, but cwd comes only from a registered project,
+Vault, or folder target. Browser requests cannot supply URLs, commands, cwd, model, sandbox,
+permissions, environment, or raw Codex configuration. Project operations still accept only a
+registered `project_id` and a relative path under `docs/`; collisions and symlink escapes fail,
+deletion goes to recoverable project trash, and Hub never writes Git.
+
+To enable a Codex task in the Hub, register its working folder once and configure the local Codex
+executable. A destination decides where the terminal appears; the registered target decides its
+working directory. These administrator commands run on the same host as the Hub:
+
+```bash
+scholar-workflow hub target list
+scholar-workflow hub target add-source SOURCE_ID --target-id research
+# Or use an already registered project:
+scholar-workflow hub target add-project PROJECT_ID --target-id project
+scholar-workflow hub codex configure --executable /absolute/path/to/codex --model YOUR_MODEL --sandbox workspace-write
+scholar-workflow hub codex status
+scholar-workflow hub restart
+```
+
+`SOURCE_ID` is shown in the **Fields → 选择 Vault / 目录** preview; `PROJECT_ID` comes
+from the project's manifest and host registration. Use the target command that matches your work.
+`configure` probes the explicitly supplied executable and stores the model and sandbox as private
+server policy; it does not search `$PATH`. In the Hub's **Codex tasks** panel, choose the registered
+task, target, destination, effort, and a brief of at most 8 KiB, then start the run. The page shows
+the run status and the selected cmux terminal. Until configuration, a live destination, and the
+worker capability check all succeed, the panel shows the specific unavailable reason. The
+administrator can choose `--sandbox read-only` instead for a task that must not write files.
+
+To give another PDF reader a separate copy with supported Zotero annotations:
+
+```bash
+scholar-workflow zotero snapshot-annotations ATTACHMENT_KEY --output /path/to/annotated-copy.pdf
+```
+
+This creates a new PDF and hash receipt; it never overwrites the Zotero attachment or syncs edits
+made to the copy back into Zotero. Unsupported annotation types fail explicitly.
+
+After a Field has been explicitly registered and its exact migration preview has been accepted,
+legacy paper links can be migrated one Field at a time:
+
+```bash
+scholar-workflow hub field-migration plan SOURCE_ID FIELD_ID
+scholar-workflow hub field-migration apply SOURCE_ID FIELD_ID --approved-digest sha256:PLAN_DIGEST
+```
+
+The plan is read-only. Each distinct attachment key must be verified through Zotero's Local API as
+an available PDF in the user library before its stable URI is approved. Missing items, group items,
+non-PDF or unsupported attachments, and an unavailable Local API are explicit plan conflicts; apply
+also reverifies them before any recovery snapshot or write. Apply re-scans the Field and requires the
+exact approved digest; it only rewrites legacy links in Markdown/Canvas files named by that Field's
+manifest. Unmapped files with remaining legacy links block the operation. It does not reorganize
+paper analysis or normalize JEPA templates. A synchronous failure is rolled back, but a process
+crash during multi-file replacement requires manual recovery from the snapshot; that snapshot is
+not a verified backup.
+
+See [`references/hub-contract.md`](references/hub-contract.md) for the complete runtime contract.
+Recovery snapshots created during a Field migration are not verified backups; a separate backup
+medium and restore exercise remain required.
 
 ## Skills
 
@@ -123,14 +184,17 @@ command and `/open/paper/<attachment-key>` URLs remain compatibility routes.
 - **Claude Code or Codex** (Codex CLI or the Codex app; the IDE extension does not load plugins).
 - **Python ≥ 3.11** — the deterministic CLI is a Python package.
 - **Git** — required when `init-project` creates or verifies a project skeleton.
-- **cmux** — required for workspace-targeted viewing, bound mutations, and any controlled Codex
-  task worker. Without a valid workspace binding, library and document reading remains available,
-  while workspace, project-write, and task actions are disabled.
+- **cmux** — optional for routing Web/terminal/Codex/CLI windows to a chosen workspace. It does not
+  grant file access and is not required for reading, Vault saves, or registered project-document
+  operations.
 - **Zotero 10+ with Local API enabled** — the authoritative library. Enable it in
   Zotero's **Settings → Advanced**. No Zotero plugin or MCP server is required. A sandboxed
   Codex run may need localhost/network permission before it can reach port 23119; retry with
   that permission before interpreting exit 3 as Zotero being offline.
 - **Optional, per feature:**
+  - **Obsidian + ZotFlow** — for in-Obsidian PDF annotation. Hub checks the installed app/plugin
+    versions and ZotFlow's `minAppVersion`; it reports incompatibility but never upgrades Obsidian.
+    ZotFlow keeps its Zotero Web API key in Obsidian SecretStorage.
   - Notion integration token — only if you enable the Notion projection.
   - `notebooklm-py` + a Google login — only for the `recommend-papers` skim tier and
     NotebookLM-assisted literature-tree batch reading.
@@ -166,19 +230,19 @@ command and `/open/paper/<attachment-key>` URLs remain compatibility routes.
    ```
    Verify: `scholar-workflow --help`.
 
-3. **Create the config.** Just ask in-conversation ("configure scholar-workflow, my
-   vault is ~/path/to/vault") and the `config-setup` skill runs it for you, or do it
-   directly:
+3. **Create the config.** Ask in-conversation ("configure scholar-workflow") and the
+   `config-setup` skill runs it for you, or do it directly:
    ```bash
-   scholar-workflow config init --research-vault-root ~/path/to/obsidian/vault
+   scholar-workflow config init
    # add optional settings inline as KEY=VALUE, e.g.:
-   #   scholar-workflow config init --research-vault-root ~/vault notion.enabled=true
+   #   scholar-workflow config init notion.enabled=true
    scholar-workflow config set paper_inbox ~/path/to/download/inbox   # change one key later
    scholar-workflow config show                                       # inspect effective values
    ```
    This writes `~/.config/scholar-workflow/config.yml` (only the keys you name), validates
    it, and preserves comments on later edits. Override the location with
-   `SCHOLAR_WORKFLOW_HOME` if needed.
+   `SCHOLAR_WORKFLOW_HOME` if needed. Add each Vault or folder from **Hub → Fields → 选择 Vault / 目录**;
+   an old `research_vault_root` value is treated only as a migration candidate.
 
 4. **Authorize Zotero writes.** Start Zotero, then run:
    ```bash
@@ -227,13 +291,15 @@ The plugin is in active `0.x` development. What's solid vs. still settling:
   listing, remembered write authorization, item creation, imported-PDF upload, exact DOI
   reuse, and attachment reuse. The same ingest payload returns the original item and
   attachment without re-uploading.
-- **The v0.27 cmux compatibility path was live-tested:** `open-hub` created a Hub browser surface
-  and its legacy action could create a blank native agent session. The v2 lease/binding and
-  bounded TaskRecipe contracts are covered by tests, but a real worker and port-23128 cutover are
-  deliberately not activated by this source change.
-- **The v2 knowledge/project contracts are fixture-tested, not migrated:** existing Vaults and
-  projects remain untouched until an explicit migration plan is approved; the first knowledge
-  pilot remains JEPA and the first real project is still a user decision.
+- **Hub v3 replaces the v0.28.1 binding model:** cmux is only an open location; trusted
+  folder/project targets authorize files and cwd. Managed lifecycle uses a dynamic port and
+  self-identifying discovery rather than a fixed 23128 service or source-tree root.
+- **Real data still uses per-Field gates:** the first Source is the current research-document
+  Vault, the first Field is World Models, and JEPA/V-JEPA is the acceptance sample. A preview must
+  be accepted before that Field changes; other Vaults and projects remain untouched.
+- **ZotFlow compatibility is diagnosed, not repaired automatically:** if the installed Obsidian
+  version is below the plugin's `minAppVersion`, Hub disables the ZotFlow action and explains the
+  required upgrade. It never upgrades Obsidian or removes another plugin.
 - **Implemented but not yet exercised on a real end-to-end run:** the `build-literature-tree`
   CLI render path (especially the fourth `module` level and the challenge-insight tree
   written to the vault), the `recommend-papers` NotebookLM skim tier, and `check-consistency`.
@@ -245,7 +311,7 @@ The plugin is in active `0.x` development. What's solid vs. still settling:
 
 ## Development
 
-This is the `release` branch (runtime only), including the native Codex marketplace,
-the Claude-compatible marketplace, and both host manifests. Development — conventions,
-planning docs, tests, and evals — lives on the `main` branch. See its `AGENT.md` for
-contributor guidelines. Run tests there with `pytest tests/unit tests/contract`.
+The published `release` branch contains runtime files only, including native Codex and
+Claude-compatible marketplace metadata and both host manifests. Development conventions,
+planning docs, tests, and evals live on `main`. See its `AGENT.md` for contributor guidelines;
+run tests there with `pytest tests/unit tests/contract`.

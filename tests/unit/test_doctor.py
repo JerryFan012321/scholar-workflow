@@ -7,7 +7,7 @@ from scholar_workflow.doctor import probe_zotero_local, run_doctor
 
 
 class Cfg:
-    def __init__(self, inbox, vault):
+    def __init__(self, inbox, vault=None):
         self.paper_inbox = inbox
         self.research_vault_root = vault
 
@@ -75,3 +75,10 @@ def test_run_doctor_advisory_does_not_affect_ok(tmp_path):
     out = run_doctor(Cfg(tmp_path, tmp_path), zotero_probe=lambda: unavailable)
     assert out["ok"] is True
     assert out["advisories"] == [unavailable]
+
+
+def test_optional_legacy_vault_is_not_a_required_path(tmp_path):
+    out = run_doctor(Cfg(tmp_path), zotero_probe=lambda: _available())
+
+    assert out["ok"] is True
+    assert [check["name"] for check in out["checks"]] == ["paper_inbox"]

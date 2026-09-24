@@ -20,6 +20,7 @@ from typing import Any, Protocol
 from urllib.parse import urlencode, urlsplit
 
 from scholar_workflow.adapters.obsidian import VaultPathError, safe_vault_path
+from scholar_workflow.adapters.zotero_local import ZoteroLocalAdapter, ZoteroLocalError
 from scholar_workflow.hub.cmux import (
     CmuxControl,
     CmuxControlError,
@@ -27,7 +28,12 @@ from scholar_workflow.hub.cmux import (
     WorkspaceRegistry,
     minimal_child_environment,
 )
-
+from scholar_workflow.hub.zotflow import (
+    PdfRef,
+    RegisteredSourceZotFlowAdapter,
+    ZotFlowError,
+    ZotFlowReaderAdapter,
+)
 
 DEFAULT_CMUX_PATH = Path("/Applications/cmux.app/Contents/Resources/bin/cmux")
 _CMUX_BUNDLE_ID = "com.cmuxterm.app"
@@ -76,6 +82,9 @@ class ActionKind(str, Enum):
     ARTIFACT_CMUX = "artifact.cmux"
     OBSIDIAN_NOTE = "obsidian.note"
     ZOTERO_ITEM = "zotero.item"
+    ZOTERO_PDF = "zotero.pdf"
+    ZOTFLOW_ATTACHMENT = "zotflow.attachment"
+    SYSTEM_PDF = "system.pdf"
     CODEX_SESSION = "codex.session"
 
 
@@ -94,6 +103,9 @@ class PublicAction:
     label: str
     kind: ActionKind
     workspace_policy: WorkspacePolicy = WorkspacePolicy.NONE
+    available: bool = True
+    reason: str | None = None
+    primary: bool = False
 
 
 @dataclass(frozen=True)
@@ -105,6 +117,9 @@ class RegisteredAction:
     kind: ActionKind
     target: str
     workspace_policy: WorkspacePolicy = WorkspacePolicy.NONE
+    available: bool = True
+    reason: str | None = None
+    primary: bool = False
 
     def public_view(self) -> PublicAction:
         return PublicAction(
@@ -112,6 +127,9 @@ class RegisteredAction:
             label=self.label,
             kind=self.kind,
             workspace_policy=self.workspace_policy,
+            available=self.available,
+            reason=self.reason,
+            primary=self.primary,
         )
 
 
@@ -133,6 +151,9 @@ class ActionRegistry:
         label: str,
         target: str,
         workspace_policy: WorkspacePolicy = WorkspacePolicy.NONE,
+        available: bool = True,
+        reason: str | None = None,
+        primary: bool = False,
     ) -> PublicAction:
         if not label.strip():
             raise ValueError("Action label must not be empty")
@@ -150,6 +171,9 @@ class ActionRegistry:
             kind=ActionKind(kind),
             target=target,
             workspace_policy=WorkspacePolicy(workspace_policy),
+            available=available,
+            reason=reason,
+            primary=primary,
         )
         self._actions[action_id] = action
         return action.public_view()
@@ -286,6 +310,8 @@ class ActionExecutor:
 
     def execute(self, action_id: str, *, workspace_id: str | None = None) -> Any:
         action = self._registry.resolve(action_id)
+        if not action.available:
+            raise InvalidActionTarget(action.reason or "This action is unavailable")
         launcher = self._launchers.get(action.kind)
         if launcher is None:
             raise UnsupportedActionError(f"No launcher registered for {action.kind.value}")
@@ -322,6 +348,8 @@ class CatalogActionService:
         self._revision: str | None = None
         self._public_actions: dict[str, list[PublicAction]] = {}
         self._executor: ActionExecutor | None = None
+        self._registry: ActionRegistry | None = None
+        self._paper_actions: dict[str, tuple[str, list[PublicAction]]] = {}
 
     def public_actions(self) -> dict[str, list[PublicAction]]:
         catalog = self._catalog_provider.load()
@@ -344,12 +372,129 @@ class CatalogActionService:
                 if ActionKind.CODEX_SESSION in self._launchers:
                     public_actions["__hub__"] = [register_codex_action(registry)]
                 self._executor = ActionExecutor(registry, self._launchers)
+                self._registry = registry
                 self._public_actions = public_actions
+                self._paper_actions = {}
                 self._revision = catalog.revision
             return {
                 entity_id: list(actions)
                 for entity_id, actions in self._public_actions.items()
             }
+
+    def paper_actions(self, item: dict[str, Any]) -> list[PublicAction]:
+        """Register one-hop actions for a live Zotero paper page."""
+        self.public_actions()
+        item_key = item.get("zotero_item_key")
+        attachment_key = item.get("attachment_key")
+        pdf_payload = item.get("pdf_ref")
+        if not isinstance(item_key, str) or not _ZOTERO_KEY_RE.fullmatch(item_key):
+            return []
+        zotflow_available = False
+        zotflow_reason = "ZotFlow is unavailable"
+        zotflow_launcher = self._launchers.get(ActionKind.ZOTFLOW_ATTACHMENT)
+        if zotflow_launcher is not None and hasattr(zotflow_launcher, "availability"):
+            capability = zotflow_launcher.availability()
+            zotflow_available = bool(getattr(capability, "available", False))
+            zotflow_reason = str(getattr(capability, "reason", None) or zotflow_reason)
+        fingerprint = (
+            f"{item_key}:{attachment_key}:{pdf_payload}:"
+            f"zotflow={zotflow_available}:{zotflow_reason}"
+        )
+        entity_id = f"zotero:{item_key}"
+        with self._lock:
+            cached = self._paper_actions.get(entity_id)
+            if cached is not None and cached[0] == fingerprint:
+                return list(cached[1])
+            registry = self._registry
+            if registry is None:
+                return []
+            actions: list[PublicAction] = []
+            if isinstance(pdf_payload, dict) and isinstance(attachment_key, str):
+                try:
+                    pdf_ref = PdfRef.model_validate(pdf_payload)
+                except ValueError:
+                    pdf_ref = None
+                if pdf_ref is not None and zotflow_launcher is not None:
+                    actions.append(
+                        registry.register(
+                            kind=ActionKind.ZOTFLOW_ATTACHMENT,
+                            label="在 ZotFlow 标注",
+                            target=pdf_ref.model_dump_json(),
+                            available=zotflow_available,
+                            reason=None if zotflow_available else zotflow_reason,
+                            primary=zotflow_available,
+                        )
+                    )
+                if ActionKind.ZOTERO_PDF in self._launchers:
+                    actions.append(
+                        registry.register(
+                            kind=ActionKind.ZOTERO_PDF,
+                            label="在 Zotero 打开",
+                            target=attachment_key,
+                            primary=not zotflow_available,
+                        )
+                    )
+                if ActionKind.RESOURCE_CMUX in self._launchers:
+                    actions.append(
+                        registry.register(
+                            kind=ActionKind.RESOURCE_CMUX,
+                            label="在 cmux 阅读",
+                            target=attachment_key,
+                            workspace_policy=WorkspacePolicy.REQUIRED,
+                        )
+                    )
+                if ActionKind.SYSTEM_PDF in self._launchers:
+                    actions.append(
+                        registry.register(
+                            kind=ActionKind.SYSTEM_PDF,
+                            label="系统阅读器",
+                            target=attachment_key,
+                        )
+                    )
+            if ActionKind.ZOTERO_ITEM in self._launchers:
+                actions.append(
+                    registry.register(
+                        kind=ActionKind.ZOTERO_ITEM,
+                        label="在 Zotero 选择条目",
+                        target=item_key,
+                        primary=not actions,
+                    )
+                )
+            catalog = self._catalog_provider.load()
+            matching_resources = [
+                resource
+                for resource in catalog.resources
+                if resource.zotero.item_key == item_key
+            ]
+            artifacts = {artifact.artifact_id: artifact for artifact in catalog.artifacts}
+            for resource in matching_resources:
+                actions.extend(self._public_actions.get(resource.resource_id, []))
+                if ActionKind.OBSIDIAN_NOTE not in self._launchers:
+                    continue
+                for artifact_id in resource.artifact_ids:
+                    artifact = artifacts.get(artifact_id)
+                    if artifact is None:
+                        continue
+                    kind = getattr(artifact.kind, "value", artifact.kind)
+                    format_name = getattr(artifact.format, "value", artifact.format)
+                    if format_name != "markdown":
+                        continue
+                    if kind == "paper-analysis":
+                        label = "查看分析"
+                    elif kind == "annotation-note":
+                        label = "打开批注笔记"
+                    else:
+                        continue
+                    actions.append(
+                        registry.register(
+                            kind=ActionKind.OBSIDIAN_NOTE,
+                            label=label,
+                            target=artifact.vault_path,
+                        )
+                    )
+            self._paper_actions[entity_id] = (fingerprint, list(actions))
+            self._public_actions[entity_id] = list(actions)
+            return list(actions)
 
     def public_workspaces(
         self,
@@ -480,6 +625,91 @@ class ZoteroLauncher:
                 f"Zotero could not open the registered item (exit {result.returncode})"
             )
         return ZoteroLaunchResult(opened=True)
+
+
+class ZoteroPdfLauncher(ZoteroLauncher):
+    """Open a specific attachment in Zotero's native reader."""
+
+    def open(self, target: str) -> ZoteroLaunchResult:
+        if not isinstance(target, str) or not _ZOTERO_KEY_RE.fullmatch(target):
+            raise InvalidActionTarget("Zotero PDF target is not an attachment key")
+        return self._open_uri(f"zotero://open-pdf/library/items/{target}")
+
+    def _open_uri(self, uri: str) -> ZoteroLaunchResult:
+        try:
+            result = self._runner(
+                ["/usr/bin/open", uri],
+                shell=False,
+                timeout=self._timeout,
+                env=minimal_child_environment(),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise ActionError("Opening Zotero timed out") from exc
+        except OSError as exc:
+            raise ActionError("Could not start Zotero") from exc
+        if result.returncode != 0:
+            raise ActionError("Zotero could not open the PDF attachment")
+        return ZoteroLaunchResult(opened=True)
+
+
+class ZotFlowLauncher:
+    def __init__(
+        self,
+        adapter: ZotFlowReaderAdapter | RegisteredSourceZotFlowAdapter,
+    ) -> None:
+        self._adapter = adapter
+
+    def availability(self):
+        return self._adapter.probe()
+
+    def open(self, target: str) -> dict[str, bool]:
+        try:
+            pdf_ref = PdfRef.model_validate_json(target)
+            return self._adapter.open_attachment(pdf_ref)
+        except (ValueError, ZotFlowError) as exc:
+            raise InvalidActionTarget(str(exc)) from exc
+
+
+class SystemPdfLauncher:
+    """Open the Local-API-resolved attachment in the configured system reader."""
+
+    def __init__(
+        self,
+        *,
+        adapter_factory=ZoteroLocalAdapter,
+        runner=subprocess.run,
+        timeout: float = 5.0,
+    ) -> None:
+        self._adapter_factory = adapter_factory
+        self._runner = runner
+        self._timeout = timeout
+
+    def open(self, target: str) -> dict[str, bool]:
+        if not isinstance(target, str) or not _ZOTERO_KEY_RE.fullmatch(target):
+            raise InvalidActionTarget("System PDF target is not an attachment key")
+        try:
+            with self._adapter_factory() as adapter:
+                locator = adapter.resolve_attachment_locator(target)
+        except ZoteroLocalError as exc:
+            raise InvalidActionTarget(str(exc)) from exc
+        try:
+            result = self._runner(
+                ["/usr/bin/open", str(locator.path)],
+                shell=False,
+                timeout=self._timeout,
+                env=minimal_child_environment(),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise ActionError("Could not open the system PDF reader") from exc
+        if result.returncode != 0:
+            raise ActionError("The system PDF reader rejected the attachment")
+        return {"opened": True}
 
 
 class CmuxLauncher:
@@ -647,14 +877,14 @@ class CmuxLauncher:
 
 
 class CmuxResourceLauncher:
-    """Open a catalog PDF through the fixed loopback Hub origin in cmux."""
+    """Open a catalog PDF through the current discovered Hub origin in cmux."""
 
     def __init__(
         self,
         workspace_registry: WorkspaceRegistry,
         *,
         control: CmuxControl,
-        hub_origin: str = "http://127.0.0.1:23128",
+        hub_origin: str,
     ) -> None:
         parsed = urlsplit(hub_origin)
         if (
@@ -684,7 +914,7 @@ class CmuxResourceLauncher:
         if not isinstance(target, str) or not _ZOTERO_KEY_RE.fullmatch(target):
             raise InvalidActionTarget("Resource target is not a catalog attachment key")
         workspace = _resolve_workspace(self._workspace_registry, workspace_id)
-        url = f"{self._hub_origin}/open/paper/{target}"
+        url = f"{self._hub_origin}/api/v3/pdfs/zotero/{target}/content"
         try:
             self._control.open(url, workspace_id=workspace)
         except CmuxControlError as exc:

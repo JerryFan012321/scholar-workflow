@@ -14,7 +14,11 @@ from scholar_workflow.analysis.models import (
     EvidenceKind,
     ProfileKind,
 )
-from scholar_workflow.analysis.rendering import AnalysisBundle, render_analysis
+from scholar_workflow.analysis.rendering import (
+    AnalysisBundle,
+    canvas_node_id,
+    render_analysis,
+)
 
 
 def _claim(
@@ -154,7 +158,7 @@ def test_conformance_rejects_claim_set_drift_and_broken_workflow_flow() -> None:
     ]
     canvas["nodes"].append(
         {
-            "id": "abcdef0123456789",
+            "id": canvas_node_id(document.artifact_id, "role/output/extra"),
             "type": "text",
             "x": 5000,
             "y": 5000,
@@ -340,6 +344,34 @@ def test_custom_nodes_do_not_consume_generated_budget_or_geometry_rules() -> Non
     )
 
     assert len(canvas["nodes"]) > 40
+    assert report.ok, report.model_dump(mode="json")
+
+
+def test_user_owned_canvas_node_cannot_be_claimed_by_embedded_marker() -> None:
+    document = _whole_document()
+    rendered = render_analysis(document, note_stem="JEPA分析")
+    canvas = json.loads(json.dumps(rendered.canvas))
+    canvas["nodes"].append(
+        {
+            "id": "human-marker-note",
+            "type": "text",
+            "x": 9000,
+            "y": 9000,
+            "width": 360,
+            "height": 140,
+            "text": (
+                '<!-- sw-analysis-claim id="human-extra" role="workflow" -->\n'
+                "对应挑战：这是用户自己的自由文本。"
+            ),
+        }
+    )
+
+    report = validate_bundle(
+        document,
+        AnalysisBundle(markdown=rendered.markdown, canvas=canvas),
+        note_stem="JEPA分析",
+    )
+
     assert report.ok, report.model_dump(mode="json")
 
 

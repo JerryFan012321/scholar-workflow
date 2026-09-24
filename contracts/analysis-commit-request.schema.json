@@ -53,6 +53,9 @@
     },
     "relations": {
       "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Must include resource_id --has-analysis--> document.artifact_id; runtime enforces the cross-field binding.",
       "items": {"$ref": "knowledge-change-set.schema.json#/$defs/relation"}
     },
     "projections": {

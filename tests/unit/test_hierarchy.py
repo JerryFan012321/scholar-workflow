@@ -1,5 +1,6 @@
 """Unit tests for the hierarchical folder-mirror projection (option C, INV4/INV18)."""
 from __future__ import annotations
+
 from scholar_workflow.adapters.obsidian import ObsidianAdapter
 from scholar_workflow.workflows.hierarchy import plan_tree, project_tree
 
@@ -46,7 +47,8 @@ def test_hub_has_moc_wikilink_leaf_has_table(tmp_path):
     assert "- [[paper/科研项目/上汽标注/text2cad|text2cad]]" in mid
     leaf = (tmp_path / "paper/科研项目/上汽标注/text2cad.md").read_text(encoding="utf-8")
     assert "| Importance |" in leaf and "★★★" in leaf
-    assert "http://127.0.0.1:23128/open/paper/S6LZUS6S" in leaf
+    assert "zotero://open-pdf/library/items/S6LZUS6S" in leaf
+    assert "127.0.0.1:23128" not in leaf
 
 
 def test_plan_tree_is_pure_and_matches_apply(tmp_path):

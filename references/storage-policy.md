@@ -6,12 +6,14 @@ Canonical rule for where every object lives. Applies to all skills and agents.
 
 | Object | Authoritative store | Root |
 |---|---|---|
-| Paper bibliography, tags, attachment links | Zotero (read/write via Local API) | Zotero-managed |
+| Paper bibliography, tags, attachment links, formal annotations | Zotero (read/write via Local API; annotations edited by ZotFlow/Zotero) | Zotero-managed |
 | Paper PDFs (after ingest) | Zotero storage | Zotero-managed |
 | Downloaded paper PDFs (awaiting ingest) | Inbox | `paper_inbox` |
-| Personal knowledge, notes, technical docs | Obsidian Vault | `research_vault_root` |
-| JSON Canvas Hub identity (content stays in Canvas) | Obsidian Vault | `.scholar-workflow/artifacts.yml` |
-| Images, data, and supplements attached to Vault notes | Obsidian Vault | `research_vault_root/attachments/` + `.scholar-workflow/assets.yml` relation manifest |
+| Personal knowledge, notes, technical docs | Registered Obsidian Source/Field | trusted `folder_id` + `.scholar-workflow/fields.yml` |
+| JSON Canvas identity (content stays in Canvas) | Registered Obsidian Source | `.scholar-workflow/artifacts.yml` |
+| Images, data, and supplements attached to Vault notes | Registered Obsidian Source | Source-relative `attachments/` + `.scholar-workflow/assets.yml` relation manifest |
+| ZotFlow Source Notes | ZotFlow-owned path inside its registered Obsidian Source | disjoint from Better Notes and Scholar-managed paths |
+| Annotated PDF snapshots for external readers | Derived snapshot store | hash-bound copy; never the Zotero attachment path |
 | Knowledge outline, projects, tasks | Notion | Notion cloud |
 | Plugin runtime state (mappings, cursors, jobs, audit) | State store | `SCHOLAR_WORKFLOW_HOME` |
 
@@ -35,6 +37,12 @@ Canonical rule for where every object lives. Applies to all skills and agents.
 7. JSON Canvas remains a standard `nodes`/`edges` document. Hub identity for an analysis
    Canvas is declared in `.scholar-workflow/artifacts.yml`, never injected as private
    top-level Canvas fields or inferred from its filename.
+8. One Obsidian Source may expose multiple Fields. The legacy `research_vault_root`
+   is a migration candidate, not a required singleton root. Host paths stay in the
+   folder registry; portable Source/Field identity and navigation stay in
+   `.scholar-workflow/fields.yml`.
+9. ZotFlow Source Notes, Better Notes output, and Scholar analysis/annotation documents
+   have separate writer ownership and non-overlapping path prefixes.
 
 ## PDF handling
 
@@ -60,3 +68,12 @@ Ingested paper PDFs stay imported (mode 0) so Zotero File Syncing carries them a
 machines. A linked file (mode 2) is portable only when its stored path is relative
 (`attachments:…`), and its bytes never travel via Zotero File Syncing — so a linked
 attachment with an absolute path (`/Users/…`) is cross-machine drift to report.
+
+## Annotated PDF snapshots
+
+Zotero annotations are database objects, not edits to the authoritative PDF bytes.
+When another reader needs visible annotations, generate an explicit derived snapshot
+identified by `source_pdf_hash + annotation_set_hash`. Never replace the imported
+attachment, automatically import the snapshot into Zotero, or treat edits to the
+snapshot as synchronization. Unsupported annotation types make the export incomplete
+or failed and must be reported explicitly.

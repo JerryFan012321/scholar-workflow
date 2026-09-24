@@ -1,6 +1,6 @@
 """Unit tests for Obsidian projection rendering (GOALS INV4/INV17/INV18)."""
 from __future__ import annotations
-from pathlib import Path
+
 from scholar_workflow.adapters.obsidian import ObsidianAdapter
 from scholar_workflow.workflows.projection import format_row, project_obsidian
 
@@ -20,7 +20,8 @@ def _adapter(tmp_path):
 def test_format_row_links_and_columns():
     row = format_row(ENTRY, port=23128)
     assert row.count("|") == 10  # 9 cells (DOI dropped) -> 10 pipes
-    assert "http://127.0.0.1:23128/open/paper/S6LZUS6S" in row
+    assert "zotero://open-pdf/library/items/S6LZUS6S" in row
+    assert "127.0.0.1:23128" not in row
     assert "zotero://select/items/@8USWVHLD" in row
     assert "A. One; B. Two" in row
     assert "milestone ★★" in row  # importance text + star badge

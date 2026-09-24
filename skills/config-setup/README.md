@@ -3,9 +3,12 @@
 Configure the plugin's non-secret settings through the CLI, and bootstrap `config.yml`
 on a fresh install — so you can set things up by asking, without hand-writing YAML.
 
-- **First run** — `scholar-workflow config init --research-vault-root PATH` creates
-  `config.yml` with the vault plus any `KEY=VALUE` extras you name. It writes only what
-  you set, never a full dump of defaults, and refuses to clobber a differing existing file.
+- **First run** — `scholar-workflow config init` creates a minimal `config.yml` plus any
+  `KEY=VALUE` extras you name. It writes only what you set, never a full dump of defaults,
+  and refuses to clobber a differing existing file.
+- **Legacy migration candidate** — add `--research-vault-root PATH` only when an old
+  singleton Vault must remain available to pre-v3 projection commands. Dynamic Sources
+  and Fields are registered in the Hub instead.
 - **Change a value** — `scholar-workflow config set KEY VALUE` sets one dotted key
   (e.g. `notion.enabled`, `link_service.port`), preserving comments in the file.
 - **Inspect** — `config show` (effective values), `config show --raw` (file as written),

@@ -1,28 +1,45 @@
-# Local Link Format
+# Stable PDF Link Format
 
-Projections link to files through the local-link service, never via hardcoded
-absolute `file://` paths.
+Persistent projections link to a Zotero attachment identity, never to a Hub port,
+absolute `file://` path, storage-directory guess, or process-local action ID.
 
-## URL shape
+## Human-readable URI
 
+```text
+zotero://open-pdf/library/items/{attachment-key}
 ```
-http://127.0.0.1:23128/open/paper/{attachment-key}
+
+`{attachment-key}` is the Zotero **attachment** key, not the parent item key or a
+storage-folder name. Resolve it from the parent/child relationship returned by Zotero
+Local API. If a paper has no PDF attachment, omit the PDF action rather than inventing
+a path or URL.
+
+ZotFlow-managed notes may use its own registered action protocol:
+
+```text
+obsidian://zotflow?type=open-attachment&...
 ```
 
-`{attachment-key}` is the Zotero **attachment** key (the storage folder name), not the
-item key. Get it from `scholar-workflow zotero get <item-key> --children`.
+Only ZotFlow writes those links. Scholar-generated general Markdown uses the Zotero URI.
 
-## Client rules
+## Machine identity
 
-- Emit only the opaque attachment key in the URL — never an item key, resource ID,
-  or absolute path.
-- The service resolves the key at open time by globbing
-  `{storage_root}/{attachment-key}/*.pdf` (storage_root defaults to `~/Zotero/storage`);
-  the projection stores the stable URL, not the resolved path, so switching machines
-  or moving the storage folder never invalidates a link already written to the vault.
-- If a paper has no PDF attachment yet, omit the PDF link rather than writing a raw path.
+Machine relations store a `PdfRef`, not either display URI:
 
-The service binds to `127.0.0.1` only. It validates the key against `[A-Z0-9]+` before
-touching the filesystem (blocks path traversal), returns 200 + `application/pdf` inline on
-a hit, 404 when the folder has no PDF, and 400 on a malformed/invalid key. Full spec lives
-with the implementation in `src/scholar_workflow/adapters/local_links.py`.
+```text
+PdfRef {
+  provider: "zotero",
+  library_id,
+  attachment_key,
+  content_hash
+}
+```
+
+Hub resolves that reference to a direct, pre-registered action at runtime. Its dynamic
+loopback origin and opaque action ID are temporary and must never be persisted.
+
+## Legacy links
+
+Legacy fixed-port `/open/paper/<attachment-key>` URLs are read-only migration input.
+Do not emit it in a new or rebuilt projection. Rewrite existing occurrences only inside
+an approved per-Field migration transaction; do not perform a cross-Vault bulk replace.

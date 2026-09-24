@@ -1,11 +1,13 @@
 """Obsidian projection: render Zotero-sourced entries into a managed-block index.
 
 Entries are produced from Zotero Local API data and handed to the renderer as JSON
-(GOALS INV18 — planner/executor split). The PDF column points
-at the loopback link-service by attachment key (INV17). `format_row` is pure —
-deterministic in its input — so re-running the same entries is idempotent.
+(GOALS INV18 — planner/executor split). The PDF column uses Zotero's stable
+attachment-key URI; device-local Hub ports never enter human-authored knowledge.
+`format_row` is pure — deterministic in its input — so re-running the same entries
+is idempotent.
 """
 from __future__ import annotations
+
 from pathlib import Path
 
 from scholar_workflow.hub.obsidian_contract import (
@@ -55,8 +57,12 @@ def format_row(entry: dict, port: int, assets: bool = False) -> str:
     column (a wikilink to the paper's assets note) is emitted only when assets=True."""
     authors = entry.get("authors") or []
     authors = "; ".join(authors) if isinstance(authors, list) else authors
+    # ``port`` remains in the public signature for one compatibility cycle. New
+    # projections deliberately ignore it: an ephemeral Hub endpoint is not a
+    # persistent paper identity.
+    del port
     attach = entry.get("attachment_key")
-    pdf = f"[PDF](http://127.0.0.1:{port}/open/paper/{attach})" if attach else ""
+    pdf = f"[PDF](zotero://open-pdf/library/items/{attach})" if attach else ""
     zkey = entry.get("zotero_key")
     zotero = f"[open](zotero://select/items/@{zkey})" if zkey else ""
     arxiv = entry.get("arxiv")

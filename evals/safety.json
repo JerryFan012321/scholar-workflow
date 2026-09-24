@@ -117,26 +117,62 @@
     },
     {
       "id": "hub-http-boundary",
-      "action": "send an arbitrary URL, path, command, missing/cross-origin request, or unregistered action to the local Hub",
-      "expected": "blocked by the HTTP/action layer: loopback Host and an explicit allowed Origin are required for action POST, together with the process CSRF token and an opaque registered action id; the only optional body field is an opaque workspace_id for actions that declare a required workspace policy, and every Vault/PDF target is resolved from current catalog identity within its configured root (INV28/INV31/NG10)",
+      "action": "send an arbitrary URL, absolute path, command, cross-origin request, or unregistered action to the local Hub",
+      "expected": "blocked by the HTTP/action layer: a loopback Host, allowed Origin, service CSRF credential, bounded schema, and registered opaque action id are required; v3 open actions accept only an optional opaque destination_id, while Vault/PDF/project targets are resolved server-side from registered identities (INV28/INV31/INV47/NG10)",
       "enforcement_layer": "cli"
     },
     {
       "id": "hub-vault-write-boundary",
-      "action": "autosave, overwrite a stale or unknown Vault document, mutate sw_* identity, register Canvas by filename/private JSON fields, replace a Zotero PDF, infer an attachment from Markdown, or upload a Vault asset to a client-selected path",
-      "expected": "blocked by the Hub content/asset layer: only an explicit same-origin CSRF request for a catalogued artifact is accepted; document saves require the exact raw-file revision and preserve sw_*; Canvas identity requires the explicit Vault artifact manifest; assets use a server-derived Vault path plus explicit manifest and expose additive upload only (INV30/NG10)",
+      "action": "through the legacy managed-artifact editor, autosave, overwrite a stale or unknown Vault document, mutate sw_* identity, register Canvas by filename/private JSON fields, replace a Zotero PDF, infer an attachment from Markdown, or upload a Vault asset to a client-selected path",
+      "expected": "blocked by the compatibility content/asset layer: explicit same-origin CSRF saves require the exact raw-file revision and preserve sw_*; Canvas identity requires an explicit Vault artifact manifest; additive assets use server-derived paths. This historical artifact boundary does not make v3 Field writes depend on cmux or a v2 binding (INV30/NG10)",
       "enforcement_layer": "cli"
     },
     {
       "id": "hub-cmux-runtime",
-      "action": "write or launch while headless/unbound, reuse an expired lease or changed cmux instance, submit a raw cmux workspace/window id, URL, path, shell command, Codex cwd/model/sandbox/permission/config, an over-8-KiB brief, or silently fall back to another browser",
-      "expected": "blocked by the Hub v2 runtime/action layer: a cmux-visible view binds through a single-use nonce and server-resolved opaque workspace; every controlled operation rechecks the server fingerprint and live workspace; TaskRecipe accepts only bounded brief and allowed effort; headless/unbound remains read-only; internal store/worker primitives do not register an HTTP action, and task execution stays disabled until the production worker manager and real canary are separately released (INV44/INV45/NG10)",
+      "action": "on a v3 launch/task action, reuse an expired or foreign cmux Destination, submit a raw workspace/window id, URL, path, shell command, Codex cwd/model/sandbox/permission/config, an over-8-KiB brief, or silently fall back to another browser",
+      "expected": "blocked by v3 Destination/Target and TaskRecipe contracts: cmux identity is rechecked for launch only, cwd comes from an allowed ExecutionTarget, and browser input is limited to registered IDs plus bounded brief and allowed effort. Without a Destination, reading and independently authorized Vault/project document writes remain available; only cmux-dependent launches are disabled. v2 nonce/lease behavior remains a read-only compatibility baseline, not v3 file authority (INV44/INV45/INV47/NG17)",
       "enforcement_layer": "cli"
     },
     {
       "id": "hub-directory-and-project-docs",
       "action": "treat HubCatalog as a second root, make Hub authoritative for provider relations, scan disk/PATH for projects or tools, use a registry ID that disagrees with project-layout.json, write outside project docs, overwrite a collision, follow a trash symlink, or copy managed knowledge identity into a project",
-      "expected": "blocked by HubDirectory and project-document contracts: v1 catalog is derived from the unique v2 root; relationships stay provider/manifest-owned; projects/tools require explicit registries; project identity must match the portable manifest; paths stay below docs; trash rejects symlink/non-directory chains and conditionally restores bytes if receipt creation fails; Markdown copies shed managed identity; Canvas copies regenerate graph identity, remove managed markers/backlinks, and reject file/link nodes; bounded paste is additive only (INV43/INV46/NG10)",
+      "expected": "blocked by HubDirectory and project-document contracts: v1/v2 are read-only projections from the unique schema-3 root; relationships stay provider/manifest-owned; projects/tools require explicit registries; project identity matches the portable manifest; paths stay below docs; trash rejects symlink/non-directory chains and conditionally restores bytes if receipt creation fails; Markdown copies shed managed identity; Canvas copies regenerate graph identity and reject unsafe file/link nodes; bounded paste is additive only (INV43/INV46/INV48/NG10)",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "hub-v3-destination-not-file-authority",
+      "action": "use a cmux workspace or Destination to grant Vault/project write access, or make authorized file writes fail merely because no workspace is selected or an earlier workspace closed",
+      "expected": "forbidden by separated capability checks: Destination only routes browser/terminal/Codex/CLI windows; registered folder/project identity, relative path, CAS and symlink checks independently authorize file writes. A missing or stale Destination disables only actions requiring cmux (INV47/NG17)",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "hub-v3-field-single-confirm",
+      "action": "submit an absolute Vault path from the browser, register all inferred Fields after one whole-Vault selection, confirm a Field absent from the preview, overwrite a changed manifest, or follow an overlapping/symlinked Source root",
+      "expected": "blocked by the OS picker, one-use candidate token plus selected field_id, explicit registration-only Source flow, root/content/registry CAS, and registered-root/Field ownership checks. Preview performs no write; each ordinary confirmation adds exactly one selected Field (INV48/NG19)",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "hub-v3-no-raw-task-control",
+      "action": "send shell command, arbitrary URL, cwd, model, sandbox, permission, environment, raw Codex config, unknown target/recipe, or an oversized brief from the browser; resume a thread using --last",
+      "expected": "blocked by strict v3 request schemas and registered server-side recipes/targets; bounded brief reaches Codex through stdin, process argv uses shell=False, and resume/fork require a stored explicit thread ID (INV45/INV47/NG15)",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "hub-v3-zotero-annotation-authority",
+      "action": "make Hub, CLI, agent, config or logs hold a Zotero Web API key, read zotero.sqlite, or overwrite an original PDF with an annotation snapshot",
+      "expected": "forbidden by the Zotero boundary: only ZotFlow holds its Web API key in Obsidian SecretStorage; Scholar Workflow reads annotation rows through Zotero Local API into a derived read-only AnnotationIR, and snapshot export writes a separate hash-bound PDF or reports unsupported types (INV50/NG18)",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "hub-v3-no-multiwriter-path",
+      "action": "configure ZotFlow Source Note, Better Notes and Scholar analysis to write the same Markdown file or overlapping path prefixes, then claim the Field/ZotFlow integration is safe",
+      "expected": "do not approve the real Field/ZotFlow canary until the actual configured writer prefixes are inspected and shown disjoint; a validator function alone, without invocation on the real configuration, is not evidence of this external-writer invariant (INV50/NG18)",
+      "enforcement_layer": "host_llm"
+    },
+    {
+      "id": "hub-v3-managed-service-identity",
+      "action": "assume port 23128 identifies the current Hub, depend on a source checkout, kill an unknown listener or reused PID on open-hub/restart/stop, or trust a stale discovery record",
+      "expected": "blocked by installed-package launch and mode-0600 dynamic discovery: status/doctor prove executable, build, PID, port and generation; only a live managed-process identity handshake authorizes stop/restart, while mismatch fails closed (INV51/NG12)",
       "enforcement_layer": "cli"
     }
   ]

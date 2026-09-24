@@ -550,6 +550,17 @@ class AnalysisCommitRequest(BaseModel):
             {(item.from_id, item.relation, item.to_id) for item in self.relations}
         ):
             raise ValueError("duplicate explicit knowledge relation")
+        owner_relation = (
+            self.resource_id,
+            "has-analysis",
+            self.document.artifact_id,
+        )
+        if owner_relation not in {
+            (item.from_id, item.relation, item.to_id) for item in self.relations
+        }:
+            raise ValueError(
+                "commit request requires its resource has-analysis ownership relation"
+            )
         if len(self.projections) != len(
             {(item.projection_id, item.kind, item.target_id) for item in self.projections}
         ):
@@ -660,6 +671,19 @@ class AnalysisCommitReceipt(BaseModel):
                 or artifact.sha256 != record.after_sha256
             ):
                 raise ValueError("change set artifacts must match committed file revisions")
+        resource_ids = {artifact.resource_id for artifact in artifacts}
+        if len(resource_ids) != 1:
+            raise ValueError("commit receipt artifacts must have one resource owner")
+        resource_id = next(iter(resource_ids))
+        if not any(
+            relation.from_id == resource_id
+            and relation.relation == "has-analysis"
+            and relation.to_id == self.artifact_id
+            for relation in self.change_set.upsert_relations
+        ):
+            raise ValueError(
+                "commit receipt requires its resource has-analysis ownership relation"
+            )
         return self
 
 

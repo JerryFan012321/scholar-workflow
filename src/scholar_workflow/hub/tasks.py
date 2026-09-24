@@ -27,8 +27,13 @@ from typing import Any, ClassVar, Literal, Self
 
 from pydantic import Field, field_validator, model_validator
 
-from scholar_workflow.hub.directory import ProjectRegistry
+from scholar_workflow.hub.directory import EntityRef, ProjectRegistry
 from scholar_workflow.hub.models import HubModel
+from scholar_workflow.hub.routing import (
+    ExecutionTargetError,
+    ExecutionTargetRegistry,
+    TaskActionRequest,
+)
 
 MAX_BRIEF_BYTES = 8 * 1024
 _TASK_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$")
@@ -95,8 +100,9 @@ class TaskRecipe(HubModel):
     recipe_id: str
     title: str = Field(min_length=1, max_length=200)
     project_required: bool = True
-    allowed_library_ids: list[str] = Field(default_factory=list)
+    allowed_provider_ids: list[str] = Field(default_factory=list)
     allowed_project_ids: list[str] | None = None
+    allowed_target_ids: list[str] | None = None
     allowed_tool_ids: list[str] = Field(default_factory=list)
     context_policy_id: str = "selected-only"
     safety_policy_id: str = "default"
@@ -111,16 +117,18 @@ class TaskRecipe(HubModel):
             raise ValueError("recipe_id must be a portable registered identifier")
         return value
 
-    @field_validator("allowed_library_ids")
+    @field_validator("allowed_provider_ids")
     @classmethod
-    def _libraries(cls, values: list[str]) -> list[str]:
-        allowed = {"papers", "projects", "tools"}
-        if len(values) != len(set(values)) or any(value not in allowed for value in values):
-            raise ValueError("invalid or duplicate allowed library")
+    def _providers(cls, values: list[str]) -> list[str]:
+        if len(values) != len(set(values)) or any(
+            not _TASK_ID.fullmatch(value) for value in values
+        ):
+            raise ValueError("invalid or duplicate allowed entity provider")
         return values
 
     @field_validator(
         "allowed_project_ids",
+        "allowed_target_ids",
         "allowed_tool_ids",
         "context_policy_id",
         "safety_policy_id",
@@ -162,12 +170,13 @@ class TaskSafetyPolicy(HubModel):
 class TaskRequest(HubModel):
     recipe_id: str
     project_id: str | None = None
-    entity_refs: list[dict[str, str]] = Field(default_factory=list, max_length=32)
+    target_id: str | None = None
+    entity_refs: list[EntityRef] = Field(default_factory=list, max_length=32)
     effort: TaskEffort
     brief: str = Field(min_length=1)
     idempotency_key: str
 
-    @field_validator("recipe_id", "project_id", "idempotency_key")
+    @field_validator("recipe_id", "project_id", "target_id", "idempotency_key")
     @classmethod
     def _ids(cls, value: str | None) -> str | None:
         if value is not None and not _TASK_ID.fullmatch(value):
@@ -187,27 +196,20 @@ class TaskRequest(HubModel):
 
     @field_validator("entity_refs")
     @classmethod
-    def _entity_refs(cls, values: list[dict[str, str]]) -> list[dict[str, str]]:
-        expected = {"library_id", "item_type", "item_id"}
+    def _entity_refs(cls, values: list[EntityRef]) -> list[EntityRef]:
         seen: set[tuple[str, str, str]] = set()
         for value in values:
-            if set(value) != expected:
-                raise ValueError("entity refs must contain typed reference fields only")
-            if value["library_id"] not in {"papers", "projects", "tools"}:
-                raise ValueError("unknown entity reference library")
-            identity = (value["library_id"], value["item_type"], value["item_id"])
+            identity = (value.provider_id, value.entity_type, value.entity_id)
             if identity in seen:
                 raise ValueError("duplicate entity reference")
             seen.add(identity)
-            if any(
-                not isinstance(part, str)
-                or not part
-                or part != part.strip()
-                or any(ord(character) < 32 for character in part)
-                for part in identity
-            ):
-                raise ValueError("entity reference values must be clean text")
         return values
+
+    @model_validator(mode="after")
+    def _one_root_identity(self) -> TaskRequest:
+        if self.project_id is not None and self.target_id is not None:
+            raise ValueError("task request cannot mix target_id and project_id")
+        return self
 
 
 class LogicalTask(HubModel):
@@ -215,6 +217,7 @@ class LogicalTask(HubModel):
     recipe_id: str
     title: str = Field(min_length=1, max_length=200)
     project_id: str | None = None
+    target_id: str | None = None
     effort: TaskEffort
     configuration_fingerprint: str
     approved_summary: str | None = Field(default=None, max_length=2000)
@@ -357,7 +360,8 @@ class CodexCommandBuilder:
         self,
         *,
         codex_executable: Path,
-        project_registry: ProjectRegistry,
+        project_registry: ProjectRegistry | None = None,
+        target_registry: ExecutionTargetRegistry | None = None,
         safety_policies: dict[str, TaskSafetyPolicy],
         runtime_cwd: Path | None = None,
     ) -> None:
@@ -366,6 +370,7 @@ class CodexCommandBuilder:
             raise ValueError("codex_executable must be an explicit absolute path")
         self._executable = executable
         self._projects = project_registry
+        self._targets = target_registry
         if not safety_policies or any(
             identifier != policy.policy_id
             for identifier, policy in safety_policies.items()
@@ -456,30 +461,53 @@ class CodexCommandBuilder:
             raise ValueError("request does not match the registered recipe")
         if request.effort not in recipe.allowed_efforts:
             raise ValueError("effort is not allowlisted by the recipe")
-        if recipe.project_required and request.project_id is None:
-            raise ValueError("recipe requires a registered project")
-        if not recipe.project_required and request.project_id is not None:
-            raise ValueError("recipe does not accept a project")
-        if (
-            recipe.allowed_project_ids is not None
-            and request.project_id not in recipe.allowed_project_ids
-        ):
-            raise ValueError("project is not allowlisted by the recipe")
+        if request.target_id is not None:
+            if request.project_id is not None:
+                raise ValueError("task request cannot mix target_id and project_id")
+            if recipe.allowed_target_ids is None:
+                raise ValueError("task recipe has no execution target allowlist")
+            if request.target_id not in recipe.allowed_target_ids:
+                raise ValueError("execution target is not allowlisted by the recipe")
+            if self._targets is None:
+                raise ValueError("task request needs an execution target registry")
+        else:
+            if recipe.project_required and request.project_id is None:
+                raise ValueError("recipe requires a registered project or execution target")
+            if not recipe.project_required and request.project_id is not None:
+                raise ValueError("recipe does not accept a project")
+            if (
+                recipe.allowed_project_ids is not None
+                and request.project_id not in recipe.allowed_project_ids
+            ):
+                raise ValueError("project is not allowlisted by the recipe")
         if any(
-            reference["library_id"] not in recipe.allowed_library_ids
+            reference.provider_id not in recipe.allowed_provider_ids
             for reference in request.entity_refs
         ):
-            raise ValueError("entity reference library is not allowlisted by the recipe")
+            raise ValueError("entity reference provider is not allowlisted by the recipe")
         if any(
-            reference["library_id"] == "tools"
-            and reference["item_id"] not in recipe.allowed_tool_ids
+            reference.provider_id == "tool-registry"
+            and reference.entity_type == "tool"
+            and reference.entity_id not in recipe.allowed_tool_ids
             for reference in request.entity_refs
         ):
             raise ValueError("tool reference is not allowlisted by the recipe")
 
     def _trusted_cwd(self, recipe: TaskRecipe, request: TaskRequest) -> Path:
+        if request.target_id is not None:
+            if self._targets is None:
+                raise ValueError("task request needs an execution target registry")
+            try:
+                return self._targets.resolve(
+                    request.target_id,
+                    capability="codex",
+                ).cwd
+            except ExecutionTargetError as exc:
+                raise ValueError(str(exc)) from None
         if recipe.project_required:
             assert request.project_id is not None
+            if self._projects is None:
+                raise ValueError("legacy project task needs a project registry")
             return self._projects.resolve(request.project_id, capability="codex").root
         if self._runtime_cwd is None or not self._runtime_cwd.is_dir():
             raise ValueError("runtime recipe has no trusted server cwd")
@@ -569,14 +597,14 @@ class CodexCapabilityProbe:
 class TaskRecipeRegistryDocument(HubModel):
     """Checked host configuration; recipes are never inferred from PATH or executables."""
 
-    schema_version: int = 1
+    schema_version: int = 2
     recipes: list[TaskRecipe] = Field(default_factory=list)
     safety_policies: list[TaskSafetyPolicy] = Field(default_factory=list)
 
     @field_validator("schema_version")
     @classmethod
     def _version(cls, value: int) -> int:
-        if value != 1:
+        if value != 2:
             raise ValueError("unsupported task recipe registry schema")
         return value
 
@@ -610,6 +638,29 @@ class TaskRecipeRegistry:
             return TaskRecipeRegistryDocument.model_validate(payload)
         except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
             raise TaskContractError(f"invalid task recipe registry: {exc}") from None
+
+    def save(self, document: TaskRecipeRegistryDocument) -> None:
+        """Atomically save an explicit host recipe registry with private mode."""
+
+        checked = TaskRecipeRegistryDocument.model_validate(document)
+        parent = self.path.parent
+        parent.mkdir(parents=True, exist_ok=True)
+        if parent.is_symlink() or not parent.is_dir() or self.path.is_symlink():
+            raise TaskContractError("task recipe registry path cannot use a symlink")
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=f".{self.path.name}.", dir=parent
+        )
+        temporary = Path(temporary_name)
+        try:
+            os.fchmod(descriptor, 0o600)
+            with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+                handle.write(checked.model_dump_json(indent=2) + "\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, self.path)
+            os.chmod(self.path, 0o600)
+        finally:
+            temporary.unlink(missing_ok=True)
 
     def get(self, recipe_id: str) -> TaskRecipe:
         for recipe in self.load().recipes:
@@ -928,6 +979,30 @@ class TaskStore:
             self._write(document)
             return updated
 
+    def fail_queued(self, run_id: str, *, now: datetime, reason: str) -> TaskRun:
+        """Persist a sanitized launch failure before a process was started."""
+
+        if not reason or len(reason) > 2000:
+            raise TaskContractError("queued failure reason must be concise")
+        with self._locked_transaction():
+            document = self._read()
+            index, run = self._run_with_index(document, run_id)
+            if run.state in _TERMINAL_STATES:
+                return run
+            if run.state != TaskRunState.QUEUED:
+                raise TaskContractError("only a queued task can fail before launch")
+            updated = run.model_copy(
+                update={
+                    "state": TaskRunState.FAILED,
+                    "result_summary": reason,
+                    "result_summary_hash": _digest_text(reason),
+                    "completed_at": now,
+                }
+            )
+            document.runs[index] = updated
+            self._write(document)
+            return updated
+
     def finish(
         self,
         run_id: str,
@@ -957,11 +1032,11 @@ class TaskStore:
                 raise TaskContractError("only an active task can finish")
             if state == TaskRunState.SUCCEEDED and codex_thread_id is None:
                 raise TaskContractError("successful task runs require a Codex thread ID")
-            if run.mode == "resume" and codex_thread_id != run.source_thread_id:
-                raise TaskContractError("resume returned a different Codex thread ID")
-            if run.mode == "fork" and codex_thread_id == run.source_thread_id:
-                raise TaskContractError("fork must return a new Codex thread ID")
             if state == TaskRunState.SUCCEEDED:
+                if run.mode == "resume" and codex_thread_id != run.source_thread_id:
+                    raise TaskContractError("resume returned a different Codex thread ID")
+                if run.mode == "fork" and codex_thread_id == run.source_thread_id:
+                    raise TaskContractError("fork must return a new Codex thread ID")
                 for task in document.tasks:
                     if (
                         task.task_id != run.task_id
@@ -1123,6 +1198,7 @@ def task_configuration_fingerprint(
             "recipe": recipe.model_dump(mode="json"),
             "safety_policy": safety_policy.model_dump(mode="json"),
             "project_id": request.project_id,
+            "target_id": request.target_id,
             "entity_refs": request.entity_refs,
             "effort": request.effort.value,
         }
@@ -1185,6 +1261,7 @@ class TaskCoordinator:
             recipe_id=recipe.recipe_id,
             title=title,
             project_id=request.project_id,
+            target_id=request.target_id,
             effort=request.effort,
             configuration_fingerprint=configuration,
             brief_hash=_digest_text(request.brief),
@@ -1204,13 +1281,9 @@ class TaskCoordinator:
             created_at=now,
         )
         reservation = self._store.reserve(task, run)
-        return TaskSubmission(
-            task=reservation.task,
-            run=reservation.run,
-            invocation=(
-                None if reservation.reused else self._commands.build_new(recipe, request)
-            ),
-            reused=reservation.reused,
+        return self._prepare_reserved_submission(
+            reservation,
+            lambda: self._commands.build_new(recipe, request),
         )
 
     def resume(self, task_id: str, request: TaskRequest) -> TaskSubmission:
@@ -1242,20 +1315,14 @@ class TaskCoordinator:
             created_at=now,
         )
         reservation = self._store.reserve_run(run)
-        return TaskSubmission(
-            task=reservation.task,
-            run=reservation.run,
-            invocation=(
-                None
-                if reservation.reused
-                else self._commands.build_continuation(
-                    recipe,
-                    request,
-                    mode="resume",
-                    codex_thread_id=task.codex_thread_id,
-                )
+        return self._prepare_reserved_submission(
+            reservation,
+            lambda: self._commands.build_continuation(
+                recipe,
+                request,
+                mode="resume",
+                codex_thread_id=task.codex_thread_id,
             ),
-            reused=reservation.reused,
         )
 
     def fork(
@@ -1280,6 +1347,7 @@ class TaskCoordinator:
             recipe_id=recipe.recipe_id,
             title=title,
             project_id=request.project_id,
+            target_id=request.target_id,
             effort=request.effort,
             configuration_fingerprint=configuration,
             brief_hash=_digest_text(request.brief),
@@ -1300,21 +1368,45 @@ class TaskCoordinator:
             created_at=now,
         )
         reservation = self._store.reserve(task, run)
-        return TaskSubmission(
-            task=reservation.task,
-            run=reservation.run,
-            invocation=(
-                None
-                if reservation.reused
-                else self._commands.build_continuation(
-                    recipe,
-                    request,
-                    mode="fork",
-                    codex_thread_id=source.codex_thread_id,
-                )
+        return self._prepare_reserved_submission(
+            reservation,
+            lambda: self._commands.build_continuation(
+                recipe,
+                request,
+                mode="fork",
+                codex_thread_id=source.codex_thread_id,
             ),
-            reused=reservation.reused,
         )
+
+    def _prepare_reserved_submission(
+        self,
+        reservation: TaskReservation,
+        build_invocation: Callable[[], CodexInvocation],
+    ) -> TaskSubmission:
+        if reservation.reused:
+            return TaskSubmission(
+                task=reservation.task,
+                run=reservation.run,
+                invocation=None,
+                reused=True,
+            )
+        try:
+            invocation = build_invocation()
+            return TaskSubmission(
+                task=reservation.task,
+                run=reservation.run,
+                invocation=invocation,
+                reused=False,
+            )
+        except Exception:
+            # Keep the idempotency record, but never leave a run queued when
+            # no invocation or worker ticket could have been produced.
+            self._store.fail_queued(
+                reservation.run.run_id,
+                now=self._clock(),
+                reason="Task command preparation failed before launch",
+            )
+            raise
 
 
 def extract_codex_thread_id(jsonl: str) -> str:
@@ -1681,6 +1773,269 @@ class TaskWorker:
         )
 
 
+def task_request_from_action(
+    request: TaskActionRequest,
+    *,
+    recipe_id: str,
+    entity_refs: list[EntityRef | dict[str, str]] | None = None,
+) -> TaskRequest:
+    """Convert a strict browser envelope to a server-owned task request.
+
+    The action and optional destination identify server-side routing only.  They
+    are deliberately not copied into the command contract or its fingerprint;
+    cwd is resolved exclusively from ``target_id``.
+    """
+
+    return TaskRequest(
+        recipe_id=recipe_id,
+        target_id=request.target_id,
+        entity_refs=list(entity_refs or []),
+        effort=request.effort,
+        brief=request.brief,
+        idempotency_key=request.idempotency_key,
+    )
+
+
+class TaskRuntimeStatus(HubModel):
+    """Durable public status without prompts, transcripts, argv, cwd, or PIDs."""
+
+    task: LogicalTask
+    run: TaskRun
+    reused: bool = False
+    locally_active: bool = False
+
+
+class TaskRuntimeManager:
+    """Own per-run worker threads around the durable task primitives.
+
+    This is not a long-lived cmux terminal worker.  A future HTTP/cmux adapter
+    must route the optional destination and arrange terminal presentation.  The
+    manager only executes a fixed ``codex exec`` invocation whose cwd has
+    already been resolved through :class:`ExecutionTargetRegistry`.
+    """
+
+    def __init__(
+        self,
+        *,
+        coordinator: TaskCoordinator,
+        store: TaskStore,
+        capabilities: CodexCapabilities,
+        worker: TaskWorker | None,
+        timeout_seconds: float = 1800.0,
+    ) -> None:
+        if timeout_seconds <= 0:
+            raise ValueError("task runtime timeout must be positive")
+        if capabilities.available and worker is None:
+            raise ValueError("available task runtime requires a worker")
+        if not capabilities.available and worker is not None:
+            raise ValueError("disabled task runtime cannot expose a worker")
+        self._coordinator = coordinator
+        self._store = store
+        self._capabilities = capabilities
+        self._worker = worker
+        self._timeout_seconds = timeout_seconds
+        self._threads: dict[str, threading.Thread] = {}
+        self._threads_lock = threading.RLock()
+
+    @classmethod
+    def from_probe(
+        cls,
+        *,
+        coordinator: TaskCoordinator,
+        store: TaskStore,
+        probe: CodexCapabilityProbe,
+        timeout_seconds: float = 1800.0,
+        popen_factory: Callable[..., Any] = subprocess.Popen,
+        reaper: ProcessGroupReaper | None = None,
+        clock: Callable[[], datetime] = _now,
+    ) -> TaskRuntimeManager:
+        """Probe the configured executable before constructing an enabled worker."""
+
+        capabilities = probe.probe()
+        worker = (
+            TaskWorker(
+                store,
+                capabilities=capabilities,
+                popen_factory=popen_factory,
+                reaper=reaper,
+                clock=clock,
+            )
+            if capabilities.available
+            else None
+        )
+        return cls(
+            coordinator=coordinator,
+            store=store,
+            capabilities=capabilities,
+            worker=worker,
+            timeout_seconds=timeout_seconds,
+        )
+
+    @property
+    def capabilities(self) -> CodexCapabilities:
+        return self._capabilities
+
+    def create(self, request: TaskRequest, *, title: str) -> TaskRuntimeStatus:
+        self._require_available()
+        self._require_v3_target(request)
+        return self._dispatch(self._coordinator.create(request, title=title))
+
+    def resume(self, task_id: str, request: TaskRequest) -> TaskRuntimeStatus:
+        self._require_available()
+        self._require_v3_target(request)
+        return self._dispatch(self._coordinator.resume(task_id, request))
+
+    def fork(
+        self,
+        source_task_id: str,
+        request: TaskRequest,
+        *,
+        title: str,
+    ) -> TaskRuntimeStatus:
+        self._require_available()
+        self._require_v3_target(request)
+        return self._dispatch(
+            self._coordinator.fork(source_task_id, request, title=title)
+        )
+
+    def status(self, run_id: str) -> TaskRuntimeStatus:
+        run = self._store.get_run(run_id)
+        task = self._store.get_task(run.task_id)
+        with self._threads_lock:
+            active = run_id in self._threads
+        return TaskRuntimeStatus(task=task, run=run, locally_active=active)
+
+    def task_status(self, task_id: str) -> list[TaskRuntimeStatus]:
+        """Return all runs for one logical task in durable creation order."""
+
+        task = self._store.get_task(task_id)
+        snapshot = self._store.snapshot()
+        with self._threads_lock:
+            active = set(self._threads)
+        return [
+            TaskRuntimeStatus(
+                task=task,
+                run=run,
+                locally_active=run.run_id in active,
+            )
+            for run in snapshot.runs
+            if run.task_id == task_id
+        ]
+
+    def cancel(self, run_id: str) -> TaskRuntimeStatus:
+        if self._worker is not None:
+            self._worker.cancel(run_id)
+        else:
+            run = self._store.request_cancel(run_id, now=_now())
+            if run.state in {TaskRunState.RUNNING, TaskRunState.RECOVERY_REQUIRED}:
+                self._store.mark_recovery_required(
+                    run_id,
+                    now=_now(),
+                    reason="Cancellation cannot confirm process cleanup without a local worker",
+                )
+        return self.status(run_id)
+
+    def wait(self, run_id: str, *, timeout: float | None = None) -> TaskRuntimeStatus:
+        """Join a locally owned run for integration tests or orderly shutdown."""
+
+        with self._threads_lock:
+            thread = self._threads.get(run_id)
+        if thread is not None:
+            thread.join(timeout=timeout)
+            if thread.is_alive():
+                raise TimeoutError("task run did not finish before the wait timeout")
+        return self.status(run_id)
+
+    def recover_stale(self, *, stale_after: timedelta) -> list[TaskRuntimeStatus]:
+        if self._worker is None:
+            return []
+        return [
+            self.status(run.run_id)
+            for run in self._worker.interrupt_stale(stale_after=stale_after)
+        ]
+
+    def _dispatch(self, submission: TaskSubmission) -> TaskRuntimeStatus:
+        if submission.reused:
+            run = self._store.get_run(submission.run.run_id)
+            return TaskRuntimeStatus(
+                task=self._store.get_task(run.task_id),
+                run=run,
+                reused=True,
+                locally_active=self._is_locally_active(run.run_id),
+            )
+        assert self._worker is not None
+        thread = threading.Thread(
+            target=self._execute,
+            args=(submission,),
+            name=f"scholar-task-{submission.run.run_id}",
+            daemon=True,
+        )
+        with self._threads_lock:
+            if submission.run.run_id in self._threads:
+                raise TaskContractError("task run is already owned by this runtime")
+            self._threads[submission.run.run_id] = thread
+        thread.start()
+        return TaskRuntimeStatus(
+            task=submission.task,
+            run=submission.run,
+            locally_active=self._is_locally_active(submission.run.run_id),
+        )
+
+    def _execute(self, submission: TaskSubmission) -> None:
+        try:
+            assert self._worker is not None
+            self._worker.execute(
+                submission,
+                timeout_seconds=self._timeout_seconds,
+            )
+        except TaskContractError:
+            # A concurrent cancellation is a valid terminal race.  Any other
+            # refusal is converted to a sanitized durable state rather than
+            # leaving a queued run that can never make progress.
+            current = self._store.get_run(submission.run.run_id)
+            if current.state == TaskRunState.QUEUED:
+                self._store.fail_queued(
+                    current.run_id,
+                    now=_now(),
+                    reason="Task runtime refused the queued run",
+                )
+            elif current.state in {
+                TaskRunState.RUNNING,
+                TaskRunState.RECOVERY_REQUIRED,
+            }:
+                self._store.mark_recovery_required(
+                    current.run_id,
+                    now=_now(),
+                    reason="Task runtime stopped without confirmed process cleanup",
+                )
+        finally:
+            with self._threads_lock:
+                self._threads.pop(submission.run.run_id, None)
+
+    def _require_available(self) -> None:
+        if not (
+            self._capabilities.available
+            and self._capabilities.create
+            and self._capabilities.resume
+            and self._capabilities.fork
+            and self._worker is not None
+        ):
+            raise TaskContractError(
+                self._capabilities.detail or "Codex task runtime is unavailable"
+            )
+
+    @staticmethod
+    def _require_v3_target(request: TaskRequest) -> None:
+        if request.target_id is None or request.project_id is not None:
+            raise TaskContractError(
+                "Hub v3 task requests require target_id and forbid project_id"
+            )
+
+    def _is_locally_active(self, run_id: str) -> bool:
+        with self._threads_lock:
+            return run_id in self._threads
+
+
 __all__ = [
     "MAX_BRIEF_BYTES",
     "CodexCapabilities",
@@ -1701,6 +2056,8 @@ __all__ = [
     "TaskReservation",
     "TaskRun",
     "TaskRunState",
+    "TaskRuntimeManager",
+    "TaskRuntimeStatus",
     "TaskSafetyPolicy",
     "TaskStore",
     "TaskStoreDocument",
@@ -1709,4 +2066,5 @@ __all__ = [
     "extract_codex_thread_id",
     "task_configuration_fingerprint",
     "task_request_fingerprint",
+    "task_request_from_action",
 ]

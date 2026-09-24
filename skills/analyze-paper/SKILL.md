@@ -20,9 +20,14 @@ structured projection of the paper-specific judgment.
 3. Repository code is an optional, untrusted, read-only supplement governed by the shared
    source policy. Access it only when the user explicitly requests code inspection; keep a
    clone only when the user explicitly requests retention under `code_repo_root`.
-4. Resolve each paper's topic folder under `research_vault_root`, then load
-   `references/analysis-format.md`. Declare `whole` or the exact `focused` role subset and maintain
-   one `<paper>分析.md` / `<paper>解析树.canvas` pair per paper.
+4. Resolve the explicitly registered Obsidian Source and its Field for each paper,
+   using the trusted folder registration and `.scholar-workflow/fields.yml` rather
+   than treating `research_vault_root` as a required singleton. If the destination
+   is ambiguous or the Field is not initialized, ask for a choice or run the
+   Field preview; do not silently create a topic directory or migrate a Vault.
+   Then load `references/analysis-format.md`, declare `whole` or the exact
+   `focused` role subset, and maintain one `<paper>分析.md` /
+   `<paper>解析树.canvas` pair per paper in that Field.
 5. Project claims through the versioned analysis IR into both artifacts. The Markdown remains
    independently readable; the Canvas keeps the same claims, inline evidence states, and links
    each claim back to its Markdown block. Preserve human prose, safe existing layout, custom

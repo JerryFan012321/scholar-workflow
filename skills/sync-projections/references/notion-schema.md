@@ -17,7 +17,7 @@ paper index row (INV1) plus its related-materials hub (INV20).
 | Status | Select | reading / research / project status |
 | Zotero Item Key | Text | jump link |
 | Web Source | URL | arXiv abs / DOI / origin site. Resolves from any device/browser — the cross-device PDF entry, and the fallback when off the host machine |
-| Local URL | URL | `http://127.0.0.1:23128/open/...` link-service URL. Opens the annotated PDF instantly when Notion is viewed **on the host Mac** (INV17: both links coexist — Web Source for cross-device, Local URL for host). Stores the opaque attachment key only, never an absolute path |
+| Local URL | URL | Stable `zotero://open-pdf/library/items/<attachment-key>` host action. Web Source remains the cross-device entry. Never store a Hub origin/port, absolute path, or opaque runtime action ID |
 | Sync Revision | Text | content hash for incremental updates |
 | Last Synced | Date | last machine update |
 

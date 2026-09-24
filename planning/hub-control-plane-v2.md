@@ -1,7 +1,9 @@
-# Hub Control Plane v2 — 正式规格
+# Hub Control Plane v2 — 历史规格（已由 v3 取代）
 
-> 状态：Accepted 1.0，2026-09-22。用户已授权实现契约、测试和非生产 canary；现有 23128 listener、
-> LaunchAgent、真实 Vault/项目和 Codex thread 不在本批自动迁移或切换范围内。
+> 状态：Superseded，2026-09-22。本文记录 `0.28.0–0.28.1` 已发布的 HubDirectory v2、workspace
+> lease/binding 和 landing 架构，只用于兼容测试、迁移和历史追溯。真实使用已经否定“workspace binding
+> 决定整个 Hub 是否可写”的抽象；当前目标规格是 [`hub-control-plane-v3.md`](hub-control-plane-v3.md)。
+> 禁止依据本文继续扩展全局 binding、把 Projects/Tools 作为 Library，或在新 UI/文档中增加 landing。
 >
 > `hub-investigation-conclusion.md` 是只读调查证据，不是运行期契约。本文与
 > `project-system-v2.md`、`knowledge-system-v2.md` 并列，并以 `planning/GOALS.md` 为上位意图层。

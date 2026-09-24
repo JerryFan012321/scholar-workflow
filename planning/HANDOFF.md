@@ -1,15 +1,89 @@
 # HANDOFF — 从这里接着干
 
 > 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
-> `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-09-22。
+> `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-09-25。
 >
-> Scholar Workflow `0.28.1` 的 Hub one-command binding 修复已发布并实机验证：Codex、Claude Code
-> 插件与独立 PATH CLI 均为 `0.28.1`；23128 由 cmux 可见前台服务持有，`hub-doctor` 报告
-> `owner_mode=cmux-visible`，真实 `open-hub` 只在页面完成 binding 后输出成功，页面显示绿色
-> “已绑定工作区”并加载 305 篇 Papers。旧 `0.18.0` LaunchAgent 仍保持停止/disabled。本批没有迁移
-> 真实 Vault/JEPA、没有改造真实项目、没有运行真实 Codex task，也没有把 promotion 记成 verified backup。
+> Scholar Workflow `0.28.1` 是已发布的历史基线，但其“workspace binding 决定整个 Hub 是否可写”
+> 模型已经被真实使用否定：cmux workspace 只应决定浏览器、终端、Codex 或 CLI 窗口出现在哪里，
+> 不得授予文件权限，也不得让 Hub 因 workspace 消失而整体只读。本轮已经进入 Hub v3 实施，目标
+> 版本为 `0.29.0`；正式规格是 `hub-control-plane-v3.md`，v2 规格只保留为历史记录。
+>
+> 当前实施边界：先完成 v3 契约、动态服务发现、Destination/Target/Action 分离、动态 Fields、
+> ZotFlow/AnnotationIR 和直接动作 UI，再以拟发布安装包做 canary。旧 `0.18.0` LaunchAgent 继续保持
+> stopped/disabled；在真实 Field 预览获用户验收前，不改写 `02-科研技术文档` Vault，不迁移 JEPA、
+> 不批量替换 168 条旧链接；不自动升级 Obsidian、不卸载插件、不迁移真实项目，也不把 recovery
+> snapshot 冒充 verified backup。
+
+## 2026-09-25 Hub v3 实施状态（发布前）
+
+- 当前开发树的版本目标是 `0.29.0`，但尚未完成 main 提交、runtime-only release、已安装插件/CLI 更新及
+  真实 cmux/Codex/ZotFlow 的端到端验收；已安装的 `0.28.1` 仍是历史基线。不要用源码版本推断正在运行
+  的服务版本。拟发布 wheel 已在隔离 venv 上完成动态端口 `start/status/doctor/stop`、Hub 页面和 v3
+  Directory/Papers 的只读 canary；最终重建的 0.29.0 wheel 又在独立 venv/state 以动态端口通过
+  `start/status/doctor/stop`、Directory schema 3/Papers=305、Fields 空库入口与浏览器 UI 检查，
+  临时服务与目录均已清理。该证据不等于用户安装已更新。
+- 动态端口 lifecycle、schema-3 Directory、Papers/Fields 与平级 Projects/Tools、显式 Source/Field
+  preview/confirm、直接论文/PDF/ZotFlow 动作、Zotero Local API 批注 IR 与独立批注 PDF snapshot、
+  可信 ExecutionTarget 命令、任务 HTTP API、Codex 配置与长期 cmux terminal worker 路径均已进入开发树。
+  完整 `tests` 回归为 **710 passed**；新/关键 v3 模块 Ruff、JavaScript 语法、wheel/sdist 构建与
+  runtime 文件边界检查已通过。真实 cmux/Codex/ZotFlow canary 仍待执行；任务可用性由实际配置与
+  probe 决定，不能因接口存在就宣称可执行。全仓 Ruff 仍有旧代码基线问题，不应把局部通过写成
+  全仓零告警。
+- 使用流程已补入双语 README：`open-hub` 自动发现受管服务并记录当前 cmux 默认打开位置；如需
+  Codex 任务，管理员另用 `hub target add-source|add-project` 登记 cwd Target、`hub codex configure`
+  登记显式可执行文件与服务端策略，然后 `hub restart`；页面只提交任务、目标、打开位置、effort
+  和有界 brief。`zotero snapshot-annotations` 只产出带哈希收据的独立 PDF。
+- 当前科研技术 Vault 已只读预览，世界模型为首个 Field 候选；未写入
+  `.scholar-workflow/fields.yml`、JEPA/V-JEPA 文档或 168 条旧端口链接。WI-048 等待用户验收精确
+  Field 预览后才可逐 Field 事务迁移。WI-041 的外部备份介质、保留规则和恢复演练仍未决定；
+  recovery snapshot 不能提升为 verified backup。
+- 已新增显式 `hub field-migration plan SOURCE_ID FIELD_ID` 与 `apply ... --approved-digest DIGEST`：
+  前者只读，后者重新扫描、确认摘要后只替换 manifest 所列 Markdown/Canvas 的旧论文链接；未映射
+  文件若仍含旧链接则阻断。每个不同附件 key 在 plan 阶段经 Zotero Local API 校验为个人库 PDF 与
+  可解析 locator，apply 前复验；缺失、组库、非 PDF 或本机未下载附件均安全拒绝。尾斜杠、未知路由、
+  localhost/IPv6 回环与 JSON 转义的旧端口链接不能漏报；常见其他文本格式只读检查、发现后阻断，
+  不自动改写。同步失败回滚；
+  进程崩溃后可能需要从未验证快照人工恢复。它不做 JEPA
+  正文模板重排，真实 Vault 尚无已登记 Field，因此不能把 CLI 存在误写成迁移完成。
+- 最新只读预览在整个 Vault 识别 5 个候选 Field，其中“世界模型”首页为 `01-Paperlist.md`，入口 1 项、
+  文档 42 项、旧链接 122 处（Paperlist 43、挑战洞见树 44、技术路线树 35）；43 个不同附件 key
+  在本次只读 Zotero Local API 核验中均为 user-library PDF 且 locator 可解析。全 Vault 另有 8 个
+  未映射 Markdown。确认整个 Vault 的预览不能隐式
+  注册其他 4 个 Field；逐 Field 确认、重复根拦截和独立链接迁移已进开发树。已有便携 manifest 在
+  新主机登记时另经整份 Source 预览，只写 host registry、不改变 Field ID 或正文。真实 Vault 尚未写入。
+- V-JEPA 2 只读拓扑候选已在仓库与 Vault 外的临时目录生成（临时产物不进入 Git）：原 Canvas
+  194 节点/193 边，候选为 20 节点/19 边，14/14 个证据反链在候选 Markdown 中可解析。它只通过
+  JSON Canvas 结构校验；未复核原论文、未完整保留原分析细节、未通过正式 Analysis IR/sidecar/receipt
+  conformance 或 Obsidian 截图，因此不得直接覆盖原 Vault 文件。映射报告列出仍需逐项处理的正文与实验细节。
+
+## 2026-09-22 Hub v3 架构纠偏（0.29.0 实施中）
+
+- 最终信息架构固定为 `Libraries/Papers`、`Libraries/Fields`、平级 `Projects`、平级 `Tools`。
+  Projects/Tools 不再伪装成文档 Library；Field 来自显式选择的 Obsidian Vault/目录与便携
+  `.scholar-workflow/fields.yml`，无 manifest 时必须先 preview、后确认。
+- `CmuxDestination` 仅路由窗口；文件和执行授权来自注册的 `folder_id/project_id` 与
+  `ExecutionTarget`。取消全局 `bound/read-only` 门禁，改为逐能力报告 `vault_writes`、
+  `project_document_writes`、`cmux_launches`、`codex_tasks`、`zotflow_annotations`、
+  `zotero_local_api`。
+- 论文卡片直接触发 ZotFlow、Zotero、cmux、系统阅读器或分析文档，不再经过可见 paper/attachment
+  landing。持久身份是 Zotero item/attachment key 与 `PdfRef`，不是 23128 URL 或绝对路径。
+- Zotero 正式批注继续以 Zotero 为唯一权威；ZotFlow 是唯一可持有 Zotero Web API 写密钥的客户端，
+  Scholar Workflow 只经 Local API 读取并产生只读 `AnnotationIR`/人类投影。Better Notes、ZotFlow
+  Source Note 与 Scholar 分析目录必须保持 writer/path 分离。
+- `open-hub` 将从已安装包启动或安全重启受管服务，动态端口通过权限 `0600` 的 discovery record
+  发现；`hub start/status/stop/restart/doctor` 提供真实 executable、build、PID、generation 与日志。
+  未知进程绝不自动终止，服务不接受也不依赖 code repo root。
+- 第一真实 Source 固定为当前 `02-科研技术文档` Vault，第一 Field 固定为“世界模型”，JEPA/V-JEPA
+  是首个验收样本。实施代码和只读 preview 可以完成；任何 Field 写入必须在展示入口、导航、重名、
+  未映射正文、模板变化和链接改写后，以 Field 为单位取得用户验收。
+
+接手时先检查 WI-042–WI-049 和 `hub-control-plane-v3.md`。不要继续修补 v2 lease，也不要把已发布的
+0.28.1 行为描述成目标架构。
 
 ## 2026-09-22 Hub one-command binding（0.28.1 已发布并安装）
+
+> 历史基线：该实现解决了“裸页面永远只读”的表面问题，但把 workspace 错当成全局授权边界，
+> 已由 Hub v3 取代；只用于兼容回归，不作为新功能设计依据。
 
 - 实现提交 `69d9c72`，首个 runtime release 提交 `9dc6544`；main/release 均已推送。
 - `open-hub` 新建 opaque view 后等待轻量 `/api/v2/workspaces/status` 确认 lease，不再把“cmux 已打开

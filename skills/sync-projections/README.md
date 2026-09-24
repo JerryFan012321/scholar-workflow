@@ -9,6 +9,7 @@ Maintain the derived projections of the library after ingestion or on demand.
   machine-managed fields. Never uploads files or overwrites human content.
 
 The Obsidian table is a rebuildable derived index, not source of truth. The two
-subtasks may run in parallel.
+subtasks may run in parallel. PDF cells persist Zotero attachment URIs; Hub ports and
+runtime action IDs are never written into the Vault or Notion.
 
 See [SKILL.md](./SKILL.md) for the full procedure and constraints.

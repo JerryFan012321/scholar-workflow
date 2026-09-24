@@ -364,6 +364,110 @@ def test_pre_replace_recheck_detects_edit_after_initial_cas(tmp_path: Path) -> N
     assert markdown.read_text(encoding="utf-8") == "human edit during commit"
 
 
+def test_parent_directory_rebind_cannot_redirect_commit_outside_vault(
+    tmp_path: Path,
+) -> None:
+    vault, state = _roots(tmp_path)
+    document = _document()
+    bundle, baseline = render_analysis_projection(document, note_stem="Commit分析")
+    request = _request(document)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    original_parent = vault / "topic-original"
+
+    def rebind_parent(point: str) -> None:
+        if point == f"before-replace:{request.paths.markdown}":
+            (vault / "topic").rename(original_parent)
+            (vault / "topic").symlink_to(outside, target_is_directory=True)
+
+    with pytest.raises(AnalysisCommitPartialError, match="conditional rollback"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            fault_inject=rebind_parent,
+        )
+
+    assert not any((outside / Path(path).name).exists() for path in request.paths.as_list())
+    assert not any(
+        (original_parent / Path(path).name).exists()
+        for path in request.paths.as_list()
+    )
+
+
+def test_vault_root_rebind_cannot_split_lock_and_write_domains(
+    tmp_path: Path,
+) -> None:
+    vault, state = _roots(tmp_path)
+    document = _document()
+    bundle, baseline = render_analysis_projection(document, note_stem="Commit分析")
+    request = _request(document)
+    original_root = tmp_path / "vault-original"
+
+    def rebind_root(point: str) -> None:
+        if point == f"before-replace:{request.paths.markdown}":
+            vault.rename(original_root)
+            (vault / "topic").mkdir(parents=True)
+
+    with pytest.raises(AnalysisCommitPartialError, match="conditional rollback"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            fault_inject=rebind_root,
+        )
+
+    for relative_path in request.paths.as_list():
+        assert not (vault / relative_path).exists()
+        assert not (original_root / relative_path).exists()
+
+
+def test_state_journal_rebind_cannot_redirect_recovery_outside_state_root(
+    tmp_path: Path,
+) -> None:
+    vault, state = _roots(tmp_path)
+    document = _document()
+    bundle, baseline = render_analysis_projection(document, note_stem="Commit分析")
+    request = _request(document)
+
+    def stop_after_journal(point: str) -> None:
+        if point == "after-journal":
+            raise RuntimeError("stop after journal")
+
+    with pytest.raises(RuntimeError, match="stop after journal"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            fault_inject=stop_after_journal,
+        )
+
+    journal_root = state / "analysis-commits" / "journals"
+    original_journal_root = state / "analysis-commits" / "journals-original"
+    outside = tmp_path / "outside-state"
+    outside.mkdir()
+    journal_root.rename(original_journal_root)
+    journal_root.symlink_to(outside, target_is_directory=True)
+
+    with pytest.raises(AnalysisCommitSafetyError, match="state directory"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+        )
+
+    assert list(outside.iterdir()) == []
+    assert not any((vault / path).exists() for path in request.paths.as_list())
+
+
 @pytest.mark.parametrize(
     "tamper",
     ["path", "before", "after", "artifact", "change-set"],
@@ -412,6 +516,7 @@ def test_replay_rejects_receipt_fields_that_do_not_match_request(
                 "analysis_sidecar": ":sidecar",
             }[artifact["kind"]]
             artifact["artifact_id"] = f"analysis:forged{suffix}"
+        payload["change_set"]["upsert_relations"][0]["to_id"] = "analysis:forged"
     else:
         payload["change_set"]["upsert_projections"].append(
             {
@@ -469,6 +574,61 @@ def test_replay_rejects_forged_empty_receipt_without_canonical_files(
             bundle=bundle,
             baseline=baseline,
         )
+
+
+def test_recovery_rejects_journal_file_rebind_before_rollback(
+    tmp_path: Path,
+) -> None:
+    vault, state = _roots(tmp_path)
+    document = _document()
+    bundle, baseline = render_analysis_projection(document, note_stem="Commit分析")
+    request = _request(document)
+
+    def stop_after_journal(point: str) -> None:
+        if point == "after-journal":
+            raise RuntimeError("stop after journal")
+
+    with pytest.raises(RuntimeError, match="stop after journal"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            fault_inject=stop_after_journal,
+        )
+
+    victim = vault / "topic" / "victim.md"
+    victim.write_text("human-owned", encoding="utf-8")
+    metadata = victim.stat()
+    journal_path = (
+        state / "analysis-commits" / "journals" / f"{request.commit_id}.json"
+    )
+    journal = json.loads(journal_path.read_text(encoding="utf-8"))
+    journal["files"][0].update(
+        {
+            "path": "topic/victim.md",
+            "after_sha256": _digest(victim.read_bytes()),
+            "after_identity": {
+                "device": metadata.st_dev,
+                "inode": metadata.st_ino,
+                "size": metadata.st_size,
+                "mtime_ns": metadata.st_mtime_ns,
+                "ctime_ns": metadata.st_ctime_ns,
+            },
+        }
+    )
+    journal_path.write_text(json.dumps(journal), encoding="utf-8")
+
+    with pytest.raises(AnalysisCommitSafetyError, match="journal file record"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+        )
+    assert victim.read_text(encoding="utf-8") == "human-owned"
 
 
 def test_rollback_preserves_same_content_replacement_with_a_new_inode(

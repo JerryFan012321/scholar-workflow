@@ -5,6 +5,76 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Added
+- **Hub v3 contract.** Added the accepted `HubDirectory` schema-3 architecture with document-only
+  Papers/Fields Libraries, peer Projects/Tools collections, dynamic Obsidian Source/Field manifests,
+  direct paper actions, independent capability reporting, and explicit `CmuxDestination`,
+  `ExecutionTarget`, `OpenAction`, `EntityRef`, and `PdfRef` boundaries.
+- **Managed Hub lifecycle contract.** Defined `open-hub` plus `hub start/status/stop/restart/doctor`,
+  an installed-package service on a dynamic loopback port, mode-0600 discovery, identity-checked
+  stop/restart, and status evidence for the real executable/build/PID/generation/log.
+- **ZotFlow and annotation boundary.** Added version-aware ZotFlow open actions, Local-API-derived
+  read-only `AnnotationIR`, disjoint Source Note/Better Notes/Scholar writers, and hash-bound explicit
+  annotated-PDF snapshots that never overwrite or silently re-import a Zotero attachment.
+- **Explicit annotated-PDF export.** Added `zotero snapshot-annotations ATTACHMENT_KEY --output PATH`
+  to generate a separate PDF and hash receipt from Local API annotations; unsupported annotation
+  types fail rather than producing a misleading complete export.
+- **Trusted task setup and terminal routing.** Added `hub target list/add-source/add-project`,
+  `hub codex configure/status`, v3 task-action/target/task/run endpoints, a bounded Codex task UI,
+  and a long-lived cmux terminal-worker path. Task availability follows real runtime configuration
+  and capability probes; installed-package end-to-end verification remains a release gate.
+- **Per-Field legacy-link migration.** Added read-only `hub field-migration plan` and digest-approved
+  `apply`, with manifest-scoped Markdown/Canvas edits, unmapped-link conflict detection, CAS checks,
+  sibling-Field isolation, synchronous rollback and an explicitly unverified recovery snapshot.
+  Each distinct attachment key must be verified through Zotero Local API as a locally resolvable
+  user-library PDF during planning and again before applying; unsupported links fail closed. Any
+  residual 23128 loopback reference—including URL variants and JSON-escaped strings—blocks success;
+  additional text formats are checked read-only, and unreadable Field subtrees fail closed.
+
+### Changed
+- **Optional legacy Vault configuration.** `config init` no longer requires a singleton
+  `research_vault_root`; pre-v3 projection commands fail closed with migration guidance,
+  while the managed Hub can start against an isolated host-state compatibility root that
+  is never registered as a Knowledge Source.
+- **Local-API annotation export.** `export-annotations` and its compatibility script now
+  consume Zotero Local API data through read-only `AnnotationIR`, use stable item/attachment
+  keys, and never open `zotero.sqlite` or request ZotFlow's Web API key.
+- **cmux is routing, not authorization.** Replaced the global v2 workspace binding/read-only model
+  with a default open destination. Registered folder/project targets, relative paths, CAS, and
+  symlink defenses independently authorize Vault, project-document, and cwd operations.
+- **Knowledge entry and classification are simpler.** Projects/Tools no longer appear as Libraries;
+  Field navigation is manifest-defined rather than a fixed global taxonomy. Paper, attachment, and
+  Field actions are available directly instead of requiring a human-visible landing page. New
+  Obsidian/Notion paper projections persist stable Zotero attachment URIs/PdfRefs rather than
+  fixed Hub-port links.
+- **Planning and manuals aligned to v3.** Added G15, INV47–INV51, NG17–NG19, WI-042–WI-049 and the
+  Phase-9 rollout; marked Hub v2 as a historical compatibility specification and documented concrete
+  service, Field-registration, direct-action, and shutdown workflows in both user guides.
+
+### Fixed
+- **Task recovery and routing.** Resume accepts a new bounded brief; unsuccessful continuations reach
+  terminal states, command-construction failure cannot strand a queued run, and a crashed terminal
+  worker reconciles its active marker only after ruling out a live process group. Worker slots include
+  the cmux instance fingerprint, while runtime roots must match the Hub's trusted registries.
+- **PDF snapshot and service identity.** Ink annotations use validated PDF-to-page coordinates accepted
+  by PyMuPDF. Hub health freezes the resolved service executable at startup so diagnostics remain
+  consistent even when a temporary installer environment disappears.
+- **Field registration isolation.** Whole-Vault preview now requires confirming exactly one candidate
+  Field per operation; subsequent previews can add siblings without rewriting registered Fields.
+  Existing portable manifests can be explicitly enrolled on a new host without changing their
+  Field IDs or content. Concurrent registry updates, overlapping Vault/Field ownership and
+  uncertain post-rename persistence fail closed; the UI distinguishes a completed confirmation
+  from a subsequent list-refresh failure.
+
+### Security
+- **Zotero Web API key isolation.** Only ZotFlow may hold that key, exclusively in Obsidian
+  SecretStorage. Hub, CLI, agents, configuration, environment, logs, and diagnostics must not obtain
+  it. Scholar Workflow annotation reads now use Zotero Local API; the historical direct-SQLite
+  export exception is removed.
+- **No destination privilege.** A cmux workspace cannot grant file access or turn the whole Hub
+  writable. Browsers submit only opaque action/destination/target IDs and bounded task input, never
+  absolute paths, URLs, commands, cwd, model, sandbox, permission, environment, or raw config.
+
 ## [0.28.1] — 2026-09-22
 
 ### Fixed

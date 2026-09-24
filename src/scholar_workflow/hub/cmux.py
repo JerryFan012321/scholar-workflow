@@ -135,6 +135,52 @@ class CmuxControl:
         )
         return result
 
+    def new_terminal_worker(
+        self,
+        *,
+        workspace_id: str,
+        working_directory: Path,
+        command: str,
+    ) -> subprocess.CompletedProcess[str]:
+        """Open one server-constructed terminal worker in a cmux workspace.
+
+        ``command`` is an adapter boundary for a trusted, fixed worker command.
+        Browser input must never be interpolated into it.  cmux receives the
+        command as one argv value; this process never invokes a shell.
+        """
+
+        self._clean_value(workspace_id, "cmux workspace ID")
+        self._clean_value(command, "terminal worker command")
+        if len(command.encode("utf-8")) > 4096:
+            raise CmuxControlError("terminal worker command is too long")
+        directory = Path(working_directory)
+        if not directory.is_absolute() or not directory.is_dir():
+            raise CmuxControlError(
+                "Terminal worker directory is not an existing absolute directory"
+            )
+        resolved_directory = directory.resolve(strict=True)
+        result = self._invoke(
+            [
+                str(self.executable()),
+                "new-surface",
+                "--type",
+                "terminal",
+                "--working-directory",
+                str(resolved_directory),
+                "--workspace",
+                workspace_id,
+                "--command",
+                command,
+                "--focus",
+                "true",
+            ]
+        )
+        self._require_success(
+            result,
+            secrets=(workspace_id, str(resolved_directory), command),
+        )
+        return result
+
     def executable(self) -> Path:
         if self._configured_path is not None:
             if self._is_executable(self._configured_path):
@@ -204,7 +250,7 @@ class WorkspaceRegistry:
         control: CmuxControl,
         *,
         current_workspace_id: str | None = None,
-        hub_url: str = "http://127.0.0.1:23128/hub/",
+        hub_url: str | None = None,
         id_factory: Callable[[], str] | None = None,
     ) -> None:
         self._control = control
@@ -275,6 +321,19 @@ class WorkspaceRegistry:
             except KeyError as exc:
                 raise UnknownWorkspaceError("Unknown or expired cmux workspace") from exc
 
+    def opaque_for_raw(self, raw_id: str) -> str:
+        """Resolve a trusted CLI-provided current workspace to a browser-safe handle."""
+        if not isinstance(raw_id, str) or not raw_id or raw_id != raw_id.strip():
+            raise UnknownWorkspaceError("Current cmux workspace ID is invalid")
+        listing = self.public_workspaces()
+        if listing.capability_error is not None:
+            raise UnknownWorkspaceError(listing.capability_error)
+        with self._lock:
+            try:
+                return self._raw_to_opaque[raw_id]
+            except KeyError as exc:
+                raise UnknownWorkspaceError("Current cmux workspace is no longer live") from exc
+
     def instance_fingerprint(self) -> str:
         """Return an opaque fingerprint for the server-owned cmux instance."""
         socket_path = os.environ.get("CMUX_SOCKET_PATH")
@@ -284,8 +343,8 @@ class WorkspaceRegistry:
             socket_stat = os.stat(socket_path, follow_symlinks=False)
         except OSError as exc:
             raise CmuxControlError("cmux instance socket is unavailable") from exc
-        if stat.S_ISLNK(socket_stat.st_mode):
-            raise CmuxControlError("cmux instance socket must not be a symlink")
+        if stat.S_ISLNK(socket_stat.st_mode) or not stat.S_ISSOCK(socket_stat.st_mode):
+            raise CmuxControlError("cmux instance socket is not a trusted Unix socket")
         identity = (
             socket_stat.st_dev,
             socket_stat.st_ino,
@@ -384,9 +443,11 @@ def _workspace_label(
 
 def _contains_hub(
     node: dict[str, Any],
-    hub_url: str,
+    hub_url: str | None,
     instance_token: str | None,
 ) -> bool:
+    if hub_url is None:
+        return False
     try:
         expected = urlsplit(hub_url)
     except ValueError:

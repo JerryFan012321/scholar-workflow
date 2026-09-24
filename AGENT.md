@@ -7,7 +7,7 @@
 14 Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / analyze-paper / env-setup / agent-collaboration / init-project / config-setup / project-backlog（agent-collaboration 为所有宿主/agent 共享；其余四者用户直呼）
 2 Host manifests: .claude-plugin/plugin.json / .codex-plugin/plugin.json（同名、同版本；共享 skills/hooks，MCP 配置保持等价）
 确定性 CLI: src/scholar_workflow/ + bin/(scholar-workflow, zotero-annotations.py, recommend-papers.py)
-Zotero 经官方 Local API: 元数据/存在性/索引全文/写入(create/import/元数据)均经 `scholar-workflow zotero` 命令;主题召回用 Local API 全字段/全文 quicksearch 后由宿主模型排序,不自建向量库;唯一例外——批注导出允许 bin/zotero-annotations.py 以只读(mode=ro&immutable=1)直读本地 DB,绝不用于元数据判定或任何写入
+Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入(create/import/元数据)均经 `scholar-workflow zotero` 命令;主题召回用 Local API 全字段/全文 quicksearch 后由宿主模型排序,不自建向量库;任何组件都不得直接读取或写入 zotero.sqlite
 论文下载: CLI 落入 paper_inbox 收件箱，再经 Zotero Local API 入库
 ```
 
@@ -17,16 +17,28 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/写入(create/impor
   Run/Attempt/Target/Artifact 档案；主机项目根只进入显式 host registry。
 - **Knowledge System** 持有 Vault 核心文档、原子资源、附属产物、analysis result contract 和
   knowledge relations；批量产物逐项通过 conformance gate，失败不得记成功。
-- **Hub Control Plane** 以唯一 `HubDirectory` 聚合 Papers/Projects/Tools、Knowledge Contexts 与
-  Operations；旧 `HubCatalog` 只是版本化 `knowledge_catalog` 兼容投影，Hub 不成为正文或 transcript 真源。
+- **Hub Control Plane v3** 以唯一 `HubDirectory` 聚合文档 Libraries（Papers、动态 Fields）以及平级的
+  Projects、Tools 和 capability/diagnostics；v1/v2 只由 v3 派生兼容投影，Hub 不成为正文或 transcript 真源。
 - Knowledge 与 Project 只经人或 agent 显式复制内容；副本获得目标系统 identity 并独立演化，
   不建立自动同步、托管 project-reference 或强制 provenance。
-- Hub 默认由可见 cmux `runtime` workspace 中的唯一服务持有；workspace/file/task mutation 必须有
-  有效 binding，unbound/headless 只读。项目文件操作只限显式注册项目的 `docs/`，请求只接受
-  `project_id + docs 相对路径`；删除进入 `.scholar-workflow/trash/docs/`，Hub 不执行 Git 写操作。
-- `scholar-workflow open-hub` 必须封装 instance、nonce、lease 与 cmux fingerprint 协议，自动绑定
-  调用者当前 workspace，且仅在服务端确认 binding 后报告成功；裸 `/hub/` 必须明确标记为只读入口，
-  不得让“已选择 workspace”冒充“已绑定 workspace”。
+- cmux workspace 只是 `CmuxDestination`：只决定 terminal/browser/Codex/CLI 窗口出现在哪里，不授予
+  文件权限，也不控制 Hub 是否只读。Vault、Vault 子目录、项目 `docs/` 与 CLI cwd 只由登记的
+  `folder_id/project_id` 和 `ExecutionTarget` 解析；workspace 消失只能让相关 launch action 失效。
+- 项目文件操作只限显式注册项目的 `docs/`，请求只接受 `project_id + docs 相对路径`；删除进入
+  `.scholar-workflow/trash/docs/`，Hub 不执行 Git 写操作。Destination 的选择不得改变该授权结果。
+- Knowledge Source/Field 必须动态登记：用户选择 Vault/目录后先生成零写入 preview，每次明确选择并
+  确认一个 Field，才创建或追加 `.scholar-workflow/fields.yml`；选择整个 Vault 不等于批量登记全部
+  候选。已有便携 manifest 但尚未登记到本机时，须另行预览并明确确认整份现有 Source；只写 host
+  registry，保留 manifest、Field ID 和正文原样，不把它伪装成新 Field 的批量初始化。不得固定
+  Field 枚举或要求唯一 `research_vault_root`。
+- `scholar-workflow open-hub` 从已安装包启动或安全重启受管服务，经 mode 0600 discovery 发现动态端口，
+  并把调用者当前 cmux workspace 记为默认打开位置（若存在）。服务不得依赖 code repo root；
+  `hub start/status/stop/restart/doctor` 必须显示并核验真实 executable、build、PID、generation 与日志。
+- 论文/PDF/Field 使用稳定 EntityRef/PdfRef 直接生成动作；正常 UI 和新文档不得经过人类可见
+  paper/attachment/document landing，也不得产生固定 loopback URL。旧 landing 只作一版本兼容解析。
+- Zotero 是正式批注唯一权威，ZotFlow 是唯一可持有 Zotero Web API 读写密钥的客户端且密钥只留在
+  Obsidian SecretStorage；Hub、CLI、agent、配置、环境和日志不得获取它。Scholar Workflow 只经 Local
+  API 读取批注形成只读 AnnotationIR；ZotFlow Source Note、Better Notes 与 Scholar 分析目录 writer 分离。
 - TaskRecipe 只接受 allowlisted target、最多 8 KiB 的 bounded brief 和 `fast/standard/deep` effort；
   浏览器不能提交命令、cwd/path、model、sandbox、permission、环境变量或任意 config。
 

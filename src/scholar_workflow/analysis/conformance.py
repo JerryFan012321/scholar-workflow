@@ -14,6 +14,7 @@ from scholar_workflow.analysis.models import (
 from scholar_workflow.analysis.rendering import (
     ROLE_LABELS,
     AnalysisBundle,
+    canvas_node_id,
     claim_canvas_text,
     claim_markdown_lines,
     evidence_text,
@@ -173,14 +174,6 @@ def validate_bundle(
         )
     expected_nodes = {node["id"]: node for node in expected_bundle.canvas["nodes"]}
     expected_edges = {edge["id"]: edge for edge in expected_bundle.canvas["edges"]}
-    if len(expected_nodes) > 40:
-        findings.append(
-            _finding(
-                "canvas-node-limit",
-                "canvas/nodes",
-                "Generated Canvas subgraph exceeds 40 semantic nodes.",
-            )
-        )
 
     for index, node in enumerate(nodes):
         if not isinstance(node, dict):
@@ -231,6 +224,27 @@ def validate_bundle(
             _finding("invalid-canvas-node-ids", "canvas/nodes", "Canvas node IDs must be unique.")
         )
     node_id_set = {node_id for node_id in node_ids if isinstance(node_id, str)}
+    managed_node_ids = set(expected_nodes)
+    for node in nodes:
+        if not isinstance(node, dict) or not isinstance(node.get("text"), str):
+            continue
+        marker = _CLAIM_MARKER.search(node["text"])
+        if marker is None:
+            continue
+        claimed_id = canvas_node_id(
+            document.artifact_id,
+            f"role/{marker.group('role')}/{marker.group('id')}",
+        )
+        if node.get("id") == claimed_id:
+            managed_node_ids.add(claimed_id)
+    if len(managed_node_ids) > 40:
+        findings.append(
+            _finding(
+                "canvas-node-limit",
+                "canvas/nodes",
+                "Generated Canvas subgraph exceeds 40 semantic nodes.",
+            )
+        )
     for index, edge in enumerate(edges):
         if not isinstance(edge, dict):
             findings.append(
@@ -312,6 +326,10 @@ def validate_bundle(
         if not isinstance(node, dict):
             continue
 
+        # Only IDs produced by the deterministic renderer belong to the managed
+        # subgraph. File, link, group, and free-form text nodes remain user-owned.
+        if node.get("id") not in managed_node_ids:
+            continue
         text = node.get("text")
         marker = _CLAIM_MARKER.search(text) if isinstance(text, str) else None
         if marker:
@@ -334,11 +352,6 @@ def validate_bundle(
                             "Workflow contains an invented challenge/contribution node.",
                         )
                     )
-
-        # Only IDs produced by the deterministic renderer belong to the managed
-        # subgraph. File, link, group, and free-form text nodes remain user-owned.
-        if node.get("id") not in expected_nodes:
-            continue
         if node.get("type") != "text" or not isinstance(text, str):
             findings.append(
                 _finding(

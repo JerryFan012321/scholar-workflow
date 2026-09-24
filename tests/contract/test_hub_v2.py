@@ -16,7 +16,10 @@ from click.testing import CliRunner
 from pydantic import ValidationError
 
 import scholar_workflow.hub.project_docs as project_docs_module
-from scholar_workflow.adapters.zotero_local import ZoteroItemPage
+from scholar_workflow.adapters.zotero_local import (
+    ZoteroAttachmentLocator,
+    ZoteroItemPage,
+)
 from scholar_workflow.cli import main
 from scholar_workflow.hub.catalog import StaticCatalogProvider
 from scholar_workflow.hub.directory import (
@@ -92,7 +95,7 @@ def _request(port: int, path: str, *, method: str = "GET", headers=None, data=No
     return urllib.request.urlopen(request)
 
 
-def test_directory_is_the_unique_root_with_fixed_typed_libraries_and_pagination(tmp_path):
+def test_v3_directory_is_unique_root_with_document_libraries_and_peer_resources(tmp_path):
     project_root = tmp_path / "project"
     (project_root / "docs").mkdir(parents=True)
     _write_project_layout(project_root)
@@ -122,28 +125,39 @@ def test_directory_is_the_unique_root_with_fixed_typed_libraries_and_pagination(
     )
     directory = service.load()
 
-    assert directory.schema_version == 2
-    assert directory.knowledge_catalog.schema_version == 1
-    assert [library.library_id for library in directory.libraries] == [
+    assert directory.schema_version == 3
+    assert set(directory.libraries.model_dump()) == {"papers", "fields"}
+    assert directory.libraries.papers.library_id == "papers"
+    assert directory.libraries.fields.library_id == "fields"
+    assert [project.project_id for project in directory.projects] == [PROJECT_ID]
+    assert directory.tools == []
+
+    compatibility = service.compatibility_directory_v2()
+    assert compatibility["schema_version"] == 2
+    assert compatibility["knowledge_catalog"]["schema_version"] == 1
+    assert [row["library_id"] for row in compatibility["libraries"]] == [
         "papers",
         "projects",
         "tools",
     ]
-    assert directory.libraries[2].available is True
-    assert directory.libraries[2].total_count == 0
-    assert directory.libraries[2].detail == "No tools are registered"
 
     first = service.list_items("papers", limit=2)
     assert [item["ref"] for item in first.items] == [
-        {"library_id": "papers", "item_type": "paper", "item_id": "paper:0"},
-        {"library_id": "papers", "item_type": "paper", "item_id": "paper:1"},
+        {
+            "provider_id": "knowledge-catalog",
+            "entity_type": "paper",
+            "entity_id": "paper:0",
+        },
+        {
+            "provider_id": "knowledge-catalog",
+            "entity_type": "paper",
+            "entity_id": "paper:1",
+        },
     ]
     assert first.next_cursor
-    assert first.items[0]["landing_path"].startswith(
-        "/hub/item?library_id=papers&item_type=paper&item_id="
-    )
+    assert "landing_path" not in first.items[0]
     second = service.list_items("papers", limit=2, cursor=first.next_cursor)
-    assert [item["ref"]["item_id"] for item in second.items] == ["paper:2"]
+    assert [item["ref"]["entity_id"] for item in second.items] == ["paper:2"]
     assert second.next_cursor is None
 
     with pytest.raises(ValueError, match="cursor"):
@@ -243,8 +257,10 @@ def test_project_registry_rejects_symlinked_layout_manifest(tmp_path):
         ProjectRegistry(registry_path).resolve(PROJECT_ID)
 
 
-def test_zotero_papers_provider_requests_only_the_server_page():
+def test_zotero_papers_provider_requests_only_the_server_page(tmp_path):
     calls = []
+    pdf = tmp_path / "paper.pdf"
+    pdf.write_bytes(b"%PDF-1.7\n")
 
     class FakeAdapter:
         def __enter__(self):
@@ -283,6 +299,16 @@ def test_zotero_papers_provider_requests_only_the_server_page():
                 },
             }]
 
+        def resolve_attachment_locator(self, attachment_key):
+            assert attachment_key == "PDFD2345"
+            return ZoteroAttachmentLocator(
+                attachment_key=attachment_key,
+                library_id="1",
+                content_hash="sha256:" + "a" * 64,
+                path=pdf,
+                filename=pdf.name,
+            )
+
     provider = ZoteroPaperLibraryProvider(adapter_factory=FakeAdapter)
     page = provider.page(
         offset=40, limit=20, query="world model", sort="year",
@@ -293,12 +319,18 @@ def test_zotero_papers_provider_requests_only_the_server_page():
     assert page.has_more is True
     assert page.consumed_count == 1
     assert page.items[0]["ref"] == {
-        "library_id": "papers",
-        "item_type": "paper",
-        "item_id": "ABCD2345",
+        "provider_id": "zotero",
+        "entity_type": "paper",
+        "entity_id": "ABCD2345",
     }
     assert page.items[0]["attachment_key"] == "PDFD2345"
-    assert page.items[0]["pdf_path"] == "/open/paper/PDFD2345"
+    assert page.items[0]["pdf_path"] == "/api/v3/pdfs/zotero/PDFD2345/content"
+    assert page.items[0]["pdf_ref"] == {
+        "provider": "zotero",
+        "library_id": "1",
+        "attachment_key": "PDFD2345",
+        "content_hash": "sha256:" + "a" * 64,
+    }
 
 
 def test_zotero_cursor_advances_by_consumed_rows_when_nonbibliographic_row_is_skipped(
@@ -342,9 +374,9 @@ def test_zotero_cursor_advances_by_consumed_rows_when_nonbibliographic_row_is_sk
         paper_provider=ZoteroPaperLibraryProvider(adapter_factory=FakeAdapter),
     )
     first = service.list_items("papers", limit=2)
-    assert [item["ref"]["item_id"] for item in first.items] == ["PAPR2345"]
+    assert [item["ref"]["entity_id"] for item in first.items] == ["PAPR2345"]
     second = service.list_items("papers", limit=2, cursor=first.next_cursor)
-    assert [item["ref"]["item_id"] for item in second.items] == ["PAPR6789"]
+    assert [item["ref"]["entity_id"] for item in second.items] == ["PAPR6789"]
     assert starts == [0, 2]
 
 
@@ -369,12 +401,13 @@ def test_disabled_project_registration_is_visible_without_resolving_host_root(tm
         ToolRegistry(tmp_path / "tools.json"),
     )
     directory = service.load()
-    projects = next(row for row in directory.libraries if row.library_id == "projects")
-    assert projects.available is True
-    assert projects.total_count == 1
-    page = service.list_items("projects")
-    assert page.items[0]["enabled"] is False
-    assert page.items[0]["docs_available"] is False
+    assert set(directory.libraries.model_dump()) == {"papers", "fields"}
+    assert len(directory.projects) == 1
+    assert directory.projects[0].enabled is False
+    assert directory.projects[0].docs_available is False
+    page = service.list_compat_items("projects")
+    assert page["items"][0]["enabled"] is False
+    assert page["items"][0]["docs_available"] is False
 
 
 def test_project_docs_stay_inside_registered_docs_refuse_collisions_and_trash(tmp_path):
@@ -1373,7 +1406,7 @@ def test_codex_capability_probe_uses_argv_without_shell():
     assert all(call[1]["shell"] is False for call in calls)
 
 
-def test_v2_http_root_pages_libraries_and_keeps_writes_unbound(tmp_path):
+def test_v2_projection_is_read_only_and_v3_docs_writes_ignore_workspace(tmp_path):
     storage = tmp_path / "storage"
     vault = tmp_path / "vault"
     project_root = tmp_path / "project"
@@ -1381,6 +1414,7 @@ def test_v2_http_root_pages_libraries_and_keeps_writes_unbound(tmp_path):
     vault.mkdir()
     (project_root / "docs").mkdir(parents=True)
     _write_project_layout(project_root)
+    (project_root / "docs" / "source.md").write_text("body", encoding="utf-8")
     project_path = tmp_path / "projects.json"
     tool_path = tmp_path / "tools.json"
     _write_registry(
@@ -1421,22 +1455,40 @@ def test_v2_http_root_pages_libraries_and_keeps_writes_unbound(tmp_path):
         assert page["next_cursor"]
 
         token = json.loads(_request(port, "/api/v1/session").read())["csrf_token"]
-        body = json.dumps({"source_path": "missing.md", "destination_path": "copy.md"}).encode()
-        with pytest.raises(urllib.error.HTTPError) as error:
+        body = json.dumps({
+            "source_path": "source.md",
+            "destination_path": "copy.md",
+        }).encode()
+        headers = {
+            "Content-Type": "application/json",
+            "Origin": f"http://127.0.0.1:{port}",
+            "X-Scholar-Hub-Token": token,
+            "X-Scholar-Hub-Instance": "unbound-instance",
+        }
+        with pytest.raises(urllib.error.HTTPError) as legacy_error:
             _request(
                 port,
                 f"/api/v2/projects/{PROJECT_ID}/docs/copy",
                 method="POST",
                 data=body,
-                headers={
-                    "Content-Type": "application/json",
-                    "Origin": f"http://127.0.0.1:{port}",
-                    "X-Scholar-Hub-Token": token,
-                    "X-Scholar-Hub-Instance": "unbound-instance",
-                },
+                headers=headers,
             )
-        assert error.value.code == 409
-        assert json.loads(error.value.read())["code"] == "headless_read_only"
+        assert legacy_error.value.code == 410
+        assert json.loads(legacy_error.value.read())["code"] == (
+            "v2_read_only_compatibility"
+        )
+
+        result = json.loads(
+            _request(
+                port,
+                f"/api/v3/projects/{PROJECT_ID}/docs/copy",
+                method="POST",
+                data=body,
+                headers=headers,
+            ).read()
+        )
+        assert result["relative_path"] == "copy.md"
+        assert (project_root / "docs" / "copy.md").read_text() == "body"
     finally:
         server.shutdown()
         server.server_close()
@@ -1519,7 +1571,7 @@ def test_typed_paper_attachment_and_analysis_landings_keep_raw_urls_internal(tmp
         server.server_close()
 
 
-def test_hub_ui_is_library_first_and_surfaces_read_only_binding_state(tmp_path):
+def test_hub_ui_uses_v3_information_architecture_and_independent_capabilities(tmp_path):
     storage = tmp_path / "storage"
     vault = tmp_path / "vault"
     storage.mkdir()
@@ -1539,20 +1591,28 @@ def test_hub_ui_is_library_first_and_surfaces_read_only_binding_state(tmp_path):
         assert 'id="project-ops-dialog"' in html
         assert "相对于已注册项目的" in html
         assert "Libraries" in html
-        assert "Knowledge Contexts" in html
-        assert "/api/v2/directory" in script
-        assert "/api/v2/libraries/" in script
+        assert "Knowledge Contexts" not in html
+        assert "/api/v3/directory" in script
+        assert "/api/v3/libraries/" in script
+        assert "/api/v3/destinations" in script
+        assert "/api/v3/actions/" in script
         assert 'query.set("query"' in script
         assert 'query.set("sort"' in script
         assert 'query.set("type"' in script
-        assert "/hub/item?" in script
-        assert "state.catalog.resources" in script
+        assert "/hub/item?" not in script
+        assert "state.catalog" not in script
         assert "`/open/paper/${" not in script
-        assert "knowledge_catalog" in script
-        assert "只读 · 未绑定工作区" in script
-        assert "只读入口；请在 cmux 终端运行 scholar-workflow open-hub" in script
-        assert "Boolean(hubInstance())" in script
+        assert "knowledge_catalog" not in script
+        assert "operations.bound" not in script
+        assert "默认打开位置" in html
+        assert 'id="capability-matrix"' in html
+        assert 'id="field-register-dialog"' in html
+        assert "vault_writes" in script
+        assert "project_document_writes" in script
+        assert "Paper" in script and "Webpage" in script and "Other" in script
+        assert "journalArticle" not in script
         assert "openProjectOperations" in script
+        assert "/api/v3/projects/" in script
         assert "/docs/${operation}" in script
         assert "confirmation_required" in script
         assert "innerHTML" not in script
@@ -1561,7 +1621,7 @@ def test_hub_ui_is_library_first_and_surfaces_read_only_binding_state(tmp_path):
         server.server_close()
 
 
-def test_hub_doctor_verifies_structured_v2_health_on_temporary_port(tmp_path):
+def test_hub_doctor_verifies_structured_v3_health_on_temporary_port(tmp_path):
     storage = tmp_path / "storage"
     vault = tmp_path / "vault"
     storage.mkdir()
@@ -1580,8 +1640,8 @@ def test_hub_doctor_verifies_structured_v2_health_on_temporary_port(tmp_path):
         )
         assert result.exit_code == 0, result.output
         report = json.loads(result.output)
-        assert report["protocol"]["version"] == 2
-        assert report["hub_directory"]["schema_version"] == 2
+        assert report["protocol"]["version"] == 3
+        assert report["hub_directory"]["schema_version"] == 3
         assert report["owner_mode"] == "headless"
         assert report["task_execution"] is False
         assert report["process"]["pid"] > 0
@@ -1593,7 +1653,7 @@ def test_hub_doctor_verifies_structured_v2_health_on_temporary_port(tmp_path):
         server.server_close()
 
 
-def test_bound_v2_project_copy_accepts_only_relative_docs_paths(tmp_path):
+def test_v3_project_copy_accepts_only_relative_docs_paths(tmp_path):
     storage = tmp_path / "storage"
     vault = tmp_path / "vault"
     project_root = tmp_path / "project"
@@ -1648,7 +1708,7 @@ def test_bound_v2_project_copy_accepts_only_relative_docs_paths(tmp_path):
         token = json.loads(_request(port, "/api/v1/session").read())["csrf_token"]
         response = _request(
             port,
-            f"/api/v2/projects/{PROJECT_ID}/docs/copy",
+            f"/api/v3/projects/{PROJECT_ID}/docs/copy",
             method="POST",
             data=json.dumps({
                 "source_path": "source.md",
@@ -1666,7 +1726,7 @@ def test_bound_v2_project_copy_accepts_only_relative_docs_paths(tmp_path):
 
         pasted = _request(
             port,
-            f"/api/v2/projects/{PROJECT_ID}/docs/paste",
+            f"/api/v3/projects/{PROJECT_ID}/docs/paste",
             method="POST",
             data=json.dumps({
                 "destination_path": "nested/pasted.md",
@@ -1686,7 +1746,7 @@ def test_bound_v2_project_copy_accepts_only_relative_docs_paths(tmp_path):
         server.server_close()
 
 
-def test_workspace_nonce_and_bind_api_resolve_opaque_workspace_server_side(tmp_path):
+def test_v2_workspace_mutations_are_retired_read_only_compatibility(tmp_path):
     storage = tmp_path / "storage"
     vault = tmp_path / "vault"
     storage.mkdir()
@@ -1718,48 +1778,48 @@ def test_workspace_nonce_and_bind_api_resolve_opaque_workspace_server_side(tmp_p
             "X-Scholar-Hub-Token": token,
             "X-Scholar-Hub-Instance": "hub-instance",
         }
-        nonce_response = _request(
-            port,
-            "/api/v2/workspaces/nonce",
-            method="POST",
-            headers=headers,
-            data=b"{}",
-        )
-        nonce = json.loads(nonce_response.read())["nonce"]
-        binding = _request(
-            port,
-            "/api/v2/workspaces/bind",
-            method="POST",
-            headers=headers,
-            data=json.dumps({
-                "nonce": nonce,
-                "profile_id": "runtime",
-                "workspace_id": "opaque-workspace",
-            }).encode(),
-        )
-        payload = json.loads(binding.read())
-        assert payload["ok"] is True
-        assert payload["profile_id"] == "runtime"
-        assert resolved == ["opaque-workspace"]
+        for endpoint, body in (
+            ("/api/v2/workspaces/nonce", b"{}"),
+            (
+                "/api/v2/workspaces/bind",
+                json.dumps({
+                    "nonce": "retired",
+                    "profile_id": "runtime",
+                    "workspace_id": "opaque-workspace",
+                }).encode(),
+            ),
+        ):
+            with pytest.raises(urllib.error.HTTPError) as error:
+                _request(
+                    port,
+                    endpoint,
+                    method="POST",
+                    headers=headers,
+                    data=body,
+                )
+            assert error.value.code == 410
+            assert json.loads(error.value.read())["code"] == (
+                "v2_read_only_compatibility"
+            )
+        assert resolved == []
         directory = json.loads(
             _request(port, "/api/v2/directory?instance=hub-instance").read()
         )
-        assert directory["operations"]["bound"] is True
+        assert directory["operations"]["bound"] is False
         status = json.loads(
             _request(port, "/api/v2/workspaces/status?instance=hub-instance").read()
         )
-        assert status == {
-            "bound": True,
-            "service_generation": bindings.service_generation,
-            "workspace_binding_available": True,
-        }
-        assert "raw-never-returned" not in json.dumps(payload)
+        assert status["bound"] is False
+        assert status["service_generation"] == bindings.service_generation
+        assert status["workspace_binding_available"] is False
+        assert status["deprecated"] is True
+        assert "raw-never-returned" not in json.dumps(status)
     finally:
         server.shutdown()
         server.server_close()
 
 
-def test_v2_mutation_revalidates_live_workspace_before_each_write(tmp_path):
+def test_project_write_authority_does_not_depend_on_workspace_liveness(tmp_path):
     storage = tmp_path / "storage"
     vault = tmp_path / "vault"
     project_root = tmp_path / "project"
@@ -1819,35 +1879,51 @@ def test_v2_mutation_revalidates_live_workspace_before_each_write(tmp_path):
     try:
         port = server.server_address[1]
         token = json.loads(_request(port, "/api/v1/session").read())["csrf_token"]
-        with pytest.raises(urllib.error.HTTPError) as error:
-            _request(
-                port,
-                f"/api/v2/projects/{PROJECT_ID}/docs/copy",
-                method="POST",
-                data=json.dumps({
-                    "source_path": "source.md",
-                    "destination_path": "copy.md",
-                }).encode(),
-                headers={
-                    "Content-Type": "application/json",
-                    "Origin": f"http://127.0.0.1:{port}",
-                    "X-Scholar-Hub-Token": token,
-                    "X-Scholar-Hub-Instance": "bound-instance",
-                },
-            )
-        assert error.value.code == 409
-        assert json.loads(error.value.read())["code"] == "workspace_unbound"
-        assert not (project_root / "docs" / "copy.md").exists()
+        result = json.loads(_request(
+            port,
+            f"/api/v3/projects/{PROJECT_ID}/docs/copy",
+            method="POST",
+            data=json.dumps({
+                "source_path": "source.md",
+                "destination_path": "copy.md",
+            }).encode(),
+            headers={
+                "Content-Type": "application/json",
+                "Origin": f"http://127.0.0.1:{port}",
+                "X-Scholar-Hub-Token": token,
+                "X-Scholar-Hub-Instance": "bound-instance",
+            },
+        ).read())
+        assert result["relative_path"] == "copy.md"
+        assert (project_root / "docs" / "copy.md").read_text() == "body"
     finally:
         server.shutdown()
         server.server_close()
 
 
-def test_headless_service_stays_read_only_even_with_an_existing_lease(tmp_path):
+def test_headless_service_blocks_cmux_binding_but_not_registered_folder_writes(tmp_path):
     storage = tmp_path / "storage"
     vault = tmp_path / "vault"
     storage.mkdir()
     vault.mkdir()
+    project_root = tmp_path / "project"
+    (project_root / "docs").mkdir(parents=True)
+    _write_project_layout(project_root)
+    (project_root / "docs" / "source.md").write_text("body", encoding="utf-8")
+    registry_path = tmp_path / "projects.json"
+    _write_registry(
+        registry_path,
+        {
+            "schema_version": 1,
+            "projects": [{
+                "project_id": PROJECT_ID,
+                "display_name": "Project One",
+                "root": str(project_root),
+                "enabled": True,
+                "capabilities": ["docs"],
+            }],
+        },
+    )
     bindings = WorkspaceBindingRegistry(
         service_generation="service-1",
         profiles=[WorkspaceProfile(profile_id="runtime", role="runtime")],
@@ -1869,6 +1945,7 @@ def test_headless_service_stays_read_only_even_with_an_existing_lease(tmp_path):
         storage_root=storage,
         vault_root=vault,
         catalog_provider=StaticCatalogProvider(_catalog()),
+        project_document_service=ProjectDocumentService(ProjectRegistry(registry_path)),
         binding_coordinator=coordinator,
         owner_mode="headless",
     )
@@ -1889,22 +1966,21 @@ def test_headless_service_stays_read_only_even_with_an_existing_lease(tmp_path):
                 headers=headers,
                 data=b"{}",
             )
-        assert error.value.code == 409
-        assert json.loads(error.value.read())["code"] == "headless_read_only"
+        assert error.value.code == 410
+        assert json.loads(error.value.read())["code"] == "v2_read_only_compatibility"
 
-        with pytest.raises(urllib.error.HTTPError) as mutation_error:
-            _request(
-                port,
-                f"/api/v2/projects/{PROJECT_ID}/docs/copy",
-                method="POST",
-                headers=headers,
-                data=json.dumps({
-                    "source_path": "source.md",
-                    "destination_path": "copy.md",
-                }).encode(),
-            )
-        assert mutation_error.value.code == 409
-        assert json.loads(mutation_error.value.read())["code"] == "headless_read_only"
+        copied = json.loads(_request(
+            port,
+            f"/api/v3/projects/{PROJECT_ID}/docs/copy",
+            method="POST",
+            headers=headers,
+            data=json.dumps({
+                "source_path": "source.md",
+                "destination_path": "copy.md",
+            }).encode(),
+        ).read())
+        assert copied["relative_path"] == "copy.md"
+        assert (project_root / "docs" / "copy.md").read_text() == "body"
 
         with pytest.raises(urllib.error.HTTPError) as legacy_error:
             _request(
@@ -1914,8 +1990,8 @@ def test_headless_service_stays_read_only_even_with_an_existing_lease(tmp_path):
                 headers=headers,
                 data=b"{}",
             )
-        assert legacy_error.value.code == 409
-        assert json.loads(legacy_error.value.read())["code"] == "headless_read_only"
+        assert legacy_error.value.code == 404
+        assert legacy_error.value.read() == b"Unknown action"
 
         directory = json.loads(
             _request(port, "/api/v2/directory?instance=bound-instance").read()

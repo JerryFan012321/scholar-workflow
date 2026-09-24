@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
+import fitz
 from click.testing import CliRunner
 
 from scholar_workflow.adapters.zotero_local import (
     Authorization,
     ServerInfo,
+    ZoteroAttachmentLocator,
     ZoteroLocalError,
     ZoteroLocalUnavailable,
 )
@@ -34,10 +37,47 @@ class FakeAdapter:
         return [{"key": "ITEM1", "data": {"title": query, "qmode": qmode, "limit": limit}}]
 
     def get_item(self, item_key):
+        if item_key == "ABCD2345":
+            return {"key": item_key, "data": {"title": "Selected Paper"}}
         return {"key": item_key}
 
     def get_children(self, item_key):
+        if item_key == "ABCD2345":
+            return [
+                {
+                    "key": "EFGH6789",
+                    "data": {
+                        "itemType": "attachment",
+                        "contentType": "application/pdf",
+                        "filename": "paper.pdf",
+                    },
+                }
+            ]
         return [{"key": "ATT1", "parentItem": item_key}]
+
+    def resolve_attachment_locator(self, attachment_key):
+        return ZoteroAttachmentLocator(
+            attachment_key=attachment_key,
+            library_id="1",
+            content_hash="sha256:" + "a" * 64,
+            path=Path("/not-read.pdf"),
+            filename="paper.pdf",
+        )
+
+    def get_annotations(self, attachment_key):
+        return [
+            {
+                "key": "JKLM2345",
+                "data": {
+                    "annotationType": "highlight",
+                    "annotationText": "quoted text",
+                    "annotationComment": "my comment",
+                    "annotationPageLabel": "7",
+                    "annotationPosition": '{"pageIndex": 6}',
+                    "annotationSortIndex": "00001",
+                },
+            }
+        ]
 
     def get_fulltext(self, attachment_key):
         return {"content": f"text for {attachment_key}"}
@@ -82,6 +122,80 @@ def test_search_and_read_commands_are_json(monkeypatch):
     collection = invoke(monkeypatch, ["zotero", "collection-items", "C1"])
     assert json.loads(collection.output)["items"][0]["collection"] == "C1"
     assert json.loads(collection.output)["items"][0]["limit"] is None
+
+
+def test_annotations_command_emits_local_api_projection(monkeypatch):
+    result = invoke(
+        monkeypatch,
+        ["zotero", "annotations", "--item", "ABCD2345", "--json"],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["item_key"] == "ABCD2345"
+    assert payload["attachment_key"] == "EFGH6789"
+    assert payload["annotations"][0]["comment"] == "my comment"
+    assert payload["annotations"][0]["source_link"].startswith("zotero://open-pdf/")
+
+
+def test_snapshot_annotations_creates_independent_pdf_and_receipt(monkeypatch, tmp_path):
+    source = tmp_path / "source.pdf"
+    document = fitz.open()
+    document.new_page(width=200, height=200)
+    document.save(source)
+    document.close()
+    source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+
+    class SnapshotAdapter(FakeAdapter):
+        def resolve_attachment_locator(self, attachment_key):
+            return ZoteroAttachmentLocator(
+                attachment_key=attachment_key,
+                library_id="1",
+                content_hash=f"sha256:{source_hash}",
+                path=source,
+                filename=source.name,
+            )
+
+        def get_annotations(self, attachment_key):
+            return [
+                {
+                    "key": "JKLM2345",
+                    "data": {
+                        "annotationType": "highlight",
+                        "annotationText": "quoted text",
+                        "annotationComment": "my comment",
+                        "annotationPosition": json.dumps(
+                            {"pageIndex": 0, "rects": [[20, 20, 120, 40]]}
+                        ),
+                        "annotationSortIndex": "00001",
+                    },
+                }
+            ]
+
+    monkeypatch.setattr(
+        "scholar_workflow.cli._zotero_adapter",
+        lambda: SnapshotAdapter(),
+    )
+    output = tmp_path / "annotated.pdf"
+
+    result = CliRunner().invoke(
+        main,
+        [
+            "zotero",
+            "snapshot-annotations",
+            "EFGH6789",
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["snapshot"] == str(output)
+    assert payload["annotation_count"] == 1
+    assert payload["imported_back"] is False
+    assert output.is_file()
+    assert output.with_suffix(".pdf.snapshot.json").is_file()
 
 
 def test_ingest_accepts_json_file(monkeypatch, tmp_path: Path):

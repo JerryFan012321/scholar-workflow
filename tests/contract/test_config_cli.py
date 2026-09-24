@@ -2,8 +2,11 @@
 JSON output shape, missing-file guidance, and doctor's graceful degradation.
 """
 from __future__ import annotations
+
 import json
+
 from click.testing import CliRunner
+
 from scholar_workflow.cli import main
 
 
@@ -18,16 +21,23 @@ def test_path_succeeds_without_file(tmp_path):
 
 
 def test_init_then_show_roundtrip(tmp_path):
-    r = _run(["config", "init", "--research-vault-root", str(tmp_path / "v")], tmp_path)
+    r = _run(["config", "init"], tmp_path)
     assert r.exit_code == 0
     assert json.loads(r.output)["config"] == str(tmp_path / "config.yml")
     show = _run(["config", "show", "--raw"], tmp_path)
-    assert show.exit_code == 0 and "research_vault_root" in show.output
+    assert show.exit_code == 0 and "research_vault_root" not in show.output
 
 
-def test_init_missing_required_vault_is_exit_2(tmp_path):
+def test_init_accepts_optional_legacy_vault(tmp_path):
     r = _run(["config", "init"], tmp_path)
-    assert r.exit_code == 2  # click: missing required option
+    assert r.exit_code == 0
+
+
+def test_init_can_record_legacy_vault_migration_candidate(tmp_path):
+    r = _run(["config", "init", "--research-vault-root", str(tmp_path / "v")], tmp_path)
+    assert r.exit_code == 0
+    show = _run(["config", "show", "--raw"], tmp_path)
+    assert "research_vault_root" in show.output
 
 
 def test_set_before_init_gives_guidance_exit_2(tmp_path):
@@ -67,3 +77,15 @@ def test_doctor_missing_config_json_shape(tmp_path):
     assert r.exit_code == 3
     payload = json.loads(r.output)
     assert payload["ok"] is False and payload["configured"] is False
+
+
+def test_legacy_projection_fails_closed_without_vault_candidate(tmp_path):
+    _run(["config", "init"], tmp_path)
+    payload = tmp_path / "projection.json"
+    payload.write_text('{"entries": []}', encoding="utf-8")
+
+    result = _run(["project-obsidian", "--input", str(payload)], tmp_path)
+
+    assert result.exit_code == 3
+    assert "requires `research_vault_root`" in result.output
+    assert "registered Sources" in result.output

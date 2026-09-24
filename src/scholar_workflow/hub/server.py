@@ -13,10 +13,14 @@ from html import escape
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib import resources
 from importlib.metadata import PackageNotFoundError, version
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import parse_qs, quote, unquote, urlencode, urlparse
 
+from pydantic import ValidationError
+
+from scholar_workflow.adapters.obsidian import VaultPathError, safe_vault_path
+from scholar_workflow.adapters.zotero_local import ZoteroLocalAdapter, ZoteroLocalError
 from scholar_workflow.hub.actions import (
     ActionKind,
     CatalogActionService,
@@ -26,8 +30,11 @@ from scholar_workflow.hub.actions import (
     InvalidActionTarget,
     ObsidianLauncher,
     PublicAction,
+    SystemPdfLauncher,
     UnknownActionError,
     ZoteroLauncher,
+    ZoteroPdfLauncher,
+    ZotFlowLauncher,
 )
 from scholar_workflow.hub.artifact_manifest import VaultArtifactManifestProvider
 from scholar_workflow.hub.assets import (
@@ -57,7 +64,10 @@ from scholar_workflow.hub.content import (
     UnknownArtifactError,
     UnsupportedArtifactError,
 )
+from scholar_workflow.hub.destinations import DestinationRegistry
 from scholar_workflow.hub.directory import (
+    CapabilityMatrix,
+    CapabilityStatus,
     HubDirectoryService,
     LibraryProviderUnavailable,
     OperationStatus,
@@ -67,6 +77,14 @@ from scholar_workflow.hub.directory import (
     TypedEntityRef,
     UnknownLibraryError,
     ZoteroPaperLibraryProvider,
+)
+from scholar_workflow.hub.fields import (
+    FieldCandidateExpired,
+    FieldRegistryCommitUncertain,
+    FieldRegistryError,
+    FieldService,
+    KnowledgeSourceRegistry,
+    SystemFolderPicker,
 )
 from scholar_workflow.hub.links import LinkedCatalogProvider, ProjectionLinkStore
 from scholar_workflow.hub.models import AssetRole, HubAsset
@@ -78,28 +96,28 @@ from scholar_workflow.hub.project_docs import (
     ProjectDocumentService,
     ProjectPathError,
 )
+from scholar_workflow.hub.routing import TaskActionRequest
 from scholar_workflow.hub.vault import VaultCatalogProvider
 from scholar_workflow.hub.workspaces import (
     WorkspaceBindingCoordinator,
     WorkspaceBindingRegistry,
-    WorkspaceProfile,
 )
+from scholar_workflow.hub.zotflow import RegisteredSourceZotFlowAdapter
 
 _KEY_RE = re.compile(r"^[A-Z0-9]+$")
 _RANGE_RE = re.compile(r"^bytes=(\d*)-(\d*)$")
 _HUB_INSTANCE_RE = re.compile(r"^[A-Za-z0-9_-]{8,128}$")
-_CMUX_HUB_CAPABILITY = "cmux-workspace-actions-v1"
-_VERIFIED_BINDING_CAPABILITY = "open-hub-verified-binding-v1"
-_V2_CAPABILITIES = (
-    "hub-directory-v2",
-    "typed-library-pagination-v1",
-    "explicit-project-registry-v1",
-    "explicit-tool-registry-v1",
-    "project-documents-v1",
-    "workspace-binding-v1",
-    "task-contracts-v1",
+_DESTINATION_CAPABILITY = "cmux-destinations-v1"
+_V3_CAPABILITIES = (
+    "hub-directory-v3",
+    "typed-provider-pagination-v2",
+    "dynamic-fields-v1",
+    "direct-paper-actions-v1",
+    _DESTINATION_CAPABILITY,
+    "trusted-execution-targets-v1",
 )
-_MAX_V2_WRITE_BYTES = 32 * 1024
+_MAX_V2_WRITE_BYTES = 2 * 1024 * 1024 + 16 * 1024
+_MAX_TASK_REQUEST_BYTES = 12 * 1024
 _STATIC_TYPES = {
     ".css": "text/css; charset=utf-8",
     ".js": "text/javascript; charset=utf-8",
@@ -141,6 +159,11 @@ class HubRuntime:
     action_service: Any | None = None
     directory_service: HubDirectoryService | None = None
     project_document_service: ProjectDocumentService | None = None
+    destination_registry: DestinationRegistry | None = None
+    field_service: FieldService | None = None
+    folder_picker: SystemFolderPicker | None = None
+    task_service: Any | None = None
+    zotero_adapter_factory: Any = ZoteroLocalAdapter
     binding_registry: WorkspaceBindingRegistry | None = None
     binding_coordinator: WorkspaceBindingCoordinator | None = None
     service_generation: str = "unknown-generation"
@@ -149,6 +172,7 @@ class HubRuntime:
     log_path: Path | None = None
     state_root: Path | None = None
     catalog_path: Path | None = None
+    process_executable: str = ""
 
 
 class _StaticActionService:
@@ -192,6 +216,9 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         if not self._request_origin_allowed():
             return
         path = urlparse(self.path).path
+        if path.startswith("/api/v3/pdfs/zotero/") and path.endswith("/content"):
+            self._handle_v3_pdf(path, send_body=False)
+            return
         if path == "/open/paper" or path.startswith("/open/paper/"):
             self._handle_pdf(path, send_body=False)
             return
@@ -222,6 +249,28 @@ class HubRequestHandler(BaseHTTPRequestHandler):
                 else self.server.runtime.catalog_provider.load()
             )
             self._respond_json(200, catalog.model_dump(mode="json"))
+        elif path == "/api/v3/directory":
+            self._handle_v3_directory()
+        elif path.startswith("/api/v3/libraries/") and path.endswith("/items"):
+            self._handle_v3_library(path, parsed.query)
+        elif path.startswith("/api/v3/fields/") and path.endswith("/documents"):
+            self._handle_v3_field_read(path, parsed.query)
+        elif path == "/api/v3/destinations":
+            self._handle_v3_destinations(parsed.query)
+        elif path == "/api/v3/execution-targets":
+            service = self.server.runtime.task_service
+            targets = service.public_targets() if service is not None else []
+            self._respond_json(200, {"targets": [_model_payload(row) for row in targets]})
+        elif path == "/api/v3/task-actions":
+            service = self.server.runtime.task_service
+            actions = service.public_actions() if service is not None else []
+            self._respond_json(200, {"actions": [_model_payload(row) for row in actions]})
+        elif path.startswith("/api/v3/tasks/"):
+            self._handle_v3_task_status(path)
+        elif path.startswith("/api/v3/task-runs/"):
+            self._handle_v3_task_run_status(path)
+        elif path == "/api/v3/health":
+            self._respond_json(200, self._v3_health_payload())
         elif path == "/api/v2/directory":
             self._handle_v2_directory(parsed.query)
         elif path == "/api/v2/workspaces/status":
@@ -230,6 +279,8 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             self._handle_v2_library(path, parsed.query)
         elif path == "/api/v2/health":
             self._respond_json(200, self._v2_health_payload())
+        elif path == "/api/v3/actions":
+            self._respond_json(200, self._public_actions_payload())
         elif path == "/api/v1/actions":
             service = self.server.runtime.action_service
             groups = service.public_actions() if service is not None else {}
@@ -251,17 +302,12 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         elif path == "/api/v1/cmux/workspaces":
             self._handle_cmux_workspaces(parsed.query)
         elif path == "/api/v1/health":
-            self._respond_json(
-                200,
-                {
-                    "status": "ok",
-                    "schema_version": 1,
-                    "capabilities": [
-                        _CMUX_HUB_CAPABILITY,
-                        _VERIFIED_BINDING_CAPABILITY,
-                    ],
-                },
-            )
+            payload = self._v3_health_payload()
+            payload["compatibility"] = {
+                "endpoint": "/api/v1/health",
+                "derived_from": "HubDirectory v3",
+            }
+            self._respond_json(200, payload)
         elif path.startswith("/api/v1/artifacts/") and path.endswith("/content"):
             encoded_id = path[len("/api/v1/artifacts/"):-len("/content")]
             self._handle_artifact_content(unquote(encoded_id))
@@ -269,6 +315,8 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             self._handle_artifact_assets(artifact_id)
         elif (asset_id := self._asset_content_id(path)) is not None:
             self._handle_asset_content(asset_id, send_body=True)
+        elif path.startswith("/api/v3/pdfs/zotero/") and path.endswith("/content"):
+            self._handle_v3_pdf(path, send_body=True)
         elif path == "/open/paper" or path.startswith("/open/paper/"):
             self._handle_pdf(path, send_body=True)
         else:
@@ -277,9 +325,10 @@ class HubRequestHandler(BaseHTTPRequestHandler):
     def do_PUT(self) -> None:
         if not self._request_origin_allowed(require_origin=True):
             return
-        if not self._legacy_write_binding_allowed():
-            return
         path = urlparse(self.path).path
+        if path.startswith("/api/v3/fields/") and path.endswith("/documents"):
+            self._handle_v3_field_write(path)
+            return
         artifact_id = self._artifact_content_id(path)
         if artifact_id is None:
             self._respond_text(404, "Not found")
@@ -316,6 +365,15 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             self._respond_text(400, "content and base_revision must be strings")
             return
         try:
+            if not self._legacy_artifact_source_authorized(
+                artifact_id,
+                capability="write",
+            ):
+                self._respond_text(
+                    403,
+                    "Artifact is not inside a registered writable knowledge source",
+                )
+                return
             saved = self.server.runtime.content_store.write(
                 artifact_id,
                 content=content,
@@ -330,7 +388,7 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         except InvalidArtifactContentError as exc:
             self._respond_text(422, str(exc))
             return
-        except ArtifactPathRejectedError:
+        except (ArtifactPathRejectedError, FieldRegistryError):
             self._respond_text(403, "Artifact path was rejected")
             return
         except (UnknownArtifactError, ArtifactMissingError):
@@ -344,15 +402,130 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             return
         self._respond_json(200, saved.as_payload())
 
+    def _handle_v3_field_read(self, path: str, query: str) -> None:
+        segments = path.strip("/").split("/")
+        if (
+            len(segments) != 5
+            or segments[:3] != ["api", "v3", "fields"]
+            or segments[4] != "documents"
+        ):
+            self._respond_text(404, "Not found")
+            return
+        parameters = parse_qs(query, keep_blank_values=True)
+        if set(parameters) != {"relative_path"} or len(parameters["relative_path"]) != 1:
+            self._respond_text(400, "Expected exactly one relative_path")
+            return
+        service = self.server.runtime.field_service
+        if service is None:
+            self._respond_text(503, "Field document reads are unavailable")
+            return
+        try:
+            result = service.read_document(
+                unquote(segments[3]),
+                parameters["relative_path"][0],
+            )
+        except ValueError as exc:
+            self._respond_text(400, str(exc))
+            return
+        except FieldRegistryError as exc:
+            self._respond_json(409, {"ok": False, "error": str(exc)})
+            return
+        self._respond_json(200, {"ok": True, **result})
+
+    def _handle_v3_field_write(self, path: str) -> None:
+        if not self._require_session_token():
+            return
+        segments = path.strip("/").split("/")
+        if (
+            len(segments) != 5
+            or segments[:3] != ["api", "v3", "fields"]
+            or segments[4] != "documents"
+        ):
+            self._respond_text(404, "Not found")
+            return
+        try:
+            body = self._read_v2_json_body()
+        except (TypeError, ValueError) as exc:
+            self._respond_text(400, str(exc))
+            return
+        if body is None:
+            return
+        if set(body) != {"relative_path", "content", "base_revision"}:
+            self._respond_text(400, "Expected relative_path, content, and base_revision only")
+            return
+        try:
+            _require_string_fields(body, "relative_path", "base_revision")
+            if not isinstance(body["content"], str):
+                raise TypeError("content must be text")
+            service = self.server.runtime.field_service
+            if service is None:
+                raise FieldRegistryError("Field document writes are unavailable")
+            result = service.write_document(
+                unquote(segments[3]),
+                body["relative_path"],
+                content=body["content"],
+                base_revision=body["base_revision"],
+            )
+        except (TypeError, ValueError) as exc:
+            self._respond_text(400, str(exc))
+            return
+        except FieldRegistryError as exc:
+            self._respond_json(409, {"ok": False, "error": str(exc)})
+            return
+        self._respond_json(200, {"ok": True, **result})
+
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
-        if path in {"/api/v2/workspaces/nonce", "/api/v2/workspaces/bind"}:
+        if path == "/api/v3/destinations/default":
             if not self._request_origin_allowed(require_origin=True):
                 return
-            self._handle_v2_workspace_binding(path)
+            self._handle_v3_default_destination()
             return
-        if path.startswith("/api/v2/projects/") and "/docs/" in path:
+        if path == "/api/v3/fields/select":
+            if not self._request_origin_allowed(require_origin=True):
+                return
+            self._handle_v3_field_select()
+            return
+        if path == "/api/v3/fields/confirm":
+            if not self._request_origin_allowed(require_origin=True):
+                return
+            self._handle_v3_field_confirm()
+            return
+        if path.startswith("/api/v3/actions/"):
+            if not self._request_origin_allowed(require_origin=True):
+                return
+            self._handle_v3_action(path)
+            return
+        if path == "/api/v3/tasks" or (
+            path.startswith("/api/v3/tasks/")
+            and path.endswith(("/resume", "/fork"))
+        ):
+            if not self._request_origin_allowed(require_origin=True):
+                return
+            self._handle_v3_task_dispatch(path)
+            return
+        if path.startswith("/api/v3/task-runs/") and path.endswith("/cancel"):
+            if not self._request_origin_allowed(require_origin=True):
+                return
+            self._handle_v3_task_cancel(path)
+            return
+        if path.startswith("/api/v2/"):
+            if not self._request_origin_allowed(require_origin=True):
+                return
+            self._respond_json(
+                410,
+                {
+                    "ok": False,
+                    "code": "v2_read_only_compatibility",
+                    "error": (
+                        "Hub v2 is a read-only compatibility projection; "
+                        "use the corresponding /api/v3 endpoint"
+                    ),
+                },
+            )
+            return
+        if path.startswith("/api/v3/projects/") and "/docs/" in path:
             if not self._request_origin_allowed(require_origin=True):
                 return
             self._handle_v2_project_document_operation(path)
@@ -361,13 +534,9 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         if artifact_id is not None:
             if not self._request_origin_allowed(require_origin=True):
                 return
-            if not self._legacy_write_binding_allowed():
-                return
             self._handle_asset_upload(artifact_id, parsed.query)
             return
         if not self._request_origin_allowed(require_origin=True):
-            return
-        if not self._legacy_write_binding_allowed():
             return
         if not path.startswith("/api/v1/actions/"):
             self._respond_text(404, "Not found")
@@ -516,6 +685,318 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             },
         )
 
+    def _require_session_token(self) -> bool:
+        supplied = self.headers.get("X-Scholar-Hub-Token", "")
+        if not secrets.compare_digest(supplied, self.server.runtime.session_token):
+            self._respond_text(403, "Invalid session token")
+            return False
+        return True
+
+    @staticmethod
+    def _serialize_action(action: Any) -> dict[str, Any]:
+        policy = _action_workspace_policy(action)
+        return {
+            "id": action.id,
+            "label": action.label,
+            "kind": _enum_value(action.kind),
+            "destination_required": policy == "required",
+            "available": bool(getattr(action, "available", True)),
+            "reason": getattr(action, "reason", None),
+            "primary": bool(getattr(action, "primary", False)),
+        }
+
+    def _public_actions_payload(self) -> dict[str, list[dict[str, Any]]]:
+        service = self.server.runtime.action_service
+        groups = service.public_actions() if service is not None else {}
+        return {
+            entity_id: [self._serialize_action(action) for action in actions]
+            for entity_id, actions in groups.items()
+        }
+
+    def _handle_v3_directory(self) -> None:
+        service = self.server.runtime.directory_service
+        if service is None:
+            self._respond_text(503, "HubDirectory is unavailable")
+            return
+        try:
+            root = service.load()
+        except (LibraryProviderUnavailable, OSError, ValueError, RegistryError):
+            self._respond_text(503, "HubDirectory provider failed")
+            return
+        self._respond_json(200, root.model_dump(mode="json"))
+
+    def _library_parameters(self, query: str) -> dict[str, Any] | None:
+        parameters = parse_qs(query, keep_blank_values=True)
+        allowed = {"cursor", "limit", "query", "sort", "direction", "type"}
+        if set(parameters) - allowed:
+            self._respond_text(400, "Unsupported library query field")
+            return None
+        if any(len(values) != 1 for values in parameters.values()):
+            self._respond_text(400, "Library query fields may appear once")
+            return None
+        try:
+            limit = int(parameters.get("limit", ["50"])[0])
+        except ValueError:
+            self._respond_text(400, "limit must be an integer")
+            return None
+        return {
+            "cursor": parameters.get("cursor", [None])[0],
+            "limit": limit,
+            "query": parameters.get("query", [None])[0],
+            "sort": parameters.get("sort", ["title"])[0],
+            "direction": parameters.get("direction", ["asc"])[0],
+            "item_type": parameters.get("type", [None])[0],
+        }
+
+    def _handle_v3_library(self, path: str, query: str) -> None:
+        service = self.server.runtime.directory_service
+        if service is None:
+            self._respond_text(503, "HubDirectory is unavailable")
+            return
+        segments = path.strip("/").split("/")
+        if len(segments) != 5 or segments[:3] != ["api", "v3", "libraries"]:
+            self._respond_text(404, "Not found")
+            return
+        parameters = self._library_parameters(query)
+        if parameters is None:
+            return
+        library_id = unquote(segments[3])
+        try:
+            page = service.list_items(library_id, **parameters)
+        except UnknownLibraryError:
+            self._respond_text(404, "Unknown library")
+            return
+        except ValueError as exc:
+            self._respond_text(400, str(exc))
+            return
+        except (LibraryProviderUnavailable, OSError, RegistryError, FieldRegistryError):
+            self._respond_text(503, "Library provider failed")
+            return
+        payload = page.model_dump(mode="json")
+        if library_id == "papers":
+            action_service = self.server.runtime.action_service
+            for item in payload["items"]:
+                actions = (
+                    action_service.paper_actions(item)
+                    if action_service is not None
+                    and callable(getattr(action_service, "paper_actions", None))
+                    else []
+                )
+                item["actions"] = [self._serialize_action(action) for action in actions]
+        elif library_id == "fields" and self.server.runtime.field_service is not None:
+            for item in payload["items"]:
+                if not item.get("available", True):
+                    continue
+                try:
+                    document = self.server.runtime.field_service.read_document(
+                        str(item["field_id"]),
+                        str(item["home"]),
+                    )
+                except FieldRegistryError as exc:
+                    item["available"] = False
+                    item["detail"] = str(exc)
+                else:
+                    item["home_content"] = document["content"]
+                    item["home_revision"] = document["revision"]
+        self._respond_json(200, payload)
+
+    def _handle_v3_destinations(self, query: str) -> None:
+        registry = self.server.runtime.destination_registry
+        if registry is None:
+            self._respond_json(
+                200,
+                {"destinations": [], "available": False, "reason": "cmux is unavailable"},
+            )
+            return
+        parameters = parse_qs(query, keep_blank_values=True)
+        if set(parameters) - {"instance"} or len(parameters.get("instance", [])) > 1:
+            self._respond_text(400, "Only one instance token is accepted")
+            return
+        instance = parameters.get("instance", [None])[0]
+        if instance is not None and not _HUB_INSTANCE_RE.fullmatch(instance):
+            self._respond_text(400, "Invalid Hub instance token")
+            return
+        try:
+            destinations = registry.list_for_instance(instance)
+        except (CmuxControlError, ValueError) as exc:
+            self._respond_json(
+                200,
+                {"destinations": [], "available": False, "reason": str(exc)},
+            )
+            return
+        self._respond_json(
+            200,
+            {
+                "available": True,
+                "reason": None,
+                "destinations": [row.model_dump(mode="json") for row in destinations],
+            },
+        )
+
+    def _handle_v3_default_destination(self) -> None:
+        if not self._require_session_token():
+            return
+        instance = self.headers.get("X-Scholar-Hub-Instance", "")
+        if not _HUB_INSTANCE_RE.fullmatch(instance):
+            self._respond_text(400, "Invalid Hub instance token")
+            return
+        try:
+            body = self._read_v2_json_body()
+        except (TypeError, ValueError) as exc:
+            self._respond_text(400, str(exc))
+            return
+        if body is None:
+            return
+        if set(body) != {"workspace_id"}:
+            self._respond_text(400, "Expected workspace_id only")
+            return
+        try:
+            _require_string_fields(body, "workspace_id")
+            registry = self.server.runtime.destination_registry
+            if registry is None:
+                raise CmuxControlError("cmux destination routing is unavailable")
+            destination = registry.register_default_from_raw(
+                instance_token=instance,
+                raw_workspace_id=body["workspace_id"],
+            )
+        except (CmuxControlError, ValueError) as exc:
+            self._respond_json(409, {"ok": False, "error": str(exc)})
+            return
+        self._respond_json(200, {"ok": True, **destination.model_dump(mode="json")})
+
+    def _handle_v3_action(self, path: str) -> None:
+        if not self._require_session_token():
+            return
+        try:
+            body = self._read_v2_json_body()
+        except (TypeError, ValueError) as exc:
+            self._respond_text(400, str(exc))
+            return
+        if body is None:
+            return
+        if set(body) - {"destination_id"}:
+            self._respond_text(400, "Open actions accept destination_id only")
+            return
+        if "destination_id" in body:
+            try:
+                _require_string_fields(body, "destination_id")
+            except ValueError as exc:
+                self._respond_text(400, str(exc))
+                return
+        service = self.server.runtime.action_service
+        if service is None:
+            self._respond_text(503, "Actions are unavailable")
+            return
+        encoded_action = path.removeprefix("/api/v3/actions/")
+        if encoded_action.endswith("/invoke"):
+            encoded_action = encoded_action.removesuffix("/invoke")
+        if not encoded_action or "/" in encoded_action:
+            self._respond_text(404, "Unknown action")
+            return
+        action_id = unquote(encoded_action)
+        action = _find_public_action(service, action_id)
+        if action is None:
+            self._respond_text(404, "Unknown action")
+            return
+        required = _action_workspace_policy(action) == "required"
+        destination_id = body.get("destination_id")
+        if required and destination_id is None:
+            self._respond_text(400, "This action requires destination_id")
+            return
+        if not required and destination_id is not None:
+            self._respond_text(400, "This action does not accept destination_id")
+            return
+        try:
+            if destination_id is None:
+                result = service.execute(action_id)
+            else:
+                destinations = self.server.runtime.destination_registry
+                if destinations is None:
+                    raise InvalidActionTarget("cmux destination routing is unavailable")
+                workspace_id = destinations.resolve(destination_id)
+                result = service.execute(action_id, workspace_id=workspace_id)
+        except (KeyError, UnknownActionError):
+            self._respond_text(404, "Unknown action")
+            return
+        except (InvalidActionTarget, CmuxControlError) as exc:
+            self._respond_json(409, {"ok": False, "error": str(exc)})
+            return
+        except Exception as exc:  # noqa: BLE001 - external app boundary
+            self._respond_json(503, {"ok": False, "error": str(exc)})
+            return
+        payload = (
+            result.model_dump(mode="json")
+            if hasattr(result, "model_dump")
+            else vars(result) if hasattr(result, "__dict__") else result
+        )
+        self._respond_json(200, payload)
+
+    def _handle_v3_field_select(self) -> None:
+        if not self._require_session_token():
+            return
+        try:
+            body = self._read_v2_json_body()
+        except (TypeError, ValueError) as exc:
+            self._respond_text(400, str(exc))
+            return
+        if body is None:
+            return
+        if body:
+            self._respond_text(400, "Folder selection accepts no browser path")
+            return
+        service = self.server.runtime.field_service
+        picker = self.server.runtime.folder_picker
+        if service is None or picker is None:
+            self._respond_text(503, "Field initialization is unavailable")
+            return
+        try:
+            preview = service.preview(picker.choose())
+        except FieldRegistryError as exc:
+            self._respond_json(409, {"ok": False, "error": str(exc)})
+            return
+        self._respond_json(200, {"ok": True, "preview": preview.model_dump(mode="json")})
+
+    def _handle_v3_field_confirm(self) -> None:
+        if not self._require_session_token():
+            return
+        try:
+            body = self._read_v2_json_body()
+        except (TypeError, ValueError) as exc:
+            self._respond_text(400, str(exc))
+            return
+        if body is None:
+            return
+        field_registration = set(body) == {"candidate_token", "field_id"}
+        source_registration = set(body) == {"candidate_token", "source_id"}
+        if not field_registration and not source_registration:
+            self._respond_text(400, "Expected candidate_token and one Field or Source ID")
+            return
+        try:
+            _require_string_fields(
+                body,
+                "candidate_token",
+                "field_id" if field_registration else "source_id",
+            )
+            service = self.server.runtime.field_service
+            if service is None:
+                raise FieldRegistryError("Field initialization is unavailable")
+            manifest = (
+                service.confirm(body["candidate_token"], body["field_id"])
+                if field_registration
+                else service.confirm_source(body["candidate_token"], body["source_id"])
+            )
+        except FieldRegistryCommitUncertain as exc:
+            self._respond_json(503, {
+                "ok": False,
+                "code": "field_registration_commit_uncertain",
+                "error": str(exc),
+            })
+            return
+        except (FieldRegistryError, FieldCandidateExpired, ValueError) as exc:
+            self._respond_json(409, {"ok": False, "error": str(exc)})
+            return
+        self._respond_json(200, {"ok": True, "manifest": manifest.model_dump(mode="json")})
+
     def _handle_v2_directory(self, query: str) -> None:
         service = self.server.runtime.directory_service
         if service is None:
@@ -534,14 +1015,14 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             self._respond_text(400, "Invalid Hub instance token")
             return
         try:
-            directory = service.load()
+            directory = service.compatibility_directory_v2()
         except (LibraryProviderUnavailable, OSError, ValueError, RegistryError):
             self._respond_text(503, "HubDirectory provider failed")
             return
-        directory = directory.model_copy(
-            update={"operations": self._operation_status(instance_token)}
+        directory["operations"] = self._operation_status(instance_token).model_dump(
+            mode="json"
         )
-        self._respond_json(200, directory.model_dump(mode="json"))
+        self._respond_json(200, directory)
 
     def _handle_v2_workspace_status(self, query: str) -> None:
         parameters = parse_qs(query, keep_blank_values=True)
@@ -553,16 +1034,17 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             self._respond_text(400, "Invalid Hub instance token")
             return
         runtime = self.server.runtime
-        available = (
-            runtime.owner_mode == "cmux-visible"
-            and runtime.binding_coordinator is not None
-        )
         self._respond_json(
             200,
             {
-                "bound": self._operation_status(instance_token).bound,
+                "bound": False,
                 "service_generation": runtime.service_generation,
-                "workspace_binding_available": available,
+                "workspace_binding_available": False,
+                "deprecated": True,
+                "detail": (
+                    "Workspace binding is retired; v3 destinations only route "
+                    "cmux launch actions"
+                ),
             },
         )
 
@@ -587,7 +1069,7 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         query_text = parameters.get("query", [None])[0]
         try:
             limit = int(parameters.get("limit", ["50"])[0])
-            page = service.list_items(
+            page = service.list_compat_items(
                 library_id,
                 cursor=cursor,
                 limit=limit,
@@ -605,90 +1087,94 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         except (LibraryProviderUnavailable, OSError, RegistryError):
             self._respond_text(503, "Library provider failed")
             return
-        self._respond_json(200, page.model_dump(mode="json"))
+        self._respond_json(200, page)
 
-    def _v2_health_payload(self) -> dict[str, Any]:
+    def _v3_health_payload(self) -> dict[str, Any]:
         runtime = self.server.runtime
         try:
             package_version = version("scholar-workflow")
         except PackageNotFoundError:
-            package_version = "unknown"
-        provider_capabilities: dict[str, dict[str, Any]] = {
-            identifier: {
-                "available": False,
-                "authority": "unavailable",
-                "detail": "HubDirectory provider is not configured",
-            }
-            for identifier in ("papers", "projects", "tools")
-        }
+            from scholar_workflow import __version__ as package_version
+
+        root = None
         if runtime.directory_service is not None:
             try:
-                provider_capabilities = {
-                    row.library_id: {
-                        "available": row.available,
-                        "authority": row.authority,
-                        "detail": row.detail,
-                    }
-                    for row in runtime.directory_service.load().libraries
-                }
+                root = runtime.directory_service.load()
             except (LibraryProviderUnavailable, OSError, ValueError, RegistryError):
-                provider_capabilities = {
-                    identifier: {
-                        "available": False,
-                        "authority": "unavailable",
-                        "detail": "Provider health check failed",
-                    }
-                    for identifier in ("papers", "projects", "tools")
+                root = None
+        provider_capabilities: dict[str, dict[str, Any]] = {}
+        if root is not None:
+            for descriptor in (root.libraries.papers, root.libraries.fields):
+                provider_capabilities[descriptor.library_id] = {
+                    "available": descriptor.available,
+                    "authority": descriptor.authority,
+                    "detail": descriptor.detail,
                 }
+            provider_capabilities["projects"] = {
+                "available": not any(
+                    row.code == "projects_provider_invalid" for row in root.diagnostics
+                ),
+                "authority": "explicit host project registry",
+                "detail": "No projects are registered" if not root.projects else None,
+            }
+            provider_capabilities["tools"] = {
+                "available": not any(
+                    row.code == "tools_provider_invalid" for row in root.diagnostics
+                ),
+                "authority": "explicit tool registry",
+                "detail": "No tools are registered" if not root.tools else None,
+            }
+        else:
+            provider_capabilities = {
+                key: {
+                    "available": False,
+                    "authority": "unavailable",
+                    "detail": "Provider health check failed",
+                }
+                for key in ("papers", "fields", "projects", "tools")
+            }
         cmux_fingerprint: str | None = None
-        cmux_detail = "Hub service is headless"
-        if runtime.owner_mode == "cmux-visible" and runtime.binding_coordinator is not None:
+        cmux_detail: str | None = "No live cmux instance is available"
+        destinations = runtime.destination_registry
+        if destinations is not None:
             try:
-                cmux_fingerprint = (
-                    runtime.binding_coordinator.current_instance_fingerprint()
-                )
+                cmux_fingerprint = destinations.workspaces.instance_fingerprint()
                 cmux_detail = None
             except (CmuxControlError, ValueError):
-                cmux_detail = "Current cmux instance is unavailable"
-        instance_token = self.headers.get("X-Scholar-Hub-Instance", "")
-        workspace_bound = False
-        if instance_token and runtime.owner_mode == "cmux-visible":
-            try:
-                self._require_live_binding(instance_token)
-            except (CmuxControlError, ValueError):
                 pass
-            else:
-                workspace_bound = True
-        build_revision = None
         log_path = str(runtime.log_path) if runtime.log_path is not None else None
+        task_service = runtime.task_service
+        task_available = bool(getattr(task_service, "available", False))
+        task_detail = (
+            None
+            if task_available
+            else getattr(task_service, "unavailable_reason", None)
+            or "Codex task runtime is not configured"
+        )
+        capabilities = list(_V3_CAPABILITIES)
+        if task_available:
+            capabilities.append("codex-tasks-v1")
         return {
             "status": "ok",
-            "service": {
-                "name": "scholar-workflow-hub",
-                "version": package_version,
-            },
-            "package": {
-                "name": "scholar-workflow",
-                "version": package_version,
-            },
+            "service": {"name": "scholar-workflow-hub", "version": package_version},
+            "package": {"name": "scholar-workflow", "version": package_version},
             "build": {
                 "version": package_version,
-                "revision": build_revision,
-                "detail": "Build revision is unavailable",
+                "revision": None,
+                "detail": "Installed package build is identified by discovery build_hash",
             },
-            "protocol": {"name": "hub-http", "version": 2},
-            "hub_directory": {"schema_version": 2},
-            # Flat aliases remain temporarily for diagnostics consumers that
-            # predate the structured v2 health contract.
+            "protocol": {"name": "hub-http", "version": 3},
+            "hub_directory": {"schema_version": 3},
             "service_name": "scholar-workflow-hub",
             "service_version": package_version,
-            "protocol_version": 2,
-            "root_schema_version": 2,
+            "protocol_version": 3,
+            "root_schema_version": 3,
             "service_generation": runtime.service_generation,
             "owner_mode": runtime.owner_mode,
             "process": {
                 "pid": os.getpid(),
-                "executable": str(Path(sys.executable).resolve()),
+                "executable": runtime.process_executable
+                or str(Path(sys.executable).resolve()),
             },
             "origin": (
                 f"http://{self.server.server_address[0]}:"
@@ -696,62 +1182,63 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             ),
             "roots": {
                 "state": str(runtime.state_root) if runtime.state_root is not None else None,
-                "catalog": (
-                    str(runtime.catalog_path)
-                    if runtime.catalog_path is not None
-                    else None
-                ),
-                "vault": str(runtime.vault_root),
-                "storage": str(runtime.storage_root),
+                "catalog": str(runtime.catalog_path) if runtime.catalog_path else None,
             },
-            "capabilities": list(_V2_CAPABILITIES),
+            "capabilities": capabilities,
+            "capability_matrix": (
+                root.capabilities.model_dump(mode="json")
+                if root is not None
+                else CapabilityMatrix().model_dump(mode="json")
+            ),
             "provider_capabilities": provider_capabilities,
             "providers": {
-                identifier: detail["available"]
-                for identifier, detail in provider_capabilities.items()
+                name: status["available"]
+                for name, status in provider_capabilities.items()
             },
             "worker_capabilities": {
                 "task_contracts": True,
-                "task_execution": False,
-                "detail": "Codex task worker is not enabled in this release",
+                "task_execution": task_available,
+                "detail": task_detail,
             },
-            "workspace_binding_required": runtime.require_workspace_binding,
-            "workspace_binding_available": (
-                runtime.owner_mode == "cmux-visible"
-                and runtime.binding_coordinator is not None
-            ),
-            "workspace_bound": workspace_bound,
+            "workspace_binding_required": False,
+            "workspace_binding_available": False,
+            "workspace_bound": False,
             "cmux_instance_fingerprint": cmux_fingerprint,
-            "cmux": {
-                "instance_fingerprint": cmux_fingerprint,
-                "detail": cmux_detail,
-            },
-            "task_execution": False,
+            "cmux": {"instance_fingerprint": cmux_fingerprint, "detail": cmux_detail},
+            "task_execution": task_available,
             "log_path": log_path,
-            "log": {
-                "path": log_path,
-                "detail": (
-                    None if log_path is not None else "Log location is unavailable"
-                ),
-            },
+            "log": {"path": log_path, "detail": None if log_path else "Unavailable"},
         }
+
+    def _v2_health_payload(self) -> dict[str, Any]:
+        payload = self._v3_health_payload()
+        payload["protocol"] = {"name": "hub-http", "version": 2}
+        payload["hub_directory"] = {"schema_version": 2}
+        payload["protocol_version"] = 2
+        payload["root_schema_version"] = 2
+        payload["provider_capabilities"] = {
+            key: value
+            for key, value in payload["provider_capabilities"].items()
+            if key in {"papers", "projects", "tools"}
+        }
+        payload["providers"] = {
+            key: value["available"]
+            for key, value in payload["provider_capabilities"].items()
+        }
+        payload["compatibility"] = {
+            "endpoint": "/api/v2/health",
+            "derived_from": "HubDirectory v3",
+        }
+        return payload
 
     def _operation_status(self, instance_token: str | None) -> OperationStatus:
         runtime = self.server.runtime
-        if runtime.owner_mode != "cmux-visible":
-            return OperationStatus(reason="Headless Hub service is read-only")
-        if instance_token is None:
-            return OperationStatus()
-        try:
-            self._require_live_binding(instance_token)
-        except (CmuxControlError, ValueError):
-            return OperationStatus()
         return OperationStatus(
-            bound=True,
+            bound=False,
             project_documents=runtime.project_document_service is not None,
-            workspace_actions=runtime.action_service is not None,
+            workspace_actions=runtime.destination_registry is not None,
             task_actions=False,
-            reason="Task worker execution is not enabled",
+            reason="v2 binding is deprecated; v3 capabilities are independent",
         )
 
     def _require_live_binding(self, instance_token: str):
@@ -764,36 +1251,9 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         return coordinator.require_current_binding(instance_token)
 
     def _legacy_write_binding_allowed(self) -> bool:
-        runtime = self.server.runtime
-        if runtime.owner_mode != "cmux-visible":
-            self._respond_json(
-                409,
-                {
-                    "ok": False,
-                    "code": "headless_read_only",
-                    "error": "Headless Hub services are read-only",
-                },
-            )
-            return False
-        if not runtime.require_workspace_binding:
-            return True
-        instance_token = self.headers.get("X-Scholar-Hub-Instance", "")
-        if instance_token:
-            try:
-                self._require_live_binding(instance_token)
-            except (CmuxControlError, ValueError):
-                pass
-            else:
-                return True
-        self._respond_json(
-            409,
-            {
-                "ok": False,
-                "code": "workspace_unbound",
-                "error": "Hub view must be bound before state-changing operations",
-            },
-        )
-        return False
+        # One-cycle compatibility hook.  v3 authorization is rooted in the
+        # registered target and CAS, never a cmux destination or lease.
+        return True
 
     def _handle_v2_project_document_operation(self, path: str) -> None:
         runtime = self.server.runtime
@@ -801,35 +1261,17 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         if not secrets.compare_digest(supplied_token, runtime.session_token):
             self._respond_text(403, "Invalid session token")
             return
-        if runtime.owner_mode != "cmux-visible":
-            self._respond_json(
-                409,
-                {
-                    "ok": False,
-                    "code": "headless_read_only",
-                    "error": "Headless Hub services are read-only",
-                },
-            )
-            return
-        instance_token = self.headers.get("X-Scholar-Hub-Instance", "")
-        try:
-            self._require_live_binding(instance_token)
-        except (CmuxControlError, ValueError):
-            self._respond_json(
-                409,
-                {
-                    "ok": False,
-                    "code": "workspace_unbound",
-                    "error": "Hub view must be bound before project document operations",
-                },
-            )
-            return
         service = runtime.project_document_service
         if service is None:
             self._respond_text(503, "Project document operations are unavailable")
             return
         segments = path.strip("/").split("/")
-        if len(segments) != 6 or segments[:3] != ["api", "v2", "projects"] or segments[4] != "docs":
+        if (
+            len(segments) != 6
+            or segments[:3]
+            not in (["api", "v2", "projects"], ["api", "v3", "projects"])
+            or segments[4] != "docs"
+        ):
             self._respond_text(404, "Not found")
             return
         project_id = unquote(segments[3])
@@ -868,6 +1310,27 @@ class HubRequestHandler(BaseHTTPRequestHandler):
                     )
                 _require_string_fields(body, "artifact_id", "destination_path")
                 _require_optional_bool(body, "confirm_git")
+                try:
+                    source_authorized = self._legacy_artifact_source_authorized(
+                        body["artifact_id"],
+                        capability="read",
+                    )
+                except UnknownArtifactError as exc:
+                    raise ProjectDocumentMissingError(
+                        "Unknown knowledge artifact"
+                    ) from exc
+                except (
+                    ArtifactPathRejectedError,
+                    ArtifactMissingError,
+                    FieldRegistryError,
+                ) as exc:
+                    raise ProjectPathError(
+                        "Knowledge artifact path was rejected"
+                    ) from exc
+                if not source_authorized:
+                    raise ProjectPathError(
+                        "Knowledge artifact is not inside a registered readable source"
+                    )
                 result = service.copy_knowledge_artifact(
                     project_id,
                     body["artifact_id"],
@@ -956,6 +1419,154 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         if not isinstance(body, dict):
             raise TypeError("Expected a JSON object")
         return body
+
+    def _read_task_json_body(self) -> dict[str, Any] | None:
+        if self.headers.get("Content-Type", "").split(";", 1)[0] != "application/json":
+            self._respond_text(415, "Expected application/json")
+            return None
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError as exc:
+            raise ValueError("Invalid content length") from exc
+        if length < 0:
+            raise ValueError("Invalid content length")
+        if length > _MAX_TASK_REQUEST_BYTES:
+            self._respond_text(413, "Task request body is too large")
+            return None
+        try:
+            encoded = self.rfile.read(length)
+            if len(encoded) != length:
+                raise ValueError("Incomplete task request body")
+            body = json.loads(encoded)
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            raise ValueError("Invalid JSON") from exc
+        if not isinstance(body, dict):
+            raise TypeError("Expected a JSON object")
+        return body
+
+    def _handle_v3_task_dispatch(self, path: str) -> None:
+        if not self._require_session_token():
+            return
+        service = self.server.runtime.task_service
+        if service is None or not bool(getattr(service, "available", False)):
+            reason = (
+                getattr(service, "unavailable_reason", None)
+                if service is not None
+                else None
+            )
+            self._respond_json(
+                503,
+                {"ok": False, "error": reason or "Codex task execution is unavailable"},
+            )
+            return
+        try:
+            body = self._read_task_json_body()
+            if body is None:
+                return
+            request = TaskActionRequest.model_validate(body)
+        except ValidationError as exc:
+            self._respond_json(
+                422,
+                {
+                    "ok": False,
+                    "error": "Task request does not match the public contract",
+                    "details": exc.errors(include_url=False, include_input=False),
+                },
+            )
+            return
+        except (TypeError, ValueError) as exc:
+            self._respond_text(400, str(exc))
+            return
+        try:
+            if path == "/api/v3/tasks":
+                result = service.create(request)
+            else:
+                segments = path.strip("/").split("/")
+                if len(segments) != 5 or segments[:3] != ["api", "v3", "tasks"]:
+                    self._respond_text(404, "Not found")
+                    return
+                task_id = unquote(segments[3])
+                if segments[4] == "resume":
+                    result = service.resume(task_id, request)
+                elif segments[4] == "fork":
+                    result = service.fork(task_id, request)
+                else:
+                    self._respond_text(404, "Not found")
+                    return
+        except KeyError:
+            self._respond_text(404, "Unknown task, action, target, or destination")
+            return
+        except ValueError as exc:
+            self._respond_json(409, {"ok": False, "error": str(exc)})
+            return
+        except RuntimeError as exc:
+            self._respond_json(503, {"ok": False, "error": str(exc)})
+            return
+        payload = _model_payload(result)
+        self._respond_json(200 if payload.get("reused") else 202, payload)
+
+    def _handle_v3_task_status(self, path: str) -> None:
+        segments = path.strip("/").split("/")
+        if len(segments) != 4 or segments[:3] != ["api", "v3", "tasks"]:
+            self._respond_text(404, "Not found")
+            return
+        service = self.server.runtime.task_service
+        if service is None:
+            self._respond_text(503, "Codex task execution is unavailable")
+            return
+        try:
+            result = service.task_status(unquote(segments[3]))
+        except (KeyError, ValueError):
+            self._respond_text(404, "Unknown logical task")
+            return
+        self._respond_json(200, _model_payload(result))
+
+    def _handle_v3_task_run_status(self, path: str) -> None:
+        segments = path.strip("/").split("/")
+        if len(segments) != 4 or segments[:3] != ["api", "v3", "task-runs"]:
+            self._respond_text(404, "Not found")
+            return
+        service = self.server.runtime.task_service
+        if service is None:
+            self._respond_text(503, "Codex task execution is unavailable")
+            return
+        try:
+            result = service.run_status(unquote(segments[3]))
+        except (KeyError, ValueError):
+            self._respond_text(404, "Unknown task run")
+            return
+        self._respond_json(200, _model_payload(result))
+
+    def _handle_v3_task_cancel(self, path: str) -> None:
+        if not self._require_session_token():
+            return
+        segments = path.strip("/").split("/")
+        if (
+            len(segments) != 5
+            or segments[:3] != ["api", "v3", "task-runs"]
+            or segments[4] != "cancel"
+        ):
+            self._respond_text(404, "Not found")
+            return
+        try:
+            body = self._read_task_json_body()
+            if body is None:
+                return
+            if body:
+                raise ValueError("Task cancellation accepts no fields")
+        except (TypeError, ValueError) as exc:
+            self._respond_text(400, str(exc))
+            return
+        service = self.server.runtime.task_service
+        if service is None:
+            self._respond_text(503, "Codex task execution is unavailable")
+            return
+        try:
+            result = service.cancel(unquote(segments[3]))
+        except (KeyError, ValueError):
+            self._respond_text(404, "Unknown task run")
+            return
+        self._respond_json(200, _model_payload(result))
 
     def _request_origin_allowed(self, *, require_origin: bool = False) -> bool:
         host = self.headers.get("Host", "")
@@ -1093,10 +1704,32 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         if not _KEY_RE.fullmatch(key):
             self._respond_text(400, "Invalid key")
             return
-        pdf = self._find_pdf(key)
+        pdf = self._resolve_pdf(key)
         if pdf is None:
             self._respond_text(404, f"No PDF for attachment: {key}")
             return
+        self._serve_pdf(pdf, send_body=send_body)
+
+    def _handle_v3_pdf(self, path: str, *, send_body: bool) -> None:
+        segments = path.strip("/").split("/")
+        if (
+            len(segments) != 6
+            or segments[:4] != ["api", "v3", "pdfs", "zotero"]
+            or segments[5] != "content"
+        ):
+            self._respond_text(404, "Not found")
+            return
+        key = segments[4]
+        if not _KEY_RE.fullmatch(key):
+            self._respond_text(400, "Invalid attachment key")
+            return
+        pdf = self._resolve_pdf(key)
+        if pdf is None:
+            self._respond_text(404, "PDF attachment is unavailable")
+            return
+        self._serve_pdf(pdf, send_body=send_body)
+
+    def _serve_pdf(self, pdf: Path, *, send_body: bool) -> None:
         size = pdf.stat().st_size
         byte_range = self._parse_range(size)
         if byte_range is False:
@@ -1154,16 +1787,107 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             ),
         )
 
-    def _find_pdf(self, key: str) -> Path | None:
-        root = self.server.runtime.storage_root.resolve()
-        directory = (root / key).resolve()
-        if directory.parent != root or not directory.is_dir():
+    def _resolve_pdf(self, key: str) -> Path | None:
+        try:
+            with self.server.runtime.zotero_adapter_factory() as adapter:
+                locator = adapter.resolve_attachment_locator(key)
+        except (ZoteroLocalError, OSError, ValueError):
             return None
-        for candidate in sorted(directory.glob("*.pdf")):
-            resolved = candidate.resolve()
-            if resolved.parent == directory and resolved.is_file():
-                return resolved
-        return None
+        path = Path(locator.path)
+        if path.is_symlink() or not path.is_file() or path.suffix.casefold() != ".pdf":
+            return None
+        try:
+            return path.resolve(strict=True)
+        except OSError:
+            return None
+
+    def _legacy_artifact_path(self, artifact_id: str) -> Path:
+        """Resolve a compatibility artifact without trusting a browser path."""
+        runtime = self.server.runtime
+        catalog = runtime.catalog_provider.load()
+        artifact = next(
+            (row for row in catalog.artifacts if row.artifact_id == artifact_id),
+            None,
+        )
+        if artifact is None:
+            raise UnknownArtifactError(artifact_id)
+        relative = PurePosixPath(artifact.vault_path)
+        current = runtime.vault_root
+        for part in relative.parts:
+            current = current / part
+            if current.is_symlink():
+                raise ArtifactPathRejectedError(artifact.vault_path)
+        try:
+            target = safe_vault_path(runtime.vault_root.resolve(strict=True), artifact.vault_path)
+            resolved = target.resolve(strict=True)
+        except VaultPathError as exc:
+            raise ArtifactPathRejectedError(artifact.vault_path) from exc
+        except OSError as exc:
+            raise ArtifactMissingError(artifact_id) from exc
+        if not resolved.is_file():
+            raise ArtifactMissingError(artifact_id)
+        return resolved
+
+    def _legacy_artifact_source_authorized(
+        self,
+        artifact_id: str,
+        *,
+        capability: str,
+    ) -> bool:
+        """Authorize legacy artifact access only through an explicit Source root.
+
+        The legacy catalog remains a one-cycle compatibility projection. It may
+        identify a file, but it no longer grants write/read-copy authority by
+        itself. A registered folder containing the resolved artifact must grant
+        the requested capability.
+        """
+        target = self._legacy_artifact_path(artifact_id)
+        service = self.server.runtime.field_service
+        if service is None:
+            return False
+        document = service.registry.load_document()
+        for source in document.sources:
+            if not source.enabled or capability not in source.capabilities:
+                continue
+            try:
+                root = service.registry.resolve(
+                    source.source_id,
+                    capability=capability,
+                )
+            except FieldRegistryError:
+                continue
+            if target == root or root in target.parents:
+                return True
+        return False
+
+    def _legacy_vault_root_authorized(self, *, capability: str) -> bool:
+        """Require an exact Source root for compatibility stores rooted at the Vault.
+
+        Legacy attachments and their manifest are written relative to
+        ``runtime.vault_root`` rather than the owning artifact directory. A
+        subdirectory registration therefore cannot authorize those writes.
+        """
+        try:
+            legacy_root = self.server.runtime.vault_root.resolve(strict=True)
+        except OSError as exc:
+            raise FieldRegistryError("legacy Vault root is unavailable") from exc
+        service = self.server.runtime.field_service
+        if service is None:
+            return False
+        document = service.registry.load_document()
+        for source in document.sources:
+            if not source.enabled or capability not in source.capabilities:
+                continue
+            try:
+                root = service.registry.resolve(
+                    source.source_id,
+                    capability=capability,
+                )
+            except FieldRegistryError:
+                continue
+            if root == legacy_root:
+                return True
+        return False
 
     def _handle_artifact_content(self, artifact_id: str) -> None:
         try:
@@ -1202,6 +1926,24 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         supplied_token = self.headers.get("X-Scholar-Hub-Token", "")
         if not secrets.compare_digest(supplied_token, self.server.runtime.session_token):
             self._respond_text(403, "Invalid session token")
+            return
+        try:
+            self._legacy_artifact_path(artifact_id)
+            source_authorized = self._legacy_vault_root_authorized(capability="write")
+        except UnknownArtifactError:
+            self._respond_text(404, "Unknown artifact")
+            return
+        except ArtifactMissingError:
+            self._respond_text(404, "Artifact is unavailable")
+            return
+        except (ArtifactPathRejectedError, FieldRegistryError):
+            self._respond_text(403, "Artifact path was rejected")
+            return
+        if not source_authorized:
+            self._respond_text(
+                403,
+                "Artifact is not inside a registered writable knowledge source",
+            )
             return
         parameters = parse_qs(query, keep_blank_values=True)
         if set(parameters) - {"name", "role"} or len(parameters.get("name", [])) != 1:
@@ -1384,6 +2126,17 @@ def _enum_value(value: Any) -> str:
     return str(getattr(value, "value", value))
 
 
+def _model_payload(value: Any) -> Any:
+    """Serialize public task DTOs without accepting arbitrary object internals."""
+    if hasattr(value, "model_dump"):
+        return value.model_dump(mode="json")
+    if isinstance(value, dict):
+        return {key: _model_payload(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_model_payload(item) for item in value]
+    return value
+
+
 def _action_workspace_policy(action: Any) -> str:
     """Return the public workspace policy, with legacy cmux compatibility."""
     declared = getattr(action, "workspace_policy", None)
@@ -1475,7 +2228,7 @@ def _workspace_listing_payload(
 
 def start_hub_server(
     *,
-    port: int = 23128,
+    port: int = 0,
     storage_root: Path,
     vault_root: Path,
     catalog_provider: CatalogProvider | None = None,
@@ -1486,6 +2239,11 @@ def start_hub_server(
     codex_working_directory: Path | None = None,
     directory_service: HubDirectoryService | None = None,
     project_document_service: ProjectDocumentService | None = None,
+    field_service: FieldService | None = None,
+    destination_registry: DestinationRegistry | None = None,
+    folder_picker: SystemFolderPicker | None = None,
+    task_service: Any | None = None,
+    zotero_adapter_factory: Any = ZoteroLocalAdapter,
     binding_registry: WorkspaceBindingRegistry | None = None,
     binding_coordinator: WorkspaceBindingCoordinator | None = None,
     service_generation: str | None = None,
@@ -1547,11 +2305,112 @@ def start_hub_server(
         provider = catalog_provider
     project_registry = ProjectRegistry(home / "hub" / "projects.json")
     tool_registry = ToolRegistry(home / "hub" / "tools.json")
+    resolved_field_service = field_service or FieldService(
+        KnowledgeSourceRegistry(home / "hub" / "sources.json")
+    )
+    zotflow_adapter = RegisteredSourceZotFlowAdapter(resolved_field_service.registry)
+    destination_holder: dict[str, DestinationRegistry | None] = {
+        "registry": destination_registry
+    }
+    task_holder: dict[str, Any | None] = {"service": task_service}
+
+    def current_capabilities() -> CapabilityMatrix:
+        vault_available = False
+        vault_reason = "No writable knowledge source is registered"
+        try:
+            source_document = resolved_field_service.registry.load_document()
+            for source in source_document.sources:
+                if not source.enabled or "write" not in source.capabilities:
+                    continue
+                resolved_field_service.registry.resolve(source.source_id, capability="write")
+                vault_available = True
+                vault_reason = None
+                break
+        except FieldRegistryError as exc:
+            vault_reason = str(exc)
+
+        project_available = False
+        project_reason = "No writable project docs root is registered"
+        try:
+            for registration in project_registry.load():
+                if not registration.enabled or not {
+                    "docs", "docs.write", "project_documents"
+                }.intersection(registration.capabilities):
+                    continue
+                project_registry.resolve(registration.project_id)
+                project_available = True
+                project_reason = None
+                break
+        except (RegistryError, OSError, ValueError) as exc:
+            project_reason = str(exc)
+
+        cmux_available = False
+        cmux_reason = "No live cmux instance is available"
+        active_destinations = destination_holder["registry"]
+        if active_destinations is not None:
+            try:
+                active_destinations.workspaces.instance_fingerprint()
+                cmux_available = True
+                cmux_reason = None
+            except (CmuxControlError, ValueError) as exc:
+                cmux_reason = str(exc)
+
+        zotflow = zotflow_adapter.probe()
+        zotero_available = False
+        zotero_reason = "Zotero Local API is unavailable"
+        try:
+            with zotero_adapter_factory() as adapter:
+                adapter.probe()
+            zotero_available = True
+            zotero_reason = None
+        except ZoteroLocalError as exc:
+            zotero_reason = str(exc)
+        active_task_service = task_holder["service"]
+        task_available = bool(getattr(active_task_service, "available", False))
+        task_reason = (
+            None
+            if task_available
+            else getattr(active_task_service, "unavailable_reason", None)
+            or "Run `scholar-workflow hub codex configure` to enable Codex tasks"
+        )
+        return CapabilityMatrix(
+            vault_writes=CapabilityStatus(
+                available=vault_available,
+                reason=vault_reason,
+            ),
+            project_document_writes=CapabilityStatus(
+                available=project_available,
+                reason=project_reason,
+            ),
+            cmux_launches=CapabilityStatus(
+                available=cmux_available,
+                reason=cmux_reason,
+            ),
+            codex_tasks=CapabilityStatus(
+                available=task_available,
+                reason=task_reason,
+            ),
+            zotflow_annotations=CapabilityStatus(
+                available=zotflow.available,
+                reason=zotflow.reason,
+            ),
+            zotero_local_api=CapabilityStatus(
+                available=zotero_available,
+                reason=zotero_reason,
+            ),
+        )
+
     resolved_directory_service = directory_service or HubDirectoryService(
         provider,
         project_registry,
         tool_registry,
-        paper_provider=ZoteroPaperLibraryProvider() if use_live_zotero_paging else None,
+        paper_provider=(
+            ZoteroPaperLibraryProvider(adapter_factory=zotero_adapter_factory)
+            if use_live_zotero_paging
+            else None
+        ),
+        field_service=resolved_field_service,
+        capability_status=current_capabilities,
     )
     resolved_project_documents = project_document_service or ProjectDocumentService(
         project_registry
@@ -1560,21 +2419,14 @@ def start_hub_server(
         if binding_registry is not None and binding_coordinator.registry is not binding_registry:
             raise ValueError("binding_coordinator and binding_registry must share state")
         binding_registry = binding_coordinator.registry
-    if binding_registry is None:
-        resolved_generation = service_generation or f"service_{secrets.token_urlsafe(18)}"
-        resolved_bindings = WorkspaceBindingRegistry(
-            service_generation=resolved_generation,
-            profiles=[
-                WorkspaceProfile(profile_id="hub", role="hub"),
-                WorkspaceProfile(profile_id="runtime", role="runtime"),
-                WorkspaceProfile(profile_id="notion", role="notion"),
-            ],
-        )
-    else:
+    if binding_registry is not None:
         resolved_bindings = binding_registry
         resolved_generation = binding_registry.service_generation
         if service_generation is not None and service_generation != resolved_generation:
             raise ValueError("service_generation does not match binding_registry")
+    else:
+        resolved_bindings = None
+        resolved_generation = service_generation or f"service_{secrets.token_urlsafe(18)}"
     if action_service is not None and (
         action_executor is not None or public_actions is not None
     ):
@@ -1606,6 +2458,11 @@ def start_hub_server(
         action_service=resolved_action_service,
         directory_service=resolved_directory_service,
         project_document_service=resolved_project_documents,
+        destination_registry=destination_registry,
+        field_service=resolved_field_service,
+        folder_picker=folder_picker or SystemFolderPicker(),
+        task_service=task_service,
+        zotero_adapter_factory=zotero_adapter_factory,
         binding_registry=resolved_bindings,
         binding_coordinator=binding_coordinator,
         service_generation=resolved_generation,
@@ -1614,6 +2471,7 @@ def start_hub_server(
         log_path=log_path,
         state_root=home,
         catalog_path=resolved_catalog_path,
+        process_executable=str(Path(sys.executable).resolve()),
     )
     server = HubHTTPServer(("127.0.0.1", port), runtime)
     if configure_default_actions:
@@ -1624,6 +2482,8 @@ def start_hub_server(
             control,
             hub_url=f"{hub_origin}/hub/",
         )
+        resolved_destinations = destination_registry or DestinationRegistry(workspaces)
+        destination_holder["registry"] = resolved_destinations
         launchers: dict[ActionKind, Any] = {
             ActionKind.RESOURCE_CMUX: CmuxResourceLauncher(
                 workspaces,
@@ -1641,24 +2501,72 @@ def start_hub_server(
             ),
             ActionKind.OBSIDIAN_NOTE: ObsidianLauncher(vault_root),
             ActionKind.ZOTERO_ITEM: ZoteroLauncher(),
+            ActionKind.ZOTERO_PDF: ZoteroPdfLauncher(),
+            ActionKind.ZOTFLOW_ATTACHMENT: ZotFlowLauncher(zotflow_adapter),
+            ActionKind.SYSTEM_PDF: SystemPdfLauncher(
+                adapter_factory=zotero_adapter_factory
+            ),
         }
-        # TaskRecipe/TaskRun contracts exist, but a secure long-lived Codex
-        # worker is not enabled yet.  Do not expose the legacy blank-session
-        # action as if Hub v2 task execution were available.
         resolved_action_service = CatalogActionService(
             provider,
             launchers,
             workspace_registry=workspaces,
         )
+        resolved_task_service = task_service
+        if resolved_task_service is None:
+            from scholar_workflow.hub.routing import ExecutionTargetRegistry
+            from scholar_workflow.hub.task_control import TaskControlService
+            from scholar_workflow.hub.tasks import (
+                CodexCommandBuilder,
+                TaskCoordinator,
+                TaskRecipeRegistry,
+                TaskStore,
+            )
+            from scholar_workflow.hub.terminal_worker import (
+                TerminalWorkerError,
+                TerminalWorkerState,
+            )
+
+            hub_state = home / "hub"
+            worker_state = TerminalWorkerState(hub_state / "task-worker")
+            if worker_state.runtime_path.exists() or worker_state.runtime_path.is_symlink():
+                try:
+                    worker_config = worker_state.current_runtime()
+                    recipes = TaskRecipeRegistry(hub_state / "task-recipes.json")
+                    targets = ExecutionTargetRegistry(
+                        hub_state / "execution-targets.json",
+                        project_registry=project_registry,
+                        source_registry=resolved_field_service.registry,
+                    )
+                    store = TaskStore(hub_state / "tasks.json")
+                    commands = CodexCommandBuilder(
+                        codex_executable=worker_config.resolved_codex_executable(),
+                        target_registry=targets,
+                        safety_policies=recipes.safety_policy_map(),
+                    )
+                    coordinator = TaskCoordinator(
+                        recipes=recipes,
+                        store=store,
+                        commands=commands,
+                    )
+                    resolved_task_service = TaskControlService(
+                        recipes=recipes,
+                        targets=targets,
+                        store=store,
+                        coordinator=coordinator,
+                        destinations=resolved_destinations,
+                        cmux=control,
+                        worker_state=worker_state,
+                        worker_generation=worker_config.generation,
+                    )
+                except (OSError, ValueError, TerminalWorkerError):
+                    resolved_task_service = None
+        task_holder["service"] = resolved_task_service
         server.runtime = replace(
             runtime,
             action_service=resolved_action_service,
-            binding_coordinator=binding_coordinator
-            or WorkspaceBindingCoordinator(
-                resolved_bindings,
-                resolve_workspace=workspaces.resolve,
-                instance_fingerprint=workspaces.instance_fingerprint,
-            ),
+            destination_registry=resolved_destinations,
+            task_service=resolved_task_service,
         )
     threading.Thread(target=server.serve_forever, daemon=True, name="scholar-hub").start()
     return server

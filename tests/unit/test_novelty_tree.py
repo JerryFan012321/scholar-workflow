@@ -6,10 +6,16 @@ tree (task/pipeline/module) and an isomorphic challenge tree (challenge/insight)
 same renderer, keyed off node kind.
 """
 from __future__ import annotations
+
 from scholar_workflow.adapters.obsidian import ObsidianAdapter
 from scholar_workflow.workflows.novelty_tree import (
-    plan_novelty_tree, project_novelty_tree, plan_paperlist, project_paperlist,
-    render_tree_note, render_paperlist, render_mermaid,
+    plan_novelty_tree,
+    plan_paperlist,
+    project_novelty_tree,
+    project_paperlist,
+    render_mermaid,
+    render_paperlist,
+    render_tree_note,
 )
 
 START, END = "<!-- s -->", "<!-- e -->"
@@ -107,7 +113,8 @@ def test_tree_note_uses_assets_column_not_doi(tmp_path):
     assert "| Assets |" in body  # subpaperlist carries Assets column
     assert "[[paper_assets/2020-Mildenhall-NeRF.md]]" in body
     assert "| DOI |" not in body
-    assert "http://127.0.0.1:23128/open/paper/S6LZUS6S" in body  # render_table reuse
+    assert "zotero://open-pdf/library/items/S6LZUS6S" in body  # render_table reuse
+    assert "127.0.0.1:23128" not in body
 
 
 # --- paper list ledger body ---

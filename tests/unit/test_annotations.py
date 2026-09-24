@@ -1,109 +1,182 @@
-"""Unit tests for the read-only annotation extractor (bin/zotero-annotations.py).
-
-Loaded by file path since bin/ is not a package. No real Zotero DB is touched:
-the annotations() query is exercised against an in-memory SQLite with a minimal
-schema mirroring itemAnnotations.
-"""
+"""Unit coverage for Local-API annotation export and its legacy script wrapper."""
 from __future__ import annotations
+
 import importlib.util
-import sqlite3
 from pathlib import Path
 
 import pytest
 
+from scholar_workflow.adapters.zotero_local import ZoteroAttachmentLocator
+from scholar_workflow.workflows import annotations as workflow
+
 _SCRIPT = Path(__file__).resolve().parents[2] / "bin" / "zotero-annotations.py"
-_spec = importlib.util.spec_from_file_location("zotero_annotations", _SCRIPT)
-za = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(za)
 
 
-# ---- clean(): strips 🔤…🔤 machine translation, keeps original ----
+class FakeAdapter:
+    def __init__(self, *, search_rows=None, children=None, annotations=None) -> None:
+        self.search_rows = search_rows or []
+        self.children = children or []
+        self.annotations = annotations or []
 
-def test_clean_strips_single_translation_block():
-    assert za.clean("keep this🔤机器翻译🔤") == "keep this"
+    def search_items(self, query, *, qmode, limit):
+        assert qmode == "titleCreatorYear"
+        assert limit == 100
+        return self.search_rows
 
+    def get_item(self, item_key):
+        return {"key": item_key, "data": {"title": "Selected Paper"}}
 
-def test_clean_strips_multiline_and_multiple_blocks():
-    # two 🔤…🔤 blocks removed (regex is DOTALL, so the first spans a newline)
-    raw = "original🔤译文一\n跨行🔤 middle 🔤译文二🔤 tail"
-    assert za.clean(raw) == "original middle  tail"
+    def get_children(self, _item_key):
+        return self.children
 
+    def resolve_attachment_locator(self, attachment_key):
+        return ZoteroAttachmentLocator(
+            attachment_key=attachment_key,
+            library_id="1",
+            content_hash="sha256:" + "a" * 64,
+            path=Path("/not/read/by-ir.pdf"),
+            filename="paper.pdf",
+        )
 
-def test_clean_none_and_empty():
-    assert za.clean(None) == ""
-    assert za.clean("   ") == ""
-
-
-def test_clean_no_marker_untouched():
-    assert za.clean("plain highlight text") == "plain highlight text"
-
-
-# ---- page(): prefers pageLabel, falls back to position.pageIndex+1 ----
-
-def test_page_prefers_label():
-    assert za.page("7", '{"pageIndex": 0}') == "7"
-
-
-def test_page_falls_back_to_index_plus_one():
-    assert za.page(None, '{"pageIndex": 4}') == "5"
-
-
-def test_page_unparseable_position_returns_question_mark():
-    assert za.page(None, "not-json") == "?"
+    def get_annotations(self, _attachment_key):
+        return self.annotations
 
 
-def test_page_missing_index_defaults_to_zero_plus_one():
-    # get("pageIndex", -1) + 1 -> 0 when key absent
-    assert za.page(None, "{}") == "0"
+def paper(key: str, title: str) -> dict:
+    return {"key": key, "data": {"itemType": "journalArticle", "title": title}}
 
 
-# ---- TYPE map ----
+def pdf(key: str) -> dict:
+    return {
+        "key": key,
+        "data": {
+            "itemType": "attachment",
+            "contentType": "application/pdf",
+            "filename": "paper.pdf",
+        },
+    }
 
-def test_type_map_known_and_unknown():
-    assert za.TYPE[1] == "highlight"
-    assert za.TYPE[2] == "note"
-    assert za.TYPE.get(99, f"type{99}") == "type99"
+
+def annotation(
+    key: str,
+    *,
+    text: str,
+    comment: str,
+    sort_index: str,
+    page_label: str | None = None,
+    page_index: int = 0,
+) -> dict:
+    return {
+        "key": key,
+        "data": {
+            "annotationType": "highlight",
+            "annotationText": text,
+            "annotationComment": comment,
+            "annotationColor": "#ffd400",
+            "annotationPageLabel": page_label,
+            "annotationPosition": f'{{"pageIndex": {page_index}}}',
+            "annotationSortIndex": sort_index,
+        },
+    }
 
 
-# ---- annotations(): reads itemAnnotations, sorts by sortIndex, cleans text ----
-
-@pytest.fixture
-def db_with_annotations():
-    con = sqlite3.connect(":memory:")
-    con.execute(
-        """CREATE TABLE itemAnnotations (
-            parentItemID INTEGER, type INTEGER, text TEXT, comment TEXT,
-            color TEXT, pageLabel TEXT, position TEXT, sortIndex TEXT
-        )"""
+def test_title_search_filters_non_title_quicksearch_hits_and_sorts() -> None:
+    adapter = FakeAdapter(
+        search_rows=[
+            paper("ABCD2345", "World Model Z"),
+            paper("EFGH6789", "Creator matched only"),
+            paper("JKLM2345", "World Model A"),
+        ]
     )
-    rows = [
-        # out-of-order sortIndex; row B should come before row A after sort
-        (10, 1, "second🔤机翻🔤", "cmt-A", "#ffd400", "3", None, "00002|000100|00010"),
-        (10, 1, "first", "cmt-B", "#ff6666", "1", None, "00001|000050|00005"),
-        (10, 2, "", "note-only", "#ffd400", "2", None, "00001|000900|00020"),
-        (99, 1, "other paper", "", "#ffd400", "1", None, "00001|000001|00001"),
+
+    matches = workflow.find_items(adapter, "world model")
+
+    assert [(row.item_key, row.title) for row in matches] == [
+        ("JKLM2345", "World Model A"),
+        ("ABCD2345", "World Model Z"),
     ]
-    con.executemany("INSERT INTO itemAnnotations VALUES (?,?,?,?,?,?,?,?)", rows)
-    con.commit()
-    return con
 
 
-def test_annotations_filters_by_parent_and_sorts(db_with_annotations):
-    anns = za.annotations(db_with_annotations, 10)
-    assert len(anns) == 3  # parent 99 excluded
-    # sorted ascending by sortIndex string
-    assert [a["comment"] for a in anns] == ["cmt-B", "note-only", "cmt-A"]
+def test_ambiguous_title_requires_stable_item_key() -> None:
+    adapter = FakeAdapter(
+        search_rows=[paper("ABCD2345", "JEPA A"), paper("EFGH6789", "JEPA B")]
+    )
+
+    with pytest.raises(workflow.AnnotationAmbiguous, match="--item ITEM_KEY"):
+        workflow.select_item(adapter, "JEPA", None)
 
 
-def test_annotations_strips_translation_in_text(db_with_annotations):
-    anns = za.annotations(db_with_annotations, 10)
-    last = anns[-1]  # cmt-A row
-    assert last["text"] == "second"
-    assert last["comment"] == "cmt-A"
+def test_pdf_selection_uses_local_api_children() -> None:
+    adapter = FakeAdapter(
+        children=[
+            {"key": "ABCD2345", "data": {"itemType": "note"}},
+            pdf("EFGH6789"),
+        ]
+    )
+
+    assert workflow.select_pdf_attachment(adapter, "JKLM2345") == "EFGH6789"
 
 
-def test_annotations_maps_type_and_page(db_with_annotations):
-    anns = za.annotations(db_with_annotations, 10)
-    note = [a for a in anns if a["comment"] == "note-only"][0]
-    assert note["type"] == "note"
-    assert note["page"] == "2"
+def test_export_builds_sorted_annotation_ir_and_strips_translation() -> None:
+    adapter = FakeAdapter(
+        children=[pdf("EFGH6789")],
+        annotations=[
+            annotation(
+                "JKLM2345",
+                text="second 🔤machine🔤",
+                comment="comment two",
+                sort_index="00002",
+                page_label="iii",
+            ),
+            annotation(
+                "NPQR6789",
+                text="first",
+                comment="comment one",
+                sort_index="00001",
+                page_index=4,
+            ),
+        ],
+    )
+
+    exported = workflow.extract_annotation_export(adapter, item_key="ABCD2345")
+
+    assert exported["item_key"] == "ABCD2345"
+    assert exported["attachment_key"] == "EFGH6789"
+    assert [row["annotation_key"] for row in exported["annotations"]] == [
+        "NPQR6789",
+        "JKLM2345",
+    ]
+    assert exported["annotations"][0]["page"] == "5"
+    assert exported["annotations"][1]["page"] == "iii"
+    assert exported["annotations"][1]["text"] == "second"
+    assert exported["annotations"][0]["source_link"].startswith("zotero://open-pdf/")
+
+
+def test_markdown_preserves_comments_quotes_and_inline_page() -> None:
+    rendered = workflow.to_markdown(
+        [
+            {
+                "type": "highlight",
+                "page": "7",
+                "text": "paper words",
+                "comment": "my words",
+                "source_link": "zotero://open-pdf/library/items/EFGH6789",
+            }
+        ]
+    )
+
+    assert "highlight (p.7)" in rendered
+    assert "HL: paper words" in rendered
+    assert "ME: my words" in rendered
+    assert "## Page" not in rendered
+
+
+def test_legacy_script_uses_package_adapter_and_never_imports_sqlite() -> None:
+    source = _SCRIPT.read_text(encoding="utf-8")
+    assert "sqlite3" not in source
+    assert "zotero.sqlite" not in source
+    spec = importlib.util.spec_from_file_location("zotero_annotations", _SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    assert module.ZoteroLocalAdapter is not None
