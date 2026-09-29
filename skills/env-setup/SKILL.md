@@ -54,5 +54,6 @@ uses that system instead.
 
 ## References
 
+- `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md`

@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["schema_version", "recipes", "safety_policies"],
   "properties": {
-    "schema_version": {"const": 1},
+    "schema_version": {"const": 2},
     "recipes": {
       "type": "array",
       "items": {"$ref": "#/$defs/recipe"}
@@ -28,7 +28,7 @@
         "recipe_id",
         "title",
         "project_required",
-        "allowed_library_ids",
+        "allowed_provider_ids",
         "allowed_project_ids",
         "allowed_tool_ids",
         "context_policy_id",
@@ -39,12 +39,22 @@
         "recipe_id": {"$ref": "#/$defs/portable_id"},
         "title": {"type": "string", "minLength": 1, "maxLength": 200},
         "project_required": {"type": "boolean"},
-        "allowed_library_ids": {
+        "allowed_provider_ids": {
           "type": "array",
-          "items": {"enum": ["papers", "projects", "tools"]},
+          "items": {"$ref": "#/$defs/portable_id"},
           "uniqueItems": true
         },
         "allowed_project_ids": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "array",
+              "items": {"$ref": "#/$defs/portable_id"},
+              "uniqueItems": true
+            }
+          ]
+        },
+        "allowed_target_ids": {
           "oneOf": [
             {"type": "null"},
             {

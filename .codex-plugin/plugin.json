@@ -1,6 +1,6 @@
 {
   "name": "scholar-workflow",
-  "version": "0.28.1",
+  "version": "0.29.0",
   "description": "Human-first scholarly knowledge, reproducible research projects, and a typed local Hub control plane for Zotero, Obsidian, Codex, and cmux.",
   "author": {
     "name": "Scholar Workflow contributors",
@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "Scholar Workflow",
     "shortDescription": "Local research Hub, resources, and workflows",
-    "longDescription": "Browse typed Papers, Projects, Tools, and knowledge contexts in a local Hub; maintain readable paper analyses; initialize reproducible research projects; and coordinate bounded work across agent runtimes.",
+    "longDescription": "Browse Zotero Papers and dynamic Obsidian Fields in a local Hub, with Projects and Tools as peer entries; maintain readable paper analyses, initialize reproducible research projects, and coordinate bounded work across agent runtimes.",
     "developerName": "Scholar Workflow contributors",
     "category": "Education & Research",
     "capabilities": [

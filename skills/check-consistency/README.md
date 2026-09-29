@@ -3,7 +3,7 @@
 Audit cross-system consistency across Zotero, Obsidian indexes, and
 Notion projections. Detects inbox-orphan PDFs (under `paper_inbox` only — never a
 reverse-scan of Zotero's own `storage/`), dead Zotero keys, stale index rows,
-broken local links, and duplicate Resource IDs.
+broken attachment-key links, legacy fixed-port links, and duplicate Resource IDs.
 
 Read-only throughout: it reports drift with a severity tag and a suggested remedy,
 but never fixes or deletes anything. Remedies run in the corresponding Agent after

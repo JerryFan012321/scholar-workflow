@@ -42,4 +42,4 @@ codex exec resume --json "$SESSION_ID" - < "$HANDOFF_FILE"
 ```
 
 Use a fresh session if the objective or authorization changed. The caller must inspect any Codex
-diff or artifacts and run the final project checks.
+diff or artifacts; tests require the user's approved test plan.

@@ -33,7 +33,7 @@
         "additionalProperties": false,
         "required": ["role", "markdown_sha256", "canvas_node_id", "canvas_text_sha256"],
         "properties": {
-          "role": {"enum": ["task", "input", "workflow", "output", "boundary"]},
+          "role": {"enum": ["task", "input", "workflow", "output", "boundary", "abstract", "introduction", "method", "limitation"]},
           "markdown_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
           "canvas_node_id": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
           "canvas_text_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
@@ -44,7 +44,6 @@
       "type": "array",
       "description": "Exact IDs emitted by the deterministic renderer; this list does not adopt other Canvas nodes.",
       "items": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
-      "maxItems": 40,
       "uniqueItems": true
     },
     "generated_edge_ids": {
@@ -53,5 +52,12 @@
       "items": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
       "uniqueItems": true
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"document": {"properties": {"schema_version": {"const": 4}}}}},
+      "then": {"properties": {"generated_node_ids": {"maxItems": 96}}},
+      "else": {"properties": {"generated_node_ids": {"maxItems": 40}}}
+    }
+  ]
 }

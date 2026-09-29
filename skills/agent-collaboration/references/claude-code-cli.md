@@ -39,4 +39,4 @@ claude -p --resume "$SESSION_ID" --output-format json < "$HANDOFF_FILE"
 ```
 
 Use a fresh session if the objective or authorization changed. The caller must inspect any Claude
-Code diff or artifacts and run the final project checks.
+Code diff or artifacts; tests require the user's approved test plan.

@@ -12,7 +12,7 @@ from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol, Self
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 from uuid import uuid4
 
 import httpx
@@ -171,6 +171,17 @@ class ZoteroItemPage:
     start: int
     limit: int
     total: int | None
+
+
+@dataclass(frozen=True)
+class ZoteroAttachmentLocator:
+    """A current attachment locator resolved by Zotero, never by storage guessing."""
+
+    attachment_key: str
+    library_id: str
+    content_hash: str
+    path: Path
+    filename: str
 
 
 def _is_loopback_url(url: str, *, api_root: bool = False) -> bool:
@@ -435,6 +446,90 @@ class ZoteroLocalAdapter:
             headers={"Zotero-API-Version": API_VERSION},
         )
         return response.json()
+
+    def get_annotations(self, attachment_key: str) -> list[dict[str, Any]]:
+        """Read Zotero-owned annotations for one attachment through the Local API."""
+        attachment_key = _validate_key(attachment_key)
+        rows: list[dict[str, Any]] = []
+        start = 0
+        while True:
+            response = self._request(
+                "GET",
+                f"users/0/items/{attachment_key}/children",
+                headers={"Zotero-API-Version": API_VERSION},
+                params={"itemType": "annotation", "limit": 100, "start": start},
+            )
+            payload = response.json()
+            if not isinstance(payload, list) or any(
+                not isinstance(row, dict) for row in payload
+            ):
+                raise ZoteroLocalError("Zotero annotations returned an unexpected response")
+            rows.extend(payload)
+            total_header = response.headers.get("Total-Results")
+            try:
+                total = int(total_header) if total_header is not None else None
+            except ValueError as exc:
+                raise ZoteroLocalError("Zotero annotations returned an invalid total") from exc
+            start += len(payload)
+            if not payload or (total is not None and start >= total) or len(payload) < 100:
+                return rows
+
+    def resolve_attachment_locator(self, attachment_key: str) -> ZoteroAttachmentLocator:
+        """Resolve a local PDF from Zotero's live ``links.enclosure`` value.
+
+        This deliberately does not reconstruct ``Zotero/storage/<key>``.  Linked
+        files, renamed stored files, and alternate storage roots therefore follow
+        Zotero's current locator instead of a Scholar Workflow convention.
+        """
+        attachment_key = _validate_key(attachment_key)
+        payload = self.get_item(attachment_key)
+        data = payload.get("data")
+        library = payload.get("library")
+        links = payload.get("links")
+        enclosure = links.get("enclosure") if isinstance(links, dict) else None
+        if (
+            not isinstance(data, dict)
+            or data.get("itemType") != "attachment"
+            or not isinstance(library, dict)
+            or not isinstance(enclosure, dict)
+        ):
+            raise ZoteroLocalError("Zotero item is not a resolvable attachment")
+        content_type = str(data.get("contentType") or enclosure.get("type") or "").casefold()
+        filename = str(data.get("filename") or enclosure.get("title") or "")
+        if content_type != "application/pdf" and not filename.casefold().endswith(".pdf"):
+            raise ZoteroLocalError("Zotero attachment is not a PDF")
+        href = enclosure.get("href")
+        if not isinstance(href, str):
+            raise ZoteroLocalError("Zotero attachment has no local enclosure locator")
+        parsed = urlparse(href)
+        if parsed.scheme != "file" or parsed.netloc not in {"", "localhost"}:
+            raise ZoteroLocalError("Zotero attachment is not available as a local file")
+        path = Path(unquote(parsed.path))
+        try:
+            resolved = path.resolve(strict=True)
+        except OSError as exc:
+            raise ZoteroLocalError("Zotero attachment file is unavailable") from exc
+        if not resolved.is_file():
+            raise ZoteroLocalError("Zotero attachment file is unavailable")
+        library_id = library.get("id")
+        if not isinstance(library_id, (str, int)) or isinstance(library_id, bool):
+            raise ZoteroLocalError("Zotero attachment omitted its library identity")
+        md5 = data.get("md5")
+        if not isinstance(md5, str) or not re.fullmatch(r"[0-9a-fA-F]{32}", md5):
+            digest = hashlib.sha256()
+            with resolved.open("rb") as handle:
+                for chunk in iter(lambda: handle.read(UPLOAD_CHUNK_BYTES), b""):
+                    digest.update(chunk)
+            content_hash = f"sha256:{digest.hexdigest()}"
+        else:
+            content_hash = f"md5:{md5.lower()}"
+        return ZoteroAttachmentLocator(
+            attachment_key=attachment_key,
+            library_id=str(library_id),
+            content_hash=content_hash,
+            path=resolved,
+            filename=filename or resolved.name,
+        )
 
     def get_item_template(
         self,

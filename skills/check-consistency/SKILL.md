@@ -5,15 +5,14 @@ description: Audit Zotero, Obsidian indexes, Notion projections, attachments, an
 
 # check-consistency
 
-## Steps
+## Result contract
 
-1. Supported audit scopes are all data, a Zotero collection, a Vault directory, and a
-   Notion project. The emitted result identifies the applied scope.
-2. Load `references/consistency-invariants.md` and run every applicable check using
-   read-only Zotero Local API, filesystem, link-service, and Notion reads.
-3. Emit structured JSON containing scope and issues. Each issue includes system,
-   category, affected identifier/path, severity (`error|warning|info`), evidence, and
-   suggested remedy. Add a Markdown summary only when requested.
+The supported scope is all data, a Zotero collection, a Vault directory, or a Notion
+project. Return structured JSON identifying the applied scope and every applicable
+issue. Each issue includes system, category, affected identifier/path, severity
+(`error|warning|info`), evidence, and suggested remedy. Add a Markdown summary only
+when requested. Load `references/consistency-invariants.md` for the checks and use
+read-only Zotero Local API, filesystem, and Notion reads.
 
 ## Constraints
 
@@ -26,6 +25,7 @@ description: Audit Zotero, Obsidian indexes, Notion projections, attachments, an
 
 ## References
 
+- `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `references/consistency-invariants.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/identity-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`

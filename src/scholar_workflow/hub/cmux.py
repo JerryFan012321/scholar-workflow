@@ -84,6 +84,28 @@ class CmuxControl:
             raise CmuxControlError("cmux returned invalid workspace JSON")
         return payload
 
+    def instance_fingerprint(self) -> str:
+        """Identify the current cmux socket without exposing its path."""
+        socket_path = os.environ.get("CMUX_SOCKET_PATH")
+        if not socket_path:
+            raise CmuxControlError("cmux instance socket is unavailable")
+        try:
+            socket_stat = os.stat(socket_path, follow_symlinks=False)
+        except OSError as exc:
+            raise CmuxControlError("cmux instance socket is unavailable") from exc
+        if stat.S_ISLNK(socket_stat.st_mode) or not stat.S_ISSOCK(socket_stat.st_mode):
+            raise CmuxControlError("cmux instance socket is not a trusted Unix socket")
+        identity = (
+            socket_stat.st_dev,
+            socket_stat.st_ino,
+            stat.S_IFMT(socket_stat.st_mode),
+            socket_stat.st_ctime_ns,
+            socket_stat.st_mtime_ns,
+            getattr(socket_stat, "st_birthtime", 0),
+        )
+        material = f"cmux-socket-v2\0{socket_path}\0{identity!r}".encode()
+        return "sha256:" + hashlib.sha256(material).hexdigest()
+
     def open(self, target: str, *, workspace_id: str) -> subprocess.CompletedProcess[str]:
         """Open one server-validated target in an already resolved workspace."""
         self._clean_value(target, "cmux target")
@@ -132,6 +154,53 @@ class CmuxControl:
         self._require_success(
             result,
             secrets=(workspace_id, str(directory)),
+        )
+        return result
+
+    def new_terminal_worker(
+        self,
+        *,
+        workspace_id: str,
+        working_directory: Path,
+        command: str,
+        focus: bool = True,
+    ) -> subprocess.CompletedProcess[str]:
+        """Open one server-constructed terminal worker in a cmux workspace.
+
+        ``command`` is an adapter boundary for a trusted, fixed worker command.
+        Browser input must never be interpolated into it.  cmux receives the
+        command as one argv value; this process never invokes a shell.
+        """
+
+        self._clean_value(workspace_id, "cmux workspace ID")
+        self._clean_value(command, "terminal worker command")
+        if len(command.encode("utf-8")) > 4096:
+            raise CmuxControlError("terminal worker command is too long")
+        directory = Path(working_directory)
+        if not directory.is_absolute() or not directory.is_dir():
+            raise CmuxControlError(
+                "Terminal worker directory is not an existing absolute directory"
+            )
+        resolved_directory = directory.resolve(strict=True)
+        result = self._invoke(
+            [
+                str(self.executable()),
+                "new-surface",
+                "--type",
+                "terminal",
+                "--working-directory",
+                str(resolved_directory),
+                "--workspace",
+                workspace_id,
+                "--command",
+                command,
+                "--focus",
+                "true" if focus else "false",
+            ]
+        )
+        self._require_success(
+            result,
+            secrets=(workspace_id, str(resolved_directory), command),
         )
         return result
 
@@ -204,7 +273,7 @@ class WorkspaceRegistry:
         control: CmuxControl,
         *,
         current_workspace_id: str | None = None,
-        hub_url: str = "http://127.0.0.1:23128/hub/",
+        hub_url: str | None = None,
         id_factory: Callable[[], str] | None = None,
     ) -> None:
         self._control = control
@@ -275,8 +344,24 @@ class WorkspaceRegistry:
             except KeyError as exc:
                 raise UnknownWorkspaceError("Unknown or expired cmux workspace") from exc
 
+    def opaque_for_raw(self, raw_id: str) -> str:
+        """Resolve a trusted CLI-provided current workspace to a browser-safe handle."""
+        if not isinstance(raw_id, str) or not raw_id or raw_id != raw_id.strip():
+            raise UnknownWorkspaceError("Current cmux workspace ID is invalid")
+        listing = self.public_workspaces()
+        if listing.capability_error is not None:
+            raise UnknownWorkspaceError(listing.capability_error)
+        with self._lock:
+            try:
+                return self._raw_to_opaque[raw_id]
+            except KeyError as exc:
+                raise UnknownWorkspaceError("Current cmux workspace is no longer live") from exc
+
     def instance_fingerprint(self) -> str:
         """Return an opaque fingerprint for the server-owned cmux instance."""
+        remote_fingerprint = getattr(self._control, "instance_fingerprint", None)
+        if callable(remote_fingerprint):
+            return remote_fingerprint()
         socket_path = os.environ.get("CMUX_SOCKET_PATH")
         if not socket_path:
             raise CmuxControlError("cmux instance socket is unavailable")
@@ -284,8 +369,8 @@ class WorkspaceRegistry:
             socket_stat = os.stat(socket_path, follow_symlinks=False)
         except OSError as exc:
             raise CmuxControlError("cmux instance socket is unavailable") from exc
-        if stat.S_ISLNK(socket_stat.st_mode):
-            raise CmuxControlError("cmux instance socket must not be a symlink")
+        if stat.S_ISLNK(socket_stat.st_mode) or not stat.S_ISSOCK(socket_stat.st_mode):
+            raise CmuxControlError("cmux instance socket is not a trusted Unix socket")
         identity = (
             socket_stat.st_dev,
             socket_stat.st_ino,
@@ -384,9 +469,11 @@ def _workspace_label(
 
 def _contains_hub(
     node: dict[str, Any],
-    hub_url: str,
+    hub_url: str | None,
     instance_token: str | None,
 ) -> bool:
+    if hub_url is None:
+        return False
     try:
         expected = urlsplit(hub_url)
     except ValueError:

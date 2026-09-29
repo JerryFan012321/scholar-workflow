@@ -8,5 +8,6 @@
   不覆盖人工内容。
 
 Obsidian 论文表是可重建的派生索引,不是主数据。两个子任务可并行执行。
+PDF 单元格持久化 Zotero attachment URI；Hub 端口和运行期 action ID 不写入 Vault 或 Notion。
 
 完整流程与约束见 [SKILL.md](./SKILL.md)。

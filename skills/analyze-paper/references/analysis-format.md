@@ -1,75 +1,200 @@
-# Paper Analysis v2 Output Contract
+# Paper Analysis v4 Output Contract
 
-This contract governs the observable output of `analyze-paper`. It constrains artifact
-identity, roles, evidence placement, cross-artifact links, and readable layout. It does not
-prescribe how a model reads a paper or forms its judgment.
+This contract governs the observable `analyze-paper` result: identity, hierarchy, evidence,
+cross-artifact links, and readable layout. It does not prescribe a reading order or the model's
+internal reasoning method. New analyses use IR v4 and the reference-image tree. IR v1–v3's
+Task / Input / Workflow / Output / Boundary format remains readable as a legacy projection;
+an ordinary update must not silently convert a legacy pair to v4.
 
-## Artifact pair
+## Accepted presentation template and its boundary
 
-Each paper has one evolving pair under its knowledge-space folder:
+The approved v4 reference-tree presentation fixes the reusable appearance and interaction
+contract, not any example paper's claims, source verdicts, or migration status. Keep these
+properties together:
 
-```text
-<paper>分析.md
-<paper>解析树.canvas
-```
-
-The Markdown note is the complete, independently readable analysis. The Canvas is a concise,
-editable projection of the same claims; it is never the only human-readable version and may not
-introduce claims absent from the note.
-
-Analysis, annotations, literature trees, and the source PDF remain separate artifacts.
-
-## Profiles and observable roles
-
-Every run declares an analysis profile:
-
-- `whole` covers all five roles: **Task, Input, Workflow, Output, Boundary**.
-- `focused` names a non-empty subset and emits only that subset. Existing roles outside the
-  requested subset remain unchanged.
-
-The roles are an output interface, not a reading sequence:
-
-| Role | Observable content |
+| Output | Accepted template behavior |
 |---|---|
-| Task | The problem, intended capability, application, and paper-specific motivation |
-| Input | Data, observations, representations, assumptions, and prerequisites |
-| Workflow | One ordered end-to-end flow containing the method's actual steps |
-| Output | Produced representation/result and experiment-backed capabilities |
-| Boundary | Limitations, applicability limits, source gaps, and inferential boundaries |
+| Paper folder | One Field-local folder owns the companion note, analysis Markdown, editable Canvas, and sidecar; Zotero retains the PDF. |
+| Markdown | Independently readable prose under the four reference-image branches, with no `sw-analysis-claim` comments or detached Evidence section. Each claim and point carries its own evidence and source link. |
+| Canvas | The same branch/content hierarchy as Markdown, editable text nodes, straight square-routed arrowless connections, compact two-dimensional layout, and roughly one extra line of clickable space per text box. No long single-axis pipeline. |
+| Navigation | Each claim/point can open its verified original-source location and link back from Canvas to the exact Markdown block. The chosen reader route is a projection of stable source identity, not the identity itself. |
 
-Workflow nodes describe actual method steps. Do not add `对应挑战`, `对应贡献`,
-`corresponding challenge`, or `corresponding contribution` nodes when they are not steps in the
-paper's flow. Discuss motivation or advantages inside the relevant step when needed.
+Keep the reference image's framework and named slots; leave unsupported slots empty. Each
+paper needs its own claim/point attribution and reader-capability check, followed by paired
+Markdown/Canvas/sidecar validation. Reusing the template does not require repeating the
+same example paper's visual acceptance or performing a real-Vault bulk operation.
 
-The versioned machine contract is
-`${CLAUDE_PLUGIN_ROOT}/contracts/analysis-ir.schema.json`. A claim has a stable `claim_id`, one
-role, a human-facing title and body, one evidence state, and an `order` only for Workflow steps.
-Whole-paper IR must cover every role. Focused IR must cover exactly its declared role subset.
+## Artifact pair and profile
 
-## Inline evidence
+Each new paper has one `resources/papers/<stable-paper-segment>/` folder inside its
+registered Field. Its human-readable paper companion note, evolving `<paper>分析.md` /
+`<paper>解析树.canvas` pair, and analysis sidecar share that folder; the PDF remains in Zotero.
+The segment is allocated and persistently mapped to the resource identity, never inferred as
+identity from a title. Existing flat `paper_assets/` and analysis pairs remain readable in place;
+moving them requires a separately reviewed relocation transaction, not an ordinary update.
+Markdown is the complete, independently readable analysis. The editable Canvas is a concise
+projection of the same claims, not a second source of knowledge. Analysis, annotations,
+literature trees, and the source PDF have separate owners.
 
-Every claim carries exactly one visible evidence or availability suffix in both artifacts:
+Every new IR v4 document declares `framework: reference_tree` and `language: en` or `zh`.
+The selected language applies to framework labels, claim/point prose, evidence descriptions,
+source-link labels, and Canvas backlink aliases. An English tree is English throughout; a
+Chinese tree is Chinese throughout. Structural conformance checks the generated language labels,
+while factual and prose-language quality still need semantic review.
+
+- `whole` renders all four sections: **Abstract, Introduction, Method, Limitation**. A section
+  may have no factual claim when the source or reference image leaves it unfilled.
+- `focused` declares a non-empty subset of those sections. The current update boundary is a
+  **complete selected section**: include all retained claims in each selected section, not only
+  one changed contribution. Unselected sections remain unchanged. A claim-level change within a
+  section is prepared as a complete replacement for that section; otherwise it could drop its
+  sibling claims.
+
+These sections are output organization, not a mandated analysis or reading sequence. The visible
+framework follows the supplied reference image:
 
 ```text
-〔作者明确陈述 · <paper-local anchor>〕
-〔分析推断 · <supporting observations>〕
-〔论文未报告〕
-〔当前正文通道无法核实 · <missing material>〕
-〔不适用 · <reason>〕
+Paper
+├── Abstract
+│   ├── Task
+│   ├── Technical challenge for previous methods
+│   ├── Key insight / motivation
+│   ├── Technical contributions
+│   └── Experiment
+├── Introduction
+│   ├── Task and application
+│   ├── Technical challenge for previous methods
+│   └── Our pipeline
+│       ├── Key innovation / insight
+│       └── Technical contributions
+├── Method
+│   ├── Overview
+│   └── Pipeline modules
+└── Limitation
+    └── Reasoned limitations
 ```
 
-Use paper-local anchors such as `§3.2`, `Table 4`, `Figure 6`, `Eq. (7)`, or a PDF page. A
-repository file/line may supplement an implementation claim only when code inspection was
-requested; it never replaces the paper anchor for a paper claim.
+Framework headings may remain visible without a factual claim underneath. In particular, an
+unfilled Experiment, Method, or Limitation slot in the reference image is not evidence that a paper reports a
+result there. Do not create a claim merely to fill a structural label. Real contributions,
+challenges, and modules may repeat to match the paper; the named framework branches stay fixed.
+The Method branch contains the actual process, without invented corresponding-challenge or
+corresponding-contribution pipeline nodes.
 
-Evidence remains in the same Markdown block and Canvas node as its claim. Do not create a
-standalone Evidence section, Evidence table, or Evidence node. `论文未报告` means the available
-paper content supports absence; `当前正文通道无法核实` means the indexed-text channel omitted
-material needed for verification.
+The machine contract is `${CLAUDE_PLUGIN_ROOT}/contracts/analysis-ir.schema.json`. Every v4 claim
+has a stable `claim_id`, one of the four `role` values, a title, complete `body`, evidence, and an
+`outline_path` in this template:
 
-## Markdown projection
+| Outline path | Optional claim-local point IDs |
+|---|---|
+| `abstract/task` | none |
+| `abstract/previous_methods/<slug>` | `challenge-1` … `challenge-3` |
+| `abstract/insight` | `motivation`, `advantage` |
+| `abstract/contributions/<slug>` | `summary`, `advantage` |
+| `abstract/experiment` | none |
+| `abstract/experiment/<slug>` | `finding-1` … `finding-4` |
+| `introduction/task_application` | none |
+| `introduction/previous_methods/<slug>` | `previous-method`, `limitation`, `technical-reason` |
+| `introduction/our_pipeline/insight` | none |
+| `introduction/our_pipeline/contributions/<slug>` | `purpose`, `how`, `advantage` |
+| `method/overview` | none |
+| `method/modules/<slug>` | `motivation`, `method`, `why-it-works`, `technical-advantage` |
+| `limitation/explanation` | none |
+| `limitation/explanation/<slug>` | `reason-1` … `reason-4` |
 
-Keep machine metadata thin and keep the body natural to read:
+`<slug>` is a stable lowercase Latin/digit/hyphen identifier for one repeated method, challenge,
+contribution, experiment, limitation, or module. Repeated experiment and limitation claims stay
+under the existing reference-image branches; they are not new framework categories. Their bounded
+finding/reason points preserve individually attributed statements without turning either branch
+into one oversized Canvas card. Only supplied point IDs in the corresponding row are valid; absent
+points stay absent rather than being fabricated. Each point has a stable claim-local `point_id`,
+complete single-paragraph `text`, and its own evidence. A point longer than 180 characters needs
+a faithful `canvas_summary` of at most 180 characters. A v4 claim body longer than 180 characters
+requires a faithful `canvas_summary` of at most 180 characters; its title must stay within 120
+characters. Evidence anchors/details and source-link counts are similarly bounded for Canvas
+readability. Neither summary may add a fact or discard a material qualification. The body
+plus points are the complete Markdown explanation.
+The `schema_version` is mandatory: new writes set it to `4` with `framework: reference_tree`;
+legacy v1–v3 must be explicit. Claim bodies may contain explanatory paragraphs but cannot inject
+new framework headings or renderer markers.
+
+## Evidence and verifiable source locations
+
+Each claim and each supplied point keeps its evidence or availability suffix beside its text in
+both artifacts. The labels follow the document language; for example:
+
+```text
+〔Author-stated · §3.2〕       〔作者明确陈述 · §3.2〕
+〔Analysis inference · …〕     〔分析推断 · …〕
+〔Not reported in the paper〕  〔论文未报告〕
+```
+
+The Canvas abbreviates these labels to `〔Author〕`, `〔Inference〕`, `〔N/A〕`, etc., plus live
+`PDF p.N` or source-block links. The full evidence anchor/reason stays inline in the Markdown
+block reached through each Canvas backlink; this keeps the tree legible without detaching evidence.
+
+The other states are `unverifiable` (当前正文通道无法核实; current indexed-text channel lacks needed
+material) and `not_applicable` (不适用; reason supplied). `not_reported` means supported absence, not merely a missing
+figure or table in Zotero's text index. There is no detached Evidence section, table, or node.
+
+For every new v4 `author_stated` or `analysis_inference` claim/point, evidence includes at least
+one `source_span`. A Zotero PDF span records library identity/type, current attachment key,
+content hash, **zero-based physical** `page_index`, optional display-only `page_label`, and an
+optional real annotation key. A registered Vault Markdown span records Source/artifact identity,
+Source-relative note path, and explicit block ID. The span is the source locator; its rendered
+reader link is not a new object identity. A repository file/line can supplement an implementation
+claim only after requested code inspection and cannot replace a paper-local anchor.
+
+Immediately after the suffix, render an original-source link in the same Markdown block and
+Canvas claim or grouped point-detail node. The document's optional `reader` selects only the
+link projection; it does not change the source span. With the default Zotero-native reader,
+`page_index=3` links to physical PDF page 4:
+
+```text
+[Source · PDF page 4](zotero://open-pdf/library/items/<attachment-key>?page=4)
+[[<relative-note-path>#^<block-id>|Source · paragraph]]
+```
+
+A verified annotation key may append `&annotation=<key>`; a page-only link does not select an
+exact sentence. Keep a section, figure/table identifier, or short quotation to aid manual
+location. PDF page labels, including Roman numerals, are not URI page numbers. For other formats,
+use a verified format-specific locator or link the document and state that precise positioning is
+manual. Persistent analysis content does not store fixed Hub ports or absolute source paths.
+
+The structural gate cannot prove that the cited page, quote, block, or annotation actually belongs
+to the current source. Before canonical use, resolve the Zotero attachment through Local API,
+compare its current bytes with the recorded hash, verify annotation membership, and resolve a
+Vault block against its registered document. Stale locators require re-verification.
+
+### Obsidian-internal ZotFlow reader link
+
+The source span stays `library_id + attachment_key + content_hash + page_index` regardless of the
+reader. In a manually authored or experimental Obsidian note, a ZotFlow Library Reader link may
+open a verified local attachment when that Vault has an enabled, audited ZotFlow version in local
+Zotero-storage mode and the link has been checked there. A successful route in one Vault does not
+prove it works in another Vault or plugin version.
+
+For the tested ZotFlow 1.6.6 route, a zero-based `page_index` of 3 uses:
+
+```text
+obsidian://zotflow?vault=<verified-16-hex-vault-id>&type=open-attachment&libraryID=<numeric-library-id>&key=<attachment-key>&navigation=%7B%22pageIndex%22%3A3%7D
+```
+
+Resolve the registered Vault's host-local Obsidian ID, encode the JSON navigation, and re-check the observed
+`navigation` parameter after a plugin upgrade. A real annotation deep link needs a verified
+annotation key; page navigation is not text selection or proof of bidirectional sync. For IR v4,
+`reader: {kind: zotflow_library, vault_id: <verified-16-hex-vault-id>}` selects the versioned ZotFlow
+Library Reader projection in both Markdown and Canvas; omitting `reader` (or setting
+`zotero_native`) retains the native Zotero route. The ZotFlow option is used only after that
+Vault's plugin version and desktop local-storage mode have been positively verified, and the
+attachment bytes exist locally. An annotation key in a source span does not make this page link
+an annotation selection. Never hand-edit one member of a managed Markdown/Canvas/sidecar bundle
+to change its reader. A legacy `vault_name` may be previewed but cannot be committed as a new v4
+bundle; a new host must re-resolve its own Vault ID. Zotero-native fallback opens a separate application.
+
+## Human-readable Markdown and editable Canvas
+
+The Markdown keeps machine metadata thin and follows the same framework. For English output:
 
 ```markdown
 ---
@@ -77,86 +202,70 @@ sw_schema: 2
 sw_kind: paper-analysis
 sw_catalog_id: "analysis:<stable-paper-resource-id>"
 sw_analysis_profile: whole
+sw_analysis_framework: reference_tree
+sw_analysis_language: en
 ---
 
-# <论文标题>：论文分析
+# <paper title>: Paper Analysis
 
-> 分析范围：全文（任务、输入、分步流程、输出、边界）
+> Scope: Whole paper
 
-## 任务
+## Abstract
 
-### <claim title>
-<human-readable explanation> 〔作者明确陈述 · §1〕 ^claim-<claim-id>
-<!-- sw-analysis-claim id="<claim-id>" role="task" -->
+### Task
 
-## 输入
+#### <claim title>
+<complete explanation> 〔Author-stated · §1〕 [Source · PDF page 4](zotero://open-pdf/library/items/<attachment-key>?page=4) ^claim-<claim-id>
 
-...
-
-## 分步流程
-
-1. **<step title>。** <explanation> 〔作者明确陈述 · §3.1〕 ^claim-<claim-id>
-<!-- sw-analysis-claim id="<claim-id>" role="workflow" -->
-
-## 输出
+### Technical challenge for previous methods
 
 ...
 
-## 边界
+## Introduction
+...
 
+## Method
+...
+
+## Limitation
 ...
 ```
 
-For a focused result, replace the scope line with the declared subset and omit unrequested role
-headings from a newly created projection. When updating an existing pair, preserve all
-unrequested roles and surrounding human prose.
+An attributable point remains in its claim's Markdown block with its own evidence, source link,
+and `^point-<claim-id-length>-<claim-id>-<point-id>` anchor. A Canvas claim node links to
+`#^claim-<claim-id>`; a claim's points share **one editable detail text node**, with one line per
+point linking to its own exact Markdown point anchor. Each line retains that point's inline
+evidence and original-source link. The length prefix keeps point IDs unambiguous when IDs contain
+hyphens. No `sw-analysis-claim` HTML comments or opaque Scholar-specific marker tags appear in v4
+human Markdown or Canvas node text. Native Obsidian `^claim-…` / `^point-…` block IDs still appear
+in Markdown source to support exact backlinks; the IR and sidecar own claim identity and Canvas
+node mapping. V1–v3 legacy files retain their historical
+marker contract and are not silently rewritten.
 
-The `sw-analysis-claim` comment is identity metadata. It must not contain analysis prose. A
-missing or malformed marker makes the corresponding existing block human-owned. Preserve such
-content and report the conflict rather than adopting or overwriting it silently. If a maintained
-baseline or revision receipt says either side was human-edited, preserve the Markdown/Canvas
-pair for that claim and report one paired conflict.
+The renderer emits standard JSON Canvas 1.0 with `{"nodes": [], "edges": []}` at the top level.
+Opening it in Advanced Canvas may add its narrow `metadata` envelope (`version` and
+`frontmatter`); validation and focused updates accept and preserve that envelope without treating
+it as Scholar identity or allowing arbitrary top-level fields. The root and four section branches lead through the gray reference-framework
+labels to claim and grouped point-detail text nodes. No panel-card layout, independent Evidence area, or giant
+vertical pipeline is the intended projection. Generated node/edge IDs are stable for their
+artifact and outline paths. The v4 limit is **40 generated claim/detail Canvas nodes** and **96 total
+renderer-owned Canvas nodes** including root, section, framework labels, and grouped details. User-created graph items
+do not consume that budget. A generated node taller than 420 px or a whole generated tree with aspect
+ratio above 2:1 fails instead of producing a long unreadable strip. Generated nodes must not
+overlap; text boxes reserve roughly one visible line beyond the measured text, including CJK
+wrapping, so source and backlink labels remain clickable. Spacing needs visual
+inspection in Obsidian.
 
-## Canvas projection
+The renderer uses fine, square-routed, arrowless parent-child edges. An installed Advanced Canvas
+may display the square routing and borderless label styling; it is optional, and ordinary Canvas
+remains editable when those presentation attributes are unavailable. The source of truth remains
+the standard `nodes`/`edges` graph, not a screenshot or an SVG. Editing a generated Canvas node's
+text is possible in Obsidian, but it is **not automatic two-way synchronization** into Markdown:
+subsequent managed updates report a paired conflict rather than silently overwriting that edit.
+Safe manual geometry/color changes and custom nodes/edges remain preserved.
 
-Use standard JSON Canvas 1.0 with the exact top-level shape:
-
-```json
-{"nodes": [], "edges": []}
-```
-
-The visible graph uses this hierarchy:
-
-```text
-Paper analysis
-├── Task
-├── Input
-├── Workflow: step 1 → step 2 → ...
-├── Output
-└── Boundary
-```
-
-Rules:
-
-- Use editable text nodes and directed edges. Generated IDs are stable for an artifact and
-  canonical role/claim path; preserve existing IDs on update.
-- The renderer-owned subgraph contains at most 40 semantic nodes, including root and role nodes.
-  User-created text, file, link, and group nodes do not consume that budget and are not adopted
-  merely because they share the Canvas.
-- Generated text nodes are at least 360 px wide and 140 px high. Use Markdown headings in node
-  text, consistent branch colors, generous spacing, and non-overlapping positions.
-- Workflow steps form one visible ordered flow instead of repeating disconnected module trees.
-- Each claim node contains its claim and evidence suffix together, plus
-  `[[<paper>分析#^claim-<claim-id>|正文]]`. This is the evidence backlink to the detailed note.
-- A generated claim node carries the matching `sw-analysis-claim` marker. Nodes without a valid
-  generated marker and non-generated edges are user-owned and remain unchanged.
-- After any update, parse the JSON, verify unique node/edge IDs and every endpoint across the whole
-  Canvas, then verify claim coverage/backlinks and readable geometry only for the renderer-owned
-  subgraph. A dangling user edge is invalid, but a user node is not rejected for its type, size, or
-  overlap with the generated layout.
-
-Canvas JSON receives no private top-level keys. Register it in the Vault-side
-`.scholar-workflow/artifacts.yml`, preserving unrelated rows:
+Register the Canvas in the Vault-side `.scholar-workflow/artifacts.yml`, preserving unrelated
+rows. Do not inject private top-level Canvas identity fields or infer identity from the filename:
 
 ```yaml
 schema_version: 1
@@ -164,35 +273,40 @@ artifacts:
   - artifact_id: analysis:<stable-paper-resource-id>:canvas
     kind: analysis-canvas
     format: canvas
-    vault_path: <topic-relative-path>/<paper>解析树.canvas
+    vault_path: <field-relative-path>/resources/papers/<stable-paper-segment>/<paper>解析树.canvas
     resource_id: <existing-hub-resource-id>
     topic_id: <existing-hub-topic-id>
     parent_id: analysis:<stable-paper-resource-id>
 ```
 
-The file must already exist inside the Vault and must not traverse a symlink. A move changes
-only `vault_path`; stable artifact identity does not depend on the filename or loopback URL.
+The file must already exist inside the Vault without traversing a symlink. A move changes
+`vault_path`, not stable artifact identity.
 
-## Conformance boundary
+## Conformance and update boundary
 
-Hard conformance validates schema version, profile coverage, stable IDs, inline evidence,
-Markdown claim content and anchors, Canvas claim content/backlinking/geometry/edges, the ordered
-Workflow flow, and the 40-node limit. It does not score prose style, argument count, analysis
-framework, or wording.
+Hard conformance checks version/framework/profile coverage, valid outline paths and point slots,
+stable identities, inline evidence and source links, Markdown claim/point anchors, Canvas
+framework labels/claim/grouped-point content/backlinks, graph endpoints, non-overlapping generated
+geometry, square routing, and both node budgets. It does not grade scientific correctness or
+prose language automatically. Each batch item is staged and checked independently; failure may
+receive at most one targeted repair, then only that item's staged drafts are cleaned.
 
-Every newly rendered pair receives a baseline sidecar that binds the source IR, full Markdown
-revision, claim hashes, and only the exact node/edge IDs emitted by the renderer. Its Canvas hash
-covers generated node content and generated edge endpoints, not user nodes, user edges, styling, or
-layout. A focused update is first planned as a zero-write operation: it preserves custom graph
-items and valid human layout, while a generated-content/endpoint edit, unsafe graph, missing or
-corrupt baseline, or Markdown revision conflict produces one paired conflict and a proposed result.
-It never silently rebases or overwrites either artifact.
+A newly rendered pair receives a baseline sidecar binding the IR, full Markdown revision,
+claim hashes, and exact renderer-owned node/edge IDs. Its Canvas hash covers generated content
+and edge endpoints, not user nodes, user edges, styling, or layout. A focused update is zero-write
+until its proposed complete selected section(s) pass validation against the baseline. A generated
+content/endpoint edit, unsafe graph, missing/corrupt baseline, or Markdown revision conflict
+returns one paired conflict and a proposal. It never silently rebases or overwrites either
+artifact. Moving from v1–v3 to v4 requires an explicit reviewed migration, not a focused update.
 
-The checked-in runtime contracts are:
+Canonical commit requires exact base hashes and commits the Markdown, Canvas, and sidecar as one
+recoverable bundle. Structural conformance is necessary but does not replace source-location
+verification or human review of scientific claims.
+
+The checked-in runtime schemas are:
 
 - `${CLAUDE_PLUGIN_ROOT}/contracts/analysis-ir.schema.json`
 - `${CLAUDE_PLUGIN_ROOT}/contracts/analysis-baseline.schema.json`
 - `${CLAUDE_PLUGIN_ROOT}/contracts/analysis-conformance-report.schema.json`
 
-For a user-selected multi-paper run, also load `references/analysis-batch.md` before staging any
-artifact.
+For a user-selected multi-paper run, also load `references/analysis-batch.md` before staging.

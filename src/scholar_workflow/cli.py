@@ -6,8 +6,9 @@ import json
 import os
 import re
 import secrets
+import stat
 import subprocess
-import time
+import webbrowser
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -87,7 +88,24 @@ def _load_cfg():
     except ConfigNotFound:
         raise DependencyError(
             "scholar-workflow is not configured yet. Run "
-            "`scholar-workflow config init --research-vault-root PATH` first.") from None
+            "`scholar-workflow config init` first.") from None
+
+
+def _require_legacy_vault(cfg) -> Path:
+    """Resolve the pre-v3 singleton only for commands that still require it."""
+    root = cfg.research_vault_root
+    if root is None:
+        raise DependencyError(
+            "This legacy projection command requires `research_vault_root`. "
+            "Set the migration candidate with `scholar-workflow config set "
+            "research_vault_root PATH`; v3 Hub Fields use registered Sources instead."
+        )
+    path = Path(root)
+    if not path.is_dir():
+        raise DependencyError(
+            f"Configured research_vault_root is not an accessible directory: {path}"
+        )
+    return path
 
 
 def _state_db_path() -> Path:
@@ -108,12 +126,6 @@ def _analysis_state_paths() -> tuple[Path, Path]:
 
 _HUB_INSTANCE_RE = re.compile(r"^[A-Za-z0-9_-]{16,128}$")
 _CMUX_TIMEOUT_SECONDS = 5.0
-_HUB_BIND_TIMEOUT_SECONDS = 8.0
-_HUB_BIND_POLL_SECONDS = 0.15
-_REQUIRED_HUB_CAPABILITIES = {
-    "cmux-workspace-actions-v1",
-    "open-hub-verified-binding-v1",
-}
 
 
 def _validate_hub_instance(
@@ -130,137 +142,127 @@ def _validate_hub_instance(
     return value
 
 
-def _require_cmux_context() -> tuple[str, str]:
+def _optional_cmux_context() -> tuple[str, str] | None:
+    """Return a clean cmux destination context, or None outside cmux.
+
+    A partial or malformed environment is not accepted as a destination, but it
+    also does not make the Hub globally unusable.
+    """
     workspace_id = os.environ.get("CMUX_WORKSPACE_ID", "")
     socket_path = os.environ.get("CMUX_SOCKET_PATH", "")
+    if not workspace_id and not socket_path:
+        return None
+    values = (workspace_id, socket_path)
     values_are_clean = all(
-        value == value.strip()
+        value
+        and value == value.strip()
         and len(value) <= 4096
         and not any(ord(char) < 32 for char in value)
-        for value in (workspace_id, socket_path)
+        for value in values
     )
-    if not workspace_id or not socket_path or not values_are_clean:
-        raise DependencyError(
-            "open-hub must run inside a cmux workspace with "
-            "CMUX_WORKSPACE_ID and CMUX_SOCKET_PATH available"
-        )
+    if not values_are_clean:
+        return None
     return workspace_id, socket_path
 
 
-def _probe_hub_health(port: int) -> None:
-    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=1.5)
-    try:
-        connection.request("GET", "/api/v1/health")
-        response = connection.getresponse()
-        body = response.read(4097)
-    except OSError:
-        raise DependencyError(
-            f"Research Hub is not running at http://127.0.0.1:{port}. "
-            "Start it explicitly with `scholar-workflow serve-hub`."
-        ) from None
-    except http.client.HTTPException as exc:
-        raise ExternalServiceError(f"Research Hub health probe failed: {exc}") from None
-    finally:
-        connection.close()
-    if response.status != 200:
-        raise ExternalServiceError(
-            f"Research Hub health probe returned HTTP {response.status}"
-        )
-    if len(body) > 4096:
-        raise ExternalServiceError("Research Hub health response was unexpectedly large")
-    try:
-        payload = json.loads(body)
-    except (TypeError, UnicodeDecodeError, json.JSONDecodeError):
-        raise ExternalServiceError("Research Hub health response was not valid JSON") from None
-    if not isinstance(payload, dict) or payload.get("status") != "ok":
-        raise ExternalServiceError("Research Hub health response did not report status=ok")
+def _destination_capability_advertised(payload: dict[str, object] | None) -> bool:
+    if not isinstance(payload, dict):
+        return False
     capabilities = payload.get("capabilities")
-    if not isinstance(capabilities, list) or not _REQUIRED_HUB_CAPABILITIES.issubset(
-        capabilities
-    ):
-        raise DependencyError(
-            "Research Hub is running but does not support verified workspace binding. "
-            "Restart it with the current `scholar-workflow serve-hub`."
+    names = {
+        "cmux-destinations-v1",
+        "cmux-destination-v1",
+        "destination-routing-v1",
+    }
+    if isinstance(capabilities, list):
+        return bool(names.intersection(str(item) for item in capabilities))
+    if isinstance(capabilities, dict):
+        return any(
+            bool(capabilities.get(name))
+            for name in names
         )
+    return False
 
 
-def _wait_for_hub_binding(port: int, instance_token: str) -> None:
-    """Wait until the browser has completed the nonce-backed workspace binding."""
-    deadline = time.monotonic() + _HUB_BIND_TIMEOUT_SECONDS
-    path = f"/api/v2/workspaces/status?{urlencode({'instance': instance_token})}"
-    while True:
-        connection = http.client.HTTPConnection(
-            "127.0.0.1",
-            port,
-            timeout=1.0,
-        )
-        try:
-            connection.request("GET", path)
-            response = connection.getresponse()
-            body = response.read(65537)
-        except (OSError, http.client.HTTPException):
-            response = None
-            body = b""
-        finally:
-            connection.close()
+def _register_default_destination(
+    port: int,
+    instance_token: str,
+    workspace_id: str,
+) -> bool:
+    """Register cmux only as this browser session's default opening place.
 
-        if response is not None and response.status == 200 and len(body) <= 65536:
-            try:
-                payload = json.loads(body)
-            except (TypeError, UnicodeDecodeError, json.JSONDecodeError):
-                payload = None
-            if (
-                isinstance(payload, dict)
-                and payload.get("bound") is True
-            ):
-                return
+    The CLI first obtains the normal loopback session token.  The workspace ID
+    never enters the Hub URL and this call grants no filesystem capability.
+    """
+    from scholar_workflow.hub.lifecycle import probe_health
 
-        if time.monotonic() >= deadline:
-            raise ExternalServiceError(
-                "The Hub browser opened, but workspace binding did not complete. "
-                "Keep the tagged Hub tab open and retry `scholar-workflow open-hub`; "
-                "a manually opened bare /hub/ page is read-only."
-            )
-        time.sleep(_HUB_BIND_POLL_SECONDS)
-
-
-def _probe_v2_hub_health(port: int) -> dict[str, object]:
-    """Return and validate the self-describing v2 health document."""
+    health = probe_health(port)
+    origin = f"http://127.0.0.1:{port}"
     connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2.0)
     try:
-        connection.request("GET", "/api/v2/health")
+        connection.request("GET", "/api/v1/session")
         response = connection.getresponse()
-        body = response.read(65537)
-    except OSError:
-        raise DependencyError(
-            f"Research Hub is not running at http://127.0.0.1:{port}."
+        session_body = response.read(65537)
+        session_status = response.status
+    except (OSError, http.client.HTTPException) as exc:
+        raise ExternalServiceError(
+            f"Could not obtain Hub browser session: {exc}"
         ) from None
-    except http.client.HTTPException as exc:
-        raise ExternalServiceError(f"Research Hub v2 health probe failed: {exc}") from None
     finally:
         connection.close()
-    if response.status != 200:
+    if session_status != 200 or len(session_body) > 65536:
         raise ExternalServiceError(
-            f"Research Hub v2 health probe returned HTTP {response.status}"
+            f"Hub browser session request returned HTTP {session_status}"
         )
-    if len(body) > 65536:
-        raise ExternalServiceError("Research Hub v2 health response was unexpectedly large")
     try:
-        payload = json.loads(body)
-    except (TypeError, UnicodeDecodeError, json.JSONDecodeError):
-        raise ExternalServiceError("Research Hub v2 health response was not valid JSON") from None
-    if not isinstance(payload, dict) or payload.get("status") != "ok":
-        raise ExternalServiceError("Research Hub v2 health did not report status=ok")
-    protocol = payload.get("protocol")
-    directory = payload.get("hub_directory")
-    if not isinstance(protocol, dict) or protocol.get("version") != 2:
-        raise DependencyError("Research Hub does not implement protocol v2")
-    if not isinstance(directory, dict) or directory.get("schema_version") != 2:
-        raise DependencyError("Research Hub does not expose HubDirectory schema v2")
-    capabilities = payload.get("capabilities")
-    if not isinstance(capabilities, list) or "hub-directory-v2" not in capabilities:
-        raise DependencyError("Research Hub does not advertise HubDirectory v2")
-    return payload
+        session_payload = json.loads(session_body)
+        csrf_token = session_payload["csrf_token"]
+    except (TypeError, KeyError, UnicodeDecodeError, json.JSONDecodeError):
+        raise ExternalServiceError("Hub browser session response was invalid") from None
+    if not isinstance(csrf_token, str) or not csrf_token:
+        raise ExternalServiceError("Hub browser session token was missing")
+
+    encoded = json.dumps({"workspace_id": workspace_id}).encode()
+    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2.0)
+    try:
+        connection.request(
+            "POST",
+            "/api/v3/destinations/default",
+            body=encoded,
+            headers={
+                "Content-Type": "application/json",
+                "Content-Length": str(len(encoded)),
+                "Origin": origin,
+                "X-Scholar-Hub-Token": csrf_token,
+                "X-Scholar-Hub-Instance": instance_token,
+            },
+        )
+        response = connection.getresponse()
+        body = response.read(65537)
+        status_code = response.status
+    except (OSError, http.client.HTTPException) as exc:
+        raise ExternalServiceError(
+            f"Could not register the cmux destination: {exc}"
+        ) from None
+    finally:
+        connection.close()
+    if status_code == 200:
+        try:
+            payload = json.loads(body)
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            raise ExternalServiceError(
+                "Hub destination response was not valid JSON"
+            ) from None
+        if not isinstance(payload, dict) or payload.get("ok") is not True:
+            raise ExternalServiceError("Hub rejected the default cmux destination")
+        return True
+    if status_code in {404, 405, 501} and not _destination_capability_advertised(health):
+        return False
+    detail = body.decode("utf-8", errors="replace").strip()[:500]
+    raise ExternalServiceError(
+        f"Hub destination registration returned HTTP {status_code}"
+        f"{f': {detail}' if detail else ''}"
+    )
 
 
 def _resolve_cmux_executable() -> Path:
@@ -276,33 +278,6 @@ def _cmux_child_env(workspace_id: str, socket_path: str) -> dict[str, str]:
     env["CMUX_WORKSPACE_ID"] = workspace_id
     env["CMUX_SOCKET_PATH"] = socket_path
     return env
-
-
-def _cmux_codex_working_directory() -> Path | None:
-    """Enable Hub Codex only for a server launched from a real cmux terminal."""
-    if not os.environ.get("CMUX_WORKSPACE_ID") or not os.environ.get("CMUX_SOCKET_PATH"):
-        return None
-    working_directory = Path.cwd().resolve()
-    if working_directory == Path(working_directory.anchor) or not working_directory.is_dir():
-        return None
-    return working_directory
-
-
-def _hub_owner_mode() -> str:
-    """Classify the service owner from a clean, complete cmux environment."""
-    workspace_id = os.environ.get("CMUX_WORKSPACE_ID", "")
-    socket_path = os.environ.get("CMUX_SOCKET_PATH", "")
-    values = (workspace_id, socket_path)
-    if not all(values):
-        return "headless"
-    if any(
-        value != value.strip()
-        or len(value) > 4096
-        or any(ord(character) < 32 for character in value)
-        for value in values
-    ):
-        return "headless"
-    return "cmux-visible"
 
 
 @click.group()
@@ -414,6 +389,95 @@ def zotero_fulltext_cmd(attachment_key: str) -> None:
     click.echo(json.dumps(payload, ensure_ascii=False))
 
 
+@zotero.command(name="annotations")
+@click.argument("query", required=False)
+@click.option("--item", "item_key", help="Zotero item key; skips title search.")
+@click.option("--json", "as_json", is_flag=True, help="Emit the raw projection as JSON.")
+def zotero_annotations_cmd(
+    query: str | None,
+    item_key: str | None,
+    as_json: bool,
+) -> None:
+    """Read one paper's Zotero-owned annotations through the Local API."""
+    from scholar_workflow.workflows.annotations import (
+        AnnotationAmbiguous,
+        AnnotationExportError,
+        extract_annotation_export,
+        to_markdown,
+    )
+
+    if query is None and item_key is None:
+        raise InputError("provide a title fragment or --item ITEM_KEY")
+    try:
+        with _open_zotero() as adapter:
+            payload = extract_annotation_export(
+                adapter,
+                query=query,
+                item_key=item_key,
+            )
+    except AnnotationAmbiguous as exc:
+        raise IdentityConflictError(str(exc)) from None
+    except (AnnotationExportError, ValueError) as exc:
+        raise InputError(str(exc)) from None
+    if as_json:
+        click.echo(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    click.echo(
+        f"item={payload['item_key']} attachment={payload['attachment_key']} "
+        f"total={payload['count']}"
+    )
+    rendered = to_markdown(payload["annotations"])
+    if rendered:
+        click.echo(rendered)
+
+
+@zotero.command(name="snapshot-annotations")
+@click.argument("attachment_key")
+@click.option(
+    "--output",
+    type=click.Path(dir_okay=False, path_type=Path),
+    required=True,
+    help="New PDF path. The Zotero attachment is never overwritten or re-imported.",
+)
+def zotero_snapshot_annotations_cmd(attachment_key: str, output: Path) -> None:
+    """Create an independent, hash-bound PDF copy with supported annotations."""
+    from scholar_workflow.hub.pdf_snapshot import (
+        AnnotationSnapshotError,
+        AnnotationSnapshotService,
+        UnsupportedAnnotationSnapshot,
+    )
+    from scholar_workflow.hub.zotflow import load_annotation_ir
+
+    destination = output.expanduser().absolute()
+    try:
+        with _open_zotero() as adapter:
+            locator = adapter.resolve_attachment_locator(attachment_key)
+            annotations = load_annotation_ir(adapter, attachment_key)
+            receipt = AnnotationSnapshotService().generate(
+                locator.path,
+                destination,
+                annotations,
+            )
+    except UnsupportedAnnotationSnapshot as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    except AnnotationSnapshotError as exc:
+        raise InputError(str(exc)) from None
+    click.echo(
+        json.dumps(
+            {
+                "snapshot": str(receipt.snapshot_path),
+                "metadata": str(receipt.metadata_path),
+                "source_pdf_hash": receipt.source_pdf_hash,
+                "annotation_set_hash": receipt.annotation_set_hash,
+                "output_hash": receipt.output_hash,
+                "annotation_count": receipt.annotation_count,
+                "imported_back": False,
+            },
+            ensure_ascii=False,
+        )
+    )
+
+
 @zotero.command(name="collections")
 @click.option("--limit", type=click.IntRange(min=1), help="Optional result cap.")
 def zotero_collections_cmd(limit: int | None) -> None:
@@ -514,11 +578,15 @@ def config() -> None:
 
 
 @config.command(name="init")
-@click.option("--research-vault-root", "vault", required=True,
-              help="Absolute path to the Obsidian research vault (required).")
+@click.option(
+    "--research-vault-root",
+    "vault",
+    required=False,
+    help="Optional legacy Vault migration candidate; v3 Sources are registered in Hub.",
+)
 @click.argument("extras", nargs=-1)
-def config_init(vault: str, extras: tuple[str, ...]) -> None:
-    """Create config.yml with the required vault + any KEY=VALUE extras (dotted keys ok).
+def config_init(vault: str | None, extras: tuple[str, ...]) -> None:
+    """Create config.yml with optional legacy Vault and KEY=VALUE extras.
 
     Writes only version + the values you name — never a full dump of defaults. Idempotent:
     an identical re-init is a no-op; a differing existing file is refused (edit with
@@ -553,8 +621,8 @@ def config_set(key: str, value: str) -> None:
         coerced = set_config_value(key, value)
     except ConfigNotFound:
         raise InputError(
-            "no config.yml yet — run "
-            "`scholar-workflow config init --research-vault-root PATH` first.") from None
+            "no config.yml yet — run `scholar-workflow config init` first."
+        ) from None
     except (ConfigError, ValidationError) as exc:
         raise InputError(str(exc)) from None
     click.echo(json.dumps({key: coerced}, ensure_ascii=False, default=str))
@@ -644,8 +712,6 @@ def project_obsidian_cmd(input_file) -> None:
     "<h1>", "entries": [{title, authors, year, venue, zotero_key, attachment_key,
     arxiv, doi, synced}, ...]}. Content outside the managed markers is preserved;
     re-running the same input is idempotent (GOALS INV4/INV18)."""
-    from pathlib import Path
-
     from scholar_workflow.adapters.obsidian import ObsidianAdapter
     from scholar_workflow.workflows.projection import project_obsidian
 
@@ -654,7 +720,7 @@ def project_obsidian_cmd(input_file) -> None:
     cfg = _load_cfg()
     index = payload.get("index") or "31-paper/index.md"
     heading = payload.get("heading") or "Papers"
-    adapter = ObsidianAdapter(Path(cfg.research_vault_root),
+    adapter = ObsidianAdapter(_require_legacy_vault(cfg),
                               cfg.obsidian.managed_block_start,
                               cfg.obsidian.managed_block_end)
     n = project_obsidian(entries, index, heading, adapter, cfg.link_service.port)
@@ -674,8 +740,6 @@ def project_tree_cmd(input_file, dry_run: bool) -> None:
     <parent>/<name>.md; a node's block holds a MOC wikilink list (child collections)
     plus a 10-column paper table (direct papers). Content outside markers is preserved;
     re-running the same input is idempotent (INV4/INV18)."""
-    from pathlib import Path
-
     from scholar_workflow.adapters.obsidian import ObsidianAdapter
     from scholar_workflow.workflows.hierarchy import plan_tree, project_tree
 
@@ -692,7 +756,7 @@ def project_tree_cmd(input_file, dry_run: bool) -> None:
              "papers": sum(p["papers"] for p in plan), "plan": plan},
             ensure_ascii=False, indent=2))
         return
-    adapter = ObsidianAdapter(Path(cfg.research_vault_root),
+    adapter = ObsidianAdapter(_require_legacy_vault(cfg),
                               cfg.obsidian.managed_block_start,
                               cfg.obsidian.managed_block_end)
     stats = project_tree(tree, root, adapter, cfg.link_service.port)
@@ -717,8 +781,6 @@ def project_literature_tree_cmd(input_file, dry_run: bool) -> None:
     "paperlist_only": true to (re)write 01-Paperlist.md (the flat 全集 ledger) instead;
     `filename` then defaults to 01-Paperlist.md. Content outside markers is preserved;
     re-running the same input is idempotent (INV4/INV18/INV22)."""
-    from pathlib import Path
-
     from scholar_workflow.adapters.obsidian import ObsidianAdapter
     from scholar_workflow.workflows.novelty_tree import (
         plan_novelty_tree,
@@ -754,7 +816,7 @@ def project_literature_tree_cmd(input_file, dry_run: bool) -> None:
              "papers": sum(p["papers"] for p in plan), "plan": plan},
             ensure_ascii=False, indent=2))
         return
-    adapter = ObsidianAdapter(Path(cfg.research_vault_root),
+    adapter = ObsidianAdapter(_require_legacy_vault(cfg),
                               cfg.obsidian.managed_block_start,
                               cfg.obsidian.managed_block_end)
     stats = applier(adapter)
@@ -782,8 +844,60 @@ def project_literature_tree_cmd(input_file, dry_run: bool) -> None:
 
 @main.command(name="serve-links")
 def serve_links() -> None:
-    """Compatibility name for the unified local Hub service."""
-    _serve_hub_foreground()
+    """Retired fixed-listener entry point retained for an explicit diagnostic."""
+    raise DependencyError(
+        "`serve-links` is retired in Hub v3; use `scholar-workflow hub start` "
+        "or `scholar-workflow open-hub`."
+    )
+
+
+@main.command(name="_hub-service", hidden=True)
+@click.option("--generation", required=True)
+@click.option(
+    "--discovery",
+    required=True,
+    type=click.Path(dir_okay=False, path_type=Path),
+)
+@click.option("--log", required=True, type=click.Path(dir_okay=False, path_type=Path))
+def _hub_service_process(generation: str, discovery: Path, log: Path) -> None:
+    """Private installed-package entry point for the detached Hub process."""
+    from scholar_workflow.hub.service_process import run
+
+    raise SystemExit(
+        run(
+            [
+                "--generation",
+                generation,
+                "--discovery",
+                str(discovery),
+                "--log",
+                str(log),
+            ]
+        )
+    )
+
+
+@main.command(name="_hub-router", hidden=True)
+@click.option("--generation", required=True)
+@click.option(
+    "--runtime-root",
+    required=True,
+    type=click.Path(file_okay=False, path_type=Path),
+)
+def _hub_router_process(generation: str, runtime_root: Path) -> None:
+    """Private cmux-descendant router for validated window operations."""
+    from scholar_workflow.hub.cmux_router import run
+
+    raise SystemExit(
+        run(
+            [
+                "--generation",
+                generation,
+                "--runtime-root",
+                str(runtime_root),
+            ]
+        )
+    )
 
 
 @main.command(name="serve-hub")
@@ -796,7 +910,7 @@ def serve_links() -> None:
 @click.option(
     "--canary",
     is_flag=True,
-    help="Force a temporary headless/read-only owner; defaults to an ephemeral port.",
+    help="Run a temporary headless canary; defaults to an ephemeral port.",
 )
 @click.option(
     "--knowledge-provider-state-root",
@@ -820,20 +934,34 @@ def serve_hub(
 @click.option("--port", type=click.IntRange(1, 65535), default=None)
 @click.option("--json", "as_json", is_flag=True)
 def hub_doctor(port: int | None, as_json: bool) -> None:
-    """Validate one running Hub's v2 identity and capability report."""
-    selected_port = port if port is not None else _load_cfg().link_service.port
-    payload = _probe_v2_hub_health(selected_port)
+    """Compatibility alias for managed Hub diagnostics."""
+    from scholar_workflow.hub.lifecycle import HubServiceManager, probe_diagnostics
+
+    if port is None:
+        status = HubServiceManager().status()
+        if not status.running or status.record is None or status.health is None:
+            raise DependencyError(status.detail)
+        selected_port = status.record.port
+    else:
+        selected_port = port
+    payload = probe_diagnostics(selected_port)
+    if payload is None:
+        raise DependencyError(
+            f"No detailed Scholar Workflow Hub diagnostics at 127.0.0.1:{selected_port}"
+        )
     if as_json:
         click.echo(json.dumps(payload, ensure_ascii=False, sort_keys=True))
         return
-    service = payload["service"]
-    protocol = payload["protocol"]
-    directory = payload["hub_directory"]
+    service = payload.get("service", {})
+    protocol = payload.get("protocol", {})
+    directory = payload.get("hub_directory", {})
     click.echo(
-        f"[ok] {service['name']} {service['version']} on 127.0.0.1:{selected_port}"
+        f"[ok] {service.get('name')} {service.get('version')} "
+        f"on 127.0.0.1:{selected_port}"
     )
     click.echo(
-        f"[ok] protocol={protocol['version']} HubDirectory={directory['schema_version']} "
+        f"[ok] protocol={protocol.get('version')} "
+        f"HubDirectory={directory.get('schema_version')} "
         f"owner={payload.get('owner_mode')}"
     )
     providers = payload.get("provider_capabilities", {})
@@ -850,6 +978,1221 @@ def hub_doctor(port: int | None, as_json: bool) -> None:
     )
 
 
+def _lifecycle_failure(exc: Exception) -> click.ClickException:
+    from scholar_workflow.hub.lifecycle import HubStartError, UnsafeManagedProcess
+
+    if isinstance(exc, UnsafeManagedProcess):
+        return SafetyRefusalError(str(exc))
+    if isinstance(exc, HubStartError):
+        return DependencyError(str(exc))
+    return ExternalServiceError(str(exc))
+
+
+def _echo_managed_record(record: object) -> None:
+    payload = record.as_payload()
+    click.echo(
+        f"[ok] {payload['service_name']} {payload['package_version']} "
+        f"on 127.0.0.1:{payload['port']}"
+    )
+    click.echo(
+        f"[ok] pid={payload['pid']} executable={payload['executable']}"
+    )
+    click.echo(
+        f"[ok] build={payload['build_hash']} protocol={payload['protocol_version']} "
+        f"generation={payload['service_generation']}"
+    )
+    click.echo(
+        f"[ok] started={payload['started_at']} log={payload['log_path']}"
+    )
+
+
+def _ensure_hub_router(record: object, workspace_id: str) -> None:
+    """Attach only window routing to cmux; never move the HTTP service there."""
+    from scholar_workflow.hub.cmux_router import ensure_router
+    from scholar_workflow.hub.lifecycle import _installed_cli_executable, runtime_root
+
+    ensure_router(
+        runtime_root=runtime_root(),
+        service_generation=record.service_generation,
+        workspace_id=workspace_id,
+        executable=_installed_cli_executable(),
+    )
+
+
+@main.group(name="hub")
+def hub_lifecycle() -> None:
+    """Manage the installed package's host-local Hub service."""
+
+
+def _hub_state_root() -> Path:
+    return Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME)).expanduser().resolve()
+
+
+def _managed_field_hub_record():
+    from scholar_workflow.hub.lifecycle import HubServiceManager
+
+    status = HubServiceManager().status()
+    if not status.running or status.record is None:
+        raise DependencyError(status.detail)
+    return status.record
+
+
+def _field_hub_request(
+    port: int,
+    path: str,
+    *,
+    payload: dict[str, object] | None = None,
+    operator_token: str | None = None,
+) -> dict[str, object]:
+    """Call the proven managed listener; never put approval data in a URL."""
+    if payload is not None:
+        session = _field_hub_request(port, "/api/v1/session")
+        csrf = session.get("csrf_token")
+        if not isinstance(csrf, str) or not csrf:
+            raise ExternalServiceError("Hub browser session response was invalid")
+        try:
+            encoded = json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8")
+        except (TypeError, ValueError) as exc:
+            raise InputError("Field request is not strict JSON") from exc
+        if len(encoded) > 8 * 1024 * 1024:
+            raise InputError("Field request is too large")
+        headers = {
+            "Content-Type": "application/json",
+            "Origin": f"http://127.0.0.1:{port}",
+            "X-Scholar-Hub-Token": csrf,
+        }
+        if operator_token is not None:
+            headers["X-Scholar-Hub-Operator"] = operator_token
+    else:
+        encoded = None
+        headers = {}
+    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=30.0)
+    try:
+        connection.request(
+            "POST" if encoded is not None else "GET",
+            path,
+            body=encoded,
+            headers=headers,
+        )
+        response = connection.getresponse()
+        content = response.read(4 * 1024 * 1024 + 1)
+        status_code = response.status
+    except (OSError, http.client.HTTPException) as exc:
+        raise ExternalServiceError(f"Managed Hub request failed: {exc}") from None
+    finally:
+        connection.close()
+    if len(content) > 4 * 1024 * 1024:
+        raise ExternalServiceError("Managed Hub response was unexpectedly large")
+    try:
+        decoded = json.loads(content)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        decoded = {"error": content.decode("utf-8", errors="replace")}
+    if not isinstance(decoded, dict):
+        raise ExternalServiceError("Managed Hub response was invalid")
+    if status_code != 200:
+        detail = str(decoded.get("error", f"HTTP {status_code}"))
+        if "candidate expired" in detail or "plan is unknown or expired" in detail:
+            detail += "; review again within 30 minutes; Hub restart invalidates plan tokens"
+        if status_code == 400:
+            raise InputError(detail)
+        if status_code in {403, 409}:
+            raise SafetyRefusalError(detail)
+        if status_code == 503:
+            raise DependencyError(detail)
+        raise ExternalServiceError(detail)
+    return decoded
+
+
+def _field_operator_token(record: object) -> str:
+    """Read the private local-operator credential after lifecycle identity proof."""
+    from scholar_workflow.hub.field_transaction import _open_private_directory
+    from scholar_workflow.hub.server import OPERATOR_CREDENTIAL_NAME
+
+    path = Path(record.log_path).parent / OPERATOR_CREDENTIAL_NAME
+    try:
+        parent_fd = _open_private_directory(path.parent)
+    except (OSError, ValueError) as exc:
+        raise SafetyRefusalError("Field operator credential parent is unsafe") from exc
+    try:
+        parent = os.fstat(parent_fd)
+        if parent.st_uid != os.geteuid() or stat.S_IMODE(parent.st_mode) & 0o077:
+            raise SafetyRefusalError("Field operator credential parent is not private")
+        descriptor = os.open(
+            path.name,
+            os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+            dir_fd=parent_fd,
+        )
+        with os.fdopen(descriptor, "rb") as handle:
+            metadata = os.fstat(handle.fileno())
+            if (
+                not stat.S_ISREG(metadata.st_mode)
+                or metadata.st_uid != os.geteuid()
+                or metadata.st_nlink != 1
+                or stat.S_IMODE(metadata.st_mode) != 0o600
+                or metadata.st_size > 1024
+            ):
+                raise SafetyRefusalError("Field operator credential is unsafe")
+            content = handle.read(1025)
+    except OSError as exc:
+        raise SafetyRefusalError("Field operator credential is unavailable or unsafe") from exc
+    finally:
+        os.close(parent_fd)
+    try:
+        payload = json.loads(content)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SafetyRefusalError("Field operator credential is invalid") from exc
+    if not isinstance(payload, dict) or set(payload) != {"service_generation", "pid", "token"}:
+        raise SafetyRefusalError("Field operator credential is invalid")
+    if payload["service_generation"] != record.service_generation or payload["pid"] != record.pid:
+        raise SafetyRefusalError("Field operator credential belongs to a stale generation")
+    token = payload["token"]
+    if not isinstance(token, str) or len(token) < 32:
+        raise SafetyRefusalError("Field operator credential is invalid")
+    return token
+
+
+def _read_legacy_field_package(handle: object) -> dict[str, object]:
+    """Bound the local candidate document before sending it to the operator route."""
+    try:
+        encoded = handle.read(8 * 1024 * 1024 + 1)
+    except OSError as exc:
+        raise InputError(f"Could not read Field proposal package: {exc}") from exc
+    if not isinstance(encoded, bytes) or len(encoded) > 8 * 1024 * 1024:
+        raise InputError("Field proposal package must be at most 8 MiB")
+
+    def unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        result: dict[str, object] = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("Duplicate Field proposal JSON key")
+            result[key] = value
+        return result
+
+    try:
+        package = json.loads(
+            encoded,
+            object_pairs_hook=unique_object,
+            parse_constant=lambda _value: (_ for _ in ()).throw(
+                ValueError("Non-finite Field proposal number")
+            ),
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        raise InputError(f"Invalid Field proposal package: {exc}") from exc
+    if not isinstance(package, dict):
+        raise InputError("Field proposal package must be a JSON object")
+    return package
+
+
+@hub_lifecycle.group(name="field-transaction")
+def hub_field_transaction() -> None:
+    """Plan one Field as a group; commit only with a local operator."""
+
+
+@hub_field_transaction.command(name="plan")
+@click.option("--field-root", default=None, help="Choose this relative Field root after folder selection.")
+@click.option("--candidate-token", default=None, help="Use a prior Hub folder-selection candidate.")
+@click.option("--field-id", default=None, help="Field ID from that exact candidate preview.")
+def hub_field_transaction_plan(
+    field_root: str | None,
+    candidate_token: str | None,
+    field_id: str | None,
+) -> None:
+    """Read only: inspect the full Field change set and exact approval digest."""
+    record = _managed_field_hub_record()
+    if (candidate_token is None) != (field_id is None):
+        raise InputError("--candidate-token and --field-id must be provided together")
+    if candidate_token is not None:
+        if field_root is not None:
+            raise InputError("--field-root cannot accompany an existing candidate")
+        selected_token, selected_id = candidate_token, field_id
+    else:
+        selected = _field_hub_request(record.port, "/api/v3/fields/select", payload={})
+        preview = selected.get("preview")
+        if not isinstance(preview, dict):
+            raise ExternalServiceError("Field preview response was invalid")
+        rows = preview.get("fields")
+        if not isinstance(rows, list):
+            raise ExternalServiceError("Field preview response was invalid")
+        matches = [
+            row for row in rows
+            if isinstance(row, dict)
+            and (field_root is None or row.get("relative_root") == field_root)
+        ]
+        if len(matches) != 1:
+            roots = [row.get("relative_root") for row in rows if isinstance(row, dict)]
+            raise InputError(
+                "Choose exactly one Field with --field-root; candidates: "
+                + ", ".join(str(root) for root in roots)
+            )
+        selected_token, selected_id = preview.get("candidate_token"), matches[0].get("field_id")
+        if not isinstance(selected_token, str) or not isinstance(selected_id, str):
+            raise ExternalServiceError("Field preview identity was invalid")
+    result = _field_hub_request(
+        record.port,
+        "/api/v3/field-transactions/plan",
+        payload={"candidate_token": selected_token, "field_id": selected_id},
+    )
+    plan = result.get("plan")
+    if not isinstance(plan, dict):
+        raise ExternalServiceError("Field transaction plan response was invalid")
+    click.echo(json.dumps({**plan, "candidate_token": selected_token}, ensure_ascii=False, sort_keys=True))
+
+
+@hub_field_transaction.command(name="legacy-preview")
+@click.argument("candidate_token")
+@click.argument("field_id")
+@click.option(
+    "--package-file",
+    required=True,
+    type=click.File("rb"),
+    help="Trusted local JSON proposal (or - for stdin); never sent by a browser.",
+)
+def hub_field_transaction_legacy_preview(
+    candidate_token: str,
+    field_id: str,
+    package_file: object,
+) -> None:
+    """Read-only mechanical cutover review for one legacy analysis pair."""
+    package = _read_legacy_field_package(package_file)
+    record = _managed_field_hub_record()
+    response = _field_hub_request(
+        record.port,
+        "/api/v3/field-transactions/legacy/preview",
+        payload={"candidate_token": candidate_token, "field_id": field_id, "package": package},
+        operator_token=_field_operator_token(record),
+    )
+    click.echo(json.dumps(response, ensure_ascii=False, sort_keys=True))
+
+
+@hub_field_transaction.command(name="legacy-stage")
+@click.argument("candidate_token")
+@click.argument("field_id")
+@click.option(
+    "--package-file",
+    required=True,
+    type=click.File("rb"),
+    help="The same trusted local JSON proposal reviewed in legacy-preview.",
+)
+@click.option(
+    "--approved-cutover-digest",
+    required=True,
+    help="Exact cutover_digest from the reviewed read-only preview.",
+)
+@click.option(
+    "--field-definition-file",
+    type=click.File("rb"),
+    default=None,
+    help="Optional reviewed Field navigation/home override as local JSON.",
+)
+def hub_field_transaction_legacy_stage(
+    candidate_token: str,
+    field_id: str,
+    package_file: object,
+    approved_cutover_digest: str,
+    field_definition_file: object | None,
+) -> None:
+    """Unavailable until Provider and Field share a recovery journal."""
+    raise DependencyError(
+        "Legacy analysis staging is unavailable until Provider and Field changes "
+        "share one recoverable transaction journal; use legacy-preview for read-only review"
+    )
+
+
+@hub_field_transaction.command(name="apply")
+@click.argument("plan_token")
+@click.option("--approved-digest", required=True, help="Exact plan_digest from the reviewed plan.")
+@click.option(
+    "--external-writers-paused",
+    is_flag=True,
+    help="Human assertion: Obsidian and sync writers are paused; the CLI cannot detect this.",
+)
+def hub_field_transaction_apply(
+    plan_token: str,
+    approved_digest: str,
+    external_writers_paused: bool,
+) -> None:
+    """Commit the reviewed plan in a manually arranged quiet writer window."""
+    if not external_writers_paused:
+        raise SafetyRefusalError("External Field writers must be paused before apply")
+    if not click.confirm(
+        "Confirm external editors/sync are stopped and this exact digest was reviewed?",
+        default=False,
+    ):
+        raise SafetyRefusalError("Field transaction was not confirmed")
+    record = _managed_field_hub_record()
+    operator_token = _field_operator_token(record)
+    response = _field_hub_request(
+        record.port,
+        "/api/v3/field-transactions/apply",
+        payload={"plan_token": plan_token, "approved_digest": approved_digest},
+        operator_token=operator_token,
+    )
+    result = response.get("result")
+    if not isinstance(result, dict):
+        raise ExternalServiceError("Field transaction apply response was invalid")
+    click.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@hub_field_transaction.command(name="recover")
+@click.argument("source_id")
+@click.argument("field_id")
+@click.option("--confirm-recovery", is_flag=True, help="Confirm conditional rollback/completion.")
+@click.option(
+    "--external-writers-paused",
+    is_flag=True,
+    help="Human assertion: Obsidian and sync writers are paused; the CLI cannot detect this.",
+)
+def hub_field_transaction_recover(
+    source_id: str,
+    field_id: str,
+    confirm_recovery: bool,
+    external_writers_paused: bool,
+) -> None:
+    """Conditionally recover only this interrupted Field, preserving conflicts."""
+    if not confirm_recovery:
+        raise SafetyRefusalError("Explicit --confirm-recovery is required")
+    if not external_writers_paused:
+        raise SafetyRefusalError("External Field writers must be paused before recovery")
+    if not click.confirm("Inspect the pending Field journal and conditionally recover it?", default=False):
+        raise SafetyRefusalError("Field recovery was not confirmed")
+    record = _managed_field_hub_record()
+    operator_token = _field_operator_token(record)
+    response = _field_hub_request(
+        record.port,
+        "/api/v3/field-transactions/recover",
+        payload={
+            "source_id": source_id,
+            "field_id": field_id,
+            "external_writers_paused": True,
+        },
+        operator_token=operator_token,
+    )
+    result = response.get("result")
+    if not isinstance(result, dict):
+        raise ExternalServiceError("Field recovery response was invalid")
+    click.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@hub_lifecycle.group(name="field-migration")
+def hub_field_migration() -> None:
+    """Preview or explicitly apply legacy-link cleanup for one registered Field."""
+
+
+def _field_migration_service():
+    from scholar_workflow.hub.field_migration import FieldMigrationService
+    from scholar_workflow.hub.fields import KnowledgeSourceRegistry
+
+    root = _hub_state_root() / "hub"
+    return FieldMigrationService(
+        KnowledgeSourceRegistry(root / "sources.json"),
+        state_root=root / "field-migration-private",
+    )
+
+
+@hub_field_migration.command(name="plan")
+@click.argument("source_id")
+@click.argument("field_id")
+def hub_field_migration_plan(source_id: str, field_id: str) -> None:
+    """Read only: show the exact Field file set, link changes, and plan digest."""
+    from dataclasses import asdict
+
+    from scholar_workflow.hub.field_migration import FieldMigrationError
+    from scholar_workflow.hub.fields import FieldRegistryError
+
+    try:
+        plan = _field_migration_service().plan(source_id, field_id)
+    except (FieldMigrationError, FieldRegistryError, OSError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    payload = asdict(plan)
+    payload.pop("plan_token")
+    click.echo(json.dumps(payload, ensure_ascii=False, sort_keys=True))
+
+
+@hub_field_migration.command(name="apply")
+@click.argument("source_id")
+@click.argument("field_id")
+@click.option(
+    "--approved-digest",
+    required=True,
+    help="Exact plan_digest from a reviewed, fresh read-only plan.",
+)
+@click.option(
+    "--external-writers-paused",
+    is_flag=True,
+    help="Human assertion: Obsidian and sync writers are paused; the CLI cannot detect this.",
+)
+def hub_field_migration_apply(
+    source_id: str,
+    field_id: str,
+    approved_digest: str,
+    external_writers_paused: bool,
+) -> None:
+    """Re-plan and CAS-apply one approved Field in a quiet writer window."""
+    from dataclasses import asdict
+
+    from scholar_workflow.hub.field_migration import FieldMigrationError
+    from scholar_workflow.hub.fields import FieldRegistryError
+
+    service = _field_migration_service()
+    try:
+        plan = service.plan(source_id, field_id)
+        if approved_digest != plan.plan_digest:
+            raise FieldMigrationError("Field changed; review a fresh plan_digest")
+        if plan.conflicts:
+            raise FieldMigrationError("Field migration plan has unresolved conflicts")
+        if not external_writers_paused:
+            raise FieldMigrationError("External Field writers must be paused before apply")
+        if not click.confirm(
+            "Confirm external editors/sync are stopped and this exact digest was reviewed?",
+            default=False,
+        ):
+            raise FieldMigrationError("Field migration was not confirmed")
+        result = service.apply(
+            plan.plan_token,
+            approved_digest=approved_digest,
+            external_writers_paused=True,
+        )
+    except (FieldMigrationError, FieldRegistryError, OSError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    payload = asdict(result)
+    payload["recovery_snapshot"] = str(result.recovery_snapshot)
+    click.echo(json.dumps(payload, ensure_ascii=False, sort_keys=True))
+
+
+@hub_field_migration.command(name="recover")
+@click.argument("source_id")
+@click.argument("field_id")
+def hub_field_migration_recover(source_id: str, field_id: str) -> None:
+    """Explicitly conditionally restore an interrupted Field migration."""
+    from dataclasses import asdict
+
+    from scholar_workflow.hub.field_migration import FieldMigrationError
+    from scholar_workflow.hub.fields import FieldRegistryError
+
+    try:
+        result = _field_migration_service().recover(source_id, field_id)
+    except (FieldMigrationError, FieldRegistryError, OSError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    payload = asdict(result)
+    if result.recovery_snapshot is not None:
+        payload["recovery_snapshot"] = str(result.recovery_snapshot)
+    click.echo(json.dumps(payload, ensure_ascii=False, sort_keys=True))
+
+
+_DEFAULT_TASK_RECIPE_ID = "general-research"
+_DEFAULT_TASK_POLICY_ID = "default-safe"
+
+
+def _allow_default_recipe_target(root: Path, target_id: str) -> None:
+    """Extend the explicit default recipe after a trusted target is registered.
+
+    Registering a target is already the local administrator's explicit grant for
+    Codex cwd use.  Keeping the default recipe's allowlist in the same operation
+    avoids a second, unrelated browser or filesystem authority.
+    """
+    from scholar_workflow.hub.tasks import (
+        TaskContractError,
+        TaskRecipeRegistry,
+        TaskRecipeRegistryDocument,
+    )
+
+    registry_path = root / "task-recipes.json"
+    if not registry_path.is_file():
+        return
+    registry = TaskRecipeRegistry(registry_path)
+    try:
+        document = registry.load()
+    except TaskContractError as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    changed = False
+    recipes = []
+    for recipe in document.recipes:
+        if recipe.recipe_id != _DEFAULT_TASK_RECIPE_ID:
+            recipes.append(recipe)
+            continue
+        allowed = list(recipe.allowed_target_ids or [])
+        if target_id not in allowed:
+            allowed.append(target_id)
+            recipe = recipe.model_copy(update={"allowed_target_ids": sorted(allowed)})
+            changed = True
+        recipes.append(recipe)
+    if changed:
+        registry.save(
+            TaskRecipeRegistryDocument(
+                recipes=recipes,
+                safety_policies=document.safety_policies,
+            )
+        )
+
+
+@hub_lifecycle.group(name="target")
+def hub_target() -> None:
+    """Manage trusted cwd aliases without accepting browser filesystem paths."""
+
+
+@hub_target.command(name="list")
+def hub_target_list() -> None:
+    """List public execution-target metadata; never print registered host paths."""
+    from scholar_workflow.hub.directory import ProjectRegistry
+    from scholar_workflow.hub.fields import KnowledgeSourceRegistry
+    from scholar_workflow.hub.routing import ExecutionTargetRegistry
+
+    root = _hub_state_root() / "hub"
+    registry = ExecutionTargetRegistry(
+        root / "execution-targets.json",
+        project_registry=ProjectRegistry(root / "projects.json"),
+        source_registry=KnowledgeSourceRegistry(root / "sources.json"),
+    )
+    payload = {
+        "targets": [
+            {
+                "target_id": target.target_id,
+                "kind": target.kind,
+                "capabilities": target.capabilities,
+            }
+            for target in registry.load().targets
+        ]
+    }
+    click.echo(json.dumps(payload, ensure_ascii=False, sort_keys=True))
+
+
+@hub_target.command(name="add-source")
+@click.argument("source_id")
+@click.option("--target-id", required=True, help="Portable alias shown in the Hub.")
+def hub_target_add_source(source_id: str, target_id: str) -> None:
+    """Authorize one already registered Knowledge Source as a Codex cwd target."""
+    from scholar_workflow.hub.directory import ProjectRegistry
+    from scholar_workflow.hub.fields import (
+        FieldRegistryError,
+        KnowledgeSourceRegistry,
+        KnowledgeSourceRegistryDocument,
+    )
+    from scholar_workflow.hub.routing import (
+        ExecutionTarget,
+        ExecutionTargetError,
+        ExecutionTargetRegistry,
+        ExecutionTargetRegistryDocument,
+    )
+
+    root = _hub_state_root() / "hub"
+    sources = KnowledgeSourceRegistry(root / "sources.json")
+    try:
+        source_document = sources.load_document()
+        source = next(row for row in source_document.sources if row.source_id == source_id)
+        folder = next(
+            row for row in source_document.folders if row.folder_id == source.folder_id
+        )
+    except StopIteration:
+        raise InputError("Unknown registered Knowledge Source") from None
+    except FieldRegistryError as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    if not source.enabled or not folder.enabled:
+        raise SafetyRefusalError("Knowledge Source or its registered folder is disabled")
+
+    target_registry = ExecutionTargetRegistry(
+        root / "execution-targets.json",
+        project_registry=ProjectRegistry(root / "projects.json"),
+        source_registry=sources,
+    )
+    try:
+        targets = target_registry.load()
+        candidate = ExecutionTarget(
+            target_id=target_id,
+            kind="vault",
+            registered_root_id=folder.folder_id,
+            capabilities=["codex"],
+        )
+    except (ExecutionTargetError, ValueError) as exc:
+        raise InputError(str(exc)) from None
+    existing = next((row for row in targets.targets if row.target_id == target_id), None)
+    if existing is not None and existing != candidate:
+        raise IdentityConflictError("target_id is already registered to another root")
+    if existing is None:
+        # Save the unusable alias first, then grant the root capability.  A crash
+        # between the two writes fails closed because target resolution still rejects it.
+        target_registry.save(
+            ExecutionTargetRegistryDocument(targets=[*targets.targets, candidate])
+        )
+
+    updated_folders = []
+    for row in source_document.folders:
+        if row.folder_id == folder.folder_id and "codex" not in row.capabilities:
+            row = row.model_copy(update={"capabilities": [*row.capabilities, "codex"]})
+        updated_folders.append(row)
+    try:
+        sources.save(
+            KnowledgeSourceRegistryDocument(
+                folders=updated_folders,
+                sources=source_document.sources,
+            )
+        )
+        target_registry.resolve(target_id, capability="codex")
+        _allow_default_recipe_target(root, target_id)
+    except (FieldRegistryError, ExecutionTargetError, OSError, ValueError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    click.echo(
+        json.dumps(
+            {
+                "target_id": candidate.target_id,
+                "kind": candidate.kind,
+                "capabilities": candidate.capabilities,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
+@hub_target.command(name="add-project")
+@click.argument("project_id")
+@click.option("--target-id", required=True, help="Portable alias shown in the Hub.")
+def hub_target_add_project(project_id: str, target_id: str) -> None:
+    """Authorize one already registered Project as a Codex cwd target."""
+    from scholar_workflow.hub.directory import ProjectRegistry, RegistryError
+    from scholar_workflow.hub.fields import KnowledgeSourceRegistry
+    from scholar_workflow.hub.routing import (
+        ExecutionTarget,
+        ExecutionTargetError,
+        ExecutionTargetRegistry,
+        ExecutionTargetRegistryDocument,
+    )
+
+    root = _hub_state_root() / "hub"
+    projects = ProjectRegistry(root / "projects.json")
+    try:
+        rows = projects.load()
+        project = next(row for row in rows if row.project_id == project_id)
+    except StopIteration:
+        raise InputError("Unknown registered project_id") from None
+    except (RegistryError, OSError, ValueError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    if not project.enabled:
+        raise SafetyRefusalError("Registered project is disabled")
+
+    target_registry = ExecutionTargetRegistry(
+        root / "execution-targets.json",
+        project_registry=projects,
+        source_registry=KnowledgeSourceRegistry(root / "sources.json"),
+    )
+    try:
+        targets = target_registry.load()
+        candidate = ExecutionTarget(
+            target_id=target_id,
+            kind="project",
+            registered_root_id=project_id,
+            capabilities=["codex"],
+        )
+    except (ExecutionTargetError, ValueError) as exc:
+        raise InputError(str(exc)) from None
+    existing = next((row for row in targets.targets if row.target_id == target_id), None)
+    if existing is not None and existing != candidate:
+        raise IdentityConflictError("target_id is already registered to another root")
+    if existing is None:
+        target_registry.save(
+            ExecutionTargetRegistryDocument(targets=[*targets.targets, candidate])
+        )
+
+    updated = [
+        row.model_copy(update={"capabilities": [*row.capabilities, "codex"]})
+        if row.project_id == project_id and "codex" not in row.capabilities
+        else row
+        for row in rows
+    ]
+    try:
+        projects.save(updated)
+        target_registry.resolve(target_id, capability="codex")
+        _allow_default_recipe_target(root, target_id)
+    except (RegistryError, ExecutionTargetError, OSError, ValueError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    click.echo(
+        json.dumps(
+            {
+                "target_id": candidate.target_id,
+                "kind": candidate.kind,
+                "capabilities": candidate.capabilities,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
+@hub_lifecycle.group(name="codex")
+def hub_codex() -> None:
+    """Configure the server-owned Codex task recipe and inspect its capability."""
+
+
+@hub_codex.command(name="configure")
+@click.option(
+    "--executable",
+    required=True,
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Explicit absolute Codex executable; PATH is never scanned by the Hub.",
+)
+@click.option(
+    "--model",
+    required=True,
+    help="Server-owned model for the registered recipe; never exposed to the browser.",
+)
+@click.option(
+    "--sandbox",
+    type=click.Choice(["read-only", "workspace-write"]),
+    default="workspace-write",
+    show_default=True,
+)
+def hub_codex_configure(executable: Path, model: str, sandbox: str) -> None:
+    """Register and probe Codex once; task pages only select recipe/target/effort."""
+    from scholar_workflow.hub.directory import (
+        ToolDefinition,
+        ToolRegistry,
+    )
+    from scholar_workflow.hub.tasks import (
+        CodexCapabilityProbe,
+        TaskContractError,
+        TaskEffort,
+        TaskRecipe,
+        TaskRecipeRegistry,
+        TaskRecipeRegistryDocument,
+        TaskSafetyPolicy,
+    )
+    from scholar_workflow.hub.terminal_worker import (
+        TerminalWorkerError,
+        TerminalWorkerRuntimeConfig,
+        TerminalWorkerState,
+    )
+
+    candidate = executable.expanduser()
+    if not candidate.is_absolute():
+        raise InputError("--executable must be an explicit absolute path")
+    try:
+        resolved_executable = candidate.resolve(strict=True)
+    except OSError:
+        raise DependencyError("The configured Codex executable is unavailable") from None
+    if not resolved_executable.is_file() or not os.access(resolved_executable, os.X_OK):
+        raise DependencyError("The configured Codex executable is not executable")
+
+    capabilities = CodexCapabilityProbe(resolved_executable).probe()
+    if not (
+        capabilities.available
+        and capabilities.create
+        and capabilities.resume
+        and capabilities.fork
+    ):
+        raise DependencyError(
+            capabilities.detail or "Configured Codex lacks required exec capabilities"
+        )
+
+    root = _hub_state_root() / "hub"
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    try:
+        root.chmod(0o700)
+    except OSError:
+        pass
+    target_path = root / "execution-targets.json"
+    target_ids: list[str] = []
+    if target_path.is_file():
+        from scholar_workflow.hub.directory import ProjectRegistry
+        from scholar_workflow.hub.fields import KnowledgeSourceRegistry
+        from scholar_workflow.hub.routing import ExecutionTargetRegistry
+
+        targets = ExecutionTargetRegistry(
+            target_path,
+            project_registry=ProjectRegistry(root / "projects.json"),
+            source_registry=KnowledgeSourceRegistry(root / "sources.json"),
+        ).load()
+        target_ids = sorted(
+            target.target_id
+            for target in targets.targets
+            if "codex" in target.capabilities
+        )
+
+    worker_state = TerminalWorkerState(root / "task-worker")
+    try:
+        if worker_state.runtime_path.exists() or worker_state.runtime_path.is_symlink():
+            current_runtime = worker_state.current_runtime()
+            if worker_state.slots_path.is_dir():
+                slot_ids = sorted(
+                    path.name
+                    for path in worker_state.slots_path.iterdir()
+                    if path.is_dir() and not path.is_symlink()
+                )
+                statuses = [
+                    worker_state.public_status(
+                        slot_id=slot_id,
+                        generation=current_runtime.generation,
+                    )
+                    for slot_id in slot_ids
+                ]
+                if any(status.active_run_id or status.queued_run_ids for status in statuses):
+                    raise TerminalWorkerError(
+                        "Codex task policy cannot change while a run is active or queued"
+                    )
+                for status in statuses:
+                    if status.worker_alive:
+                        worker_state.request_stop(
+                            slot_id=status.slot_id,
+                            generation=current_runtime.generation,
+                        )
+    except (OSError, ValueError, TerminalWorkerError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+
+    policy = TaskSafetyPolicy(
+        policy_id=_DEFAULT_TASK_POLICY_ID,
+        policy_version=1,
+        model=model,
+        sandbox=sandbox,
+        approval_policy="never",
+    )
+    recipe = TaskRecipe(
+        recipe_id=_DEFAULT_TASK_RECIPE_ID,
+        title="General research task",
+        project_required=True,
+        allowed_provider_ids=[
+            "field-manifest",
+            "obsidian",
+            "project-registry",
+            "tool-registry",
+            "zotero",
+        ],
+        allowed_target_ids=target_ids,
+        allowed_tool_ids=["codex"],
+        context_policy_id="selected-only",
+        safety_policy_id=policy.policy_id,
+        allowed_efforts=[TaskEffort.FAST, TaskEffort.STANDARD, TaskEffort.DEEP],
+    )
+    recipes = TaskRecipeRegistry(root / "task-recipes.json")
+    try:
+        existing = recipes.load() if recipes.path.is_file() else None
+        other_recipes = (
+            [row for row in existing.recipes if row.recipe_id != recipe.recipe_id]
+            if existing is not None
+            else []
+        )
+        other_policies = (
+            [row for row in existing.safety_policies if row.policy_id != policy.policy_id]
+            if existing is not None
+            else []
+        )
+        recipes.save(
+            TaskRecipeRegistryDocument(
+                recipes=[*other_recipes, recipe],
+                safety_policies=[*other_policies, policy],
+            )
+        )
+    except (TaskContractError, ValueError) as exc:
+        raise InputError(str(exc)) from None
+
+    generation = f"worker_{secrets.token_urlsafe(24)}"
+    try:
+        worker_state.save_runtime(
+            TerminalWorkerRuntimeConfig(
+                generation=generation,
+                codex_executable=resolved_executable,
+                recipe_registry_path=recipes.path.resolve(),
+                task_store_path=(root / "tasks.json").resolve(),
+                execution_target_registry_path=target_path.resolve(),
+                project_registry_path=(root / "projects.json").resolve(),
+                source_registry_path=(root / "sources.json").resolve(),
+            )
+        )
+    except (OSError, ValueError, TerminalWorkerError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+
+    tools = ToolRegistry(root / "tools.json")
+    try:
+        existing_tools = tools.load()
+        codex_tool = ToolDefinition(
+            tool_id="codex",
+            display_name="Codex",
+            source="host-registration",
+            tool_type="codex",
+            capabilities=["task.execute"],
+            recipe_ids=[recipe.recipe_id],
+            healthcheck="codex.exec",
+            enabled=True,
+        )
+        tools.save(
+            [row for row in existing_tools if row.tool_id != codex_tool.tool_id]
+            + [codex_tool]
+        )
+    except (OSError, ValueError) as exc:
+        raise SafetyRefusalError("Could not update the explicit Tool registry") from exc
+
+    click.echo(
+        json.dumps(
+            {
+                "configured": True,
+                "available": True,
+                "recipe_id": recipe.recipe_id,
+                "allowed_target_ids": recipe.allowed_target_ids,
+                "efforts": [effort.value for effort in recipe.allowed_efforts],
+                "restart_required": True,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
+@hub_codex.command(name="status")
+def hub_codex_status() -> None:
+    """Probe the private Codex registration without executing a task."""
+    from scholar_workflow.hub.tasks import CodexCapabilityProbe, TaskRecipeRegistry
+    from scholar_workflow.hub.terminal_worker import (
+        TerminalWorkerError,
+        TerminalWorkerState,
+    )
+
+    root = _hub_state_root() / "hub"
+    state = TerminalWorkerState(root / "task-worker")
+    try:
+        runtime = state.current_runtime()
+        capabilities = CodexCapabilityProbe(runtime.resolved_codex_executable()).probe()
+        recipes = TaskRecipeRegistry(runtime.recipe_registry_path).load()
+    except (
+        OSError,
+        KeyError,
+        TypeError,
+        json.JSONDecodeError,
+        ValueError,
+        TerminalWorkerError,
+    ) as exc:
+        raise DependencyError("Codex task runtime is not configured or is invalid") from exc
+    click.echo(
+        json.dumps(
+            {
+                "configured": True,
+                "available": capabilities.available,
+                "create": capabilities.create,
+                "resume": capabilities.resume,
+                "fork": capabilities.fork,
+                "recipes": [recipe.recipe_id for recipe in recipes.recipes],
+                "detail": capabilities.detail,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
+@hub_lifecycle.command(name="start")
+@click.option("--json", "as_json", is_flag=True)
+def hub_start(as_json: bool) -> None:
+    """Start or reuse the current managed Hub on a dynamic loopback port."""
+    from scholar_workflow.hub.cmux import CmuxControlError
+    from scholar_workflow.hub.lifecycle import HubLifecycleError, HubServiceManager
+
+    try:
+        record = HubServiceManager().start()
+    except HubLifecycleError as exc:
+        raise _lifecycle_failure(exc) from None
+    cmux_context = _optional_cmux_context()
+    if cmux_context is not None:
+        try:
+            _ensure_hub_router(record, cmux_context[0])
+        except CmuxControlError as exc:
+            raise DependencyError(f"Hub is readable, but cmux routing failed: {exc}") from None
+    if as_json:
+        click.echo(json.dumps(record.as_payload(), ensure_ascii=False, sort_keys=True))
+    else:
+        _echo_managed_record(record)
+
+
+@hub_lifecycle.command(name="status")
+@click.option("--json", "as_json", is_flag=True)
+def hub_status(as_json: bool) -> None:
+    """Show the real executable, build, PID, port, start time, and log path."""
+    from scholar_workflow.hub.lifecycle import HubLifecycleError, HubServiceManager
+
+    try:
+        status = HubServiceManager().status()
+    except HubLifecycleError as exc:
+        raise _lifecycle_failure(exc) from None
+    if as_json:
+        click.echo(json.dumps(status.as_payload(), ensure_ascii=False, sort_keys=True))
+        return
+    if status.record is not None:
+        _echo_managed_record(status.record)
+    click.echo(f"[{'ok' if status.running else 'off'}] {status.detail}")
+
+
+@hub_lifecycle.command(name="stop")
+def hub_stop() -> None:
+    """Stop only a health-proven managed Hub; already stopped is success."""
+    from scholar_workflow.hub.cmux import CmuxControlError
+    from scholar_workflow.hub.cmux_router import stop_router
+    from scholar_workflow.hub.lifecycle import HubLifecycleError, HubServiceManager
+
+    manager = HubServiceManager()
+    try:
+        prior = manager.status()
+        stopped = manager.stop()
+    except HubLifecycleError as exc:
+        raise _lifecycle_failure(exc) from None
+    if prior.record is not None:
+        try:
+            stop_router(manager.record_path.parent, prior.record.service_generation)
+        except CmuxControlError as exc:
+            raise ExternalServiceError(
+                f"Managed Hub stopped, but cmux router cleanup failed: {exc}"
+            ) from None
+    click.echo("[ok] managed Hub stopped" if stopped else "[ok] managed Hub already stopped")
+
+
+@hub_lifecycle.command(name="restart")
+@click.option("--json", "as_json", is_flag=True)
+def hub_restart(as_json: bool) -> None:
+    """Safely replace a proven Hub; attach cmux routing when available."""
+    from scholar_workflow.hub.cmux import CmuxControlError
+    from scholar_workflow.hub.lifecycle import HubLifecycleError, HubServiceManager
+
+    cmux_context = _optional_cmux_context()
+    try:
+        record = HubServiceManager().restart()
+    except HubLifecycleError as exc:
+        raise _lifecycle_failure(exc) from None
+    if cmux_context is not None:
+        try:
+            _ensure_hub_router(record, cmux_context[0])
+        except CmuxControlError as exc:
+            raise DependencyError(f"Hub is readable, but cmux routing failed: {exc}") from None
+    if as_json:
+        click.echo(json.dumps(record.as_payload(), ensure_ascii=False, sort_keys=True))
+    else:
+        _echo_managed_record(record)
+
+
+@hub_lifecycle.command(name="doctor")
+@click.option("--json", "as_json", is_flag=True)
+def hub_managed_doctor(as_json: bool) -> None:
+    """Verify discovery permissions, installed build, and live process identity."""
+    import stat as _stat
+
+    from scholar_workflow.hub.lifecycle import (
+        HUB_PROTOCOL_VERSION,
+        HubLifecycleError,
+        HubServiceManager,
+        discovery_path,
+        installed_build_hash,
+    )
+
+    try:
+        status = HubServiceManager().status()
+    except HubLifecycleError as exc:
+        raise _lifecycle_failure(exc) from None
+    checks: list[dict[str, object]] = []
+    mode = None
+    try:
+        mode = _stat.S_IMODE(discovery_path().stat().st_mode)
+    except FileNotFoundError:
+        pass
+    checks.append(
+        {
+            "name": "discovery-mode",
+            "ok": mode == 0o600,
+            "detail": "0600" if mode == 0o600 else "missing or not 0600",
+        }
+    )
+    record = status.record
+    health = status.health or {}
+    health_service = health.get("service", {})
+    health_process = health.get("process", {})
+    health_protocol = health.get("protocol", {})
+    health_build = health.get("build", {})
+    checks.append(
+        {
+            "name": "managed-process",
+            "ok": status.running,
+            "detail": status.detail,
+        }
+    )
+    checks.append(
+        {
+            "name": "installed-build",
+            "ok": record is not None
+            and record.package_version == __version__
+            and record.build_hash == installed_build_hash(),
+            "detail": (
+                f"package={record.package_version} build={record.build_hash}"
+                if record is not None
+                else "no discovery record"
+            ),
+        }
+    )
+    checks.append(
+        {
+            "name": "health-identity",
+            "ok": status.running
+            and record is not None
+            and isinstance(health_service, dict)
+            and health_service.get("name") == "scholar-workflow-hub"
+            and health_service.get("version") == record.package_version
+            and isinstance(health_process, dict)
+            and health_process.get("pid") == record.pid
+            and health_process.get("executable") == record.executable,
+            "detail": (
+                f"service={health_service.get('name')} "
+                f"version={health_service.get('version')} "
+                f"pid={health_process.get('pid')}"
+                if isinstance(health_service, dict)
+                and isinstance(health_process, dict)
+                else "health identity unavailable"
+            ),
+        }
+    )
+    checks.append(
+        {
+            "name": "protocol",
+            "ok": record is not None
+            and record.protocol_version == HUB_PROTOCOL_VERSION
+            and isinstance(health_protocol, dict)
+            and health_protocol.get("version") == HUB_PROTOCOL_VERSION,
+            "detail": (
+                f"discovery={record.protocol_version} health="
+                f"{health_protocol.get('version')}"
+                if record is not None and isinstance(health_protocol, dict)
+                else "unavailable"
+            ),
+        }
+    )
+    build_version = health_build.get("version") if isinstance(health_build, dict) else None
+    checks.append(
+        {
+            "name": "health-build",
+            "ok": record is not None and build_version == record.package_version,
+            "detail": f"health build version={build_version}",
+        }
+    )
+    log_mode = None
+    if record is not None:
+        try:
+            log_mode = _stat.S_IMODE(Path(record.log_path).stat().st_mode)
+        except FileNotFoundError:
+            pass
+    checks.append(
+        {
+            "name": "private-log",
+            "ok": log_mode == 0o600,
+            "detail": "0600" if log_mode == 0o600 else "missing or not 0600",
+        }
+    )
+    report: dict[str, object] = {
+        "ok": all(bool(item["ok"]) for item in checks),
+        "checks": checks,
+        "status": status.as_payload(),
+    }
+    if as_json:
+        click.echo(json.dumps(report, ensure_ascii=False, sort_keys=True))
+    else:
+        for item in checks:
+            click.echo(
+                f"[{'ok' if item['ok'] else 'FAIL'}] "
+                f"{item['name']}: {item['detail']}"
+            )
+    if not report["ok"]:
+        raise SystemExit(3)
+
+
 @main.command(name="open-hub")
 @click.option(
     "--instance",
@@ -857,16 +2200,41 @@ def hub_doctor(port: int | None, as_json: bool) -> None:
     help="Optional URL-safe opaque id for this Hub browser instance.",
 )
 def open_hub(instance: str | None) -> None:
-    """Open the running research Hub in the current cmux workspace."""
+    """Start the managed Hub and open it, with cmux as an optional destination."""
     from scholar_workflow.hub.actions import CmuxUnavailable
+    from scholar_workflow.hub.cmux import CmuxControlError
+    from scholar_workflow.hub.lifecycle import HubLifecycleError, HubServiceManager
 
-    workspace_id, socket_path = _require_cmux_context()
-    cfg = _load_cfg()
-    port = cfg.link_service.port
+    manager = HubServiceManager()
+    cmux_context = _optional_cmux_context()
+    try:
+        record = manager.ensure_running()
+    except HubLifecycleError as exc:
+        raise _lifecycle_failure(exc) from None
     instance_id = instance or f"hub_{secrets.token_urlsafe(18)}"
-    url = f"http://127.0.0.1:{port}/hub/?{urlencode({'instance': instance_id})}"
 
-    _probe_hub_health(port)
+    if cmux_context is None:
+        port = record.port
+        url = f"http://127.0.0.1:{port}/hub/?{urlencode({'instance': instance_id})}"
+        if not webbrowser.open(url, new=2):
+            raise ExternalServiceError(
+                "The managed Hub is running, but the system browser did not open"
+            )
+        click.echo(
+            f"[ok] Hub opened at {url}; choose a cmux destination only for launch actions"
+        )
+        return
+
+    workspace_id, socket_path = cmux_context
+    port = record.port
+    try:
+        _ensure_hub_router(record, workspace_id)
+        registered = _register_default_destination(port, instance_id, workspace_id)
+    except CmuxControlError as exc:
+        raise DependencyError(f"Hub is readable, but cmux routing failed: {exc}") from None
+    if not registered:
+        raise ExternalServiceError("Managed Hub does not support cmux destinations")
+    url = f"http://127.0.0.1:{port}/hub/?{urlencode({'instance': instance_id})}"
     try:
         executable = _resolve_cmux_executable()
     except CmuxUnavailable as exc:
@@ -903,8 +2271,7 @@ def open_hub(instance: str | None) -> None:
             f"cmux could not open the Hub: "
             f"{detail or f'exit status {result.returncode}'}"
         )
-    _wait_for_hub_binding(port, instance_id)
-    click.echo("[ok] Hub opened and bound to the current cmux workspace")
+    click.echo("[ok] Hub opened; current cmux workspace is the default opening place")
 
 
 def _serve_hub_foreground(
@@ -913,34 +2280,42 @@ def _serve_hub_foreground(
     canary: bool = False,
     knowledge_provider_state_root: Path | None = None,
 ) -> None:
-    """Serve the Web Hub and legacy PDF URLs on the same loopback listener.
+    """Serve an explicit foreground Hub, normally on an ephemeral port.
 
-    Serves GET /open/paper/<attachment-key> as an inline PDF from the Zotero
-    storage folder and the human-facing Hub at /hub/. Explicit Hub editor saves
-    are confined to registered Vault artifacts; never reaches MCP."""
+    PDF content is resolved through Zotero's live Local API locator.  The
+    one-cycle legacy routes share this listener but are never stable identity.
+    """
     import threading as _t
 
+    from scholar_workflow.config import Config, ConfigNotFound, load_config
+    from scholar_workflow.hub.compatibility import compatibility_vault_root
     from scholar_workflow.hub.server import start_hub_server
 
-    cfg = _load_cfg()
-    selected_port = 0 if canary and port_override is None else port_override
-    if selected_port is None:
-        selected_port = cfg.link_service.port
+    try:
+        cfg = load_config()
+    except ConfigNotFound:
+        cfg = Config()
+    vault_root = compatibility_vault_root(cfg.research_vault_root)
+    selected_port = 0 if port_override is None else port_override
     server = start_hub_server(
         port=selected_port,
         storage_root=cfg.link_service.storage_root,
-        vault_root=cfg.research_vault_root,
+        vault_root=vault_root,
         knowledge_provider_state_root=knowledge_provider_state_root,
-        owner_mode="headless" if canary else _hub_owner_mode(),
-        require_workspace_binding=True,
+        owner_mode="headless",
+        require_workspace_binding=False,
     )
     host, port = server.server_address
     if canary:
+        from scholar_workflow.hub.lifecycle import probe_health
+
         try:
-            payload = _probe_v2_hub_health(port)
+            payload = probe_health(port)
+            if payload is None:
+                raise ExternalServiceError("Canary health endpoint is unavailable")
             if payload.get("owner_mode") != "headless":
                 raise ExternalServiceError(
-                    "Canary did not start in headless/read-only mode"
+                    "Canary did not start in headless mode"
                 )
         except Exception:
             server.shutdown()
@@ -949,7 +2324,7 @@ def _serve_hub_foreground(
     click.echo(
         f"research-hub on http://{host}:{port}/hub/  "
         f"(storage: {cfg.link_service.storage_root})  "
-        f"{'CANARY · HEADLESS · READ-ONLY  ' if canary else ''}Ctrl-C to stop"
+        f"{'CANARY · EPHEMERAL  ' if canary else ''}Ctrl-C to stop"
     )
     try:
         _t.Event().wait()
@@ -961,31 +2336,11 @@ def _serve_hub_foreground(
 @click.option("--load/--no-load", default=True,
               help="Load into launchd immediately (default: load).")
 def install_service(load: bool) -> None:
-    """Install a macOS LaunchAgent so the Hub auto-starts at login (KeepAlive).
-
-    Writes ~/Library/LaunchAgents/com.scholar-workflow.link-service.plist pointing at
-    this executable + the compatible `serve-links` entry point, then bootstraps it.
-    Idempotent: an existing agent is unloaded and replaced. macOS only."""
-    import subprocess
-    import sys
-
-    from scholar_workflow.workflows.service import LABEL, plist_path, render_plist
-
-    if sys.platform != "darwin":
-        raise InputError("install-service is macOS-only (launchd)")
-    executable = str(Path(sys.argv[0]).resolve())
-    log_dir = str(Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME)))
-    Path(log_dir).mkdir(parents=True, exist_ok=True)
-    home_env = os.environ.get("SCHOLAR_WORKFLOW_HOME")
-    dest = plist_path()
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(render_plist(executable, log_dir, home_env), encoding="utf-8")
-    if load:
-        subprocess.run(["launchctl", "unload", str(dest)],
-                       capture_output=True, check=False)
-        subprocess.run(["launchctl", "load", str(dest)], check=True)
-    click.echo(json.dumps({"label": LABEL, "plist": str(dest), "loaded": load},
-                          ensure_ascii=False))
+    """Retired LaunchAgent installer; Hub v3 owns its managed process directly."""
+    del load
+    raise DependencyError(
+        "The fixed-port LaunchAgent is retired; use `scholar-workflow hub start`."
+    )
 
 
 @main.command(name="env-init")
@@ -1147,12 +2502,18 @@ def analysis_audit_batches(state_db: Path | None) -> None:
 @click.option("--state-db", type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option("--stage-root", type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--commit-state-root", type=click.Path(file_okay=False, path_type=Path))
+@click.option(
+    "--provider-state-root",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    help="Legacy v1-v3 option; IR v4 resolves its provider from the registered Source.",
+)
 def analysis_commit_bundle(
     request_path: Path,
     vault_root: Path,
     state_db: Path | None,
     stage_root: Path | None,
     commit_state_root: Path | None,
+    provider_state_root: Path | None,
 ) -> None:
     """CAS-commit one validated staged Markdown/Canvas/sidecar bundle."""
     from pydantic import ValidationError
@@ -1171,6 +2532,7 @@ def analysis_commit_bundle(
         AnalysisState,
     )
     from scholar_workflow.analysis.rendering import AnalysisBundle
+    from scholar_workflow.hub.fields import KnowledgeSourceRegistry
 
     default_db, default_stage = _analysis_state_paths()
     state_home = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME)) / "analysis"
@@ -1184,6 +2546,10 @@ def analysis_commit_bundle(
     store = AnalysisBatchStore(state_db or default_db, readonly=True)
     try:
         item = store.get_item(request.batch_id, request.item_id)
+        staged_zotero_item_key = store.get_zotero_item_key(
+            request.batch_id,
+            request.item_id,
+        )
     finally:
         store.close()
     if item is None:
@@ -1192,6 +2558,13 @@ def analysis_commit_bundle(
         raise DependencyError("analysis bundle has not passed conformance")
     if item.state.value != request.source_state:
         raise IdentityConflictError("commit request source_state differs from batch state")
+    if (
+        request.document.schema_version == 4
+        and staged_zotero_item_key != request.zotero_item_key
+    ):
+        raise IdentityConflictError(
+            "commit request Zotero item key differs from staged batch Zotero item key"
+        )
     if item.stage_path is None:
         raise DependencyError("validated analysis bundle has no staging receipt")
 
@@ -1242,6 +2615,12 @@ def analysis_commit_bundle(
             request=request,
             bundle=bundle,
             baseline=baseline,
+            provider_state_root=provider_state_root,
+            source_registry=(
+                KnowledgeSourceRegistry(_hub_state_root() / "hub" / "sources.json")
+                if request.document.schema_version == 4
+                else None
+            ),
         )
     except AnalysisCommitPartialError as exc:
         raise PartialCompletionError(str(exc)) from None

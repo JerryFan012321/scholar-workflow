@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Callable
 
 from scholar_workflow.adapters.zotero_local import ZoteroLocalAdapter, ZoteroLocalError
 
@@ -42,10 +42,10 @@ def probe_zotero_local() -> dict:
 def run_doctor(config, *, zotero_probe: Callable[[], dict] | None = None) -> dict:
     """Check required local paths and report Local API availability as advisory."""
     checks: list[Check] = []
-    for name, root in (
-        ("paper_inbox", config.paper_inbox),
-        ("research_vault_root", config.research_vault_root),
-    ):
+    roots: list[tuple[str, object]] = [("paper_inbox", config.paper_inbox)]
+    if config.research_vault_root is not None:
+        roots.append(("research_vault_root", config.research_vault_root))
+    for name, root in roots:
         path = Path(root)
         checks.append(Check(name, path.is_dir(), str(path)))
 

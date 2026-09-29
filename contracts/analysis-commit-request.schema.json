@@ -30,6 +30,7 @@
     "document": {"$ref": "analysis-ir.schema.json"},
     "paths": {
       "type": "object",
+      "description": "For analysis IR v4, runtime validation requires all three paths to share one Field-local resources/papers/<paper-segment>/ folder; earlier IR versions retain their existing paths.",
       "additionalProperties": false,
       "required": ["markdown", "canvas", "sidecar"],
       "properties": {
@@ -51,8 +52,21 @@
       "type": ["string", "null"],
       "pattern": "^sha256:[0-9a-f]{64}$"
     },
+    "base_snapshot_revision": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "Required by runtime for IR v4 to pin the full provider manifest and catalog."
+    },
+    "zotero_item_key": {
+      "type": ["string", "null"],
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+      "description": "Required by runtime for IR v4 and matched to the staged batch and provider paper."
+    },
     "relations": {
       "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Must include resource_id --has-analysis--> document.artifact_id; runtime enforces the cross-field binding.",
       "items": {"$ref": "knowledge-change-set.schema.json#/$defs/relation"}
     },
     "projections": {

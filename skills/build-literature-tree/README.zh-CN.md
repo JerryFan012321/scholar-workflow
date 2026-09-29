@@ -17,8 +17,11 @@
 一个主题的全部内容放在一个以主题命名的文件夹里。索引文件用图书馆编码前缀：`01-Paperlist.md`
 是固定的扁平全集账本，每棵树/视图是带编号的笔记(`02-…文献树.md`、`03-…`)。一棵树渲染为
 一个自包含笔记 —— 内联 Mermaid 概览，然后是嵌套的概念小节(任务/挑战为 `##`、pipeline/insight
-为 `###`、module 为 `####`)，各自带 novelty 锚点、可选的内容简介、以及论文列表(subpaperlist)。每篇论文另有一个 `paper_assets/`
-下的相关资料笔记，其 `# 相关文献树` 小节反向链接回它在树中的位置。渲染幂等 —— 受管标记之外
+为 `###`、module 为 `####`)，各自带 novelty 锚点、可选的内容简介、以及论文列表(subpaperlist)。
+新论文的相关资料笔记位于 `resources/papers/<稳定论文目录段>/论文信息.md`，其 `# 相关文献树`
+小节反向链接回它在树中的位置；分析 Markdown、Canvas、sidecar 与其他 Scholar 附属笔记同处该
+论文文件夹，原 PDF 仍由 Zotero 保存。目录段与稳定论文身份的映射由清单保存，不从标题临时推断。
+现有 `paper_assets/*.md` 保持原路径，未经审议不自动迁移。渲染幂等 —— 受管标记之外
 的内容原样保留。规范化文档符合 `contracts/literature-tree.schema.json`。
 
 完整流程与约束见 [SKILL.md](./SKILL.md)。

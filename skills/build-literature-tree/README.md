@@ -23,8 +23,13 @@ numbered note (`02-…文献树.md`, `03-…`). One tree renders as a single sel
 an inline Mermaid overview, then nested concept sections (task/challenge at `##`,
 pipeline/insight at `###`, module at `####`) each with its novelty anchor, an optional
 内容简介, and a 论文列表 subpaperlist. Each paper also gets a
-companion note under `paper_assets/` whose `# 相关文献树` section links back to its place in
-the tree. Rendering is idempotent — content outside the managed markers is preserved. The
-normalized document conforms to `contracts/literature-tree.schema.json`.
+companion note under `resources/papers/<stable-paper-segment>/论文信息.md` whose
+`# 相关文献树` section links back to its place in the tree. Its analysis, Canvas, sidecar,
+and other Scholar-owned notes share that folder; the PDF stays in Zotero. The folder
+segment is recorded against the stable paper identity rather than inferred from the
+filename. Existing `paper_assets/*.md` notes remain at their declared paths until an
+explicit reviewed migration. Rendering is idempotent — content outside the managed
+markers is preserved. The normalized document conforms to
+`contracts/literature-tree.schema.json`.
 
 See [SKILL.md](./SKILL.md) for the full procedure and constraints.

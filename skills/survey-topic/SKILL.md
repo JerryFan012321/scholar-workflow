@@ -17,16 +17,16 @@ Thin router for broad research requests. It creates no persistent artifact.
 | close reading of selected papers | `ingest-resource` → `analyze-paper` |
 | author/lab tracking | `recommend-papers` watchlist |
 
-## Steps
+## Observable result and routing boundary
 
-1. Confirm only the missing inputs that change the route: topic boundary, time window,
-   desired artifact, and whether the user wants breadth or close reading. If the request
-   already names an artifact or action, route directly without another scoping round.
-2. When an ambiguous topic cannot be scoped from the request, a read-only, throwaway web
-   reconnaissance is allowed. It must not download, ingest, or write files.
-3. Dispatch only the owning skill or skills required by the confirmed artifact. Order them
-   only where one product is an input to another.
-4. Report each delegated product and its location. This skill writes nothing itself.
+- The resolved request states its topic boundary, time window, desired artifact, and
+  breadth or close-reading scope insofar as these change the route. Ask only for missing
+  route-changing inputs; an explicitly named artifact or action routes directly.
+- Return the selected owning skill(s) and the location/status of each resulting product.
+  This router creates no persistent file and does not perform the delegated skill's work.
+- If the route truly depends on unfamiliar topic context, a throwaway web reconnaissance
+  may inform the choice; it remains read-only and produces no library or Vault content.
+- Sequence delegated skills only when one product is a required input to another.
 
 ## Constraints
 
@@ -38,6 +38,7 @@ Thin router for broad research requests. It creates no persistent artifact.
 
 ## References
 
+The visible routing result follows `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`.
 Load only when a delegated step reaches acquisition or a write.
 
 - `${CLAUDE_PLUGIN_ROOT}/references/source-policy.md`

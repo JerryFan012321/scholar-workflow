@@ -30,6 +30,7 @@
         "recipe_id",
         "title",
         "project_id",
+        "target_id",
         "effort",
         "configuration_fingerprint",
         "approved_summary",
@@ -44,6 +45,9 @@
         "recipe_id": {"$ref": "#/$defs/portable_id"},
         "title": {"type": "string", "minLength": 1, "maxLength": 200},
         "project_id": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/portable_id"}]
+        },
+        "target_id": {
           "oneOf": [{"type": "null"}, {"$ref": "#/$defs/portable_id"}]
         },
         "effort": {"enum": ["fast", "standard", "deep"]},

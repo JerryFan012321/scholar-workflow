@@ -1,11 +1,13 @@
 """Public models for versioned paper-analysis artifacts and batches."""
 from __future__ import annotations
 
+import re
 from enum import StrEnum
 from pathlib import PurePosixPath
-from typing import Literal
+from typing import Annotated, Literal
+from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from scholar_workflow.models import ResourceKind
 
@@ -16,9 +18,72 @@ class AnalysisRole(StrEnum):
     WORKFLOW = "workflow"
     OUTPUT = "output"
     BOUNDARY = "boundary"
+    ABSTRACT = "abstract"
+    INTRODUCTION = "introduction"
+    METHOD = "method"
+    LIMITATION = "limitation"
 
 
-ALL_ROLES = tuple(AnalysisRole)
+ALL_ROLES = (
+    AnalysisRole.TASK,
+    AnalysisRole.INPUT,
+    AnalysisRole.WORKFLOW,
+    AnalysisRole.OUTPUT,
+    AnalysisRole.BOUNDARY,
+)
+TREE_ROLES = (
+    AnalysisRole.ABSTRACT,
+    AnalysisRole.INTRODUCTION,
+    AnalysisRole.METHOD,
+    AnalysisRole.LIMITATION,
+)
+
+_OUTLINE_SLUG = r"[a-z0-9]+(?:-[a-z0-9]+)*"
+_REFERENCE_TREE_PATHS = (
+    (re.compile(r"^abstract/task$"), frozenset()),
+    (re.compile(rf"^abstract/previous_methods/{_OUTLINE_SLUG}$"), None),
+    (re.compile(r"^abstract/insight$"), frozenset({"motivation", "advantage"})),
+    (re.compile(rf"^abstract/contributions/{_OUTLINE_SLUG}$"), frozenset({"summary", "advantage"})),
+    (re.compile(r"^abstract/experiment$"), frozenset()),
+    (
+        re.compile(rf"^abstract/experiment/{_OUTLINE_SLUG}$"),
+        frozenset(f"finding-{index}" for index in range(1, 5)),
+    ),
+    (re.compile(r"^introduction/task_application$"), frozenset()),
+    (
+        re.compile(rf"^introduction/previous_methods/{_OUTLINE_SLUG}$"),
+        frozenset({"previous-method", "limitation", "technical-reason"}),
+    ),
+    (re.compile(r"^introduction/our_pipeline/insight$"), frozenset()),
+    (
+        re.compile(rf"^introduction/our_pipeline/contributions/{_OUTLINE_SLUG}$"),
+        frozenset({"purpose", "how", "advantage"}),
+    ),
+    (re.compile(r"^method/overview$"), frozenset()),
+    (
+        re.compile(rf"^method/modules/{_OUTLINE_SLUG}$"),
+        frozenset({"motivation", "method", "why-it-works", "technical-advantage"}),
+    ),
+    (re.compile(r"^limitation/explanation$"), frozenset()),
+    (
+        re.compile(rf"^limitation/explanation/{_OUTLINE_SLUG}$"),
+        frozenset(f"reason-{index}" for index in range(1, 5)),
+    ),
+)
+
+
+def reference_tree_point_slots(path: str) -> frozenset[str] | None:
+    """Return allowed point IDs for a known tree path, or None for unknown paths.
+
+    The reference image has three numbered previous-method challenges. Keep
+    that bounded so a single editable detail card cannot become a tall scroll.
+    """
+    for pattern, slots in _REFERENCE_TREE_PATHS:
+        if pattern.fullmatch(path):
+            return slots if slots is not None else frozenset(
+                f"challenge-{index}" for index in range(1, 4)
+            )
+    return None
 
 
 class ProfileKind(StrEnum):
@@ -42,12 +107,60 @@ class AnalysisState(StrEnum):
     FAILED = "failed"
 
 
+class ZoteroPdfSpan(BaseModel):
+    """Stable attachment identity and one verifiable PDF page or annotation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["zotero_pdf"] = "zotero_pdf"
+    library_type: Literal["personal", "group"]
+    library_id: str = Field(pattern=r"^[0-9]+$")
+    attachment_key: str = Field(pattern=r"^[A-Z0-9]{8}$")
+    content_hash: str = Field(pattern=r"^(?:md5:[0-9a-f]{32}|sha256:[0-9a-f]{64})$")
+    page_index: int = Field(ge=0)
+    page_label: str | None = Field(default=None, min_length=1, max_length=64)
+    annotation_key: str | None = Field(default=None, pattern=r"^[A-Z0-9]{8}$")
+    section: str | None = Field(default=None, min_length=1, max_length=160)
+    quote: str | None = Field(default=None, min_length=1, max_length=400)
+
+
+class VaultMarkdownSpan(BaseModel):
+    """Portable note identity plus one explicit Obsidian block locator."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["vault_markdown"] = "vault_markdown"
+    source_id: UUID
+    artifact_id: str = Field(min_length=1, max_length=240, pattern=r"^[^\s]+$")
+    vault_path: str = Field(min_length=4, max_length=512)
+    block_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9-]{0,127}$")
+
+    @field_validator("vault_path")
+    @classmethod
+    def validate_vault_path(cls, value: str) -> str:
+        path = PurePosixPath(value)
+        if (
+            path.is_absolute()
+            or not value.endswith(".md")
+            or any(part in {"", ".", ".."} for part in value.split("/"))
+            or any(char in value for char in "\\#|[]\r\n")
+        ):
+            raise ValueError("vault_path must be a safe relative Markdown path")
+        return value
+
+
+SourceSpan = Annotated[ZoteroPdfSpan | VaultMarkdownSpan, Field(discriminator="kind")]
+
+
 class Evidence(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     kind: EvidenceKind
     anchor: str | None = Field(default=None, min_length=1, max_length=512)
     detail: str | None = Field(default=None, min_length=1, max_length=2048)
+    source_spans: list[SourceSpan] = Field(
+        default_factory=list, max_length=8, exclude_if=lambda value: not value
+    )
 
     @model_validator(mode="after")
     def validate_support(self) -> Evidence:
@@ -67,17 +180,73 @@ class AnalysisProfile(BaseModel):
 
     kind: ProfileKind
     roles: list[AnalysisRole] = Field(default_factory=list)
+    framework: Literal["legacy", "reference_tree"] = "legacy"
 
     @model_validator(mode="after")
     def validate_roles(self) -> AnalysisProfile:
         if len(self.roles) != len(set(self.roles)):
             raise ValueError("profile roles must be unique")
+        allowed_roles = TREE_ROLES if self.framework == "reference_tree" else ALL_ROLES
         if self.kind is ProfileKind.WHOLE:
-            if self.roles and set(self.roles) != set(ALL_ROLES):
-                raise ValueError("whole profile must declare all five roles or omit roles")
-            self.roles = list(ALL_ROLES)
+            if self.roles and set(self.roles) != set(allowed_roles):
+                raise ValueError("whole profile must declare all framework roles or omit roles")
+            self.roles = list(allowed_roles)
         elif not self.roles:
             raise ValueError("focused profile must declare at least one role")
+        elif not set(self.roles).issubset(allowed_roles):
+            raise ValueError("focused profile roles must belong to its framework")
+        return self
+
+
+class AnalysisReader(BaseModel):
+    """A display route, not source identity. Vault IDs are local to one host.
+
+    A persisted ZotFlow projection must be re-rendered after moving hosts, once
+    the destination host has resolved the registered Vault's own ID.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["zotero_native", "zotflow_library"]
+    vault_name: str | None = Field(default=None, min_length=1, max_length=100)
+    vault_id: str | None = Field(default=None, pattern=r"^[0-9a-f]{16}$")
+
+    @model_validator(mode="after")
+    def validate_reader(self) -> AnalysisReader:
+        if self.kind == "zotflow_library":
+            if self.vault_name is None and self.vault_id is None:
+                raise ValueError("zotflow_library requires a vault_id or legacy vault_name")
+            if self.vault_name is not None and self.vault_id is not None:
+                raise ValueError("zotflow_library must choose one Vault target")
+            if self.vault_name is not None and (
+                self.vault_name.strip() != self.vault_name
+                or any(char in self.vault_name for char in "/\\\r\n\x00")
+                or self.vault_name in {".", ".."}
+            ):
+                raise ValueError("zotflow_library requires a safe explicit vault_name")
+        elif self.vault_name is not None or self.vault_id is not None:
+            raise ValueError("zotero_native must not specify a Vault target")
+        return self
+
+
+class AnalysisPoint(BaseModel):
+    """One evidence-bearing statement inside a Canvas-sized analysis claim."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    point_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{0,63}$")
+    text: str = Field(min_length=1, max_length=5_000)
+    canvas_summary: str | None = Field(default=None, min_length=1, max_length=180)
+    evidence: Evidence
+
+    @model_validator(mode="after")
+    def validate_readable_projection(self) -> AnalysisPoint:
+        if not self.text.strip() or "\n" in self.text or "\r" in self.text:
+            raise ValueError("point text must be a nonblank single paragraph")
+        if self.canvas_summary is not None and not self.canvas_summary.strip():
+            raise ValueError("point canvas_summary cannot be blank")
+        if len(self.text) > 180 and self.canvas_summary is None:
+            raise ValueError("point canvas_summary is required when text exceeds 180 characters")
         return self
 
 
@@ -88,11 +257,19 @@ class AnalysisClaim(BaseModel):
     role: AnalysisRole
     title: str = Field(min_length=1, max_length=200)
     body: str = Field(min_length=1, max_length=20_000)
+    canvas_summary: str | None = Field(default=None, min_length=1, max_length=400)
     evidence: Evidence
+    points: list[AnalysisPoint] = Field(default_factory=list, max_length=64, exclude_if=lambda value: not value)
     order: int | None = Field(default=None, ge=1)
+    outline_path: str | None = Field(default=None, min_length=1, max_length=160)
 
     @model_validator(mode="after")
     def validate_workflow_order(self) -> AnalysisClaim:
+        if self.canvas_summary is not None and not self.canvas_summary.strip():
+            raise ValueError("canvas_summary cannot be blank")
+        point_ids = [point.point_id for point in self.points]
+        if len(point_ids) != len(set(point_ids)):
+            raise ValueError("point_id values must be unique within a claim")
         if self.role is AnalysisRole.WORKFLOW and self.order is None:
             raise ValueError("workflow claims require an order")
         if self.role is not AnalysisRole.WORKFLOW and self.order is not None:
@@ -113,23 +290,106 @@ class AnalysisClaim(BaseModel):
 class AnalysisDocument(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[1] = 1
+    schema_version: Literal[1, 2, 3, 4]
     artifact_id: str = Field(pattern=r"^analysis:[^\s]+$")
     paper_title: str = Field(min_length=1, max_length=1000)
+    language: Literal["en", "zh"] | None = None
     profile: AnalysisProfile
+    reader: AnalysisReader | None = None
     claims: list[AnalysisClaim] = Field(min_length=1)
 
     @model_validator(mode="after")
     def validate_projection(self) -> AnalysisDocument:
+        is_reference_tree = self.schema_version == 4
+        if is_reference_tree != (self.profile.framework == "reference_tree"):
+            raise ValueError("IR v4 requires reference_tree framework; v1-v3 require legacy")
+        if is_reference_tree and self.language is None:
+            raise ValueError("IR v4 requires an explicit analysis language")
+        if not is_reference_tree and self.reader is not None:
+            raise ValueError("reader projection is available only in IR v4")
+        if not is_reference_tree and self.language is None:
+            self.language = "zh"
+        if self.schema_version == 1 and any(claim.points for claim in self.claims):
+            raise ValueError("evidence points require analysis IR schema_version 2")
+        if self.schema_version >= 3:
+            all_evidence = [
+                evidence
+                for claim in self.claims
+                for evidence in (claim.evidence, *(point.evidence for point in claim.points))
+            ]
+            if any(
+                evidence.kind in {EvidenceKind.AUTHOR_STATED, EvidenceKind.ANALYSIS_INFERENCE}
+                and not evidence.source_spans
+                for evidence in all_evidence
+            ):
+                raise ValueError("IR v3 author claims and inferences require a source span")
         claim_ids = [claim.claim_id for claim in self.claims]
         if len(claim_ids) != len(set(claim_ids)):
             raise ValueError("claim_id values must be unique")
 
+        outline_paths: list[str] = []
+        for claim in self.claims:
+            if not is_reference_tree:
+                if claim.outline_path is not None:
+                    raise ValueError("legacy claims cannot carry outline_path")
+                continue
+            path = claim.outline_path
+            if path is None or not path.startswith(f"{claim.role.value}/"):
+                raise ValueError("IR v4 outline_path must start with its claim role")
+            if any(char in claim.title for char in "\r\n"):
+                raise ValueError("IR v4 claim title must be a single line")
+            if re.search(r"(?m)^#{1,6}\s", claim.body) or "sw-analysis-claim" in claim.body:
+                raise ValueError("IR v4 claim body cannot inject framework headings or markers")
+            if len(claim.title) > 120:
+                raise ValueError("IR v4 Canvas claim title must not exceed 120 characters")
+            if len(claim.body) > 180 and claim.canvas_summary is None:
+                raise ValueError(
+                    "IR v4 claim canvas_summary is required when body exceeds 180 characters"
+                )
+            if claim.canvas_summary is not None and len(claim.canvas_summary) > 180:
+                raise ValueError("IR v4 claim canvas_summary must not exceed 180 characters")
+            if claim.canvas_summary is not None and any(
+                char in claim.canvas_summary for char in "\r\n"
+            ):
+                raise ValueError("IR v4 claim canvas_summary must be a single line")
+            if any(
+                point.canvas_summary is not None
+                and any(char in point.canvas_summary for char in "\r\n")
+                for point in claim.points
+            ):
+                raise ValueError("IR v4 point canvas_summary must be a single line")
+            for evidence in (claim.evidence, *(point.evidence for point in claim.points)):
+                if len(evidence.anchor or "") > 160 or len(evidence.detail or "") > 180:
+                    raise ValueError("IR v4 evidence anchor/detail must be Canvas-sized")
+                if any(
+                    char in ((evidence.anchor or "") + (evidence.detail or ""))
+                    for char in "\r\n"
+                ):
+                    raise ValueError("IR v4 evidence labels must be single-line")
+                if len(evidence.source_spans) > 3:
+                    raise ValueError("IR v4 evidence has too many inline source spans")
+            slots = reference_tree_point_slots(path)
+            if slots is None:
+                raise ValueError(f"IR v4 outline_path is outside the reference tree: {path}")
+            unexpected_points = {point.point_id for point in claim.points} - slots
+            if unexpected_points:
+                raise ValueError(
+                    f"IR v4 point_id is outside the outline_path template: {path}"
+                )
+            outline_paths.append(path)
+        if len(outline_paths) != len(set(outline_paths)):
+            raise ValueError("IR v4 outline_path values must be unique")
+
         covered = {claim.role for claim in self.claims}
         expected = set(self.profile.roles)
-        if self.profile.kind is ProfileKind.WHOLE and covered != set(ALL_ROLES):
-            missing = sorted(role.value for role in set(ALL_ROLES) - covered)
-            raise ValueError(f"whole profile must cover all five roles; missing: {missing}")
+        required_roles = TREE_ROLES if is_reference_tree else ALL_ROLES
+        if (
+            self.profile.kind is ProfileKind.WHOLE
+            and not is_reference_tree
+            and covered != set(required_roles)
+        ):
+            missing = sorted(role.value for role in set(required_roles) - covered)
+            raise ValueError(f"whole profile must cover all framework roles; missing: {missing}")
         if self.profile.kind is ProfileKind.FOCUSED:
             outside = covered - expected
             missing = expected - covered
@@ -146,10 +406,14 @@ class AnalysisDocument(BaseModel):
         if workflow_orders and workflow_orders != list(range(1, len(workflow_orders) + 1)):
             raise ValueError("workflow order must be unique and contiguous from 1")
 
-        generated_semantic_nodes = 1 + len(covered) + len(self.claims)
+        generated_semantic_nodes = (
+            len(self.claims) + sum(bool(claim.points) for claim in self.claims)
+            if is_reference_tree
+            else 1 + len(covered) + len(self.claims)
+        )
         if generated_semantic_nodes > 40:
             raise ValueError(
-                "analysis projection exceeds 40 semantic Canvas nodes "
+                "analysis projection exceeds 40 generated semantic Canvas nodes "
                 "(limit: 40 generated semantic Canvas nodes)"
             )
         return self
@@ -192,8 +456,11 @@ class AnalysisBaseline(BaseModel):
             raise ValueError("baseline generated_node_ids must be unique")
         if len(self.generated_edge_ids) != len(set(self.generated_edge_ids)):
             raise ValueError("baseline generated_edge_ids must be unique")
-        if len(self.generated_node_ids) > 40:
-            raise ValueError("baseline cannot own more than 40 generated semantic nodes")
+        max_generated_nodes = 96 if self.document.schema_version == 4 else 40
+        if len(self.generated_node_ids) > max_generated_nodes:
+            raise ValueError(
+                f"baseline cannot own more than {max_generated_nodes} generated nodes"
+            )
         claim_node_ids = {claim.canvas_node_id for claim in self.claims.values()}
         if not claim_node_ids.issubset(set(self.generated_node_ids)):
             raise ValueError("baseline claim nodes must belong to the generated Canvas subgraph")
@@ -228,7 +495,7 @@ class AnalysisBatchItem(BaseModel):
 
     @model_validator(mode="after")
     def validate_note_stem(self) -> AnalysisBatchItem:
-        if any(token in self.note_stem for token in ("/", "\\", "#", "^", "[", "]")):
+        if any(token in self.note_stem for token in ("/", "\\", "#", "^", "[", "]", "|", "\r", "\n")):
             raise ValueError("note_stem must be a plain filename stem")
         return self
 
@@ -533,6 +800,14 @@ class AnalysisCommitRequest(BaseModel):
         default=None,
         pattern=r"^sha256:[0-9a-f]{64}$",
     )
+    base_snapshot_revision: str | None = Field(
+        default=None,
+        pattern=r"^sha256:[0-9a-f]{64}$",
+    )
+    zotero_item_key: str | None = Field(
+        default=None,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+    )
     relations: list[KnowledgeRelation] = Field(default_factory=list)
     projections: list[KnowledgeProjection] = Field(default_factory=list)
 
@@ -540,6 +815,17 @@ class AnalysisCommitRequest(BaseModel):
     def validate_commit_contract(self) -> AnalysisCommitRequest:
         if any(token in self.note_stem for token in ("/", "\\", "#", "^", "[", "]")):
             raise ValueError("note_stem must be a plain filename stem")
+        if self.document.schema_version == 4:
+            parents = {
+                PurePosixPath(path).parent for path in self.paths.as_list()
+            }
+            if len(parents) != 1:
+                raise ValueError("IR v4 analysis files must share one paper folder")
+            parent = next(iter(parents))
+            if len(parent.parts) < 4 or parent.parts[-3:-1] != ("resources", "papers"):
+                raise ValueError(
+                    "IR v4 canonical paths require a Field resources/papers/<paper> folder"
+                )
         expected_paths = set(self.paths.as_list())
         if set(self.base_revisions) != expected_paths:
             raise ValueError("base_revisions must exactly cover all canonical paths")
@@ -550,6 +836,17 @@ class AnalysisCommitRequest(BaseModel):
             {(item.from_id, item.relation, item.to_id) for item in self.relations}
         ):
             raise ValueError("duplicate explicit knowledge relation")
+        owner_relation = (
+            self.resource_id,
+            "has-analysis",
+            self.document.artifact_id,
+        )
+        if owner_relation not in {
+            (item.from_id, item.relation, item.to_id) for item in self.relations
+        }:
+            raise ValueError(
+                "commit request requires its resource has-analysis ownership relation"
+            )
         if len(self.projections) != len(
             {(item.projection_id, item.kind, item.target_id) for item in self.projections}
         ):
@@ -660,6 +957,19 @@ class AnalysisCommitReceipt(BaseModel):
                 or artifact.sha256 != record.after_sha256
             ):
                 raise ValueError("change set artifacts must match committed file revisions")
+        resource_ids = {artifact.resource_id for artifact in artifacts}
+        if len(resource_ids) != 1:
+            raise ValueError("commit receipt artifacts must have one resource owner")
+        resource_id = next(iter(resource_ids))
+        if not any(
+            relation.from_id == resource_id
+            and relation.relation == "has-analysis"
+            and relation.to_id == self.artifact_id
+            for relation in self.change_set.upsert_relations
+        ):
+            raise ValueError(
+                "commit receipt requires its resource has-analysis ownership relation"
+            )
         return self
 
 

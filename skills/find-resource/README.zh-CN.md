@@ -1,11 +1,12 @@
 # find-resource
 
-查找与定位学术资源,两种模式:
+查找与定位学术资源：
 
-- **发现** —— 规范化标识符(DOI / arXiv ID / 标题),检查本地库和 Zotero 是否已有,
-  并在获得明确授权时查询 Crossref / OpenAlex / Semantic Scholar。返回候选列表,
+- **发现** —— 规范化标识符(DOI / arXiv ID / 标题),检查 Zotero 是否已有,
+  并只读查询 Crossref / OpenAlex / Semantic Scholar 元数据。返回候选列表,
   含匹配依据和 arXiv PDF 可用性。
-- **定位** —— 把已有论文或文档解析为本地路径和本地链接服务 URL,不复制文件。
+- **定位** —— 返回已有论文的条目/附件身份和稳定阅读 URI，或已登记文档的 Vault
+  相对路径；不复制文件。
 
 全程只读。不从非 arXiv 来源下载 PDF,不写任何文件。
 

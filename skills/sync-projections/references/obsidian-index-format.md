@@ -13,7 +13,7 @@ Human notes above stay untouched.
 <!-- scholar-workflow:start -->
 | Title | Authors | Year | Venue | Importance | Zotero | PDF | arXiv | Synced |
 |---|---|---:|---|---|---|---|---|---|
-| ... | A One; B Two | 2024 | CVPR | founding ★★★ | [open](zotero://select/items/@8USWVHLD) | [PDF](http://127.0.0.1:23128/open/paper/S6LZUS6S) | [2401.01234](https://arxiv.org/abs/2401.01234) | 2024-01-15 |
+| ... | A One; B Two | 2024 | CVPR | founding ★★★ | [open](zotero://select/items/@8USWVHLD) | [PDF](zotero://open-pdf/library/items/S6LZUS6S) | [2401.01234](https://arxiv.org/abs/2401.01234) | 2024-01-15 |
 <!-- scholar-workflow:end -->
 
 Human notes below stay untouched.
@@ -25,8 +25,8 @@ Title, Authors (`; `-joined), Year, Venue (keep it — with Year it lets a later
 up the BibTeX citation), Importance (three-tier text `founding` / `milestone` /
 `representative`, from the Zotero `prio:★★★/★★/★` tag; the renderer appends the star badge
 so the cell reads e.g. `founding ★★★`; empty when untagged), Zotero
-(`zotero://select/items/@<item-key>`), PDF (link-service URL
-`http://127.0.0.1:<port>/open/paper/<attachment-key>` — never a relative or absolute file
+(`zotero://select/items/@<item-key>`), PDF (stable
+`zotero://open-pdf/library/items/<attachment-key>` — never a Hub port URL or relative/absolute file
 path), arXiv (`[id](https://arxiv.org/abs/id)`), Synced (ISO date, taken from the
 input row, not `now()` — keeps re-projection idempotent).
 

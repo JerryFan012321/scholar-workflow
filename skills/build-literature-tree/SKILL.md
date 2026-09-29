@@ -19,13 +19,21 @@ description: Build an Obsidian literature tree and flat paper ledger for a resea
 
 ## Vault format
 
-Inside `<topic>/`:
+Inside a registered topic Field (`<Field>/`):
 
 - `01-Paperlist.md` — fixed flat metadata ledger;
 - `02-<topic>文献树.md`, `03-<topic>挑战洞见树.md`, ... — one numbered tree/view per
   note, in creation order;
-- `paper_assets/<year>-<first-author-surname>-<title>.md` — companion note per paper,
-  including `# 相关文献树` back-links to every tree section that contains it.
+- `resources/papers/<stable-paper-segment>/论文信息.md` — new companion note per paper,
+  including `# 相关文献树` back-links to every tree section that contains it. Keep its
+  analysis Markdown, editable Canvas, sidecar, and other Scholar-owned paper notes in
+  the same paper folder. The Zotero PDF remains in Zotero storage.
+
+The segment is a path-safe, collision-checked folder label allocated once and recorded
+with the paper's stable `resource_id` and companion-note path in the owning manifest;
+it is not the paper identity. Existing `paper_assets/*.md` paths remain valid on reads
+and updates. Do not move them or create a second companion note merely to apply the
+new layout.
 
 A tree note has no H1. It contains an inline Mermaid overview followed by concept
 sections: task/challenge `##`, pipeline/insight `###`, module `####`, with each
@@ -33,17 +41,14 @@ node's anchor, optional summary, and paper subset. The ledger and trees cross-li
 
 ## Steps
 
-1. Resolve the topic folder, tree view, paper set, time window, and requested resolution.
+1. Resolve the registered topic Field, tree view, paper set, time window, and requested resolution.
    Ask only for unspecified choices that materially change the output.
-2. Collect papers from a Zotero collection
+2. The declared corpus comes from a Zotero collection
    (`scholar-workflow zotero collection-items`), an existing paper index, or the user's
-   list. Zotero/authoritative sources supply metadata. For a large set, NotebookLM may
-   be used as a read substrate; otherwise use Zotero indexed full text. The resulting
-   concept placement and anchors go into the schema below.
-3. Assemble a document conforming to
-   `contracts/literature-tree.schema.json`. Keep unplaced papers in the ledger with
-   `classified: false`.
-4. Preview and render:
+   list. Metadata comes from Zotero or authoritative sources. The output conforms to
+   `contracts/literature-tree.schema.json`; papers without supported concept placement
+   remain in the ledger with `classified: false`.
+3. Preview and render:
    - ledger: pipe
      `{"root":"<topic>","paperlist_only":true,"doc":{...}}` to
      `scholar-workflow project-literature-tree`;
@@ -51,8 +56,11 @@ node's anchor, optional summary, and paper subset. The ledger and trees cross-li
      `{"root":"<topic>","filename":"02-<topic>文献树.md","doc":{...}}` to the same
      command, using `03-`, `04-`, ... for additional views.
    Use `--dry-run` before each write.
-5. Create/update the paper companion notes and their tree back-links without replacing
-   unrelated human content.
+4. For a new companion note, resolve or explicitly allocate its manifest-declared paper
+   folder before writing. If the mapping cannot be durably declared, preview the proposed
+   path and leave the paper note unwritten. Update existing companion notes at their
+   declared paths, including legacy `paper_assets/*.md`, and maintain tree back-links
+   without replacing unrelated human content.
 
 ## Constraints
 
@@ -65,8 +73,12 @@ node's anchor, optional summary, and paper subset. The ledger and trees cross-li
   rendered column.
 - Writes are limited to managed blocks and new companion-note content; never overwrite
   human-authored content outside managed blocks.
+- `asset_note` in the paper-list/tree payload is the declared companion-note path, not
+  a filename derived from title, author, or `resource_id`. A paper's repeated appearances
+  in one Field reuse that path; path collisions require explicit resolution, not overwrite.
 
 ## References
 
+- `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md`

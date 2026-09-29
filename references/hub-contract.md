@@ -1,221 +1,342 @@
-# Hub Control Plane v2 Contract
+# Hub v3 Runtime Contract
 
-`HubDirectory` schema 2 is the only Hub root. It is a rebuildable control-plane
-projection, not a knowledge database and not an authority for provider-owned
-relationships.
+`HubDirectory` schema 3 is the only Hub root. It is a rebuildable control-plane
+projection, not a knowledge database or an authority for provider-owned content.
 
 ```text
-Zotero / Vault manifests / project manifests / explicit tool registry / Codex
-                                  |
-                                  v
-                            HubDirectory
-                    aggregate, route, validate, project
+Zotero / Obsidian Field manifests / project manifests / explicit tool registry / Codex
+                                      |
+                                      v
+                              HubDirectory v3
+                         aggregate, route, validate
 ```
 
-`HubCatalog` schema 1 survives only as the `knowledge_catalog` member of
-`HubDirectory`. During migration, `GET /api/v1/catalog` is derived from that member;
-there is no second catalog root or independently mutable v1 state.
+Legacy v1/v2 responses are derived read-only views of this root. They never form a
+second state store. Legacy v1 artifact PUT, asset upload, and action POST are retired with
+`410 Gone`; writes and launches must use the corresponding v3 capability-checked routes.
 
-## Authority and identity
+## Information architecture
 
-- Zotero owns paper bibliography, PDFs, attachments, and formal annotations.
-- The Vault owns human-readable Markdown/Canvas and its checked artifact/asset
-  manifests. Those providers own their declared relationships.
-- A project's `project-layout.json` owns its stable UUIDv4 `project_id`. The host
-  registry maps that ID to one local root and capability set; it is a locator, not a
-  portable identity source.
-- The explicit `ToolDefinition` registry owns tool registrations. Hub never scans
-  `$PATH` for tools.
-- Codex owns transcript and thread identity. Hub task records may retain an explicit
-  thread ID and approved summary, never a copied transcript.
-- cmux owns transient workspace state. Hub keeps only process-local opaque workspace
-  handles and a hashed instance fingerprint.
-- Hub aggregates and renders relationships supplied by these authorities. It does not
-  become their relation owner.
+```text
+Libraries
+├── Papers
+└── Fields
+Projects
+Tools
+```
 
-Every cross-library reference has this shape:
+Libraries contain documents only. Projects and Tools are root-level collections, not
+libraries. Papers are provided by Zotero Local API. Fields are provided by explicitly
+registered Obsidian Sources and portable `.scholar-workflow/fields.yml` manifests.
+
+Public paper types are `Paper`, `Report`, `Book`, `Webpage`, and `Other`. Venue,
+conference, journal, and publication status are metadata, not types.
+
+Cross-provider references use:
 
 ```json
-{"library_id":"papers","item_type":"paper","item_id":"ABCD2345"}
+{"provider_id":"zotero:users:0","entity_type":"paper","entity_id":"ABCD2345"}
 ```
 
-`papers`, `projects`, and `tools` name the three Library providers. The reserved
-`knowledge` namespace identifies `knowledge_catalog` artifacts and Knowledge Contexts;
-it is not a fourth Library and never routes a Vault artifact through the Zotero provider.
+Loopback URLs, ports, absolute paths, and process-local action IDs are never entity
+identity.
 
-Loopback URLs, including `127.0.0.1:23128`, are presentation entry points and never
-object identity.
+## Papers and PDF identity
 
-## Canonical root and libraries
+The Papers provider performs paging, querying, sorting, filtering, and attachment
+resolution through Zotero Local API. It does not materialize the whole library first
+and does not guess `Zotero/storage/<key>/*.pdf`.
 
 ```text
-HubDirectory
-├── schema_version = 2
-├── libraries = [Papers, Projects, Tools]
-├── knowledge_catalog
-├── knowledge_contexts
-├── operations
-└── diagnostics
+PdfRef {
+  provider: "zotero",
+  library_id,
+  attachment_key,
+  content_hash
+}
 ```
 
-The three initial libraries are always present, including when empty or unavailable.
-Each descriptor reports authority, availability, count, and a human-readable detail.
+A paper card invokes pre-registered actions directly:
 
-- **Papers** pages the Zotero Local API with server-side `start`, `limit`, query,
-  bibliographic item-type, sort, and direction parameters. Production must not materialize
-  the full `HubCatalog` before paging. For only the parent rows in that page, it resolves
-  child PDF attachment keys and exposes their loopback PDF path. If a malformed or
-  non-bibliographic row is skipped, the cursor still advances by the number of provider rows
-  consumed, so paging cannot repeat or stall.
-- **Projects** reads only the explicit host registry. Resolving a project fails closed
-  unless its real root contains a regular, non-symlink `project-layout.json` with
-  schema 2 and the exact registry `project_id`.
-- **Tools** reads only explicit `ToolDefinition` rows. Health checks and recipe IDs are
-  registered identifiers, never browser-supplied commands.
+- Open the local PDF in Zotero (primary; revalidate the attachment at launch)
+- Annotate in ZotFlow (optional, only after local-storage mode is positively verified)
+- Read in cmux
+- Open in the system PDF reader
+- View analysis
+- Open annotation note
 
-Cursors are opaque and bind library, normalized query, filter, sorting, direction,
-and offset. Reusing a cursor with different query parameters is rejected.
+Normal UI never requires a paper, attachment, or document landing page. `/hub/item`
+and `/open/paper/<attachment-key>` survive for one release cycle as legacy resolvers;
+new UI and persisted documents must not produce those URLs.
 
-Paper cards link to a stable `/hub/item` landing keyed by the complete
-`TypedEntityRef`. The landing resolves the current Zotero parent and PDF attachment
-server-side. The paper landing links to a typed `papers:attachment:*` landing, and only
-that attachment landing resolves `/open/paper/<attachment-key>` as an implementation-level
-byte stream. Analysis Markdown/Canvas uses a `knowledge:artifact:*` landing and is never
-presented as an item owned by the Papers provider.
+## Knowledge Sources and Fields
 
-## Knowledge and project copies
+The host registry stores only stable Source/folder IDs and trusted local locators:
 
-Knowledge and projects never live-sync. A copy is an explicit content transfer and
-the result evolves independently.
+```text
+KnowledgeSourceRegistration {
+  source_id,
+  provider: "obsidian",
+  folder_id,
+  enabled,
+  capabilities
+}
+```
 
-Knowledge-to-project copies accept registered UTF-8 Markdown and JSON Canvas. Markdown
-loses `sw_*` frontmatter, analysis identity comments, managed-block markers, and
-generated claim block IDs while retaining readable prose. Canvas is parsed as a graph,
-has every node/edge identity regenerated, loses `sw_*` fields and generated claim
-markers/backlinks, and rejects file/link or unsupported node types rather than carrying
-managed relationships across the boundary. The service copies no sidecar, baseline,
-Zotero PDF, annotation, or unselected attachment, and creates no semantic provenance
-relation.
+A Source can be an entire Vault or an explicitly chosen subdirectory and may expose
+multiple Fields. Its portable manifest is:
 
-Project-to-knowledge promotion is a separate knowledge-ingest operation that creates a
-new Vault-native identity. It does not preserve a live backlink or synchronization
-contract.
+```yaml
+schema_version: 1
+source_id: <stable UUID>
+fields:
+  - field_id: <stable UUID>
+    title: World Models
+    relative_root: World Models
+    home: 00-Field-Home.md
+    navigation:
+      - label: Core surveys
+        items: []
+      - label: Papers and resources
+        items: []
+```
 
-## Project document operations
+The browser never submits an absolute path. A system folder picker returns a bounded-lifetime,
+process-local candidate token. If no manifest exists, Hub must perform a zero-write
+preview and show the proposed Fields, home documents, navigation, collisions, ignored
+files, template changes, unmapped prose, and link rewrites. Confirmation becomes stale
+if the candidate, root inode, or content revision changes.
+Each confirmation selects exactly one candidate Field; choosing an entire Vault never
+registers all candidates at once. Existing Sources and sibling Fields keep their IDs,
+and overlapping registered roots or Field ownership are rejected.
+If a portable manifest already exists on a new host, a separate registration-only
+preview explicitly shows every existing Field. Confirmation registers that Source in
+the host registry without rewriting the manifest, Field IDs, or document content.
 
-Hub accepts only `project_id` plus POSIX paths relative to the registered project's
-`docs/`. It rejects absolute paths, `..`, backslashes, symlinks in any traversed path,
-missing manifests, disabled/unregistered projects, implicit overwrite, and automatic
-rename. It never accepts a client absolute path and never performs `git add`, commit, or
-push.
+For a first registration containing legacy links or a managed legacy analysis pair,
+the browser's compatibility confirmation must not split registration from migration.
+The trusted local operator instead reviews one `hub field-transaction plan`: its digest
+covers the portable manifest, host registry, managed Markdown/Canvas/sidecar changes,
+and link rewrites. A legacy analysis candidate must pass separate old-field/node/edge
+conservation and new bundle conformance before it can join the same Field plan. Its
+candidate is reviewed and staged through the local operator CLI, not the browser. A
+proposed navigation change cannot silently omit any previewed managed document.
+Commit requires the exact plan digest, a manually arranged external-writer pause,
+per-file CAS, an unverified recovery snapshot, and a private per-Field journal.
+An interrupted commit blocks new plans/applies until explicit recovery. The
+`hub field-transaction recover SOURCE_ID FIELD_ID --confirm-recovery --external-writers-paused`
+command requires the operator's external-writer pause assertion and conditionally restores
+journal-owned files; external edits or damaged recovery data fail closed. Multi-file replacement is
+not instantaneously atomic to external Vault readers. The local operator credential
+and interactive CLI confirmation assume processes running as that OS user are trusted;
+they do not cryptographically prove an independent human approval.
 
-Copy, paste, and trash inspect relevant Git paths. A tracked, modified,
-tracked-deleted, or unknown source/destination requires explicit confirmation for that
-operation. Paste accepts bounded UTF-8 text into a new relative path only; it does not
-overwrite or accept a client absolute path.
+The older `hub field-migration` command is link-only compatibility for an already
+registered Field. It cannot normalize an analysis pair or initialize a Field in one
+transaction. Managed analysis Markdown/Canvas/sidecar cannot be changed through a
+single-file Hub editor; use the paired Knowledge update workflow.
 
-Delete means recoverable trash only:
+`home`, `resource`, and `support` are ownership/template roles, not public filters.
+Navigation labels and order belong to each Field. The legacy `research_vault_root` is
+only a migration candidate, not a required singleton knowledge root.
+
+## Destination, Target, and Action
+
+These types are independent:
+
+```text
+CmuxDestination {
+  destination_id,
+  cmux_instance_fingerprint,
+  workspace_id,
+  display_name,
+  expires_at
+}
+
+ExecutionTarget {
+  target_id,
+  kind: "project" | "vault" | "folder",
+  registered_root_id,
+  capabilities
+}
+
+OpenAction {
+  action_id,
+  kind: "web" | "pdf" | "file" | "native-app" | "terminal" | "codex",
+  entity_ref,
+  destination_required
+}
+```
+
+- A Destination only determines where a cmux browser or terminal surface appears.
+- A Target resolves a trusted project/folder root and authorizes file access or cwd.
+- An Action is a server-registered operation over an entity and declares whether it
+  needs a Destination or Target.
+
+`open-hub` records the caller's current cmux workspace as the browser session's default
+Destination when one exists. Each launch may select another live Destination. Closing
+a workspace invalidates only actions routed there; reading, Vault writes, and project
+document operations retain their own capability results.
+
+Obsidian, Zotero, Preview, and other native applications do not belong to a cmux
+workspace. Notion and other Web tools use registered URL recipes. CLI and Codex use
+registered terminal recipes, with cwd derived only from the selected Target.
+
+The browser may submit only opaque action/destination/target/recipe IDs, an idempotency
+key, an allowed effort value, and a UTF-8 brief of at most 8 KiB. It never submits an
+arbitrary URL, command, cwd/path, model, sandbox, permission, environment, or raw Codex
+configuration. Briefs use stdin, argv is fixed with `shell=False`, and resume/fork uses
+an explicitly saved thread ID rather than `--last`.
+
+## Independent capabilities
+
+There is no global `bound/read-only` state. Directory and health report each capability
+independently, including at least:
+
+```text
+vault_writes
+project_document_writes
+cmux_launches
+codex_tasks
+zotflow_annotations
+zotero_local_api
+```
+
+Each reports availability, a structured reason, dependencies, and a suggested remedy.
+Failure of one capability cannot hide or disable unrelated capabilities.
+
+## Project document boundary
+
+Project operations accept only `project_id` plus POSIX paths relative to the checked
+project `docs/` root. They reject absolute paths, `..`, backslashes, missing or mismatched
+manifests, unknown/disabled projects, symlink traversal or swaps, implicit overwrite,
+and automatic rename. A cmux Destination is irrelevant to authorization.
+
+Knowledge-to-project copies strip `sw_*` identity, sidecars, generated markers,
+managed relationships, and generated Canvas identities. They copy no Zotero PDF or
+formal annotation unless a separate explicit operation says so. The result evolves
+independently and creates no managed provenance relation.
+
+Delete means recoverable project-local trash:
 
 ```text
 .scholar-workflow/trash/docs/<UTC timestamp>/<original relative path>
 ```
 
-The private directory and every descendant are checked before any move or directory
-creation; a symlink or non-directory fails closed. Each moved file has a receipt with
-the original path, content hash, deletion time, and Git state. Permanent deletion and
-automatic trash cleanup are not exposed in v2's initial surface.
+Receipts include original relative path, hash, deletion time, and Git state. Tracked or
+dirty files produce an operation-specific warning. Hub never runs a Git write and does
+not expose permanent deletion in this version.
 
-## Workspace ownership and binding
+## ZotFlow and annotation authority
 
-`HubService` is one process generation. A browser view becomes writable only through:
+Zotero owns formal annotations. ZotFlow is an optional local-PDF editor and the only client
+allowed to hold the Zotero Web API read/write key; that key remains in Obsidian
+SecretStorage. Hub, CLI, agents, configuration, environment, logs, and diagnostics must
+not obtain it. Scholar Workflow's separate Local API ingest authorization remains in
+macOS Keychain.
 
-```text
-server nonce -> opaque workspace selection -> server resolution -> WorkspaceLease
+`ZotFlowReaderAdapter` opens `obsidian://zotflow` attachment and annotation actions only
+after checking Obsidian version, ZotFlow version, `minAppVersion`, enabled state, and a
+non-secret positive proof that the desktop local-storage mode points at the attachment's
+actual Zotero storage root. It revalidates the local PDF at launch, fails closed if missing
+or changed, and never falls back to Web API/WebDAV PDF download. A narrow Obsidian CLI probe
+may provide the mode proof; its absence only disables ZotFlow, not Zotero or Hub reading.
+Zotero native actions also revalidate the local attachment before launch. Metadata and
+annotation Web API synchronization remain distinct from PDF file download. The adapter
+reports upgrade requirements but never upgrades Obsidian.
+
+Agents read annotations from Zotero Local API and may render a read-only `AnnotationIR`.
+The IR is not another authority. ZotFlow Source Notes, Better Notes files, and Scholar
+analysis/annotation files must have separate owners and non-overlapping path prefixes.
+
+Other PDF readers receive only explicit annotated snapshots. A snapshot binds
+`source_pdf_hash + annotation_set_hash`, never overwrites or auto-imports into the Zotero
+attachment, and treats edits as independent. Highlight, note, underline, ink, and image
+annotations are validated by type; unsupported types cause a visible incomplete/failed
+result rather than a false complete export.
+
+## Managed service lifecycle
+
+Public commands are:
+
+```bash
+scholar-workflow open-hub
+scholar-workflow hub start
+scholar-workflow hub status
+scholar-workflow hub stop
+scholar-workflow hub restart
+scholar-workflow hub doctor
 ```
 
-The lease records service generation, lease generation, profile, opaque workspace, and
-the server-derived cmux fingerprint. Nonces are single-use and bounded. On every
-controlled mutation or launch, Hub recomputes the current fingerprint and resolves the
-opaque workspace against a fresh cmux tree. A missing workspace, changed instance,
-expired lease, or restarted service invalidates the binding.
+`open-hub` verifies the installed package/build, starts or safely restarts its managed
+service, discovers the current URL, and opens the Hub. It does not accept or depend on a
+code repository root.
 
-Only a service started from a clean cmux workspace/socket environment may report
-`owner_mode=cmux-visible`. A headless service is permanently read-only even if stale or
-forged in-memory lease state exists. The Web UI may request a nonce and bind its selected
-opaque workspace; without a successful bind it keeps all write/launch controls disabled.
+The service binds a dynamically selected loopback port. A mode-0600 runtime discovery
+record includes port, PID, executable, installed package version and build hash,
+protocol, generation, start time, and log path. Plugin manifest versions are checked
+by release validation, not claimed as a runtime discovery field. Browser
+authentication is separate from cmux Destination state.
 
-`scholar-workflow open-hub` is the user-level binding operation. It creates the opaque view
-instance, opens that tagged view in the caller's current cmux workspace, and does not report
-success until `GET /api/v2/workspaces/status` confirms the live binding. The status response
-contains no raw workspace identity. A bare `/hub/` URL has no view identity, is explicitly
-read-only, and cannot present a selected workspace as a completed binding.
+`status` reports actual process facts. `stop` is idempotent and removes a stale record
+only after validation. Stop/restart may signal a PID only when discovery and a live
+identity/generation handshake prove it is the Scholar Workflow managed process. Unknown
+listeners, PID reuse, or mismatched builds fail closed and are never terminated.
+The v3 identity handshake is independent of providers and cmux; detailed health is
+diagnostic only and cannot invalidate a verified service merely because a provider or
+window router is slow.
 
-## Task contracts and current execution gate
+## HTTP and browser boundary
 
-The stable model is:
-
-```text
-TaskRecipe -> LogicalTask -> TaskRun -> explicit codex_thread_id
-```
-
-A browser task request may contain only a registered recipe, an allowed project or
-typed object, an idempotency key, one of `fast | standard | deep`, and a UTF-8 brief of
-at most 8 KiB. The server maps effort to fixed configuration and derives cwd from the
-project registry. Brief text goes over stdin. Process launch uses an argv array with
-`shell=False`; resume/fork requires the saved thread ID and never uses `--last`.
-
-The repository currently implements and tests these schemas, validators, command
-construction, capability probe, durable task store, cross-process thread exclusion,
-idempotency, heartbeat/cancel/timeout state, and process-group recovery primitives with
-fake subprocesses. It does **not** expose a production worker manager or task execution
-endpoint and has not run a real Codex task. Health reports `task_execution=false`, the UI
-exposes no task button, and the legacy blank-session action is not registered. Wiring the
-long-lived cmux workers into production HTTP, supervising them across service restarts,
-and real capability/cancel/recovery canaries remain release gates rather than claimed
-runtime capabilities.
-
-## HTTP surface
+The v3 minimum surface is:
 
 ```text
 GET  /hub/
-GET  /hub/item?library_id=<id>&item_type=<type>&item_id=<id>
-GET  /api/v2/directory?instance=<opaque-view-instance>
-GET  /api/v2/libraries/<papers|projects|tools>/items
-GET  /api/v2/health
-GET  /api/v2/workspaces/status?instance=<opaque-view-instance>
-POST /api/v2/workspaces/nonce
-POST /api/v2/workspaces/bind
-POST /api/v2/projects/<project-id>/docs/copy
-POST /api/v2/projects/<project-id>/docs/copy-knowledge
-POST /api/v2/projects/<project-id>/docs/paste
-POST /api/v2/projects/<project-id>/docs/trash
-
-GET  /api/v1/catalog          derived compatibility projection
 GET  /api/v1/session
-GET  /api/v1/actions
-GET  /api/v1/cmux/workspaces
-GET  /api/v1/artifacts/<id>/content
-PUT  /api/v1/artifacts/<id>/content
-GET  /api/v1/artifacts/<id>/assets
-POST /api/v1/artifacts/<id>/assets
-GET | HEAD /api/v1/assets/<id>/content
-GET | HEAD /open/paper/<attachment-key>
+GET  /api/v3/directory
+GET  /api/v3/libraries/papers/items
+GET  /api/v3/libraries/fields/items
+GET  /api/v3/destinations
+GET  /api/v3/actions
+GET  /api/v3/execution-targets
+GET  /api/v3/task-actions
+POST /api/v3/actions/<action-id>
+POST /api/v3/fields/select
+POST /api/v3/fields/confirm
+GET  /api/v3/identity
+GET  /api/v3/health
 ```
 
-All state-changing routes require loopback Host validation, an allowed same-origin
-`Origin`, the process CSRF token, and (in production) a freshly validated workspace
-binding. The browser cannot submit shell commands, cwd, arbitrary paths, model names,
-sandbox/permission settings, raw Codex configuration, environment variables, or raw
-cmux IDs.
+State-changing routes require loopback Host validation, same-origin `Origin`, the
+service's anti-CSRF token, strict schemas, and bounded bodies. Task creation additionally
+uses an idempotency key. Folder candidate tokens are bounded-lifetime process-local
+handles; Action and Destination IDs are server-generated, and Destinations expire and
+revalidate their cmux instance. The anti-CSRF token is shared by same-origin Hub pages
+for one service generation, not a per-browser session identity.
 
-`GET /api/v2/health` separates service, package, build, protocol, HubDirectory schema,
-owner mode, cmux fingerprint, provider capabilities, worker capabilities, and log
-location. Unknown build revisions or log locations are explicit `null` values with a
-detail, never silently omitted.
+The UI label is “default open location”, never “workspace bound”. Fields display manifest
+navigation and selected Markdown together. Cards expose primary actions immediately;
+metadata drawers are optional rather than required landing pages. Raw UUIDs, absolute
+paths, ports, tokens, shell text, and unfiltered stderr are not displayed.
+All human-visible Hub content also follows `references/human-presentation.md`: a displayed
+link must be actionable in that surface, or have a distinct supported open action or
+unavailable reason. Diagnostics and machine identifiers do not substitute for the
+object's readable content and status.
 
 ## Migration boundary
 
-This contract does not authorize switching the live `23128` listener, changing a
-LaunchAgent, rewriting existing raw-port links, migrating projects or knowledge, or
-enabling task execution. Those actions require canary verification and the separate
-approval gates in the implementation plan.
+The first Source is the current research-document Vault; the first Field is World Models,
+with JEPA/V-JEPA as its acceptance sample. Each Field is previewed and transacted alone.
+A recovery snapshot is explicitly not a verified backup. Unmapped original prose is
+preserved in original order under a retained-content section.
+
+Existing fixed loopback links are rewritten only inside an approved Field transaction.
+The managed v4 analysis renderer defaults to stable `zotero://open-pdf/...` links and
+may explicitly project verified `obsidian://zotflow` Library Reader page links into its
+paired Markdown and Canvas. The target Vault, audited local-PDF mode, attachment, and
+reader route must be verified; using that reader does not transfer writer ownership
+of the note. Machine relations store only `PdfRef`. The optional v4 projection is not
+an automatic Field-wide link migration target.
+
+This contract does not authorize automatic Obsidian upgrades, plugin removal, another
+Vault/project migration, permanent deletion, or a verified-backup claim.

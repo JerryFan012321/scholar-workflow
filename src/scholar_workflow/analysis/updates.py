@@ -11,6 +11,7 @@ from typing import Any
 from scholar_workflow.analysis.conformance import validate_bundle
 from scholar_workflow.analysis.models import (
     ALL_ROLES,
+    TREE_ROLES,
     AnalysisBaseline,
     AnalysisBaselineClaim,
     AnalysisDocument,
@@ -20,6 +21,7 @@ from scholar_workflow.analysis.models import (
 )
 from scholar_workflow.analysis.rendering import (
     AnalysisBundle,
+    canvas_node_id,
     claim_canvas_text,
     claim_markdown_lines,
     render_analysis,
@@ -47,7 +49,7 @@ def _text_hash(value: str) -> str:
 
 
 def _managed_canvas_hash(
-    canvas: dict[str, list[dict[str, object]]],
+    canvas: dict[str, Any],
     *,
     node_ids: list[str],
     edge_ids: list[str],
@@ -120,14 +122,24 @@ def create_baseline(
         for node in bundle.canvas["nodes"]
         if isinstance(node, dict) and isinstance(node.get("id"), str)
     }
-    claim_node_ids: dict[str, str] = {}
-    for node in rendered.canvas["nodes"]:
-        text = node.get("text")
-        if not isinstance(text, str):
-            continue
-        for claim in document.claims:
-            if f'id="{claim.claim_id}" role="{claim.role.value}"' in text:
-                claim_node_ids[claim.claim_id] = str(node["id"])
+    if document.schema_version == 4:
+        claim_node_ids = {
+            claim.claim_id: canvas_node_id(
+                document.artifact_id,
+                f"role/{claim.role.value}/{claim.claim_id}",
+            )
+            for claim in document.claims
+        }
+    else:
+        # Published v1-v3 baselines still use their original marker-backed graph.
+        claim_node_ids = {}
+        for node in rendered.canvas["nodes"]:
+            text = node.get("text")
+            if not isinstance(text, str):
+                continue
+            for claim in document.claims:
+                if f'id="{claim.claim_id}" role="{claim.role.value}"' in text:
+                    claim_node_ids[claim.claim_id] = str(node["id"])
 
     claims: dict[str, AnalysisBaselineClaim] = {}
     for claim in document.claims:
@@ -135,10 +147,24 @@ def create_baseline(
         node = actual_nodes.get(node_id or "")
         if node_id is None or node is None:
             raise AnalysisUpdateError(f"missing generated Canvas node for {claim.claim_id}")
-        markdown = "\n".join(
-            claim_markdown_lines(claim, workflow=claim.role is AnalysisRole.WORKFLOW)
-        )
-        canvas_text = claim_canvas_text(claim, note_stem)
+        if document.schema_version == 4:
+            from scholar_workflow.analysis.reference_rendering import (
+                reference_claim_canvas_text,
+                reference_claim_markdown_lines,
+            )
+
+            language = document.language or "zh"
+            markdown = "\n".join(
+                reference_claim_markdown_lines(claim, language, reader=document.reader)
+            )
+            canvas_text = reference_claim_canvas_text(
+                claim, note_stem, language, reader=document.reader
+            )
+        else:
+            markdown = "\n".join(
+                claim_markdown_lines(claim, workflow=claim.role is AnalysisRole.WORKFLOW)
+            )
+            canvas_text = claim_canvas_text(claim, note_stem)
         claims[claim.claim_id] = AnalysisBaselineClaim(
             role=claim.role,
             markdown_sha256=_text_hash(markdown),
@@ -176,13 +202,66 @@ def _merged_document(
     baseline: AnalysisDocument,
     update: AnalysisDocument,
 ) -> AnalysisDocument:
+    if (baseline.schema_version == 4) != (update.schema_version == 4):
+        raise AnalysisUpdateError(
+            "reference-tree cutover requires an explicit migration, not an ordinary update"
+        )
+    if baseline.profile.framework != update.profile.framework:
+        raise AnalysisUpdateError("analysis update cannot change its framework")
+    if baseline.schema_version == 4 and update.reader is not None and update.reader != baseline.reader:
+        raise AnalysisUpdateError(
+            "reference-tree reader changes require an explicit migration"
+        )
     if update.profile.kind is ProfileKind.WHOLE:
+        if baseline.schema_version == 4 and update.reader is None:
+            return update.model_copy(update={"reader": baseline.reader})
         return update
 
     replaced_roles = set(update.profile.roles)
+    if baseline.schema_version == 4:
+        for role in replaced_roles:
+            existing_paths = {
+                claim.outline_path for claim in baseline.claims if claim.role is role
+            }
+            submitted_paths = {
+                claim.outline_path for claim in update.claims if claim.role is role
+            }
+            if not existing_paths.issubset(submitted_paths):
+                raise AnalysisUpdateError(
+                    "focused reference-tree updates must include every existing "
+                    "outline path in each selected branch"
+                )
+        # A whole reference tree keeps all four structural branches even when
+        # one of them has no factual claim. Preserve the supplied order inside
+        # each branch; claim IDs are identities, not presentation order.
+        claims = [
+            claim
+            for role in TREE_ROLES
+            for claim in (update.claims if role in replaced_roles else baseline.claims)
+            if claim.role is role
+        ]
+        profile = (
+            AnalysisProfile(kind=ProfileKind.WHOLE, framework=baseline.profile.framework)
+            if baseline.profile.kind is ProfileKind.WHOLE
+            else AnalysisProfile(
+                kind=ProfileKind.FOCUSED,
+                roles=[role for role in TREE_ROLES if any(c.role is role for c in claims)],
+                framework=baseline.profile.framework,
+            )
+        )
+        return AnalysisDocument(
+            schema_version=4,
+            artifact_id=baseline.artifact_id,
+            paper_title=baseline.paper_title,
+            language=baseline.language,
+            profile=profile,
+            reader=baseline.reader,
+            claims=claims,
+        )
     claims = [claim for claim in baseline.claims if claim.role not in replaced_roles]
     claims.extend(update.claims)
-    role_rank = {role: index for index, role in enumerate(ALL_ROLES)}
+    framework_roles = TREE_ROLES if baseline.schema_version == 4 else ALL_ROLES
+    role_rank = {role: index for index, role in enumerate(framework_roles)}
     claims.sort(
         key=lambda claim: (
             role_rank[claim.role],
@@ -190,26 +269,32 @@ def _merged_document(
             claim.claim_id,
         )
     )
-    roles = [role for role in ALL_ROLES if any(claim.role is role for claim in claims)]
+    roles = [role for role in framework_roles if any(claim.role is role for claim in claims)]
     profile = (
-        AnalysisProfile(kind=ProfileKind.WHOLE)
-        if set(roles) == set(ALL_ROLES)
-        else AnalysisProfile(kind=ProfileKind.FOCUSED, roles=roles)
+        AnalysisProfile(kind=ProfileKind.WHOLE, framework=baseline.profile.framework)
+        if set(roles) == set(framework_roles)
+        else AnalysisProfile(
+            kind=ProfileKind.FOCUSED,
+            roles=roles,
+            framework=baseline.profile.framework,
+        )
     )
     return AnalysisDocument(
+        schema_version=max(baseline.schema_version, update.schema_version),
         artifact_id=baseline.artifact_id,
         paper_title=baseline.paper_title,
+        language=baseline.language,
         profile=profile,
         claims=claims,
     )
 
 
 def _merge_canvas(
-    current: dict[str, list[dict[str, Any]]],
+    current: dict[str, Any],
     *,
     baseline: AnalysisBaseline,
-    rendered: dict[str, list[dict[str, Any]]],
-) -> dict[str, list[dict[str, Any]]]:
+    rendered: dict[str, Any],
+) -> dict[str, Any]:
     """Replace only the managed subgraph while retaining user graph items and layout."""
 
     current_nodes = current.get("nodes") if isinstance(current, dict) else None
@@ -243,6 +328,16 @@ def _merge_canvas(
         for key, value in current_node.items():
             if key not in {"id", "type", "text"}:
                 replacement[key] = deepcopy(value)
+        if baseline.document.schema_version == 4:
+            from scholar_workflow.analysis.reference_rendering import _visible_height
+
+            width = replacement.get("width")
+            height = replacement.get("height")
+            node_text = replacement.get("text")
+            if isinstance(width, int) and width > 0 and isinstance(height, int) and isinstance(node_text, str):
+                replacement["height"] = max(
+                    height, _visible_height(node_text, minimum=0, width=width)
+                )
         merged_nodes.append(replacement)
         emitted_node_ids.add(node_id)
 
@@ -280,7 +375,10 @@ def _merge_canvas(
             merged_edges.append(deepcopy(edge))
             emitted_edge_ids.add(edge_id)
 
-    return {"nodes": merged_nodes, "edges": merged_edges}
+    merged: dict[str, Any] = {"nodes": merged_nodes, "edges": merged_edges}
+    if "metadata" in current:
+        merged["metadata"] = deepcopy(current["metadata"])
+    return merged
 
 
 def plan_analysis_update(
@@ -297,6 +395,8 @@ def plan_analysis_update(
         raise AnalysisUpdateError("note_stem differs from the trusted baseline")
     if update.profile.kind is ProfileKind.FOCUSED and update.paper_title != baseline.document.paper_title:
         raise AnalysisUpdateError("a focused update cannot change the paper title")
+    if update.profile.kind is ProfileKind.FOCUSED and update.language != baseline.document.language:
+        raise AnalysisUpdateError("a focused update cannot change the analysis language")
 
     trusted_bundle = render_analysis(baseline.document, note_stem=note_stem)
     trusted = create_baseline(baseline.document, trusted_bundle, note_stem=note_stem)

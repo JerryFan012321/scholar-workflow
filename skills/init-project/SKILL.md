@@ -43,6 +43,7 @@ pointer.
 
 ## References
 
+- `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `references/skeleton-manifest.md`
 - `references/source-layout.md`
 - `references/experiment-records.md`

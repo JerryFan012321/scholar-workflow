@@ -41,6 +41,28 @@
         }
       }
     },
-    "change_set": {"$ref": "knowledge-change-set.schema.json"}
+    "change_set": {
+      "allOf": [
+        {"$ref": "knowledge-change-set.schema.json"},
+        {
+          "properties": {
+            "upsert_artifacts": {
+              "minItems": 3,
+              "maxItems": 3,
+              "uniqueItems": true
+            },
+            "upsert_relations": {
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "expected_base_hashes": {
+              "minProperties": 3,
+              "maxProperties": 3
+            }
+          }
+        }
+      ],
+      "description": "Runtime validation additionally binds the three artifact kinds and their single resource owner to the has-analysis relation and receipt artifact_id."
+    }
   }
 }

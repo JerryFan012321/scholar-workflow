@@ -10,6 +10,10 @@ description: Rebuild Obsidian paper indexes or push the one-way Notion managemen
 1. Supported outputs map to commands as follows:
    - one topic table: `scholar-workflow project-obsidian`;
    - a Zotero collection subtree: `scholar-workflow project-tree`.
+   These are legacy managed-block projections into an explicitly configured
+   Vault. They do not register a Hub Field or infer a target from an unselected
+   `research_vault_root`; use the Field preview/confirmation flow for a new
+   dynamic Source.
 2. Read live structure and papers with
    `scholar-workflow zotero collections` and
    `scholar-workflow zotero collection-items <key>`. Existing Obsidian files and
@@ -19,8 +23,8 @@ description: Rebuild Obsidian paper indexes or push the one-way Notion managemen
    - subtree: `{root, tree:{name, collection_key, papers[], children[]}}`.
 4. For `project-tree`, run `--dry-run`, review every target path, then apply.
    Renderers may create files and replace managed blocks only.
-5. PDF cells use the attachment-key URL from `references/link-format.md`. Start
-   `scholar-workflow serve-links` when a valid URL is connection-refused.
+5. PDF cells use the stable attachment-key URI from `references/link-format.md`.
+   Never emit a Hub port URL; Hub direct actions are runtime-only.
 
 ## Notion
 
@@ -29,10 +33,10 @@ description: Rebuild Obsidian paper indexes or push the one-way Notion managemen
    according to `references/notion-schema.md`.
 2. Pipe it to
    `SCHOLAR_WORKFLOW_NOTION_TOKEN=… ${CLAUDE_PLUGIN_ROOT}/bin/notion-project.py`.
-   The script upserts papers by `Resource ID`, then related documents by `Doc ID`,
-   wires relations, and returns page-id maps.
-3. Build the topic page from those page IDs. Each paper entry links to its Papers page,
-   Web Source, and Local URL; related material links to its Related Docs page.
+   The returned page-id maps must contain the requested Papers and Related Docs rows
+   with their declared relations; the script owns the upsert order and wiring.
+3. The resulting topic page links each paper entry to its Papers page,
+   Web Source, and stable Zotero PDF URI; related material links to its Related Docs page.
 4. Report Obsidian and Notion results independently.
 
 ## Constraints
@@ -44,11 +48,13 @@ description: Rebuild Obsidian paper indexes or push the one-way Notion managemen
   and Vault backlink.
 - `notion-project.py` is the only Notion API caller. The token comes only from
   `SCHOLAR_WORKFLOW_NOTION_TOKEN`.
-- The Vault index uses the plain `paper/` subtree. PDFs stay in Zotero storage.
+- The legacy Vault index uses its existing plain `paper/` subtree; this is not a
+  global Field taxonomy. PDFs stay in Zotero storage.
 - Skip unchanged Notion records by `Sync Revision`.
 
 ## References
 
+- `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `references/obsidian-index-format.md`
 - `references/notion-schema.md`
 - `references/link-format.md`
