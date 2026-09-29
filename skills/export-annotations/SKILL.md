@@ -5,26 +5,24 @@ description: Export one paper's Zotero highlights and comments to a separate Obs
 
 # export-annotations
 
-## Steps
+## Source and destination boundary
 
-1. Run the read-only extractor:
-   `scholar-workflow zotero annotations "<title fragment>" --json`.
-2. If several items match, ask for the item and rerun with `--item <item-key> --json`. If there is
-   no PDF attachment, report it and stop.
-3. Resolve a destination inside a registered Knowledge Source/Field. The legacy
-   `research_vault_root`, when configured, is only a migration candidate; ask for the
-   target Field when it is not inferable.
-4. Create a separate annotations note. Never overwrite an analysis or human-authored
-   note; cross-link related notes through frontmatter `related`.
-5. Write frontmatter with title, arXiv id, source item ID, annotation counts, and related
-   links. Group entries under descriptive headings suited to the material or requested
-   view; retain inline `(p.N)` provenance and preserve source order within a group when it
-   matters.
-6. Preserve source types exactly:
-   - user comments: verbatim callouts;
-   - highlighted paper text: block quotes;
-   - model-added context: a separate `补充（模型）` callout.
-   Omit empty entries and stripped machine translations.
+Read annotations with `scholar-workflow zotero annotations "<title fragment>" --json`;
+disambiguate multiple matches with `--item <item-key> --json`. Report a missing PDF
+attachment rather than inventing content. The destination is a registered Knowledge
+Source/Field; legacy `research_vault_root` is only a migration candidate, not an
+implicit destination.
+
+## Output contract
+
+- Create one separate annotations note without overwriting analysis or human-authored
+  notes; use frontmatter `related` to link them.
+- Frontmatter contains title, arXiv ID when available, source item ID, annotation
+  counts, and related links. Entries have descriptive headings, inline `(p.N)`
+  provenance, and source order within a group when it matters.
+- User comments are verbatim callouts; highlighted source text is block quoted;
+  model-added context uses a separate `补充（模型）` callout. Omit empty entries and
+  stripped machine translations.
 
 ## Constraints
 
@@ -38,5 +36,6 @@ description: Export one paper's Zotero highlights and comments to a separate Obs
 
 ## References
 
+- `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md`

@@ -6,9 +6,12 @@ one structure, keyed off node kind: a technical tree (topic → task → pipelin
 and a challenge tree (topic → challenge → insight). This test locks the topology, the
 kind enum, the paper-list-alongside requirement, and the classified flag.
 """
+
 from __future__ import annotations
+
 import json
 from pathlib import Path
+
 import jsonschema
 import pytest
 
@@ -65,13 +68,21 @@ def test_minimal_doc_paperlist_only_empty_topic_tree():
     jsonschema.validate(doc, SCHEMA)
 
 
-def test_summary_and_asset_note_optional_fields():
+def test_summary_and_legacy_asset_note_optional_fields():
     """Concept-level summary (内容简介) and paper-level asset_note are optional additions."""
     doc = json.loads(json.dumps(FULL))
     doc["tree"]["children"][0]["summary"] = "This task frames scene reconstruction as a continuous field."
     doc["tree"]["children"][0]["children"][0]["summary"] = "Implicit MLP-based radiance fields."
     doc["paper_list"][0]["asset_note"] = "paper_assets/2020-Mildenhall-NeRF.md"
     doc["paper_list"][0]["doi"] = "10.1145/xyz"
+    jsonschema.validate(doc, SCHEMA)
+
+
+def test_paper_folder_asset_note_path_is_schema_compatible():
+    doc = json.loads(json.dumps(FULL))
+    doc["paper_list"][0]["asset_note"] = (
+        "resources/papers/2020-mildenhall-nerf/论文信息.md"
+    )
     jsonschema.validate(doc, SCHEMA)
 
 

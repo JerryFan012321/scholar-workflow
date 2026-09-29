@@ -1990,8 +1990,8 @@ def test_headless_service_blocks_cmux_binding_but_not_registered_folder_writes(t
                 headers=headers,
                 data=b"{}",
             )
-        assert legacy_error.value.code == 404
-        assert legacy_error.value.read() == b"Unknown action"
+        assert legacy_error.value.code == 410
+        assert json.loads(legacy_error.value.read())["code"] == "v1_read_only_compatibility"
 
         directory = json.loads(
             _request(port, "/api/v2/directory?instance=bound-instance").read()

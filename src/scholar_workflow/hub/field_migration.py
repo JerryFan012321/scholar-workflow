@@ -3,9 +3,9 @@
 This is deliberately narrower than a knowledge-template migration.  Only files
 declared by one existing Field manifest may be rewritten.  Unmapped prose and
 files are reported, not normalized or inferred into the manifest.  The shared
-cross-process Field lock and CAS checks protect managed writes.  Synchronous
-failures roll back the Field; a process crash during a multi-file commit may
-require manual restoration from the explicitly unverified recovery snapshot.
+cross-process Field lock and CAS checks protect managed writes.  An explicitly
+invoked, conditional recovery journal handles interrupted multi-file writes.
+Recovery snapshots are not verified backups.
 """
 
 from __future__ import annotations
@@ -16,10 +16,11 @@ import os
 import re
 import secrets
 import stat
+import sys
 import time
 import zipfile
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path, PurePosixPath
 
 from scholar_workflow.adapters.zotero_local import (
@@ -51,10 +52,38 @@ _INSPECTED_TEXT_SUFFIXES = _SUPPORTED_SUFFIXES | {
     ".txt", ".html", ".json", ".yml", ".yaml", ".ipynb"
 }
 _READ_LIMIT = _MAX_FIELD_DOCUMENT_BYTES
+_JOURNAL_NAME = "pending.json"
+_JOURNAL_SCHEMA_VERSION = 1
+_ANALYSIS_KIND = re.compile(rb"(?m)^\s*sw_kind\s*:\s*['\"]?paper-analysis\b")
 
 
 class FieldMigrationError(RuntimeError):
     """A Field plan is stale, unsafe, incomplete, or not explicitly approved."""
+
+
+def _analysis_peer_paths(relative: str) -> tuple[str, ...]:
+    """Known Markdown/Canvas/sidecar pairings, relative to the Source root."""
+    path = PurePosixPath(relative)
+    stem = path.name[: -len(path.suffix)]
+    peers: set[str] = set()
+    if path.suffix.casefold() == ".md":
+        peers.update({stem + ".analysis.json", stem + ".canvas"})
+        if stem.endswith("分析") and stem != "分析":
+            peers.add(stem.removesuffix("分析") + "解析树.canvas")
+    elif path.suffix.casefold() == ".canvas":
+        peers.update({stem + ".md", stem + ".analysis.json"})
+        if stem.endswith("解析树") and stem != "解析树":
+            markdown_stem = stem.removesuffix("解析树") + "分析"
+            peers.update({markdown_stem + ".md", markdown_stem + ".analysis.json"})
+    return tuple(sorted(path.with_name(name).as_posix() for name in peers))
+
+
+def _has_analysis_identity(content: bytes) -> bool:
+    return (
+        bool(_ANALYSIS_KIND.search(content))
+        or b"sw-analysis-claim" in content
+        or b"sw-analysis-field" in content
+    )
 
 
 @dataclass(frozen=True)
@@ -78,7 +107,7 @@ class FieldMigrationPlan:
     unresolved_legacy_links: tuple[FieldLinkChange, ...]
     conflicts: tuple[str, ...]
     template_normalization: str = "manual-review-required"
-    crash_recovery: str = "manual-from-unverified-snapshot"
+    crash_recovery: str = "explicit-conditional-journal-recovery"
     recovery_is_verified_backup: bool = False
 
 
@@ -90,7 +119,44 @@ class FieldMigrationResult:
     replaced_links: int
     recovery_snapshot: Path
     recovery_is_verified_backup: bool = False
-    crash_recovery: str = "manual-from-unverified-snapshot"
+    crash_recovery: str = "explicit-conditional-journal-recovery"
+
+
+@dataclass(frozen=True)
+class FieldMigrationRecovery:
+    source_id: str
+    field_id: str
+    recovered_files: tuple[str, ...]
+    recovery_snapshot: Path | None
+    recovery_is_verified_backup: bool = False
+
+
+@dataclass(frozen=True)
+class _JournalFile:
+    relative_path: str
+    old_hash: str
+    new_hash: str
+    old_mode: int
+    old_owner: int
+    old_link_count: int
+    new_device: int
+    new_inode: int
+    temporary_name: str
+
+
+@dataclass(frozen=True)
+class _RecoveryJournal:
+    schema_version: int
+    source_id: str
+    field_id: str
+    plan_digest: str
+    root_device: int
+    root_inode: int
+    field_device: int
+    field_inode: int
+    manifest_hash: str
+    snapshot_name: str
+    files: tuple[_JournalFile, ...]
 
 
 @dataclass(frozen=True)
@@ -379,12 +445,14 @@ class FieldMigrationService:
             raise FieldMigrationError("Field is not declared by its source manifest")
         try:
             root_fd = _open_directory_chain(root)
-            field_fd = _open_directory_chain(root, _field_parts(field))
             try:
-                root_identity = _identity(os.fstat(root_fd))
-                field_identity = _identity(os.fstat(field_fd))
+                field_fd = _open_directory_chain(root, _field_parts(field))
+                try:
+                    root_identity = _identity(os.fstat(root_fd))
+                    field_identity = _identity(os.fstat(field_fd))
+                finally:
+                    os.close(field_fd)
             finally:
-                os.close(field_fd)
                 os.close(root_fd)
         except OSError as exc:
             raise FieldMigrationError("Field root is unavailable or unsafe") from exc
@@ -448,6 +516,10 @@ class FieldMigrationService:
         root, manifest, field, root_identity, field_identity = self._resolve(
             source_id, field_id, capability="read"
         )
+        unfinished = self._read_journal(root, source_id, field_id)
+        if unfinished is not None:
+            os.close(unfinished[2])
+            raise FieldMigrationError("Field recovery is required before a new plan; run recover")
         manifest_state = _read_file(root, ".scholar-workflow/fields.yml")
         managed_names = _managed_paths(field)
         managed: list[_FileState] = []
@@ -500,6 +572,18 @@ class FieldMigrationService:
             changes.extend(file_changes)
         inventory, inventory_digest, inventory_conflicts = self._inventory(root, manifest, field)
         conflicts.extend(inventory_conflicts)
+        inventory_paths = set(inventory)
+        for state in managed:
+            replacement, _ = _replacements(state.content, state.relative_path)
+            if replacement == state.content:
+                continue
+            if _has_analysis_identity(state.content) or inventory_paths.intersection(
+                _analysis_peer_paths(state.relative_path)
+            ):
+                conflicts.append(
+                    "managed paper analysis requires a validated Field transaction: "
+                    + state.relative_path
+                )
         declared = {_field_path(field, name) for name in managed_names}
         unmapped = tuple(
             PurePosixPath(path).relative_to(PurePosixPath(*_field_parts(field))).as_posix()
@@ -615,6 +699,11 @@ class FieldMigrationService:
         if prospective == root or root in prospective.parents:
             raise FieldMigrationError("recovery state must be outside the Vault")
         state_root.mkdir(mode=0o700, parents=True, exist_ok=True)
+        parent_fd = _open_directory_chain(state_root.parent)
+        try:
+            os.fsync(parent_fd)
+        finally:
+            os.close(parent_fd)
         resolved = state_root.resolve(strict=True)
         if not resolved.is_dir() or resolved == root or root in resolved.parents:
             raise FieldMigrationError("recovery state must be outside the Vault")
@@ -637,6 +726,11 @@ class FieldMigrationService:
                 except FileExistsError:
                     pass
                 child_fd = os.open(part, _DIRECTORY_FLAGS, dir_fd=directory_fd)
+                try:
+                    os.fsync(directory_fd)
+                except BaseException:
+                    os.close(child_fd)
+                    raise
                 os.close(directory_fd)
                 directory_fd = child_fd
                 if stat.S_IMODE(os.fstat(directory_fd).st_mode) & 0o077:
@@ -692,6 +786,378 @@ class FieldMigrationService:
             os.close(directory_fd)
         return archive
 
+    def _open_recovery_directory(
+        self, root: Path, source_id: str, field_id: str
+    ) -> tuple[Path, int] | None:
+        """Open an existing private recovery directory without creating state."""
+        if any(part in {"", ".", ".."} or "/" in part for part in (source_id, field_id)):
+            raise FieldMigrationError("invalid Field recovery identity")
+        if self.state_root.is_symlink():
+            raise FieldMigrationError("recovery state root is a symbolic link")
+        if not self.state_root.exists():
+            return None
+        try:
+            resolved = self.state_root.resolve(strict=True)
+            if resolved == root or root in resolved.parents:
+                raise FieldMigrationError("recovery state must be outside the Vault")
+            if stat.S_IMODE(resolved.stat().st_mode) & 0o077:
+                raise FieldMigrationError("recovery state directory must be private")
+            directory = resolved / "field-recovery" / source_id / field_id
+            try:
+                directory_fd = _open_directory_chain(
+                    resolved, ("field-recovery", source_id, field_id)
+                )
+            except FileNotFoundError:
+                return None
+            if stat.S_IMODE(os.fstat(directory_fd).st_mode) & 0o077:
+                os.close(directory_fd)
+                raise FieldMigrationError("recovery directory must be private")
+            return directory, directory_fd
+        except FieldMigrationError:
+            raise
+        except OSError as exc:
+            raise FieldMigrationError("recovery directory is unsafe") from exc
+
+    def _read_journal(
+        self, root: Path, source_id: str, field_id: str
+    ) -> tuple[_RecoveryJournal, Path, int] | None:
+        opened = self._open_recovery_directory(root, source_id, field_id)
+        if opened is None:
+            return None
+        directory, directory_fd = opened
+        try:
+            try:
+                content, metadata = _read_regular_at(
+                    directory_fd, _JOURNAL_NAME, limit=_READ_LIMIT
+                )
+            except FileNotFoundError:
+                os.close(directory_fd)
+                return None
+            if stat.S_IMODE(metadata.st_mode) != 0o600:
+                raise FieldMigrationError("Field recovery journal is not private")
+            payload = json.loads(content)
+            if not isinstance(payload, dict):
+                raise TypeError("journal is not an object")
+            files = payload.pop("files")
+            if not isinstance(files, list) or not all(isinstance(row, dict) for row in files):
+                raise ValueError("invalid journal files")
+            journal = _RecoveryJournal(
+                **payload, files=tuple(_JournalFile(**row) for row in files)
+            )
+            if (
+                journal.schema_version != _JOURNAL_SCHEMA_VERSION
+                or journal.source_id != source_id
+                or journal.field_id != field_id
+                or not isinstance(journal.snapshot_name, str)
+                or not journal.snapshot_name.endswith(".zip")
+                or Path(journal.snapshot_name).name != journal.snapshot_name
+                or len({row.relative_path for row in journal.files}) != len(journal.files)
+            ):
+                raise ValueError("journal identity or schema is invalid")
+            return journal, directory, directory_fd
+        except (OSError, ValueError, TypeError, KeyError, UnicodeDecodeError, FieldRegistryError) as exc:
+            os.close(directory_fd)
+            raise FieldMigrationError("Field recovery journal is invalid; manual review required") from exc
+        except BaseException:
+            os.close(directory_fd)
+            raise
+
+    @staticmethod
+    def _write_journal(directory_fd: int, journal: _RecoveryJournal) -> None:
+        payload = json.dumps(asdict(journal), sort_keys=True).encode("utf-8")
+        if len(payload) > _READ_LIMIT:
+            raise FieldMigrationError("Field recovery journal exceeds the size limit")
+        temporary = f".journal-{secrets.token_hex(8)}.tmp"
+        linked = False
+        try:
+            descriptor = os.open(
+                temporary,
+                os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                0o600,
+                dir_fd=directory_fd,
+            )
+            with os.fdopen(descriptor, "wb") as handle:
+                handle.write(payload)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.link(
+                temporary,
+                _JOURNAL_NAME,
+                src_dir_fd=directory_fd,
+                dst_dir_fd=directory_fd,
+                follow_symlinks=False,
+            )
+            linked = True
+            os.fsync(directory_fd)
+        except OSError as exc:
+            if linked:
+                try:
+                    os.unlink(_JOURNAL_NAME, dir_fd=directory_fd)
+                    os.fsync(directory_fd)
+                except OSError:
+                    pass
+            raise FieldMigrationError("Field recovery journal could not be committed") from exc
+        finally:
+            try:
+                os.unlink(temporary, dir_fd=directory_fd)
+            except FileNotFoundError:
+                pass
+
+    @staticmethod
+    def _read_snapshot(
+        directory_fd: int, journal: _RecoveryJournal
+    ) -> dict[str, bytes]:
+        try:
+            descriptor = os.open(
+                journal.snapshot_name,
+                os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+                dir_fd=directory_fd,
+            )
+            with os.fdopen(descriptor, "rb") as handle:
+                metadata = os.fstat(handle.fileno())
+                if not stat.S_ISREG(metadata.st_mode) or stat.S_IMODE(metadata.st_mode) != 0o600:
+                    raise FieldMigrationError("Field recovery snapshot is not a private file")
+                with zipfile.ZipFile(handle) as archive:
+                    if archive.getinfo("recovery.json").file_size > _READ_LIMIT:
+                        raise FieldMigrationError("Field recovery receipt is too large")
+                    receipt = json.loads(archive.read("recovery.json"))
+                    if not isinstance(receipt, dict):
+                        raise FieldMigrationError("Field recovery receipt is invalid")
+                    if (
+                        receipt.get("source_id") != journal.source_id
+                        or receipt.get("field_id") != journal.field_id
+                        or receipt.get("plan_digest") != journal.plan_digest
+                    ):
+                        raise FieldMigrationError("Field recovery snapshot identity changed")
+                    originals: dict[str, bytes] = {}
+                    for row in journal.files:
+                        name = "original/" + row.relative_path
+                        info = archive.getinfo(name)
+                        if info.file_size > _READ_LIMIT:
+                            raise FieldMigrationError("Field recovery snapshot file is too large")
+                        content = archive.read(info)
+                        if _sha256(content) != row.old_hash:
+                            raise FieldMigrationError("Field recovery snapshot hash changed")
+                        originals[row.relative_path] = content
+                    return originals
+        except FieldMigrationError:
+            raise
+        except (OSError, ValueError, KeyError, zipfile.BadZipFile, UnicodeDecodeError) as exc:
+            raise FieldMigrationError("Field recovery snapshot is invalid; manual review required") from exc
+
+    @staticmethod
+    def _clear_journal(directory_fd: int) -> None:
+        try:
+            os.unlink(_JOURNAL_NAME, dir_fd=directory_fd)
+        except OSError as exc:
+            raise FieldMigrationError("Field journal cleanup failed; journal retained") from exc
+        try:
+            os.fsync(directory_fd)
+        except OSError as exc:
+            raise FieldMigrationError(
+                "Field journal finalization uncertain after unlink; inspect before further writes"
+            ) from exc
+
+    @staticmethod
+    def _cleanup_temp_and_close(parent_fd: int, temporary_name: str) -> str | None:
+        errors: list[str] = []
+        try:
+            os.unlink(temporary_name, dir_fd=parent_fd)
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            errors.append(f"unlink {temporary_name}: {exc}")
+        try:
+            os.close(parent_fd)
+        except OSError as exc:
+            errors.append(f"close staged directory: {exc}")
+        return "; ".join(errors) or None
+
+    @staticmethod
+    def _journal_file_is_new(state: _FileState, row: _JournalFile) -> bool:
+        return (
+            _sha256(state.content) == row.new_hash
+            and (state.device, state.inode) == (row.new_device, row.new_inode)
+            and state.mode == row.old_mode
+            and state.owner == row.old_owner
+            and state.link_count == 1
+        )
+
+    def _recover_opened(
+        self,
+        root: Path,
+        manifest: FieldManifest,
+        field: FieldDefinition,
+        root_identity: tuple[int, int],
+        field_identity: tuple[int, int],
+        opened: tuple[_RecoveryJournal, Path, int],
+    ) -> FieldMigrationRecovery:
+        journal, directory, directory_fd = opened
+        if (
+            root_identity != (journal.root_device, journal.root_inode)
+            or field_identity != (journal.field_device, journal.field_inode)
+            or _sha256(_read_file(root, ".scholar-workflow/fields.yml").content)
+            != journal.manifest_hash
+            or manifest.source_id != journal.source_id
+        ):
+            raise FieldMigrationError("Field recovery identity changed; manual review required")
+        allowed = {_field_path(field, path) for path in _managed_paths(field)}
+        for row in journal.files:
+            if (
+                row.relative_path not in allowed
+                or PurePosixPath(row.relative_path).suffix.casefold() not in _SUPPORTED_SUFFIXES
+                or not isinstance(row.temporary_name, str)
+                or not row.temporary_name.startswith(".scholar-migrate-")
+                or Path(row.temporary_name).name != row.temporary_name
+                or not isinstance(row.old_hash, str)
+                or not isinstance(row.new_hash, str)
+                or not re.fullmatch(r"sha256:[0-9a-f]{64}", row.old_hash)
+                or not re.fullmatch(r"sha256:[0-9a-f]{64}", row.new_hash)
+                or not isinstance(row.new_device, int)
+                or not isinstance(row.new_inode, int)
+                or not isinstance(row.old_mode, int)
+                or not isinstance(row.old_owner, int)
+                or row.old_link_count != 1
+            ):
+                raise FieldMigrationError("Field recovery journal has an unsafe file entry")
+        originals = self._read_snapshot(directory_fd, journal)
+        states: dict[str, _FileState] = {}
+        for row in journal.files:
+            current = _read_file(root, row.relative_path)
+            is_original = (
+                _sha256(current.content) == row.old_hash
+                and current.mode == row.old_mode
+                and current.owner == row.old_owner
+                and current.link_count == row.old_link_count
+            )
+            if not is_original and not self._journal_file_is_new(current, row):
+                raise FieldMigrationError(
+                    f"Field recovery conflicts with external edit: {row.relative_path}"
+                )
+            states[row.relative_path] = current
+            parent_fd = _open_directory_chain(root, PurePosixPath(row.relative_path).parts[:-1])
+            try:
+                self._assert_parent(root, row.relative_path, parent_fd)
+                try:
+                    temporary, temp_meta = _read_regular_at(
+                        parent_fd, row.temporary_name, limit=_READ_LIMIT
+                    )
+                except FileNotFoundError:
+                    pass
+                else:
+                    if (
+                        _sha256(temporary) != row.new_hash
+                        or _identity(temp_meta) != (row.new_device, row.new_inode)
+                    ):
+                        raise FieldMigrationError(
+                            f"Field staged file changed externally: {row.relative_path}"
+                        )
+            finally:
+                os.close(parent_fd)
+        recovered: list[str] = []
+        for row in journal.files:
+            if _sha256(states[row.relative_path].content) == row.old_hash:
+                continue
+            parent_fd = _open_directory_chain(root, PurePosixPath(row.relative_path).parts[:-1])
+            restore_name = f".scholar-restore-{secrets.token_hex(8)}.tmp"
+            try:
+                self._assert_parent(root, row.relative_path, parent_fd)
+                current = _read_file(root, row.relative_path)
+                if not self._journal_file_is_new(current, row):
+                    raise FieldMigrationError(
+                        f"Field recovery conflicts with external edit: {row.relative_path}"
+                    )
+                self._write_temp(
+                    parent_fd, restore_name, originals[row.relative_path], row.old_mode
+                )
+                _replace_at(
+                    restore_name,
+                    PurePosixPath(row.relative_path).name,
+                    parent_fd,
+                )
+                os.fsync(parent_fd)
+                recovered.append(row.relative_path)
+            finally:
+                primary = sys.exception()
+                cleanup_error = self._cleanup_temp_and_close(parent_fd, restore_name)
+                if cleanup_error:
+                    if primary is not None:
+                        raise FieldMigrationError(
+                            f"{primary}; restore temp cleanup failed; journal retained: "
+                            f"{cleanup_error}"
+                        ) from primary
+                    raise FieldMigrationError(
+                        f"restore temp cleanup failed; journal retained: {cleanup_error}"
+                    )
+        for row in journal.files:
+            restored = _read_file(root, row.relative_path)
+            if (
+                _sha256(restored.content) != row.old_hash
+                or restored.mode != row.old_mode
+                or restored.owner != row.old_owner
+                or restored.link_count != row.old_link_count
+            ):
+                raise FieldMigrationError("Field recovery verification failed; journal retained")
+            parent_fd = _open_directory_chain(root, PurePosixPath(row.relative_path).parts[:-1])
+            try:
+                try:
+                    temporary, temp_meta = _read_regular_at(
+                        parent_fd, row.temporary_name, limit=_READ_LIMIT
+                    )
+                except FileNotFoundError:
+                    continue
+                if (
+                    _sha256(temporary) != row.new_hash
+                    or _identity(temp_meta) != (row.new_device, row.new_inode)
+                ):
+                    raise FieldMigrationError("Field staged file changed; journal retained")
+                os.unlink(row.temporary_name, dir_fd=parent_fd)
+                os.fsync(parent_fd)
+            finally:
+                os.close(parent_fd)
+        self._clear_journal(directory_fd)
+        return FieldMigrationRecovery(
+            source_id=journal.source_id,
+            field_id=journal.field_id,
+            recovered_files=tuple(recovered),
+            recovery_snapshot=directory / journal.snapshot_name,
+        )
+
+    def recover(self, source_id: str, field_id: str) -> FieldMigrationRecovery:
+        """Explicitly restore only journal-owned bytes; never overwrite external edits."""
+        root, manifest, field, root_identity, field_identity = self._resolve(
+            source_id, field_id, capability="write"
+        )
+        with self._field_service._field_write_guard(root):
+            current_root, manifest, field, current_root_identity, current_field_identity = (
+                self._resolve(source_id, field_id, capability="write")
+            )
+            if (
+                current_root != root
+                or current_root_identity != root_identity
+                or current_field_identity != field_identity
+            ):
+                raise FieldMigrationError("registered Field changed before recovery lock")
+            opened = self._read_journal(root, source_id, field_id)
+            if opened is None:
+                return FieldMigrationRecovery(source_id, field_id, (), None)
+            try:
+                try:
+                    return self._recover_opened(
+                        root,
+                        manifest,
+                        field,
+                        current_root_identity,
+                        current_field_identity,
+                        opened,
+                    )
+                except OSError as exc:
+                    raise FieldMigrationError(
+                        "Field recovery IO failed; journal retained for retry"
+                    ) from exc
+            finally:
+                os.close(opened[2])
+
     @staticmethod
     def _write_temp(parent_fd: int, name: str, content: bytes, mode: int) -> None:
         descriptor = os.open(
@@ -736,38 +1202,17 @@ class FieldMigrationService:
         except OSError as exc:
             raise FieldMigrationError("Field parent is no longer safe") from exc
 
-    @classmethod
-    def _restore(cls, root: Path, staged: _StagedWrite) -> None:
-        cls._assert_parent(root, staged.original.relative_path, staged.parent_fd)
-        current = _read_file(root, staged.original.relative_path)
-        if (
-            current.device,
-            current.inode,
-        ) != staged.prepared_identity or current.content != staged.replacement:
+    def apply(
+        self,
+        plan_token: str,
+        *,
+        approved_digest: str,
+        external_writers_paused: bool = False,
+    ) -> FieldMigrationResult:
+        if external_writers_paused is not True:
             raise FieldMigrationError(
-                f"cannot roll back externally changed file: {staged.original.relative_path}"
+                "external Field writers must be paused before migration apply"
             )
-        restore_name = f".scholar-restore-{secrets.token_hex(8)}.tmp"
-        try:
-            cls._write_temp(
-                staged.parent_fd,
-                restore_name,
-                staged.original.content,
-                staged.original.mode,
-            )
-            _replace_at(
-                restore_name,
-                PurePosixPath(staged.original.relative_path).name,
-                staged.parent_fd,
-            )
-            os.fsync(staged.parent_fd)
-        finally:
-            try:
-                os.unlink(restore_name, dir_fd=staged.parent_fd)
-            except FileNotFoundError:
-                pass
-
-    def apply(self, plan_token: str, *, approved_digest: str) -> FieldMigrationResult:
         pending = self._plans.pop(plan_token, None)
         if pending is None or pending.expires_at <= self._clock():
             raise FieldMigrationError("Field migration plan is unknown or expired")
@@ -777,6 +1222,12 @@ class FieldMigrationService:
         if preview.conflicts:
             raise FieldMigrationError("Field migration plan has unresolved conflicts")
         with self._field_service._field_write_guard(pending.root):
+            unfinished = self._read_journal(
+                pending.root, preview.source_id, preview.field_id
+            )
+            if unfinished is not None:
+                os.close(unfinished[2])
+                raise FieldMigrationError("Field recovery is required before apply; run recover")
             self._assert_current(pending)
             for key, approved_uri in pending.verified_links:
                 try:
@@ -799,7 +1250,9 @@ class FieldMigrationService:
                     changes.append((state, replacement))
             snapshot = self._recovery_snapshot(pending)
             staged: list[_StagedWrite] = []
-            committed: list[_StagedWrite] = []
+            journal: _RecoveryJournal | None = None
+            recovery_fd: int | None = None
+            journal_written = False
             try:
                 for state, replacement in changes:
                     parts = PurePosixPath(state.relative_path).parts
@@ -812,12 +1265,13 @@ class FieldMigrationService:
                         )
                         if prepared != replacement:
                             raise FieldMigrationError("staged Field file changed unexpectedly")
-                    except BaseException:
-                        try:
-                            os.unlink(temporary, dir_fd=parent_fd)
-                        except FileNotFoundError:
-                            pass
-                        os.close(parent_fd)
+                    except BaseException as exc:
+                        cleanup_error = self._cleanup_temp_and_close(parent_fd, temporary)
+                        if cleanup_error:
+                            raise FieldMigrationError(
+                                f"{exc}; staging cleanup failed before commit: "
+                                f"{cleanup_error}"
+                            ) from exc
                         raise
                     staged.append(
                         _StagedWrite(
@@ -829,6 +1283,41 @@ class FieldMigrationService:
                         )
                     )
                 self._assert_current(pending)
+                opened = self._open_recovery_directory(
+                    pending.root, preview.source_id, preview.field_id
+                )
+                if opened is None or opened[0] != snapshot.parent:
+                    raise FieldMigrationError("Field recovery directory changed before commit")
+                _directory, recovery_fd = opened
+                journal = _RecoveryJournal(
+                    schema_version=_JOURNAL_SCHEMA_VERSION,
+                    source_id=preview.source_id,
+                    field_id=preview.field_id,
+                    plan_digest=preview.plan_digest,
+                    root_device=pending.root_identity[0],
+                    root_inode=pending.root_identity[1],
+                    field_device=pending.field_identity[0],
+                    field_inode=pending.field_identity[1],
+                    manifest_hash=_sha256(pending.manifest.content),
+                    snapshot_name=snapshot.name,
+                    files=tuple(
+                        _JournalFile(
+                            relative_path=item.original.relative_path,
+                            old_hash=_sha256(item.original.content),
+                            new_hash=_sha256(item.replacement),
+                            old_mode=item.original.mode,
+                            old_owner=item.original.owner,
+                            old_link_count=item.original.link_count,
+                            new_device=item.prepared_identity[0],
+                            new_inode=item.prepared_identity[1],
+                            temporary_name=item.temporary_name,
+                        )
+                        for item in staged
+                    ),
+                )
+                self._read_snapshot(recovery_fd, journal)
+                self._write_journal(recovery_fd, journal)
+                journal_written = True
                 for item in staged:
                     self._assert_parent(pending.root, item.original.relative_path, item.parent_fd)
                     self._assert_same_file(pending.root, item.original)
@@ -842,35 +1331,71 @@ class FieldMigrationService:
                         raise FieldMigrationError("staged Field file changed before commit")
                     name = PurePosixPath(item.original.relative_path).name
                     _replace_at(item.temporary_name, name, item.parent_fd)
-                    committed.append(item)
                     os.fsync(item.parent_fd)
                 remaining = self._remaining_legacy_links(pending.root, manifest, field)
                 if remaining:
                     raise FieldMigrationError(
                         "legacy paper links remain in Field files: " + ", ".join(remaining)
                     )
+                assert journal is not None
+                for row in journal.files:
+                    current = _read_file(pending.root, row.relative_path)
+                    if not self._journal_file_is_new(current, row):
+                        raise FieldMigrationError(
+                            f"Field target changed during commit: {row.relative_path}"
+                        )
             except BaseException as exc:
-                rollback_errors: list[str] = []
-                for item in reversed(committed):
+                if journal_written:
+                    assert journal is not None and recovery_fd is not None
                     try:
-                        self._restore(pending.root, item)
+                        self._recover_opened(
+                            pending.root,
+                            manifest,
+                            field,
+                            pending.root_identity,
+                            pending.field_identity,
+                            (journal, snapshot.parent, recovery_fd),
+                        )
                     except (OSError, FieldMigrationError) as rollback_exc:
-                        rollback_errors.append(str(rollback_exc))
-                detail = "; ".join(rollback_errors)
-                if detail:
-                    raise FieldMigrationError(
-                        f"Field migration failed; rollback incomplete; snapshot={snapshot}; {detail}"
-                    ) from exc
+                        raise FieldMigrationError(
+                            "Field migration failed; conditional rollback incomplete; "
+                            f"snapshot={snapshot}; {rollback_exc}"
+                        ) from exc
                 raise FieldMigrationError(
-                    f"Field migration failed and was rolled back; snapshot={snapshot}"
+                    f"Field migration failed and was rolled back; {exc}; snapshot={snapshot}"
                 ) from exc
+            else:
+                assert recovery_fd is not None
+                try:
+                    self._clear_journal(recovery_fd)
+                except OSError as exc:
+                    raise FieldMigrationError(
+                        "Field commit completed but journal finalization is uncertain; "
+                        "inspect before further writes"
+                    ) from exc
             finally:
+                primary = sys.exception()
+                cleanup_errors: list[str] = []
                 for item in staged:
+                    detail = self._cleanup_temp_and_close(
+                        item.parent_fd, item.temporary_name
+                    )
+                    if detail:
+                        cleanup_errors.append(detail)
+                if recovery_fd is not None:
                     try:
-                        os.unlink(item.temporary_name, dir_fd=item.parent_fd)
-                    except FileNotFoundError:
-                        pass
-                    os.close(item.parent_fd)
+                        os.close(recovery_fd)
+                    except OSError as exc:
+                        cleanup_errors.append(f"close recovery directory: {exc}")
+                if cleanup_errors:
+                    detail = "; ".join(cleanup_errors)
+                    if primary is not None:
+                        raise FieldMigrationError(
+                            f"{primary}; staged cleanup failed; inspect journal state: {detail}"
+                        ) from primary
+                    raise FieldMigrationError(
+                        f"staged cleanup failed; inspect journal state: {detail}"
+                    )
         changed = tuple(
             _field_relative(item.original.relative_path, pending.field_parts) for item in staged
         )

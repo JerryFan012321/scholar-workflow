@@ -17,13 +17,21 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
   Run/Attempt/Target/Artifact 档案；主机项目根只进入显式 host registry。
 - **Knowledge System** 持有 Vault 核心文档、原子资源、附属产物、analysis result contract 和
   knowledge relations；批量产物逐项通过 conformance gate，失败不得记成功。
+- 知识库以纲领、梳理和目录文档组织主题；论文、重要技术文档和 Blog/Web article 是原子资源，
+  分析、批注、Canvas 和补充材料是附属产物。Paperlist 或文献树只是一种视图，不能定义整个知识库。
+  持久论述应以可独立阅读的人类 Markdown 为主，机器身份与关系放在薄 frontmatter、manifest、
+  sidecar 或可重建投影中，不淹没正文；Canvas 等非正文产物由 owner Markdown 说明。
+- 需持续审阅并在 Obsidian 展示的知识实验和迁移候选放在独立 `test` Vault，`/tmp` 仅存可丢弃
+  中间物；实验副本不自动注册正式 Field、不与正式 Vault 同步，也不代表迁移或发布验收获批。
 - **Hub Control Plane v3** 以唯一 `HubDirectory` 聚合文档 Libraries（Papers、动态 Fields）以及平级的
-  Projects、Tools 和 capability/diagnostics；v1/v2 只由 v3 派生兼容投影，Hub 不成为正文或 transcript 真源。
+  Projects、Tools 和 capability/diagnostics；v1/v2 只由 v3 派生只读兼容投影，旧 artifact PUT、asset
+  upload 和 action POST 不得成为写入或执行旁路；Hub 不成为正文或 transcript 真源。
 - Knowledge 与 Project 只经人或 agent 显式复制内容；副本获得目标系统 identity 并独立演化，
   不建立自动同步、托管 project-reference 或强制 provenance。
 - cmux workspace 只是 `CmuxDestination`：只决定 terminal/browser/Codex/CLI 窗口出现在哪里，不授予
   文件权限，也不控制 Hub 是否只读。Vault、Vault 子目录、项目 `docs/` 与 CLI cwd 只由登记的
-  `folder_id/project_id` 和 `ExecutionTarget` 解析；workspace 消失只能让相关 launch action 失效。
+  `folder_id/project_id` 和 `ExecutionTarget` 解析；HTTP 服务独立于任何 workspace 存活，cmux
+  socket 只交给可失效的受限路由 helper；workspace 消失只能让相关 launch action 失效。
 - 项目文件操作只限显式注册项目的 `docs/`，请求只接受 `project_id + docs 相对路径`；删除进入
   `.scholar-workflow/trash/docs/`，Hub 不执行 Git 写操作。Destination 的选择不得改变该授权结果。
 - Knowledge Source/Field 必须动态登记：用户选择 Vault/目录后先生成零写入 preview，每次明确选择并
@@ -31,14 +39,48 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
   候选。已有便携 manifest 但尚未登记到本机时，须另行预览并明确确认整份现有 Source；只写 host
   registry，保留 manifest、Field ID 和正文原样，不把它伪装成新 Field 的批量初始化。不得固定
   Field 枚举或要求唯一 `research_vault_root`。
+- 真实 Field 多文件迁移只可在外部编辑器/同步器停写窗口中执行，靠逐文件 CAS、持久 journal 和条件恢复
+  达成可恢复的逻辑事务；不能宣称文件系统硬原子或把恢复快照称为已验证备份。旧论文分析改写须同时
+  守恒旧 Markdown 未标记正文及每个字段、旧 Canvas 节点/边，并让候选 Markdown/Canvas/sidecar 通过
+  正式 conformance；未经可信人工批准的同一合成摘要不得放行。用户已原则批准调整经核实为纯机器生成的
+  世界模型旧稿，无须再逐字段请求内容裁决；这不免除原件保留、当前字节绑定、科学来源核验和事务审批。
+  其他同级集合须先只读确定边界并核实机器来源，不得据此批量自动迁移。首次登记含旧分析或旧链接的 Field
+  须把 manifest、host registry、内容、导航和链接作为同一事务审议，不能先用旧网页确认身份；新导航
+  不得静默遗漏预览中的旧文档。受管分析 Markdown/Canvas/sidecar 不得经单文件 Hub 编辑器改写。
+  本地操作员的事务入口虽已接入开发树，真实 JEPA 的 Provider+Field 联合事务及停写验收仍未完成，
+  不能仅凭上述内容批准据此迁移。
 - `scholar-workflow open-hub` 从已安装包启动或安全重启受管服务，经 mode 0600 discovery 发现动态端口，
   并把调用者当前 cmux workspace 记为默认打开位置（若存在）。服务不得依赖 code repo root；
   `hub start/status/stop/restart/doctor` 必须显示并核验真实 executable、build、PID、generation 与日志。
+  受管进程的启停身份握手不得依赖 Zotero、其他 provider 或 cmux 路由的健康；详细能力诊断与
+  生命周期身份探针分离，慢速诊断不能让存活的 HTTP 服务被误判为未知进程。
 - 论文/PDF/Field 使用稳定 EntityRef/PdfRef 直接生成动作；正常 UI 和新文档不得经过人类可见
   paper/attachment/document landing，也不得产生固定 loopback URL。旧 landing 只作一版本兼容解析。
 - Zotero 是正式批注唯一权威，ZotFlow 是唯一可持有 Zotero Web API 读写密钥的客户端且密钥只留在
   Obsidian SecretStorage；Hub、CLI、agent、配置、环境和日志不得获取它。Scholar Workflow 只经 Local
   API 读取批注形成只读 AnnotationIR；ZotFlow Source Note、Better Notes 与 Scholar 分析目录 writer 分离。
+- Hub 与 ZotFlow 阅读论文 PDF 不得依赖 Zotero Web API/WebDAV 附件下载。ZotFlow 已审计版本、
+  本机 Zotero storage 模式和对应附件必须在动作执行时得到非秘密的正向验证；验证失败即拒绝打开，
+  不回退云端文件端点。
+  元数据/批注的 Web API 同步可以继续；不得为验证本机模式读取 ZotFlow 的密钥或完整秘密配置。
+- 新论文分析的作者事实与分析推断须在每个 claim/point 的行内证据旁提供可验证原文位置；Zotero PDF
+  使用 attachment identity、内容 hash、物理页索引与可选的真实批注 key，Vault Markdown 使用已登记文档
+  identity 与块锚点。Canvas 同点保留原文入口和对应正文反链。页级跳转不得冒称逐句/批注定位；结构
+  conformance 不等于来源存在性、归属与版本核验。cmux PDF surface 仅本机只读预览，不能冒称嵌入
+  Zotero 原生 reader 或正式批注写回；Zotero 深链打开独立应用。
+- 新生成的论文解析树以用户给定原图的完整 Abstract / Introduction / Method / Limitation 层级为输出契约，
+  含原图各子槽位；旧任务／输入／流程／输出／边界仅作 v1–v3 历史分析对兼容读取，不再作为新分析模板。
+  英文内容使用英文结构标签，中文内容使用中文标签；空槽位不编造论文事实。Canvas 必须保留可编辑
+  JSON text 节点和直角无箭头连接，逐点证据、原文入口及对应正文反链不得因紧凑排版丢失。正式 Vault
+  旧分析迁移仍需独立审议，test Vault 样张不能冒充真实论文验收。Advanced Canvas 自动添加的
+  受限 `metadata`（`version`/`frontmatter`）须被校验并保留，但不能当作 Scholar 对象身份或放行任意顶层字段。
+- v4 人类 Markdown 与 Canvas 节点正文不输出 `sw-analysis-claim` 机器注释；块锚点、确定性节点 ID 与
+  sidecar 承担身份。Canvas 文本框按中文换行留出约一行点击空间，仍守护整体长宽比。来源 span 身份与
+  阅读器入口分离：在已核验 Vault 可显式选择 ZotFlow Library Reader 页级投影，Markdown/Canvas
+  同步渲染并成对校验；未核验时保留 Zotero 原生入口，不手改其中一个文件。
+- 新论文的资料笔记、分析 Markdown、Canvas 和 sidecar 同处 Field 内
+  `resources/papers/<stable-paper-segment>/`；PDF 仍归 Zotero。目录段须与资源 ID 持久映射，旧平铺
+  产物只原位兼容，正式搬迁需显式 CAS/恢复事务及链接清理，不能靠普通分析更新顺手移动。
 - TaskRecipe 只接受 allowlisted target、最多 8 KiB 的 bounded brief 和 `fast/standard/deep` effort；
   浏览器不能提交命令、cwd/path、model、sandbox、permission、环境变量或任意 config。
 
@@ -67,6 +109,15 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
 模型自由形成判断,再把结果投影到规定格式。只有工具依赖、安全/权限和脆弱操作顺序等真实外部
 过程契约,才值得规定执行步骤。
 
+### 开发验证与真实执行分离
+
+开发或迭代 skill、CLI、Hub 契约时，内循环先用合成 fixture 和一个受控对象
+（一篇论文、一个仓库或一个 `test` Vault 样本）验证路由、格式、安全和失败恢复；
+按风险补充定向边界用例，不把真实批量入库、整库扫描或正式迁移反复用作调试循环。
+运行期 skill 仍须完整执行用户实际要求的范围，这条开发规则不能成为缩小用户任务的理由。
+需要真实全集验收的发布门禁，在实现稳定后按已批准范围进行一次完整预览和受控执行；
+代码或输入变化使摘要失效时重新生成并审议，不沿用旧结果，也不因节省验证成本跳过安全门禁。
+
 ### 约束分两类:业务约束稳定维护,优化约束随能力做减法
 
 过了上一条筛子(非内在能力冗余)的真实约束,再分两类,增删逻辑相反:
@@ -90,7 +141,7 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
 
 ```
 skills/<name>/
-├── SKILL.md          # Required — frontmatter (name, description) + trigger, steps, constraints
+├── SKILL.md          # Required — frontmatter (name, description) + observable result, interfaces, constraints
 ├── README.md         # English documentation
 ├── README.zh-CN.md   # Chinese documentation
 ├── scripts/          # Executable scripts (if any)
@@ -98,9 +149,13 @@ skills/<name>/
 ```
 
 SKILL.md 的 `description` 字段是宿主判断是否触发该 skill 的主要机制，触发词准确性直接影响路由质量。
-正文只保留项目特定的路由、精确工具调用、产物格式、环境事实与安全/权限边界；通用的研究、分析、
-分类、排序、总结和写作方法不写进运行期 skill。运行期安全约束写在各 SKILL.md 的 Constraints
-小节，不放本文。
+正文以可复现的**最终结果契约**为主：产物归属与身份、文件/schema 字段、内容层级、证据和链接、
+可读呈现、完成/失败状态及验收标准。只有真实工具依赖、权限/安全门禁、脆弱外部操作顺序才规定
+执行步骤；通用的研究、分析、分类、排序、总结和写作方法不写进运行期 skill。详细格式放入
+按需加载的 reference，不把单篇样本的事实或节点数推广成通用模板。运行期安全约束写在各
+SKILL.md 的 Constraints 小节，不放本文。
+面向人呈现的笔记、Canvas、报告、Hub 和 CLI 文本共同遵守 `references/human-presentation.md`；
+该文件只约束可见结果的可读性、来源、链接和状态，各产物仍由自己的格式契约决定具体结构。
 
 ### References: two tiers
 
@@ -165,7 +220,9 @@ methodology (stable); `planning/` is the per-phase **"what to build / goals / ha
 - Test skill triggering by reviewing the `description` field — it's the primary routing mechanism
 - Write contract test before modifying any adapter interface
 - Update `contracts/handoff.schema.json` before modifying the state machine
-- Run `pytest tests/unit tests/contract` before committing
+- Before committing, propose the `pytest tests/unit tests/contract` test plan with its
+  inputs, expected results, impact, and artifacts; run it only after user approval.
+  Do not treat an untested change as validated or ready to commit.
 
 ### Ask First
 

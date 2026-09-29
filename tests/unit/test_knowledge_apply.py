@@ -398,6 +398,32 @@ def test_checked_in_provider_schemas_accept_runtime_snapshot(tmp_path: Path) -> 
     assert KnowledgeProviderSnapshot.model_validate_json(
         (state / "knowledge-provider.snapshot.json").read_text(encoding="utf-8")
     ) == snapshot
+    legacy_payload = snapshot.model_dump(mode="json")
+    legacy_payload.pop("vault_binding")
+    assert KnowledgeProviderSnapshot.model_validate(legacy_payload) == snapshot
+
+    vault = tmp_path / "vault"
+    vault.mkdir()
+    bound_state = tmp_path / "bound-provider"
+    bound_state.mkdir()
+    bound = initialize_knowledge_provider_snapshot(
+        state_root=bound_state,
+        vault_root=vault,
+        manifest=_manifest(),
+        catalog=_catalog(),
+    )
+    jsonschema.Draft202012Validator(
+        schemas["knowledge-provider-snapshot.schema.json"],
+        registry=registry,
+    ).validate(bound.model_dump(mode="json"))
+    assert bound.vault_binding is not None
+    applied = apply_knowledge_change_set(
+        state_root=bound_state,
+        change_set=_change(bound.catalog.revision),
+        clock=lambda: NOW,
+    )
+    assert applied.change_id
+    assert load_knowledge_provider_snapshot(bound_state).vault_binding == bound.vault_binding
 
 
 def test_replay_rejects_receipt_without_applied_change(tmp_path: Path) -> None:

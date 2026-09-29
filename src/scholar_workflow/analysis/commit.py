@@ -7,16 +7,22 @@ import json
 import os
 import secrets
 import stat
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from hashlib import sha256
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from pydantic import ValidationError
 
+from scholar_workflow.analysis.apply_changes import (
+    KnowledgeApplySafetyError,
+    KnowledgeProviderSnapshot,
+    _locked_state_root,
+    _read_snapshot,
+)
 from scholar_workflow.analysis.conformance import validate_bundle
 from scholar_workflow.analysis.models import (
     AnalysisBaseline,
@@ -28,6 +34,13 @@ from scholar_workflow.analysis.models import (
 )
 from scholar_workflow.analysis.rendering import AnalysisBundle
 from scholar_workflow.analysis.updates import create_baseline
+from scholar_workflow.hub.fields import (
+    FieldRegistryError,
+    FieldService,
+    KnowledgeSourceRegistry,
+)
+from scholar_workflow.hub.zotflow import ZotFlowError, resolve_obsidian_vault_id
+from scholar_workflow.models import ResourceKind
 
 
 class AnalysisCommitError(ValueError):
@@ -63,8 +76,13 @@ def _json_bytes(value: object) -> bytes:
 
 
 def _request_fingerprint(request: AnalysisCommitRequest) -> str:
+    semantic = request.model_dump(mode="json")
+    if request.document.schema_version != 4:
+        # Preserve persisted v1-v3 receipt fingerprints from before these v4 fields existed.
+        semantic.pop("base_snapshot_revision", None)
+        semantic.pop("zotero_item_key", None)
     payload = json.dumps(
-        request.model_dump(mode="json"),
+        semantic,
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
@@ -1151,6 +1169,273 @@ def _rollback(
     return conflicts
 
 
+@contextmanager
+def _authoritative_paper_folder(
+    request: AnalysisCommitRequest,
+    provider_state_root: Path | None,
+) -> Iterator[KnowledgeProviderSnapshot | None]:
+    """Pin the provider declaration while an IR v4 bundle is committed."""
+
+    if request.document.schema_version != 4:
+        yield None
+        return
+    if provider_state_root is None:
+        raise AnalysisCommitSafetyError(
+            "IR v4 commit requires an authoritative Knowledge provider state root"
+        )
+    if request.base_catalog_revision is None:
+        raise AnalysisCommitConflict("IR v4 commit requires base_catalog_revision")
+    if request.base_snapshot_revision is None:
+        raise AnalysisCommitConflict("IR v4 commit requires base_snapshot_revision")
+    if request.zotero_item_key is None:
+        raise AnalysisCommitSafetyError("IR v4 commit requires a Zotero item key")
+
+    try:
+        # Share the provider apply lock so its manifest cannot change during commit.
+        provider_path = _existing_root(
+            provider_state_root,
+            label="Knowledge provider state root",
+        )
+        with _locked_state_root(provider_path) as provider_root:
+            snapshot, _, _ = _read_snapshot(provider_root.fd)
+            provider_root.ensure_current()
+            if snapshot.vault_binding is None:
+                raise AnalysisCommitSafetyError(
+                    "IR v4 Knowledge provider has no Vault root binding"
+                )
+            yield snapshot
+            provider_root.ensure_current()
+    except KnowledgeApplySafetyError as exc:
+        raise AnalysisCommitSafetyError(
+            f"authoritative Knowledge provider state is unavailable: {exc}"
+        ) from exc
+
+
+@contextmanager
+def _registered_v4_provider(
+    registry: KnowledgeSourceRegistry | None,
+    vault_root: Path,
+    request: AnalysisCommitRequest,
+) -> Iterator[tuple[Path, str]]:
+    """Resolve the only v4 provider through the host-registered Obsidian Source.
+
+    Managed Source writes take the same registry lock exclusively. Keep a shared
+    lock until the canonical bundle has committed so a managed re-registration
+    cannot redirect the Source between authorization and file replacement.
+    """
+
+    if registry is None:
+        raise AnalysisCommitSafetyError(
+            "IR v4 commit requires a registered Obsidian Source"
+        )
+    root = _existing_root(vault_root, label="Vault root")
+    parent = _existing_root(registry.path.parent, label="Source registry parent")
+    directory_fd: int | None = None
+    lock_fd: int | None = None
+    try:
+        flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        directory_fd = os.open(parent, flags)
+        lock_fd = os.open(
+            f".{registry.path.name}.lock",
+            os.O_RDWR | getattr(os, "O_NOFOLLOW", 0),
+            dir_fd=directory_fd,
+        )
+        lock_meta = os.fstat(lock_fd)
+        if (
+            not stat.S_ISREG(lock_meta.st_mode)
+            or lock_meta.st_uid != os.geteuid()
+            or lock_meta.st_nlink != 1
+            or stat.S_IMODE(lock_meta.st_mode) & 0o077
+        ):
+            raise AnalysisCommitSafetyError("Source registry lock is not private and regular")
+        fcntl.flock(lock_fd, fcntl.LOCK_SH)
+        document = registry.load_document()
+        matches: list[tuple[str, Path]] = []
+        for source in document.sources:
+            if not source.enabled or "write" not in source.capabilities:
+                continue
+            folder = next(row for row in document.folders if row.folder_id == source.folder_id)
+            if not folder.enabled or "write" not in folder.capabilities:
+                continue
+            try:
+                registered_root = _existing_root(
+                    folder.root,
+                    label="registered Source folder",
+                )
+            except AnalysisCommitSafetyError:
+                # Another Source may be temporarily offline. It cannot authorize
+                # this Vault; a matching but unsafe path must never be followed.
+                continue
+            if root.samefile(registered_root):
+                matches.append((source.source_id, registered_root))
+        if len(matches) != 1:
+            raise AnalysisCommitSafetyError(
+                "IR v4 Vault requires exactly one enabled writable registered Obsidian Source"
+            )
+        source_id, registered_root = matches[0]
+        reader = request.document.reader
+        if reader is not None and reader.kind == "zotflow_library":
+            if reader.vault_id is None:
+                raise AnalysisCommitSafetyError(
+                    "IR v4 ZotFlow reader requires a verified Vault ID for commit"
+                )
+            try:
+                registered_vault_id = resolve_obsidian_vault_id(registered_root)
+            except ZotFlowError as exc:
+                raise AnalysisCommitSafetyError(
+                    f"IR v4 registered Vault ID is unavailable: {exc}"
+                ) from exc
+            if reader.vault_id != registered_vault_id:
+                raise AnalysisCommitSafetyError(
+                    "IR v4 ZotFlow reader Vault ID differs from registered target Vault"
+                )
+        _assert_v4_source_manifest(root, source_id, request)
+        yield parent / "knowledge-providers" / source_id, source_id
+    except (FieldRegistryError, OSError) as exc:
+        raise AnalysisCommitSafetyError(
+            f"registered Obsidian Source is unavailable or unsafe: {exc}"
+        ) from exc
+    finally:
+        if lock_fd is not None:
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            os.close(lock_fd)
+        if directory_fd is not None:
+            os.close(directory_fd)
+
+
+def _assert_v4_source_manifest(
+    vault_root: Path,
+    source_id: str,
+    request: AnalysisCommitRequest,
+) -> None:
+    try:
+        manifest = FieldService._load_manifest(vault_root)
+    except FieldRegistryError as exc:
+        raise AnalysisCommitSafetyError(f"IR v4 Field manifest is unavailable: {exc}") from exc
+    if manifest.source_id != source_id:
+        raise AnalysisCommitSafetyError(
+            "IR v4 Field manifest Source differs from the registered Obsidian Source"
+        )
+    paper_folder = PurePosixPath(request.paths.markdown).parent
+    owners = [
+        field
+        for field in manifest.fields
+        if field.relative_root == "."
+        or paper_folder == PurePosixPath(field.relative_root)
+        or PurePosixPath(field.relative_root) in paper_folder.parents
+    ]
+    if len(owners) != 1:
+        raise AnalysisCommitSafetyError(
+            "IR v4 paper folder must belong to exactly one registered Field"
+        )
+
+
+def _assert_v4_provider_preconditions(
+    request: AnalysisCommitRequest,
+    snapshot: KnowledgeProviderSnapshot,
+) -> None:
+    if request.base_snapshot_revision != snapshot.snapshot_revision:
+        raise AnalysisCommitConflict(
+            "Knowledge provider snapshot revision changed before IR v4 commit"
+        )
+    if request.base_catalog_revision != snapshot.catalog.revision:
+        raise AnalysisCommitConflict(
+            "Knowledge provider catalog revision changed before IR v4 commit"
+        )
+    paper_folder = PurePosixPath(request.paths.markdown).parent
+    owners = [
+        resource
+        for resource in snapshot.manifest.atomic_resources
+        if PurePosixPath(resource.markdown_path).parent == paper_folder
+    ]
+    if len(owners) != 1 or owners[0].resource_id != request.resource_id:
+        raise AnalysisCommitSafetyError(
+            "IR v4 paper folder has no unique manifest owner matching resource_id"
+        )
+    if owners[0].kind is not ResourceKind.PAPER:
+        raise AnalysisCommitSafetyError(
+            "IR v4 paper folder owner must be a declared paper resource"
+        )
+    catalog_paper = next(
+        (
+            resource
+            for resource in snapshot.catalog.resources
+            if resource.resource_id == request.resource_id
+        ),
+        None,
+    )
+    if (
+        catalog_paper is None
+        or catalog_paper.kind is not ResourceKind.PAPER
+        or catalog_paper.zotero.item_key != request.zotero_item_key
+    ):
+        raise AnalysisCommitSafetyError(
+            "IR v4 Zotero item key differs from the provider paper"
+        )
+    _assert_v4_target_ownership(request, snapshot)
+
+
+def _assert_v4_target_ownership(
+    request: AnalysisCommitRequest,
+    snapshot: KnowledgeProviderSnapshot,
+) -> None:
+    """Reject collisions before any Vault journal or file is created."""
+
+    reserved_paths = {
+        *(item.markdown_path for item in snapshot.manifest.atomic_resources),
+        *(item.markdown_path for item in snapshot.manifest.core_documents),
+        *(item.vault_path for item in snapshot.catalog.assets),
+    }
+    supporting_paths = {
+        item.vault_path: item.document_id
+        for item in snapshot.manifest.supporting_documents
+    }
+    artifacts_by_path = {item.vault_path: item for item in snapshot.artifacts}
+    artifacts_by_id = {item.artifact_id: item for item in snapshot.artifacts}
+    expected = (
+        (request.paths.markdown, request.document.artifact_id, "analysis_markdown"),
+        (request.paths.canvas, f"{request.document.artifact_id}:canvas", "analysis_canvas"),
+        (request.paths.sidecar, f"{request.document.artifact_id}:sidecar", "analysis_sidecar"),
+    )
+    for path, artifact_id, kind in expected:
+        if path in reserved_paths:
+            raise AnalysisCommitSafetyError(
+                f"IR v4 target collides with a declared Knowledge path: {path}"
+            )
+        existing_at_path = artifacts_by_path.get(path)
+        existing_by_id = artifacts_by_id.get(artifact_id)
+        if existing_by_id is not None and existing_by_id.vault_path != path:
+            raise AnalysisCommitSafetyError(
+                f"IR v4 artifact identity is already assigned to another path: {artifact_id}"
+            )
+        if existing_at_path is None:
+            if path in supporting_paths:
+                raise AnalysisCommitSafetyError(
+                    f"IR v4 target collides with a declared Knowledge path: {path}"
+                )
+            if request.base_revisions[path] is not None:
+                raise AnalysisCommitSafetyError(
+                    f"IR v4 new artifact cannot replace an unmanaged file: {path}"
+                )
+            continue
+        if supporting_paths.get(path, artifact_id) != artifact_id:
+            raise AnalysisCommitSafetyError(
+                f"IR v4 target collides with another supporting document: {path}"
+            )
+        if (
+            existing_at_path.artifact_id != artifact_id
+            or existing_at_path.kind != kind
+            or existing_at_path.resource_id != request.resource_id
+        ):
+            raise AnalysisCommitSafetyError(
+                f"IR v4 target belongs to another Knowledge artifact: {path}"
+            )
+        if request.base_revisions[path] != existing_at_path.sha256:
+            raise AnalysisCommitConflict(
+                f"IR v4 provider artifact revision changed: {path}"
+            )
+
+
 def commit_analysis_bundle(
     *,
     vault_root: Path,
@@ -1158,6 +1443,8 @@ def commit_analysis_bundle(
     request: AnalysisCommitRequest,
     bundle: AnalysisBundle,
     baseline: AnalysisBaseline,
+    provider_state_root: Path | None = None,
+    source_registry: KnowledgeSourceRegistry | None = None,
     fault_inject: FaultInjector | None = None,
 ) -> AnalysisCommitReceipt:
     """Commit one validated pair and sidecar with CAS, journal, and safe rollback.
@@ -1165,8 +1452,59 @@ def commit_analysis_bundle(
     The function never scans Markdown for relations.  Its ``KnowledgeChangeSet``
     contains only the three committed artifacts plus relations and projections
     supplied explicitly in ``request``.
+
+    IR v4 resolves its provider solely from the registered Source's host-state
+    location. Older arbitrary provider directories and snapshots without a
+    Vault binding remain disabled for v4; this operation never migrates or
+    silently rebinds them.
     """
 
+    if request.document.schema_version == 4:
+        if provider_state_root is not None:
+            raise AnalysisCommitSafetyError(
+                "IR v4 --provider-state-root is not an authority; use the registered Source"
+            )
+        with _registered_v4_provider(source_registry, vault_root, request) as (
+            registered_provider_root,
+            source_id,
+        ), _authoritative_paper_folder(
+            request,
+            registered_provider_root,
+        ) as provider_snapshot:
+            return _commit_analysis_bundle_locked(
+                vault_root=vault_root,
+                state_root=state_root,
+                request=request,
+                bundle=bundle,
+                baseline=baseline,
+                provider_snapshot=provider_snapshot,
+                source_id=source_id,
+                fault_inject=fault_inject,
+            )
+    with _authoritative_paper_folder(request, provider_state_root) as provider_snapshot:
+        return _commit_analysis_bundle_locked(
+            vault_root=vault_root,
+            state_root=state_root,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            provider_snapshot=provider_snapshot,
+            source_id=None,
+            fault_inject=fault_inject,
+        )
+
+
+def _commit_analysis_bundle_locked(
+    *,
+    vault_root: Path,
+    state_root: Path,
+    request: AnalysisCommitRequest,
+    bundle: AnalysisBundle,
+    baseline: AnalysisBaseline,
+    provider_snapshot: KnowledgeProviderSnapshot | None,
+    source_id: str | None,
+    fault_inject: FaultInjector | None,
+) -> AnalysisCommitReceipt:
     root = _existing_root(vault_root, label="Vault root")
     root_identity = _path_directory_identity(root)
     state = _state_root(state_root)
@@ -1179,6 +1517,32 @@ def commit_analysis_bundle(
         _open_state_layout(state, request.commit_id) as state_layout,
         _commit_lock(root, root_identity) as vault_descriptor,
     ):
+        if source_id is not None:
+            # Field registration uses the same Vault inode lock for manifest
+            # replacement; recheck after locking, before any canonical write.
+            _assert_v4_source_manifest(root, source_id, request)
+        if provider_snapshot is not None:
+            binding = provider_snapshot.vault_binding
+            if binding is None:
+                raise AnalysisCommitSafetyError("IR v4 provider Vault binding is missing")
+            try:
+                bound_root = _existing_root(
+                    Path(binding.root_path),
+                    label="provider Vault binding",
+                )
+                matches_path = root.samefile(bound_root)
+            except OSError as exc:
+                raise AnalysisCommitSafetyError(
+                    f"IR v4 provider Vault binding is unavailable: {exc}"
+                ) from exc
+            opened = os.fstat(vault_descriptor)
+            if (
+                not matches_path
+                or (opened.st_dev, opened.st_ino) != (binding.device, binding.inode)
+            ):
+                raise AnalysisCommitSafetyError(
+                    "IR v4 provider Vault root binding differs from target Vault"
+                )
         if _state_file_exists(
             state_layout,
             state_layout.receipts_descriptor,
@@ -1200,6 +1564,9 @@ def commit_analysis_bundle(
             )
             _verify_receipt_targets(root, vault_descriptor, receipt)
             return receipt
+
+        if provider_snapshot is not None:
+            _assert_v4_provider_preconditions(request, provider_snapshot)
 
         if _state_file_exists(
             state_layout,

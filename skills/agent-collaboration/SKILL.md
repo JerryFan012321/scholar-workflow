@@ -26,8 +26,8 @@ The caller owns integration, validation, and the final user-visible result.
    - Codex: `references/codex-cli.md`;
    - Claude Code: `references/claude-code-cli.md`.
 6. Verify the actual completion signal, returned artifact/diff, scope, and acceptance
-   criteria. Then integrate, run final task checks, and remove temporary handoff/output
-   files.
+   criteria. Integrate the result; run tests only under the user's approved test plan.
+   Remove only temporary handoff/output files created for this assignment.
 
 ## Constraints
 
@@ -39,6 +39,7 @@ The caller owns integration, validation, and the final user-visible result.
 
 ## References
 
+- `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `references/handoff-contract.md`
 - `references/codex-cli.md`
 - `references/claude-code-cli.md`

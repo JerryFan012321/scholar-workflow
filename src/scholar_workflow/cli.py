@@ -6,6 +6,7 @@ import json
 import os
 import re
 import secrets
+import stat
 import subprocess
 import webbrowser
 from collections.abc import Iterator
@@ -876,6 +877,29 @@ def _hub_service_process(generation: str, discovery: Path, log: Path) -> None:
     )
 
 
+@main.command(name="_hub-router", hidden=True)
+@click.option("--generation", required=True)
+@click.option(
+    "--runtime-root",
+    required=True,
+    type=click.Path(file_okay=False, path_type=Path),
+)
+def _hub_router_process(generation: str, runtime_root: Path) -> None:
+    """Private cmux-descendant router for validated window operations."""
+    from scholar_workflow.hub.cmux_router import run
+
+    raise SystemExit(
+        run(
+            [
+                "--generation",
+                generation,
+                "--runtime-root",
+                str(runtime_root),
+            ]
+        )
+    )
+
+
 @main.command(name="serve-hub")
 @click.option(
     "--port",
@@ -911,21 +935,20 @@ def serve_hub(
 @click.option("--json", "as_json", is_flag=True)
 def hub_doctor(port: int | None, as_json: bool) -> None:
     """Compatibility alias for managed Hub diagnostics."""
-    from scholar_workflow.hub.lifecycle import HubServiceManager, probe_health
+    from scholar_workflow.hub.lifecycle import HubServiceManager, probe_diagnostics
 
     if port is None:
         status = HubServiceManager().status()
         if not status.running or status.record is None or status.health is None:
             raise DependencyError(status.detail)
         selected_port = status.record.port
-        payload = status.health
     else:
         selected_port = port
-        payload = probe_health(selected_port)
-        if payload is None:
-            raise DependencyError(
-                f"No compatible Scholar Workflow Hub at 127.0.0.1:{selected_port}"
-            )
+    payload = probe_diagnostics(selected_port)
+    if payload is None:
+        raise DependencyError(
+            f"No detailed Scholar Workflow Hub diagnostics at 127.0.0.1:{selected_port}"
+        )
     if as_json:
         click.echo(json.dumps(payload, ensure_ascii=False, sort_keys=True))
         return
@@ -983,6 +1006,19 @@ def _echo_managed_record(record: object) -> None:
     )
 
 
+def _ensure_hub_router(record: object, workspace_id: str) -> None:
+    """Attach only window routing to cmux; never move the HTTP service there."""
+    from scholar_workflow.hub.cmux_router import ensure_router
+    from scholar_workflow.hub.lifecycle import _installed_cli_executable, runtime_root
+
+    ensure_router(
+        runtime_root=runtime_root(),
+        service_generation=record.service_generation,
+        workspace_id=workspace_id,
+        executable=_installed_cli_executable(),
+    )
+
+
 @main.group(name="hub")
 def hub_lifecycle() -> None:
     """Manage the installed package's host-local Hub service."""
@@ -990,6 +1026,351 @@ def hub_lifecycle() -> None:
 
 def _hub_state_root() -> Path:
     return Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME)).expanduser().resolve()
+
+
+def _managed_field_hub_record():
+    from scholar_workflow.hub.lifecycle import HubServiceManager
+
+    status = HubServiceManager().status()
+    if not status.running or status.record is None:
+        raise DependencyError(status.detail)
+    return status.record
+
+
+def _field_hub_request(
+    port: int,
+    path: str,
+    *,
+    payload: dict[str, object] | None = None,
+    operator_token: str | None = None,
+) -> dict[str, object]:
+    """Call the proven managed listener; never put approval data in a URL."""
+    if payload is not None:
+        session = _field_hub_request(port, "/api/v1/session")
+        csrf = session.get("csrf_token")
+        if not isinstance(csrf, str) or not csrf:
+            raise ExternalServiceError("Hub browser session response was invalid")
+        try:
+            encoded = json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8")
+        except (TypeError, ValueError) as exc:
+            raise InputError("Field request is not strict JSON") from exc
+        if len(encoded) > 8 * 1024 * 1024:
+            raise InputError("Field request is too large")
+        headers = {
+            "Content-Type": "application/json",
+            "Origin": f"http://127.0.0.1:{port}",
+            "X-Scholar-Hub-Token": csrf,
+        }
+        if operator_token is not None:
+            headers["X-Scholar-Hub-Operator"] = operator_token
+    else:
+        encoded = None
+        headers = {}
+    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=30.0)
+    try:
+        connection.request(
+            "POST" if encoded is not None else "GET",
+            path,
+            body=encoded,
+            headers=headers,
+        )
+        response = connection.getresponse()
+        content = response.read(4 * 1024 * 1024 + 1)
+        status_code = response.status
+    except (OSError, http.client.HTTPException) as exc:
+        raise ExternalServiceError(f"Managed Hub request failed: {exc}") from None
+    finally:
+        connection.close()
+    if len(content) > 4 * 1024 * 1024:
+        raise ExternalServiceError("Managed Hub response was unexpectedly large")
+    try:
+        decoded = json.loads(content)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        decoded = {"error": content.decode("utf-8", errors="replace")}
+    if not isinstance(decoded, dict):
+        raise ExternalServiceError("Managed Hub response was invalid")
+    if status_code != 200:
+        detail = str(decoded.get("error", f"HTTP {status_code}"))
+        if "candidate expired" in detail or "plan is unknown or expired" in detail:
+            detail += "; review again within 30 minutes; Hub restart invalidates plan tokens"
+        if status_code == 400:
+            raise InputError(detail)
+        if status_code in {403, 409}:
+            raise SafetyRefusalError(detail)
+        if status_code == 503:
+            raise DependencyError(detail)
+        raise ExternalServiceError(detail)
+    return decoded
+
+
+def _field_operator_token(record: object) -> str:
+    """Read the private local-operator credential after lifecycle identity proof."""
+    from scholar_workflow.hub.field_transaction import _open_private_directory
+    from scholar_workflow.hub.server import OPERATOR_CREDENTIAL_NAME
+
+    path = Path(record.log_path).parent / OPERATOR_CREDENTIAL_NAME
+    try:
+        parent_fd = _open_private_directory(path.parent)
+    except (OSError, ValueError) as exc:
+        raise SafetyRefusalError("Field operator credential parent is unsafe") from exc
+    try:
+        parent = os.fstat(parent_fd)
+        if parent.st_uid != os.geteuid() or stat.S_IMODE(parent.st_mode) & 0o077:
+            raise SafetyRefusalError("Field operator credential parent is not private")
+        descriptor = os.open(
+            path.name,
+            os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+            dir_fd=parent_fd,
+        )
+        with os.fdopen(descriptor, "rb") as handle:
+            metadata = os.fstat(handle.fileno())
+            if (
+                not stat.S_ISREG(metadata.st_mode)
+                or metadata.st_uid != os.geteuid()
+                or metadata.st_nlink != 1
+                or stat.S_IMODE(metadata.st_mode) != 0o600
+                or metadata.st_size > 1024
+            ):
+                raise SafetyRefusalError("Field operator credential is unsafe")
+            content = handle.read(1025)
+    except OSError as exc:
+        raise SafetyRefusalError("Field operator credential is unavailable or unsafe") from exc
+    finally:
+        os.close(parent_fd)
+    try:
+        payload = json.loads(content)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SafetyRefusalError("Field operator credential is invalid") from exc
+    if not isinstance(payload, dict) or set(payload) != {"service_generation", "pid", "token"}:
+        raise SafetyRefusalError("Field operator credential is invalid")
+    if payload["service_generation"] != record.service_generation or payload["pid"] != record.pid:
+        raise SafetyRefusalError("Field operator credential belongs to a stale generation")
+    token = payload["token"]
+    if not isinstance(token, str) or len(token) < 32:
+        raise SafetyRefusalError("Field operator credential is invalid")
+    return token
+
+
+def _read_legacy_field_package(handle: object) -> dict[str, object]:
+    """Bound the local candidate document before sending it to the operator route."""
+    try:
+        encoded = handle.read(8 * 1024 * 1024 + 1)
+    except OSError as exc:
+        raise InputError(f"Could not read Field proposal package: {exc}") from exc
+    if not isinstance(encoded, bytes) or len(encoded) > 8 * 1024 * 1024:
+        raise InputError("Field proposal package must be at most 8 MiB")
+
+    def unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        result: dict[str, object] = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("Duplicate Field proposal JSON key")
+            result[key] = value
+        return result
+
+    try:
+        package = json.loads(
+            encoded,
+            object_pairs_hook=unique_object,
+            parse_constant=lambda _value: (_ for _ in ()).throw(
+                ValueError("Non-finite Field proposal number")
+            ),
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        raise InputError(f"Invalid Field proposal package: {exc}") from exc
+    if not isinstance(package, dict):
+        raise InputError("Field proposal package must be a JSON object")
+    return package
+
+
+@hub_lifecycle.group(name="field-transaction")
+def hub_field_transaction() -> None:
+    """Plan one Field as a group; commit only with a local operator."""
+
+
+@hub_field_transaction.command(name="plan")
+@click.option("--field-root", default=None, help="Choose this relative Field root after folder selection.")
+@click.option("--candidate-token", default=None, help="Use a prior Hub folder-selection candidate.")
+@click.option("--field-id", default=None, help="Field ID from that exact candidate preview.")
+def hub_field_transaction_plan(
+    field_root: str | None,
+    candidate_token: str | None,
+    field_id: str | None,
+) -> None:
+    """Read only: inspect the full Field change set and exact approval digest."""
+    record = _managed_field_hub_record()
+    if (candidate_token is None) != (field_id is None):
+        raise InputError("--candidate-token and --field-id must be provided together")
+    if candidate_token is not None:
+        if field_root is not None:
+            raise InputError("--field-root cannot accompany an existing candidate")
+        selected_token, selected_id = candidate_token, field_id
+    else:
+        selected = _field_hub_request(record.port, "/api/v3/fields/select", payload={})
+        preview = selected.get("preview")
+        if not isinstance(preview, dict):
+            raise ExternalServiceError("Field preview response was invalid")
+        rows = preview.get("fields")
+        if not isinstance(rows, list):
+            raise ExternalServiceError("Field preview response was invalid")
+        matches = [
+            row for row in rows
+            if isinstance(row, dict)
+            and (field_root is None or row.get("relative_root") == field_root)
+        ]
+        if len(matches) != 1:
+            roots = [row.get("relative_root") for row in rows if isinstance(row, dict)]
+            raise InputError(
+                "Choose exactly one Field with --field-root; candidates: "
+                + ", ".join(str(root) for root in roots)
+            )
+        selected_token, selected_id = preview.get("candidate_token"), matches[0].get("field_id")
+        if not isinstance(selected_token, str) or not isinstance(selected_id, str):
+            raise ExternalServiceError("Field preview identity was invalid")
+    result = _field_hub_request(
+        record.port,
+        "/api/v3/field-transactions/plan",
+        payload={"candidate_token": selected_token, "field_id": selected_id},
+    )
+    plan = result.get("plan")
+    if not isinstance(plan, dict):
+        raise ExternalServiceError("Field transaction plan response was invalid")
+    click.echo(json.dumps({**plan, "candidate_token": selected_token}, ensure_ascii=False, sort_keys=True))
+
+
+@hub_field_transaction.command(name="legacy-preview")
+@click.argument("candidate_token")
+@click.argument("field_id")
+@click.option(
+    "--package-file",
+    required=True,
+    type=click.File("rb"),
+    help="Trusted local JSON proposal (or - for stdin); never sent by a browser.",
+)
+def hub_field_transaction_legacy_preview(
+    candidate_token: str,
+    field_id: str,
+    package_file: object,
+) -> None:
+    """Read-only mechanical cutover review for one legacy analysis pair."""
+    package = _read_legacy_field_package(package_file)
+    record = _managed_field_hub_record()
+    response = _field_hub_request(
+        record.port,
+        "/api/v3/field-transactions/legacy/preview",
+        payload={"candidate_token": candidate_token, "field_id": field_id, "package": package},
+        operator_token=_field_operator_token(record),
+    )
+    click.echo(json.dumps(response, ensure_ascii=False, sort_keys=True))
+
+
+@hub_field_transaction.command(name="legacy-stage")
+@click.argument("candidate_token")
+@click.argument("field_id")
+@click.option(
+    "--package-file",
+    required=True,
+    type=click.File("rb"),
+    help="The same trusted local JSON proposal reviewed in legacy-preview.",
+)
+@click.option(
+    "--approved-cutover-digest",
+    required=True,
+    help="Exact cutover_digest from the reviewed read-only preview.",
+)
+@click.option(
+    "--field-definition-file",
+    type=click.File("rb"),
+    default=None,
+    help="Optional reviewed Field navigation/home override as local JSON.",
+)
+def hub_field_transaction_legacy_stage(
+    candidate_token: str,
+    field_id: str,
+    package_file: object,
+    approved_cutover_digest: str,
+    field_definition_file: object | None,
+) -> None:
+    """Unavailable until Provider and Field share a recovery journal."""
+    raise DependencyError(
+        "Legacy analysis staging is unavailable until Provider and Field changes "
+        "share one recoverable transaction journal; use legacy-preview for read-only review"
+    )
+
+
+@hub_field_transaction.command(name="apply")
+@click.argument("plan_token")
+@click.option("--approved-digest", required=True, help="Exact plan_digest from the reviewed plan.")
+@click.option(
+    "--external-writers-paused",
+    is_flag=True,
+    help="Human assertion: Obsidian and sync writers are paused; the CLI cannot detect this.",
+)
+def hub_field_transaction_apply(
+    plan_token: str,
+    approved_digest: str,
+    external_writers_paused: bool,
+) -> None:
+    """Commit the reviewed plan in a manually arranged quiet writer window."""
+    if not external_writers_paused:
+        raise SafetyRefusalError("External Field writers must be paused before apply")
+    if not click.confirm(
+        "Confirm external editors/sync are stopped and this exact digest was reviewed?",
+        default=False,
+    ):
+        raise SafetyRefusalError("Field transaction was not confirmed")
+    record = _managed_field_hub_record()
+    operator_token = _field_operator_token(record)
+    response = _field_hub_request(
+        record.port,
+        "/api/v3/field-transactions/apply",
+        payload={"plan_token": plan_token, "approved_digest": approved_digest},
+        operator_token=operator_token,
+    )
+    result = response.get("result")
+    if not isinstance(result, dict):
+        raise ExternalServiceError("Field transaction apply response was invalid")
+    click.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@hub_field_transaction.command(name="recover")
+@click.argument("source_id")
+@click.argument("field_id")
+@click.option("--confirm-recovery", is_flag=True, help="Confirm conditional rollback/completion.")
+@click.option(
+    "--external-writers-paused",
+    is_flag=True,
+    help="Human assertion: Obsidian and sync writers are paused; the CLI cannot detect this.",
+)
+def hub_field_transaction_recover(
+    source_id: str,
+    field_id: str,
+    confirm_recovery: bool,
+    external_writers_paused: bool,
+) -> None:
+    """Conditionally recover only this interrupted Field, preserving conflicts."""
+    if not confirm_recovery:
+        raise SafetyRefusalError("Explicit --confirm-recovery is required")
+    if not external_writers_paused:
+        raise SafetyRefusalError("External Field writers must be paused before recovery")
+    if not click.confirm("Inspect the pending Field journal and conditionally recover it?", default=False):
+        raise SafetyRefusalError("Field recovery was not confirmed")
+    record = _managed_field_hub_record()
+    operator_token = _field_operator_token(record)
+    response = _field_hub_request(
+        record.port,
+        "/api/v3/field-transactions/recover",
+        payload={
+            "source_id": source_id,
+            "field_id": field_id,
+            "external_writers_paused": True,
+        },
+        operator_token=operator_token,
+    )
+    result = response.get("result")
+    if not isinstance(result, dict):
+        raise ExternalServiceError("Field recovery response was invalid")
+    click.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
 
 
 @hub_lifecycle.group(name="field-migration")
@@ -1035,8 +1416,18 @@ def hub_field_migration_plan(source_id: str, field_id: str) -> None:
     required=True,
     help="Exact plan_digest from a reviewed, fresh read-only plan.",
 )
-def hub_field_migration_apply(source_id: str, field_id: str, approved_digest: str) -> None:
-    """Re-plan and CAS-apply one approved Field; never infer consent."""
+@click.option(
+    "--external-writers-paused",
+    is_flag=True,
+    help="Human assertion: Obsidian and sync writers are paused; the CLI cannot detect this.",
+)
+def hub_field_migration_apply(
+    source_id: str,
+    field_id: str,
+    approved_digest: str,
+    external_writers_paused: bool,
+) -> None:
+    """Re-plan and CAS-apply one approved Field in a quiet writer window."""
     from dataclasses import asdict
 
     from scholar_workflow.hub.field_migration import FieldMigrationError
@@ -1047,11 +1438,44 @@ def hub_field_migration_apply(source_id: str, field_id: str, approved_digest: st
         plan = service.plan(source_id, field_id)
         if approved_digest != plan.plan_digest:
             raise FieldMigrationError("Field changed; review a fresh plan_digest")
-        result = service.apply(plan.plan_token, approved_digest=approved_digest)
+        if plan.conflicts:
+            raise FieldMigrationError("Field migration plan has unresolved conflicts")
+        if not external_writers_paused:
+            raise FieldMigrationError("External Field writers must be paused before apply")
+        if not click.confirm(
+            "Confirm external editors/sync are stopped and this exact digest was reviewed?",
+            default=False,
+        ):
+            raise FieldMigrationError("Field migration was not confirmed")
+        result = service.apply(
+            plan.plan_token,
+            approved_digest=approved_digest,
+            external_writers_paused=True,
+        )
     except (FieldMigrationError, FieldRegistryError, OSError) as exc:
         raise SafetyRefusalError(str(exc)) from None
     payload = asdict(result)
     payload["recovery_snapshot"] = str(result.recovery_snapshot)
+    click.echo(json.dumps(payload, ensure_ascii=False, sort_keys=True))
+
+
+@hub_field_migration.command(name="recover")
+@click.argument("source_id")
+@click.argument("field_id")
+def hub_field_migration_recover(source_id: str, field_id: str) -> None:
+    """Explicitly conditionally restore an interrupted Field migration."""
+    from dataclasses import asdict
+
+    from scholar_workflow.hub.field_migration import FieldMigrationError
+    from scholar_workflow.hub.fields import FieldRegistryError
+
+    try:
+        result = _field_migration_service().recover(source_id, field_id)
+    except (FieldMigrationError, FieldRegistryError, OSError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    payload = asdict(result)
+    if result.recovery_snapshot is not None:
+        payload["recovery_snapshot"] = str(result.recovery_snapshot)
     click.echo(json.dumps(payload, ensure_ascii=False, sort_keys=True))
 
 
@@ -1555,12 +1979,19 @@ def hub_codex_status() -> None:
 @click.option("--json", "as_json", is_flag=True)
 def hub_start(as_json: bool) -> None:
     """Start or reuse the current managed Hub on a dynamic loopback port."""
+    from scholar_workflow.hub.cmux import CmuxControlError
     from scholar_workflow.hub.lifecycle import HubLifecycleError, HubServiceManager
 
     try:
         record = HubServiceManager().start()
     except HubLifecycleError as exc:
         raise _lifecycle_failure(exc) from None
+    cmux_context = _optional_cmux_context()
+    if cmux_context is not None:
+        try:
+            _ensure_hub_router(record, cmux_context[0])
+        except CmuxControlError as exc:
+            raise DependencyError(f"Hub is readable, but cmux routing failed: {exc}") from None
     if as_json:
         click.echo(json.dumps(record.as_payload(), ensure_ascii=False, sort_keys=True))
     else:
@@ -1588,25 +2019,43 @@ def hub_status(as_json: bool) -> None:
 @hub_lifecycle.command(name="stop")
 def hub_stop() -> None:
     """Stop only a health-proven managed Hub; already stopped is success."""
+    from scholar_workflow.hub.cmux import CmuxControlError
+    from scholar_workflow.hub.cmux_router import stop_router
     from scholar_workflow.hub.lifecycle import HubLifecycleError, HubServiceManager
 
+    manager = HubServiceManager()
     try:
-        stopped = HubServiceManager().stop()
+        prior = manager.status()
+        stopped = manager.stop()
     except HubLifecycleError as exc:
         raise _lifecycle_failure(exc) from None
+    if prior.record is not None:
+        try:
+            stop_router(manager.record_path.parent, prior.record.service_generation)
+        except CmuxControlError as exc:
+            raise ExternalServiceError(
+                f"Managed Hub stopped, but cmux router cleanup failed: {exc}"
+            ) from None
     click.echo("[ok] managed Hub stopped" if stopped else "[ok] managed Hub already stopped")
 
 
 @hub_lifecycle.command(name="restart")
 @click.option("--json", "as_json", is_flag=True)
 def hub_restart(as_json: bool) -> None:
-    """Safely replace a proven managed Hub with the installed build."""
+    """Safely replace a proven Hub; attach cmux routing when available."""
+    from scholar_workflow.hub.cmux import CmuxControlError
     from scholar_workflow.hub.lifecycle import HubLifecycleError, HubServiceManager
 
+    cmux_context = _optional_cmux_context()
     try:
         record = HubServiceManager().restart()
     except HubLifecycleError as exc:
         raise _lifecycle_failure(exc) from None
+    if cmux_context is not None:
+        try:
+            _ensure_hub_router(record, cmux_context[0])
+        except CmuxControlError as exc:
+            raise DependencyError(f"Hub is readable, but cmux routing failed: {exc}") from None
     if as_json:
         click.echo(json.dumps(record.as_payload(), ensure_ascii=False, sort_keys=True))
     else:
@@ -1753,15 +2202,16 @@ def hub_managed_doctor(as_json: bool) -> None:
 def open_hub(instance: str | None) -> None:
     """Start the managed Hub and open it, with cmux as an optional destination."""
     from scholar_workflow.hub.actions import CmuxUnavailable
+    from scholar_workflow.hub.cmux import CmuxControlError
     from scholar_workflow.hub.lifecycle import HubLifecycleError, HubServiceManager
 
     manager = HubServiceManager()
+    cmux_context = _optional_cmux_context()
     try:
         record = manager.ensure_running()
     except HubLifecycleError as exc:
         raise _lifecycle_failure(exc) from None
     instance_id = instance or f"hub_{secrets.token_urlsafe(18)}"
-    cmux_context = _optional_cmux_context()
 
     if cmux_context is None:
         port = record.port
@@ -1778,17 +2228,12 @@ def open_hub(instance: str | None) -> None:
     workspace_id, socket_path = cmux_context
     port = record.port
     try:
+        _ensure_hub_router(record, workspace_id)
         registered = _register_default_destination(port, instance_id, workspace_id)
-    except ExternalServiceError:
-        # A managed service originally started outside cmux has no instance
-        # socket.  Safely restart only our proven process with this terminal's
-        # routing socket, then retry the opaque destination registration.
-        try:
-            record = manager.restart()
-        except HubLifecycleError as exc:
-            raise _lifecycle_failure(exc) from None
-        port = record.port
-        registered = _register_default_destination(port, instance_id, workspace_id)
+    except CmuxControlError as exc:
+        raise DependencyError(f"Hub is readable, but cmux routing failed: {exc}") from None
+    if not registered:
+        raise ExternalServiceError("Managed Hub does not support cmux destinations")
     url = f"http://127.0.0.1:{port}/hub/?{urlencode({'instance': instance_id})}"
     try:
         executable = _resolve_cmux_executable()
@@ -1826,10 +2271,7 @@ def open_hub(instance: str | None) -> None:
             f"cmux could not open the Hub: "
             f"{detail or f'exit status {result.returncode}'}"
         )
-    if registered:
-        click.echo("[ok] Hub opened; current cmux workspace is the default opening place")
-    else:
-        click.echo("[ok] Hub opened in cmux (legacy service has no destination registry)")
+    click.echo("[ok] Hub opened; current cmux workspace is the default opening place")
 
 
 def _serve_hub_foreground(
@@ -2060,12 +2502,18 @@ def analysis_audit_batches(state_db: Path | None) -> None:
 @click.option("--state-db", type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option("--stage-root", type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--commit-state-root", type=click.Path(file_okay=False, path_type=Path))
+@click.option(
+    "--provider-state-root",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    help="Legacy v1-v3 option; IR v4 resolves its provider from the registered Source.",
+)
 def analysis_commit_bundle(
     request_path: Path,
     vault_root: Path,
     state_db: Path | None,
     stage_root: Path | None,
     commit_state_root: Path | None,
+    provider_state_root: Path | None,
 ) -> None:
     """CAS-commit one validated staged Markdown/Canvas/sidecar bundle."""
     from pydantic import ValidationError
@@ -2084,6 +2532,7 @@ def analysis_commit_bundle(
         AnalysisState,
     )
     from scholar_workflow.analysis.rendering import AnalysisBundle
+    from scholar_workflow.hub.fields import KnowledgeSourceRegistry
 
     default_db, default_stage = _analysis_state_paths()
     state_home = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME)) / "analysis"
@@ -2097,6 +2546,10 @@ def analysis_commit_bundle(
     store = AnalysisBatchStore(state_db or default_db, readonly=True)
     try:
         item = store.get_item(request.batch_id, request.item_id)
+        staged_zotero_item_key = store.get_zotero_item_key(
+            request.batch_id,
+            request.item_id,
+        )
     finally:
         store.close()
     if item is None:
@@ -2105,6 +2558,13 @@ def analysis_commit_bundle(
         raise DependencyError("analysis bundle has not passed conformance")
     if item.state.value != request.source_state:
         raise IdentityConflictError("commit request source_state differs from batch state")
+    if (
+        request.document.schema_version == 4
+        and staged_zotero_item_key != request.zotero_item_key
+    ):
+        raise IdentityConflictError(
+            "commit request Zotero item key differs from staged batch Zotero item key"
+        )
     if item.stage_path is None:
         raise DependencyError("validated analysis bundle has no staging receipt")
 
@@ -2155,6 +2615,12 @@ def analysis_commit_bundle(
             request=request,
             bundle=bundle,
             baseline=baseline,
+            provider_state_root=provider_state_root,
+            source_registry=(
+                KnowledgeSourceRegistry(_hub_state_root() / "hub" / "sources.json")
+                if request.document.schema_version == 4
+                else None
+            ),
         )
     except AnalysisCommitPartialError as exc:
         raise PartialCompletionError(str(exc)) from None

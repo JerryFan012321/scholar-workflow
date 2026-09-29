@@ -103,10 +103,15 @@ def _managed_record(tmp_path: Path, *, port: int = 45678):
 
 
 def _use_managed_record(monkeypatch, record):
+    monkeypatch.setattr(cli, "_ensure_hub_router", lambda *_args: None)
     monkeypatch.setattr(
         lifecycle,
         "HubServiceManager",
-        lambda: type("Manager", (), {"ensure_running": lambda self: record})(),
+        lambda: type(
+            "Manager",
+            (),
+            {"ensure_running": lambda self: record},
+        )(),
     )
 
 
@@ -245,14 +250,22 @@ def test_open_hub_starts_managed_service_automatically(tmp_path, monkeypatch):
     home = _configured_home(tmp_path)
     record = _managed_record(tmp_path)
     starts: list[bool] = []
+    routed: list[str] = []
     monkeypatch.setattr(
         lifecycle,
         "HubServiceManager",
         lambda: type(
             "Manager",
             (),
-            {"ensure_running": lambda self: starts.append(True) or record},
+            {
+                "ensure_running": lambda self: starts.append(True) or record
+            },
         )(),
+    )
+    monkeypatch.setattr(
+        cli,
+        "_ensure_hub_router",
+        lambda _record, workspace: routed.append(workspace),
     )
     calls: list[list[str]] = []
     monkeypatch.setattr(cli, "_register_default_destination", lambda *_args: True)
@@ -267,6 +280,7 @@ def test_open_hub_starts_managed_service_automatically(tmp_path, monkeypatch):
 
     assert result.exit_code == 0, result.output
     assert starts == [True]
+    assert routed == ["workspace:7"]
     assert calls[0][2].startswith("http://127.0.0.1:45678/hub/")
 
 

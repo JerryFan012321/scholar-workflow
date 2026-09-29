@@ -1,10 +1,11 @@
 """Managed lifecycle for the loopback-only Scholar Workflow Hub service.
 
-The lifecycle is deliberately independent from a source checkout.  A detached
-service is launched through the Python interpreter that imported the installed
-``scholar_workflow`` package, publishes its actual ephemeral port in a private
-runtime record, and proves its identity through the Hub health document before
-it may be stopped or replaced.
+The lifecycle is deliberately independent from a source checkout and from any
+cmux workspace.  The installed package starts a detached, read-capable HTTP
+service; a separate cmux-owned router supplies only window-launch capability.
+Closing a workspace must not stop Papers, Fields, or file operations.  The
+service publishes an ephemeral port in a private runtime record and proves
+identity through health before stop or replacement.
 """
 from __future__ import annotations
 
@@ -283,12 +284,51 @@ def _request_json(
 
 
 def probe_health(port: int) -> dict[str, Any] | None:
-    """Read current health, preferring the breaking v3 endpoint."""
+    """Prove identity without depending on slow optional diagnostics."""
+    status_code, payload = _request_json(port, "/api/v3/identity")
+    if status_code == 200:
+        return payload if payload is not None and payload.get("status") == "ok" else None
+    if status_code not in {404, 405, 501}:
+        return None
+    # Older managed builds do not have an identity-only endpoint.  Preserve
+    # their health proof during replacement without using detailed v3 health
+    # as the normal v3 lifecycle gate.
     for path in ("/api/v3/health", "/api/v2/health"):
         status_code, payload = _request_json(port, path)
         if status_code == 200 and payload is not None and payload.get("status") == "ok":
             return payload
-        if status_code not in {0, 404, 405, 501}:
+        if status_code not in {404, 405, 501}:
+            return None
+    return None
+
+
+def probe_diagnostics(port: int) -> dict[str, Any] | None:
+    """Read detailed health after proving identity; never use it to authorize lifecycle actions."""
+    identity = probe_health(port)
+    if identity is None:
+        return None
+    if isinstance(identity.get("hub_directory"), dict):
+        # An older managed build returned its detailed health as identity proof.
+        return identity
+    for path in ("/api/v3/health", "/api/v2/health"):
+        status_code, payload = _request_json(port, path, timeout=3.0)
+        if status_code == 200 and payload is not None and payload.get("status") == "ok":
+            service = payload.get("service")
+            process = payload.get("process")
+            identity_service = identity.get("service")
+            identity_process = identity.get("process")
+            if (
+                isinstance(service, dict)
+                and isinstance(process, dict)
+                and isinstance(identity_service, dict)
+                and isinstance(identity_process, dict)
+                and service.get("name") == identity_service.get("name") == SERVICE_NAME
+                and process.get("pid") == identity_process.get("pid")
+                and payload.get("service_generation") == identity.get("service_generation")
+            ):
+                return payload
+            return None
+        if status_code not in {404, 405, 501}:
             return None
     return None
 
@@ -301,9 +341,20 @@ def health_matches_record(
         return False
     service = health.get("service")
     process = health.get("process")
-    if not isinstance(service, dict) or service.get("name") != SERVICE_NAME:
+    protocol = health.get("protocol")
+    if (
+        not isinstance(service, dict)
+        or service.get("name") != SERVICE_NAME
+        or service.get("version") != record.package_version
+    ):
         return False
-    if not isinstance(process, dict) or process.get("pid") != record.pid:
+    if (
+        not isinstance(process, dict)
+        or process.get("pid") != record.pid
+        or process.get("executable") != record.executable
+    ):
+        return False
+    if not isinstance(protocol, dict) or protocol.get("version") != record.protocol_version:
         return False
     return health.get("service_generation") == record.service_generation
 
@@ -326,17 +377,10 @@ def lifecycle_lock(root: Path | None = None) -> Iterator[None]:
 
 
 def _service_environment() -> dict[str, str]:
-    # The socket selects the cmux *window-routing instance* only.  It is not a
-    # filesystem authority and the raw workspace remains a per-open-hub input.
-    allowed = ("HOME", "PATH", "TMPDIR", "LANG", "LC_ALL", "CMUX_SOCKET_PATH")
+    # A detached process loses cmux ancestry after its launcher exits.  Do not
+    # pass a socket that can appear to work briefly but later denies routing.
+    allowed = ("HOME", "PATH", "TMPDIR", "LANG", "LC_ALL")
     environment = {name: os.environ[name] for name in allowed if name in os.environ}
-    socket_path = environment.get("CMUX_SOCKET_PATH")
-    if socket_path is not None and (
-        socket_path != socket_path.strip()
-        or not Path(socket_path).is_absolute()
-        or any(ord(character) < 32 for character in socket_path)
-    ):
-        environment.pop("CMUX_SOCKET_PATH", None)
     configured_home = os.environ.get("SCHOLAR_WORKFLOW_HOME")
     if configured_home:
         environment["SCHOLAR_WORKFLOW_HOME"] = configured_home
@@ -575,6 +619,7 @@ __all__ = [
     "installed_build_hash",
     "lifecycle_log_path",
     "load_discovery",
+    "probe_diagnostics",
     "probe_health",
     "process_exists",
     "remove_discovery_if_owned",

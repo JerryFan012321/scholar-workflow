@@ -1,6 +1,8 @@
-"""Shared fail-closed validation for standard JSON Canvas documents."""
+"""Shared fail-closed validation for JSON Canvas and a narrow Advanced Canvas envelope."""
 
 from __future__ import annotations
+
+from typing import Any
 
 
 class CanvasValidationError(ValueError):
@@ -9,10 +11,27 @@ class CanvasValidationError(ValueError):
 
 def validate_canvas_payload(
     value: object,
-) -> dict[str, list[dict[str, object]]]:
+) -> dict[str, Any]:
     """Validate structure shared by Knowledge, Hub, and Project boundaries."""
-    if not isinstance(value, dict) or set(value) != {"nodes", "edges"}:
-        raise CanvasValidationError("Canvas content must contain nodes and edges only")
+    if (
+        not isinstance(value, dict)
+        or not {"nodes", "edges"}.issubset(value)
+        or set(value) - {"nodes", "edges", "metadata"}
+    ):
+        raise CanvasValidationError(
+            "Canvas content must contain nodes and edges, with optional Advanced Canvas metadata"
+        )
+    metadata = value.get("metadata") if "metadata" in value else None
+    if "metadata" in value and (
+        not isinstance(metadata, dict)
+        or set(metadata) != {"version", "frontmatter"}
+        or not isinstance(metadata["version"], str)
+        or not metadata["version"].strip()
+        or len(metadata["version"]) > 64
+        or not isinstance(metadata["frontmatter"], dict)
+        or any(not isinstance(key, str) for key in metadata["frontmatter"])
+    ):
+        raise CanvasValidationError("Advanced Canvas metadata is invalid")
     raw_nodes = value["nodes"]
     raw_edges = value["edges"]
     if not isinstance(raw_nodes, list) or not isinstance(raw_edges, list):
@@ -65,6 +84,8 @@ def validate_canvas_payload(
         edge_id = raw_edge.get("id")
         from_node = raw_edge.get("fromNode")
         to_node = raw_edge.get("toNode")
+        if isinstance(edge_id, str) and edge_id in node_ids:
+            raise CanvasValidationError("Canvas edge identity collides with a node ID")
         if (
             not isinstance(edge_id, str)
             or not edge_id.strip()
@@ -77,7 +98,10 @@ def validate_canvas_payload(
             raise CanvasValidationError("Canvas edge identity is invalid")
         edge_ids.add(edge_id)
         edges.append(raw_edge)
-    return {"nodes": nodes, "edges": edges}
+    result: dict[str, Any] = {"nodes": nodes, "edges": edges}
+    if metadata is not None:
+        result["metadata"] = metadata
+    return result
 
 
 __all__ = ["CanvasValidationError", "validate_canvas_payload"]

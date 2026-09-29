@@ -28,6 +28,7 @@ it still requires optimistic concurrency protection.
 | Move one registered project document to project-local trash | Allowed from a registered project target; recoverable receipt required and every private-directory component must be non-symlink |
 | Route a browser/terminal/Codex/CLI window to cmux | Allowed only through a live opaque `CmuxDestination`; this grants no file permission |
 | Store or request a Zotero Web API key outside ZotFlow SecretStorage | Never |
+| Download a PDF through ZotFlow's Zotero Web API/WebDAV file path for a Hub reading action | Never — require a positively verified local-storage mode and an existing local attachment |
 | Delete item/attachment, overwrite a conflicting item, merge identities | Approval required — per item |
 | Automatically overwrite human-authored content, or silently replace/delete a Vault asset | Never |
 | Write `zotero.sqlite` directly | Permanently forbidden |
@@ -70,7 +71,7 @@ it still requires optimistic concurrency protection.
 
 ## ZotFlow and annotation boundary
 
-- Zotero is the sole authority for formal paper annotations. ZotFlow is the preferred
+- Zotero is the sole authority for formal paper annotations. ZotFlow is an optional local-PDF
   human editor and the only client allowed to hold a Zotero Web API read/write key.
   That key remains in Obsidian SecretStorage. Hub, CLI, agents, config, process
   environment, logs, and diagnostics must neither request nor expose it.
@@ -79,6 +80,11 @@ it still requires optimistic concurrency protection.
   is governed by the Local API rules above.
 - Agent reads use Local API annotation rows and may build a read-only `AnnotationIR`.
   The IR and rendered Markdown are projections, not another annotation authority.
+- ZotFlow's Web API metadata/annotation sync does not authorize a cloud PDF download.
+  Hub must prove the desktop local-storage mode through a fixed non-secret probe and
+  revalidate the attachment's Local API locator before enabling or launching that action;
+  an unproven mode, missing file, or changed PDF fails closed. Zotero native launch also
+  revalidates its local attachment so a stale card cannot trigger implicit retrieval.
 - ZotFlow Source Notes, Better Notes outputs, and Scholar-managed analysis/annotation
   paths must have disjoint writer ownership and path prefixes. Hub never resolves a
   conflict by guessing which writer wins.

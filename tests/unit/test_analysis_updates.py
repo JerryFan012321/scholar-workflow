@@ -7,6 +7,7 @@ import pytest
 from scholar_workflow.analysis.models import (
     AnalysisClaim,
     AnalysisDocument,
+    AnalysisPoint,
     AnalysisProfile,
     AnalysisRole,
     Evidence,
@@ -35,6 +36,7 @@ def _claim(role: AnalysisRole, body: str, *, order: int | None = None) -> Analys
 
 def _whole() -> AnalysisDocument:
     return AnalysisDocument(
+        schema_version=1,
         artifact_id="analysis:paper:update-test",
         paper_title="Update Test",
         profile=AnalysisProfile(kind=ProfileKind.WHOLE),
@@ -50,6 +52,7 @@ def _whole() -> AnalysisDocument:
 
 def _focused_workflow() -> AnalysisDocument:
     return AnalysisDocument(
+        schema_version=1,
         artifact_id="analysis:paper:update-test",
         paper_title="Update Test",
         profile=AnalysisProfile(kind=ProfileKind.FOCUSED, roles=[AnalysisRole.WORKFLOW]),
@@ -73,6 +76,89 @@ def test_focused_update_uses_baseline_and_preserves_other_roles() -> None:
     for unchanged in ("Original task.", "Original input.", "Original output.", "Original boundary."):
         assert unchanged in plan.proposed.markdown
     assert plan.document.profile.kind is ProfileKind.WHOLE
+
+
+def test_focused_update_preserves_complete_body_and_canvas_summary_outside_scope() -> None:
+    payload = _whole().model_dump(mode="json")
+    complete_body = "A complete task explanation with source qualifications. " * 60
+    payload["claims"][0]["body"] = complete_body
+    payload["claims"][0]["canvas_summary"] = "Predict the target from context."
+    document = AnalysisDocument.model_validate(payload)
+    current, baseline = render_analysis_projection(document, note_stem="Update Test分析")
+
+    plan = plan_analysis_update(
+        current=current,
+        baseline=baseline,
+        update=_focused_workflow(),
+        note_stem="Update Test分析",
+    )
+
+    assert plan.status == "ready"
+    assert complete_body in plan.proposed.markdown
+    assert plan.document.claims[0].canvas_summary == "Predict the target from context."
+    task_node = next(
+        node for node in plan.proposed.canvas["nodes"] if 'id="task-1"' in node["text"]
+    )
+    assert "Predict the target from context." in task_node["text"]
+    assert complete_body not in task_node["text"]
+
+
+def test_focused_update_promotes_ir_v2_and_preserves_evidence_points() -> None:
+    current, baseline = render_analysis_projection(_whole(), note_stem="Update Test分析")
+    payload = _focused_workflow().model_dump(mode="json")
+    payload["schema_version"] = 2
+    payload["claims"][0]["points"] = [
+        AnalysisPoint(
+            point_id="source-result",
+            text="The paper reports the result.",
+            evidence=Evidence(kind=EvidenceKind.AUTHOR_STATED, anchor="Table 4"),
+        ).model_dump(mode="json"),
+        AnalysisPoint(
+            point_id="qualified-inference",
+            text="The result supports a narrower interpretation.",
+            evidence=Evidence(
+                kind=EvidenceKind.ANALYSIS_INFERENCE,
+                detail="The comparison changes more than one condition.",
+            ),
+        ).model_dump(mode="json"),
+    ]
+    update = AnalysisDocument.model_validate(payload)
+    plan = plan_analysis_update(
+        current=current,
+        baseline=baseline,
+        update=update,
+        note_stem="Update Test分析",
+    )
+
+    assert plan.status == "ready"
+    assert plan.document.schema_version == 2
+    assert [point.point_id for point in plan.document.claims[2].points] == [
+        "source-result",
+        "qualified-inference",
+    ]
+    assert "^point-10-workflow-1-source-result" in plan.proposed.markdown
+    assert plan.baseline is not None
+    assert plan.baseline.document.schema_version == 2
+
+    next_update = AnalysisDocument(
+        schema_version=1,
+        artifact_id="analysis:paper:update-test",
+        paper_title="Update Test",
+        profile=AnalysisProfile(kind=ProfileKind.FOCUSED, roles=[AnalysisRole.TASK]),
+        claims=[_claim(AnalysisRole.TASK, "Another task revision.")],
+    )
+    next_plan = plan_analysis_update(
+        current=plan.proposed,
+        baseline=plan.baseline,
+        update=next_update,
+        note_stem="Update Test分析",
+    )
+    assert next_plan.status == "ready"
+    assert next_plan.document.schema_version == 2
+    assert [point.point_id for point in next_plan.document.claims[2].points] == [
+        "source-result",
+        "qualified-inference",
+    ]
 
 
 def test_human_edit_returns_paired_conflict_without_replacing_current() -> None:

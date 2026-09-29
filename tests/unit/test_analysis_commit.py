@@ -3,19 +3,28 @@ from __future__ import annotations
 import json
 import multiprocessing
 import queue
+from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
 
 import pytest
+import yaml
 
+from scholar_workflow.analysis.apply_changes import (
+    apply_knowledge_change_set,
+    initialize_knowledge_provider_snapshot,
+    load_knowledge_provider_snapshot,
+)
 from scholar_workflow.analysis.commit import (
     AnalysisCommitConflict,
     AnalysisCommitError,
     AnalysisCommitPartialError,
     AnalysisCommitSafetyError,
+    _request_fingerprint,
     commit_analysis_bundle,
 )
 from scholar_workflow.analysis.models import (
+    ALL_ROLES,
     AnalysisCanonicalPaths,
     AnalysisClaim,
     AnalysisCommitRequest,
@@ -25,15 +34,73 @@ from scholar_workflow.analysis.models import (
     AnalysisState,
     Evidence,
     EvidenceKind,
+    KnowledgeArtifactChange,
+    KnowledgeAtomicResource,
+    KnowledgeManifest,
     KnowledgeProjection,
     KnowledgeRelation,
+    KnowledgeSupportingDocument,
     ProfileKind,
+    SupportingDocumentKind,
 )
 from scholar_workflow.analysis.updates import render_analysis_projection
+from scholar_workflow.hub.fields import (
+    FieldDefinition,
+    FieldManifest,
+    FieldNavigationGroup,
+    FolderRegistration,
+    KnowledgeSourceRegistration,
+    KnowledgeSourceRegistry,
+    KnowledgeSourceRegistryDocument,
+)
+from scholar_workflow.hub.models import HubCatalog, HubResource, ZoteroLink
+from scholar_workflow.hub.zotflow import ZotFlowError
+from scholar_workflow.models import ResourceKind
+
+_V4_SOURCE_ID = "00000000-0000-4000-8000-000000000041"
+_V4_FIELD_ID = "00000000-0000-4000-8000-000000000042"
+
+
+def _register_v4_source(tmp_path: Path, vault: Path) -> Path:
+    registry = KnowledgeSourceRegistry(tmp_path / "hub" / "sources.json")
+    registry.save(KnowledgeSourceRegistryDocument(
+        folders=[FolderRegistration(
+            folder_id="analysis-vault",
+            root=vault,
+            capabilities=["read", "write"],
+        )],
+        sources=[KnowledgeSourceRegistration(
+            source_id=_V4_SOURCE_ID,
+            folder_id="analysis-vault",
+        )],
+    ))
+    manifest = FieldManifest(
+        source_id=_V4_SOURCE_ID,
+        fields=[FieldDefinition(
+            field_id=_V4_FIELD_ID,
+            title="Analysis field",
+            relative_root="field",
+            home="home.md",
+            navigation=[FieldNavigationGroup(label="Entry", items=["home.md"])],
+        )],
+    )
+    (vault / ".scholar-workflow").mkdir(exist_ok=True)
+    (vault / ".scholar-workflow" / "fields.yml").write_text(
+        yaml.safe_dump(manifest.model_dump(mode="json"), allow_unicode=True),
+        encoding="utf-8",
+    )
+    (vault / "field").mkdir(exist_ok=True)
+    (vault / "field" / "home.md").write_text("# Analysis field\n", encoding="utf-8")
+    return registry.path.parent / "knowledge-providers" / _V4_SOURCE_ID
+
+
+def _registry_for_provider(provider: Path) -> KnowledgeSourceRegistry:
+    return KnowledgeSourceRegistry(provider.parent.parent / "sources.json")
 
 
 def _document() -> AnalysisDocument:
     return AnalysisDocument(
+        schema_version=1,
         artifact_id="analysis:paper:commit",
         paper_title="Commit Paper",
         profile=AnalysisProfile(kind=ProfileKind.WHOLE),
@@ -49,7 +116,7 @@ def _document() -> AnalysisDocument:
                 ),
                 order=1 if role is AnalysisRole.WORKFLOW else None,
             )
-            for role in AnalysisRole
+            for role in ALL_ROLES
         ],
     )
 
@@ -99,8 +166,788 @@ def _roots(tmp_path: Path) -> tuple[Path, Path]:
     return vault, state
 
 
+def test_legacy_commit_fingerprint_preserves_pre_v4_request_shape() -> None:
+    request = _request(_document())
+    legacy_payload = request.model_dump(mode="json")
+    legacy_payload.pop("base_snapshot_revision")
+    legacy_payload.pop("zotero_item_key")
+    expected = "sha256:" + sha256(
+        json.dumps(
+            legacy_payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+
+    assert _request_fingerprint(request) == expected
+
+
 def _digest(payload: bytes) -> str:
     return "sha256:" + sha256(payload).hexdigest()
+
+
+def _v4_document() -> AnalysisDocument:
+    return AnalysisDocument(
+        schema_version=4,
+        artifact_id="analysis:paper:commit",
+        paper_title="Commit Paper",
+        language="en",
+        profile=AnalysisProfile(kind=ProfileKind.WHOLE, framework="reference_tree"),
+        claims=[
+            AnalysisClaim(
+                claim_id="task",
+                role=AnalysisRole.ABSTRACT,
+                outline_path="abstract/task",
+                title="Task",
+                body="Readable task description.",
+                evidence=Evidence(
+                    kind=EvidenceKind.NOT_APPLICABLE,
+                    detail="Test fixture.",
+                ),
+            )
+        ],
+    )
+
+
+def _v4_zotflow_document(
+    vault_name: str | None = None,
+    *,
+    vault_id: str | None = None,
+) -> AnalysisDocument:
+    payload = _v4_document().model_dump(mode="json")
+    payload["reader"] = {
+        "kind": "zotflow_library",
+        "vault_name": vault_name,
+        "vault_id": vault_id,
+    }
+    payload["claims"][0]["evidence"] = {
+        "kind": "author_stated",
+        "anchor": "Abstract",
+        "source_spans": [{
+            "kind": "zotero_pdf",
+            "library_type": "personal",
+            "library_id": "17685951",
+            "attachment_key": "QR4ZU2S9",
+            "content_hash": "md5:" + "a" * 32,
+            "page_index": 3,
+        }],
+    }
+    return AnalysisDocument.model_validate(payload)
+
+
+def _v4_request(
+    document: AnalysisDocument,
+    base_catalog_revision: str | None,
+    *,
+    base_snapshot_revision: str | None = None,
+    resource_id: str = "paper:commit",
+) -> AnalysisCommitRequest:
+    paths = AnalysisCanonicalPaths(
+        markdown="field/resources/papers/commit/Commit分析.md",
+        canvas="field/resources/papers/commit/Commit解析树.canvas",
+        sidecar="field/resources/papers/commit/Commit分析.analysis.json",
+    )
+    return AnalysisCommitRequest(
+        commit_id="commit-v4",
+        batch_id="batch-v4",
+        item_id="paper-one",
+        source_state=AnalysisState.VALIDATED,
+        resource_id=resource_id,
+        note_stem="Commit分析",
+        document=document,
+        paths=paths,
+        base_revisions={path: None for path in paths.as_list()},
+        base_catalog_revision=base_catalog_revision,
+        base_snapshot_revision=base_snapshot_revision,
+        zotero_item_key="ABCDEFGH",
+        relations=[
+            KnowledgeRelation(
+                from_id=resource_id,
+                relation="has-analysis",
+                to_id=document.artifact_id,
+            )
+        ],
+    )
+
+
+def _provider_state(
+    tmp_path: Path,
+    vault_root: Path,
+    resources: list[tuple[str, ResourceKind, str]],
+) -> tuple[Path, str, str]:
+    state = _register_v4_source(tmp_path, vault_root)
+    state.mkdir(parents=True)
+    catalog = HubCatalog(
+        generated_at=datetime(2026, 9, 29, tzinfo=UTC),
+        resources=[
+            HubResource(
+                resource_id=resource_id,
+                kind=kind,
+                zotero=ZoteroLink(item_key="ABCDEFGH"),
+            )
+            for resource_id, kind, _ in resources
+        ],
+    )
+    snapshot = initialize_knowledge_provider_snapshot(
+        state_root=state,
+        vault_root=vault_root,
+        manifest=KnowledgeManifest(
+            atomic_resources=[
+                KnowledgeAtomicResource(
+                    resource_id=resource_id,
+                    kind=kind,
+                    title=resource_id,
+                    markdown_path=markdown_path,
+                )
+                for resource_id, kind, markdown_path in resources
+            ]
+        ),
+        catalog=catalog,
+    )
+    return state, catalog.revision, snapshot.snapshot_revision
+
+
+def test_v4_commit_uses_unique_provider_manifest_paper_folder(tmp_path: Path) -> None:
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    provider, revision, snapshot_revision = _provider_state(
+        tmp_path,
+        vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Note.md")],
+    )
+    document = _v4_document()
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+
+    first = commit_analysis_bundle(
+        vault_root=vault,
+        state_root=state,
+        request=request,
+        bundle=bundle,
+        baseline=baseline,
+        source_registry=_registry_for_provider(provider),
+    )
+    apply_knowledge_change_set(
+        state_root=provider,
+        change_set=first.change_set,
+    )
+    replay = commit_analysis_bundle(
+        vault_root=vault,
+        state_root=state,
+        request=request,
+        bundle=bundle,
+        baseline=baseline,
+        source_registry=_registry_for_provider(provider),
+    )
+
+    assert replay == first
+    assert all((vault / path).is_file() for path in request.paths.as_list())
+
+    applied_snapshot = load_knowledge_provider_snapshot(provider)
+    next_request = AnalysisCommitRequest.model_validate(
+        {
+            **request.model_dump(mode="json"),
+            "commit_id": "commit-v4-next",
+            "base_revisions": {item.path: item.after_sha256 for item in first.files},
+            "base_catalog_revision": applied_snapshot.catalog.revision,
+            "base_snapshot_revision": applied_snapshot.snapshot_revision,
+        }
+    )
+    unchanged = commit_analysis_bundle(
+        vault_root=vault,
+        state_root=state,
+        request=next_request,
+        bundle=bundle,
+        baseline=baseline,
+        source_registry=_registry_for_provider(provider),
+    )
+    assert all(item.action == "unchanged" for item in unchanged.files)
+
+
+def test_v4_commit_rejects_name_only_zotflow_reader_before_state_write(
+    tmp_path: Path,
+) -> None:
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    provider, revision, snapshot_revision = _provider_state(
+        tmp_path,
+        vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Note.md")],
+    )
+    document = _v4_zotflow_document("test")
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+    assert "obsidian://zotflow?vault=test" in bundle.markdown
+
+    with pytest.raises(AnalysisCommitSafetyError, match="requires a verified Vault ID"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            source_registry=_registry_for_provider(provider),
+        )
+
+    assert not state.exists()
+    assert not any((vault / path).exists() for path in request.paths.as_list())
+
+
+def test_v4_commit_rejects_mismatched_zotflow_vault_id_before_state_write(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    provider, revision, snapshot_revision = _provider_state(
+        tmp_path,
+        vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Note.md")],
+    )
+    document = _v4_zotflow_document(vault_id="1111111111111111")
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+    resolved_roots: list[Path] = []
+
+    def resolve(root: Path) -> str:
+        resolved_roots.append(root)
+        return "2222222222222222"
+
+    monkeypatch.setattr("scholar_workflow.analysis.commit.resolve_obsidian_vault_id", resolve)
+    with pytest.raises(AnalysisCommitSafetyError, match="reader Vault ID differs"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            source_registry=_registry_for_provider(provider),
+        )
+
+    assert resolved_roots == [vault]
+    assert not state.exists()
+    assert not any((vault / path).exists() for path in request.paths.as_list())
+
+
+def test_v4_commit_rejects_unresolved_zotflow_vault_id_before_state_write(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    provider, revision, snapshot_revision = _provider_state(
+        tmp_path,
+        vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Note.md")],
+    )
+    document = _v4_zotflow_document(vault_id="0123456789abcdef")
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+
+    def unavailable(root: Path) -> str:
+        assert root.samefile(vault)
+        raise ZotFlowError("Registered Obsidian Vault ID is missing or ambiguous")
+
+    monkeypatch.setattr(
+        "scholar_workflow.analysis.commit.resolve_obsidian_vault_id", unavailable
+    )
+    with pytest.raises(AnalysisCommitSafetyError, match="Vault ID is unavailable"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            source_registry=_registry_for_provider(provider),
+        )
+
+    assert not state.exists()
+    assert not any((vault / path).exists() for path in request.paths.as_list())
+
+
+def test_v4_commit_accepts_zotflow_reader_for_registered_vault_id(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    provider, revision, snapshot_revision = _provider_state(
+        tmp_path,
+        vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Note.md")],
+    )
+    vault_id = "0123456789abcdef"
+
+    def resolve(root: Path) -> str:
+        assert root.samefile(vault)
+        return vault_id
+
+    monkeypatch.setattr(
+        "scholar_workflow.analysis.commit.resolve_obsidian_vault_id", resolve
+    )
+    document = _v4_zotflow_document(vault_id=vault_id)
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+
+    receipt = commit_analysis_bundle(
+        vault_root=vault,
+        state_root=state,
+        request=request,
+        bundle=bundle,
+        baseline=baseline,
+        source_registry=_registry_for_provider(provider),
+    )
+
+    reader_url = f"obsidian://zotflow?vault={vault_id}"
+    assert reader_url in (vault / request.paths.markdown).read_text(encoding="utf-8")
+    committed_canvas = json.loads((vault / request.paths.canvas).read_text(encoding="utf-8"))
+    assert any(reader_url in node["text"] for node in committed_canvas["nodes"])
+    assert all(item.action == "created" for item in receipt.files)
+
+
+@pytest.mark.parametrize(
+    "resources",
+    [
+        [],
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/other/Note.md")],
+        [("paper:other", ResourceKind.PAPER, "field/resources/papers/commit/Note.md")],
+        [("paper:commit", ResourceKind.TECHNICAL_DOCUMENT, "field/resources/papers/commit/Note.md")],
+        [
+            ("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Note.md"),
+            ("paper:other", ResourceKind.PAPER, "field/resources/papers/commit/Other.md"),
+        ],
+    ],
+)
+def test_v4_commit_rejects_missing_mismatched_or_ambiguous_folder_owner(
+    tmp_path: Path,
+    resources: list[tuple[str, ResourceKind, str]],
+) -> None:
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    provider, revision, snapshot_revision = _provider_state(tmp_path, vault, resources)
+    document = _v4_document()
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+
+    with pytest.raises(AnalysisCommitSafetyError, match="manifest owner|declared paper"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            source_registry=_registry_for_provider(provider),
+        )
+
+    assert not any((vault / path).exists() for path in request.paths.as_list())
+
+
+def test_v4_commit_requires_provider_and_matching_catalog_revision(tmp_path: Path) -> None:
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    provider, revision, snapshot_revision = _provider_state(
+        tmp_path,
+        vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Note.md")],
+    )
+    document = _v4_document()
+    bundle, baseline = render_analysis_projection(document, note_stem="Commit分析")
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+
+    with pytest.raises(AnalysisCommitSafetyError, match="registered Obsidian Source"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+        )
+    with pytest.raises(AnalysisCommitConflict, match="catalog revision changed"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=_v4_request(
+                document,
+                "sha256:" + "f" * 64,
+                base_snapshot_revision=snapshot_revision,
+            ),
+            bundle=bundle,
+            baseline=baseline,
+            source_registry=_registry_for_provider(provider),
+        )
+    with pytest.raises(AnalysisCommitConflict, match="requires base_catalog_revision"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=_v4_request(document, None, base_snapshot_revision=snapshot_revision),
+            bundle=bundle,
+            baseline=baseline,
+            source_registry=_registry_for_provider(provider),
+        )
+    with pytest.raises(AnalysisCommitConflict, match="requires base_snapshot_revision"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=_v4_request(document, revision),
+            bundle=bundle,
+            baseline=baseline,
+            source_registry=_registry_for_provider(provider),
+        )
+    assert not any((vault / path).exists() for path in request.paths.as_list())
+
+
+def test_v4_commit_rejects_provider_bound_to_another_vault(tmp_path: Path) -> None:
+    vault, state = _roots(tmp_path)
+    other_vault = tmp_path / "other-vault"
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    (other_vault / "field/resources/papers/commit").mkdir(parents=True)
+    provider, revision, snapshot_revision = _provider_state(
+        tmp_path,
+        vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Note.md")],
+    )
+    _register_v4_source(tmp_path, other_vault)
+    document = _v4_document()
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+
+    with pytest.raises(AnalysisCommitSafetyError, match="Vault.*binding"):
+        commit_analysis_bundle(
+            vault_root=other_vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            source_registry=_registry_for_provider(provider),
+        )
+    assert not any((other_vault / path).exists() for path in request.paths.as_list())
+
+
+def test_v4_commit_rejects_unbound_provider_snapshot(tmp_path: Path) -> None:
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    provider = _register_v4_source(tmp_path, vault)
+    provider.mkdir(parents=True)
+    catalog = HubCatalog(
+        generated_at=datetime(2026, 9, 29, tzinfo=UTC),
+        resources=[
+            HubResource(
+                resource_id="paper:commit",
+                kind=ResourceKind.PAPER,
+                zotero=ZoteroLink(item_key="ABCDEFGH"),
+            )
+        ],
+    )
+    snapshot = initialize_knowledge_provider_snapshot(
+        state_root=provider,
+        manifest=KnowledgeManifest(
+            atomic_resources=[
+                KnowledgeAtomicResource(
+                    resource_id="paper:commit",
+                    kind=ResourceKind.PAPER,
+                    title="Commit Paper",
+                    markdown_path="field/resources/papers/commit/Note.md",
+                )
+            ]
+        ),
+        catalog=catalog,
+    )
+    document = _v4_document()
+    request = _v4_request(
+        document,
+        catalog.revision,
+        base_snapshot_revision=snapshot.snapshot_revision,
+    )
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+
+    with pytest.raises(AnalysisCommitSafetyError, match="Vault.*binding"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            source_registry=_registry_for_provider(provider),
+        )
+    assert not any((vault / path).exists() for path in request.paths.as_list())
+
+
+def test_v4_commit_rejects_stale_manifest_snapshot_with_unchanged_catalog(
+    tmp_path: Path,
+) -> None:
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    _, old_catalog_revision, old_snapshot_revision = _provider_state(
+        tmp_path / "old",
+        vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Old.md")],
+    )
+    provider, current_catalog_revision, current_snapshot_revision = _provider_state(
+        tmp_path / "current",
+        vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/New.md")],
+    )
+    assert old_catalog_revision == current_catalog_revision
+    assert old_snapshot_revision != current_snapshot_revision
+    document = _v4_document()
+    request = _v4_request(
+        document,
+        old_catalog_revision,
+        base_snapshot_revision=old_snapshot_revision,
+    )
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+
+    with pytest.raises(AnalysisCommitConflict, match="snapshot revision changed"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            source_registry=_registry_for_provider(provider),
+        )
+    assert not any((vault / path).exists() for path in request.paths.as_list())
+
+
+def test_v4_commit_rejects_collision_with_primary_paper_note(tmp_path: Path) -> None:
+    vault, state = _roots(tmp_path)
+    paper_folder = vault / "field/resources/papers/commit"
+    paper_folder.mkdir(parents=True)
+    original = b"# Human paper note\n"
+    primary_note = paper_folder / "Commit分析.md"
+    primary_note.write_bytes(original)
+    provider, revision, snapshot_revision = _provider_state(
+        tmp_path,
+        vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Commit分析.md")],
+    )
+    document = _v4_document()
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+    payload = request.model_dump(mode="json")
+    payload["base_revisions"][request.paths.markdown] = "sha256:" + sha256(original).hexdigest()
+    request = AnalysisCommitRequest.model_validate(payload)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+
+    with pytest.raises(AnalysisCommitSafetyError, match="declared Knowledge path"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            source_registry=_registry_for_provider(provider),
+        )
+    assert primary_note.read_bytes() == original
+    assert not (vault / request.paths.canvas).exists()
+
+
+@pytest.mark.parametrize("collision_kind", ["support", "sidecar-artifact"])
+def test_v4_commit_rejects_other_declared_targets_in_paper_folder(
+    tmp_path: Path,
+    collision_kind: str,
+) -> None:
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    document = _v4_document()
+    request = _v4_request(document, None)
+    collision_path = (
+        request.paths.canvas if collision_kind == "support" else request.paths.sidecar
+    )
+    original = b"owned by another Knowledge object\n"
+    (vault / collision_path).write_bytes(original)
+    catalog = HubCatalog(
+        generated_at=datetime(2026, 9, 29, tzinfo=UTC),
+        resources=[
+            HubResource(
+                resource_id="paper:commit",
+                kind=ResourceKind.PAPER,
+                zotero=ZoteroLink(item_key="ABCDEFGH"),
+            )
+        ],
+    )
+    supporting = (
+        [
+            KnowledgeSupportingDocument(
+                document_id="analysis:other:canvas",
+                kind=SupportingDocumentKind.ANALYSIS_CANVAS,
+                title="Other analysis tree",
+                vault_path=collision_path,
+                owner_id="paper:commit",
+            )
+        ]
+        if collision_kind == "support"
+        else []
+    )
+    artifacts = (
+        [
+            KnowledgeArtifactChange(
+                artifact_id="analysis:other:sidecar",
+                resource_id="paper:commit",
+                kind="analysis_sidecar",
+                vault_path=collision_path,
+                sha256="sha256:" + sha256(original).hexdigest(),
+            )
+        ]
+        if collision_kind == "sidecar-artifact"
+        else []
+    )
+    provider = _register_v4_source(tmp_path, vault)
+    provider.mkdir(parents=True)
+    snapshot = initialize_knowledge_provider_snapshot(
+        state_root=provider,
+        vault_root=vault,
+        manifest=KnowledgeManifest(
+            atomic_resources=[
+                KnowledgeAtomicResource(
+                    resource_id="paper:commit",
+                    kind=ResourceKind.PAPER,
+                    title="Commit Paper",
+                    markdown_path="field/resources/papers/commit/Note.md",
+                )
+            ],
+            supporting_documents=supporting,
+        ),
+        catalog=catalog,
+        artifacts=artifacts,
+    )
+    payload = request.model_dump(mode="json")
+    payload["base_catalog_revision"] = catalog.revision
+    payload["base_snapshot_revision"] = snapshot.snapshot_revision
+    payload["base_revisions"][collision_path] = "sha256:" + sha256(original).hexdigest()
+    request = AnalysisCommitRequest.model_validate(payload)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+
+    with pytest.raises(AnalysisCommitSafetyError, match="declared Knowledge path|another Knowledge artifact"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            source_registry=_registry_for_provider(provider),
+        )
+    assert (vault / collision_path).read_bytes() == original
+    assert not (vault / request.paths.markdown).exists()
+
+
+def test_v4_commit_rejects_zotero_key_mismatch(tmp_path: Path) -> None:
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    provider, revision, snapshot_revision = _provider_state(
+        tmp_path,
+        vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Note.md")],
+    )
+    document = _v4_document()
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+    request = AnalysisCommitRequest.model_validate(
+        {**request.model_dump(mode="json"), "zotero_item_key": "WXYZ6789"}
+    )
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+
+    with pytest.raises(AnalysisCommitSafetyError, match="Zotero item key"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            source_registry=_registry_for_provider(provider),
+        )
+    assert not any((vault / path).exists() for path in request.paths.as_list())
+
+
+def test_v4_commit_does_not_trust_unregistered_same_vault_provider(
+    tmp_path: Path,
+) -> None:
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    _register_v4_source(tmp_path, vault)
+    forged_provider, revision, snapshot_revision = _provider_state(
+        tmp_path / "rogue",
+        vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Note.md")],
+    )
+    document = _v4_document()
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+    registered = KnowledgeSourceRegistry(tmp_path / "hub" / "sources.json")
+
+    with pytest.raises(AnalysisCommitSafetyError, match="--provider-state-root"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            provider_state_root=forged_provider,
+            source_registry=registered,
+        )
+    with pytest.raises(AnalysisCommitSafetyError, match="provider state root"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            source_registry=registered,
+        )
+    assert not any((vault / path).exists() for path in request.paths.as_list())
+
+
+def test_v4_commit_rejects_field_manifest_with_wrong_source(tmp_path: Path) -> None:
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    provider, revision, snapshot_revision = _provider_state(
+        tmp_path,
+        vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Note.md")],
+    )
+    manifest_path = vault / ".scholar-workflow" / "fields.yml"
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+    manifest["source_id"] = "00000000-0000-4000-8000-000000000099"
+    manifest_path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+    document = _v4_document()
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+
+    with pytest.raises(AnalysisCommitSafetyError, match="Source differs"):
+        commit_analysis_bundle(
+            vault_root=vault,
+            state_root=state,
+            request=request,
+            bundle=bundle,
+            baseline=baseline,
+            source_registry=_registry_for_provider(provider),
+        )
+    assert not any((vault / path).exists() for path in request.paths.as_list())
+
+
+@pytest.mark.parametrize("schema_version", [2, 3])
+def test_legacy_commit_does_not_require_provider_state(
+    tmp_path: Path,
+    schema_version: int,
+) -> None:
+    vault, state = _roots(tmp_path)
+    payload = _document().model_dump(mode="json")
+    payload["schema_version"] = schema_version
+    for claim in payload["claims"]:
+        claim["evidence"] = {"kind": "not_applicable", "detail": "Legacy fixture."}
+    document = AnalysisDocument.model_validate(payload)
+    request = _request(document)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+
+    receipt = commit_analysis_bundle(
+        vault_root=vault,
+        state_root=state,
+        request=request,
+        bundle=bundle,
+        baseline=baseline,
+    )
+
+    assert receipt.commit_id == request.commit_id
+    assert all((vault / path).is_file() for path in request.paths.as_list())
 
 
 def _concurrent_commit_worker(

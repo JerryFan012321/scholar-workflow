@@ -14,8 +14,9 @@ runtime.
 - **Description / triggers** — this changes routing. After any edit, re-check every
   case in `evals/routing.json` still routes correctly, and that no other skill now
   mis-fires. Changing triggering strategy is an "Ask First" action (see AGENT.md).
-- **Steps / constraints** — keep the runtime safety invariants intact. If a
-  constraint duplicates a top-level policy, link instead of restating.
+- **Result contract / constraints** — keep observable outputs and runtime safety invariants
+  intact. Preserve steps only for real tool dependencies, permission gates, or fragile external
+  ordering. If a constraint duplicates a top-level policy, link instead of restating.
 - **References** — if a rule becomes shared by another skill, promote it to
   top-level `references/` and replace both copies with a pointer.
 - **Output formats** — keep exact fields and layouts when they are user-visible contracts,
@@ -24,12 +25,24 @@ runtime.
 ## After the change
 
 1. Update the skill's `README.md` and `README.zh-CN.md` if behavior changed.
-2. Run `pytest tests/unit tests/contract` (schema + contract assertions).
+2. Prepare and show the affected unit/contract test plan: synthetic inputs, commands, expected
+   results, impact, and visible artifacts. After user approval, run that plan. For integration
+   behavior, use one controlled object (one paper, one repository, or one `test` Vault sample)
+   and focused boundary cases only where warranted. Do not repeat a full real-library batch or
+   formal Vault migration on every edit. Obtain approval for the required full unit/contract
+   suite before commit; an untested change is not ready to commit.
 3. Review the eval suites (see `eval-loop.md`) — routing/safety/outcomes are mostly
    host-LLM behavior specs judged by review, not an automated pass/fail. Re-check the
    cases your change touches.
 4. Record the change in `CHANGELOG.md` and bump `plugin.json` (minor = new
    capability, patch = fix/tuning).
+
+Development validation is not the runtime skill invocation. A runtime request for a batch still
+processes that batch; a development test uses the smallest representative fixture that proves the
+changed contract. If release acceptance explicitly requires a real collection migration, freeze
+the implementation first, then produce one current full-scope preview and one reviewed execution.
+Any later change that invalidates its digest requires a fresh preview and acceptance, not reuse of
+stale evidence or a skipped safety check.
 
 ## Diagnosing a skill
 

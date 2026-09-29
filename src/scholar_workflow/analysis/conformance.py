@@ -18,6 +18,9 @@ from scholar_workflow.analysis.rendering import (
     claim_canvas_text,
     claim_markdown_lines,
     evidence_text,
+    point_anchor,
+    point_canvas_line,
+    point_markdown_line,
     render_analysis,
 )
 from scholar_workflow.canvas import CanvasValidationError, validate_canvas_payload
@@ -95,6 +98,12 @@ def validate_bundle(
     note_stem: str,
 ) -> ConformanceReport:
     """Validate observable structure without judging prose quality or reasoning."""
+    if document.schema_version == 4:
+        from scholar_workflow.analysis.reference_conformance import (
+            validate_reference_tree_bundle,
+        )
+
+        return validate_reference_tree_bundle(document, bundle, note_stem=note_stem)
     findings: list[ConformanceFinding] = []
     markdown = bundle.markdown
     canvas = bundle.canvas
@@ -145,7 +154,8 @@ def validate_bundle(
 
     if (
         not isinstance(canvas, dict)
-        or set(canvas) != {"nodes", "edges"}
+        or not {"nodes", "edges"}.issubset(canvas)
+        or set(canvas) - {"nodes", "edges", "metadata"}
         or not isinstance(canvas.get("nodes"), list)
         or not isinstance(canvas.get("edges"), list)
     ):
@@ -153,7 +163,7 @@ def validate_bundle(
             _finding(
                 "invalid-canvas-shape",
                 "canvas",
-                "Canvas must contain only nodes and edges arrays.",
+                "Canvas must contain nodes and edges arrays, with optional Advanced Canvas metadata.",
                 repairable=False,
             )
         )
@@ -446,6 +456,19 @@ def validate_bundle(
                         "Claim marker role differs from the analysis IR.",
                     )
                 )
+            for point in claim.points:
+                anchor = point_anchor(claim, point)
+                if (
+                    point_markdown_line(claim, point) not in markdown_block
+                    or markdown.split().count(f"^{anchor}") != 1
+                ):
+                    findings.append(
+                        _finding(
+                            "markdown-point-attribution-mismatch",
+                            f"markdown/{path}/points/{point.point_id}",
+                            "Each point must retain its own text, evidence, and unique block anchor.",
+                        )
+                    )
 
         claim_nodes = canvas_claims.get(claim.claim_id, [])
         if len(claim_nodes) != 1:
@@ -492,6 +515,25 @@ def validate_bundle(
                     "Canvas claim must link back to its Markdown evidence block.",
                 )
             )
+        for point in claim.points:
+            point_path = f"canvas/{path}/points/{point.point_id}"
+            point_link = f"[[{note_stem}#^{point_anchor(claim, point)}|正文]]"
+            if node_text.count(point_link) != 1:
+                findings.append(
+                    _finding(
+                        "missing-point-backlink",
+                        point_path,
+                        "Canvas point evidence must link to its exact Markdown block.",
+                    )
+                )
+            if point_canvas_line(claim, point, note_stem) not in node_text:
+                findings.append(
+                    _finding(
+                        "canvas-point-attribution-mismatch",
+                        point_path,
+                        "Canvas point text and evidence must match the analysis IR.",
+                    )
+                )
 
     workflow = sorted(
         (claim for claim in document.claims if claim.role is AnalysisRole.WORKFLOW),

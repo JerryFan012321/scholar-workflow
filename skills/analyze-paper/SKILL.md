@@ -5,9 +5,9 @@ description: Analyze one or a user-selected batch of already-ingested papers, wh
 
 # analyze-paper
 
-This skill constrains the analysis result and its external interfaces, not the model's
-reading order, reasoning framework, or internal method. The canonical artifacts are the
-structured projection of the paper-specific judgment.
+The result is a paired, independently readable Markdown analysis and editable Canvas
+under the accepted v4 presentation template in `references/analysis-format.md`. Reuse its
+structure and interaction contract, not the example paper's facts or page numbers.
 
 ## Workflow contract
 
@@ -25,14 +25,28 @@ structured projection of the paper-specific judgment.
    than treating `research_vault_root` as a required singleton. If the destination
    is ambiguous or the Field is not initialized, ask for a choice or run the
    Field preview; do not silently create a topic directory or migrate a Vault.
-   Then load `references/analysis-format.md`, declare `whole` or the exact
-   `focused` role subset, and maintain one `<paper>分析.md` /
-   `<paper>解析树.canvas` pair per paper in that Field.
-5. Project claims through the versioned analysis IR into both artifacts. The Markdown remains
-   independently readable; the Canvas keeps the same claims, inline evidence states, and links
-   each claim back to its Markdown block. Preserve human prose, safe existing layout, custom
-   nodes/edges, stable identities, and unrelated manifest rows. Treat a human-edit conflict as
-   one paired Markdown/Canvas conflict and leave both values unchanged.
+   Then load `references/analysis-format.md`. New analyses must explicitly set
+   `schema_version: 4` and `framework: reference_tree`; omission is an error, not a
+   fallback to the historical tree. Declare `whole` or the exact `focused` section subset,
+   select `en` or `zh` consistently, and place each new paper's companion note,
+   `<paper>分析.md` / `<paper>解析树.canvas` pair, and sidecar together under
+   `resources/papers/<persistently-mapped-paper-segment>/` in that Field. Existing
+   flat pairs stay in place until a separately reviewed relocation.
+5. Project claims and separately attributable points through the versioned IR into both
+   artifacts. The Markdown remains independently readable; editable Canvas claim nodes and their
+   grouped detail nodes keep each point's inline evidence, original-source link, and backlink to
+   its exact Markdown block.
+   Keep machine claim markers out of v4 human Markdown and Canvas; use block anchors and the
+   sidecar for identity. Keep the accepted reference image's Abstract / Introduction / Method / Limitation hierarchy and its
+   defined subheadings; unfilled template slots remain unfilled rather than becoming invented
+   paper claims. Preserve human prose, safe existing layout, custom nodes/edges, stable identities,
+   and unrelated manifest rows. A focused v4 update supplies the complete selected section(s),
+   because the update replaces those sections as units. Treat a human-edit conflict as one paired
+   Markdown/Canvas conflict and leave both values unchanged. Treat ZotFlow and Zotero deep links
+   as reader projections of verified PDF spans, not as source identities. The optional v4
+   ZotFlow Library Reader projection requires an explicitly verified Vault and local PDF mode;
+   follow the reader-link
+   boundary in `references/analysis-format.md`.
 6. Validate the pair against the hard conformance boundary before registration. For a multi-paper
    request, load `references/analysis-batch.md` and invoke `scholar-workflow analysis batch-run`
    with the versioned request; stage and validate each paper independently, permit at most one
@@ -54,20 +68,22 @@ structured projection of the paper-specific judgment.
   revision is allowed; whole-artifact replacement is not.
 - Analysis, annotations, and literature trees remain separate artifacts with separate
   owners. This skill writes only the analysis pair and its permitted cross-links.
-- Preserve all human-authored content and all managed blocks.
-- Evidence stays inline with its claim. The Canvas uses no more than 40 renderer-owned semantic
-  nodes (user-created nodes do not consume that budget), readable generated geometry, and an
-  ordered end-to-end Workflow rather than invented
-  challenge/contribution pipeline nodes.
-- Baselines own only renderer-emitted node/edge IDs and generated content/endpoint revisions.
-  Focused updates preserve valid human layout and custom nodes/edges; generated-content conflicts
-  return a proposal and leave the pair unchanged.
-- Batch cleanup owns staged analysis drafts only and never modifies or rolls back Zotero data.
+- Never silently discard human-authored content: Markdown revision drift returns a paired conflict.
+  A focused v4 update preserves unselected sections and replaces only its explicitly selected
+  complete sections; retained claims in those sections must be included in the submitted IR.
+- Evidence stays inline with each claim or point. Apply the v4 Canvas node budgets,
+  point-level attribution, and Method branch rules from `references/analysis-format.md`.
+- IR v1–v3's Task / Input / Workflow / Output / Boundary projection remains readable as legacy;
+  ordinary updates do not silently convert it to the v4 reference tree.
+- Focused updates preserve valid human layout and custom nodes/edges; a generated-content
+  conflict returns a proposal and leaves the pair unchanged.
+- Batch cleanup owns staged analysis drafts only and never modifies Zotero data.
 - Canonical commit requires exact base hashes and never overwrites a concurrent human edit;
   symlinks, path escape, and partial/manual-recovery state fail closed.
 
 ## References
 
+- `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `references/analysis-format.md`
 - `references/analysis-batch.md` — load only for multi-paper analysis.
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`

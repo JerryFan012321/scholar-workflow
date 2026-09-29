@@ -11,10 +11,13 @@ from typing import Any
 from scholar_workflow.analysis.models import (
     AnalysisClaim,
     AnalysisDocument,
+    AnalysisPoint,
     AnalysisRole,
     Evidence,
     EvidenceKind,
     ProfileKind,
+    VaultMarkdownSpan,
+    ZoteroPdfSpan,
 )
 
 ROLE_LABELS = {
@@ -36,7 +39,7 @@ ROLE_COLORS = {
 @dataclass(frozen=True)
 class AnalysisBundle:
     markdown: str
-    canvas: dict[str, list[dict[str, Any]]]
+    canvas: dict[str, Any]
 
 
 def evidence_text(evidence: Evidence) -> str:
@@ -51,10 +54,36 @@ def evidence_text(evidence: Evidence) -> str:
     return f"不适用 · {evidence.detail}"
 
 
+def source_span_link(span: ZoteroPdfSpan | VaultMarkdownSpan) -> str:
+    """Render a stable presentation link, never a loopback URL or filesystem path."""
+    if isinstance(span, ZoteroPdfSpan):
+        collection = (
+            "library" if span.library_type == "personal" else f"groups/{span.library_id}"
+        )
+        physical_page = span.page_index + 1
+        uri = (
+            f"zotero://open-pdf/{collection}/items/{span.attachment_key}"
+            f"?page={physical_page}"
+        )
+        if span.annotation_key:
+            uri += f"&annotation={span.annotation_key}"
+        label = "原批注" if span.annotation_key else "原文"
+        return f"[{label}·PDF 第 {physical_page} 页]({uri})"
+    note_path = span.vault_path[:-3]
+    return f"[[{note_path}#^{span.block_id}|原文·段落]]"
+
+
+def inline_evidence(evidence: Evidence) -> str:
+    suffix = f"〔{evidence_text(evidence)}〕"
+    if evidence.source_spans:
+        suffix += " " + " ".join(source_span_link(span) for span in evidence.source_spans)
+    return suffix
+
+
 def _safe_note_stem(note_stem: str) -> None:
     if not note_stem or len(note_stem) > 240:
         raise ValueError("note_stem must contain 1-240 characters")
-    if any(token in note_stem for token in ("/", "\\", "#", "^", "[", "]")):
+    if any(token in note_stem for token in ("/", "\\", "#", "^", "[", "]", "|", "\r", "\n")):
         raise ValueError("note_stem must be a plain filename stem")
 
 
@@ -72,14 +101,34 @@ def claim_marker(claim: AnalysisClaim) -> str:
     return f'<!-- sw-analysis-claim id="{claim.claim_id}" role="{claim.role.value}" -->'
 
 
+def point_anchor(claim: AnalysisClaim, point: AnalysisPoint) -> str:
+    """Encode both IDs without collisions using Obsidian-compatible characters."""
+    return f"point-{len(claim.claim_id)}-{claim.claim_id}-{point.point_id}"
+
+
+def point_markdown_line(claim: AnalysisClaim, point: AnalysisPoint) -> str:
+    return f"{point.text} {inline_evidence(point.evidence)} ^{point_anchor(claim, point)}"
+
+
+def point_canvas_line(claim: AnalysisClaim, point: AnalysisPoint, note_stem: str) -> str:
+    summary = point.canvas_summary if point.canvas_summary is not None else point.text
+    backlink = f"[[{note_stem}#^{point_anchor(claim, point)}|正文]]"
+    return f"• {summary} {inline_evidence(point.evidence)} ↩ {backlink}"
+
+
 def claim_markdown_lines(claim: AnalysisClaim, *, workflow: bool) -> list[str]:
-    supported = f"{claim.body} 〔{evidence_text(claim.evidence)}〕 ^claim-{claim.claim_id}"
+    supported = f"{claim.body} {inline_evidence(claim.evidence)} ^claim-{claim.claim_id}"
     if workflow:
-        return [f"{claim.order}. **{claim.title}。** {supported}", claim_marker(claim)]
-    return [f"### {claim.title}", supported, claim_marker(claim)]
+        lines = [f"{claim.order}. **{claim.title}。** {supported}"]
+    else:
+        lines = [f"### {claim.title}", supported]
+    for point in claim.points:
+        lines.extend(["", point_markdown_line(claim, point)])
+    return [*lines, claim_marker(claim)]
 
 
-def _render_markdown(document: AnalysisDocument) -> str:
+def _render_legacy_markdown(document: AnalysisDocument) -> str:
+    """Read-compatible v1-v3 projection; new analyses use the v4 reference tree."""
     roles = document.profile.roles
     scope = (
         "全文（任务、输入、分步流程、输出、边界）"
@@ -111,14 +160,14 @@ def _render_markdown(document: AnalysisDocument) -> str:
 
 
 def claim_canvas_text(claim: AnalysisClaim, note_stem: str) -> str:
-    return "\n".join(
-        [
-            f"### {claim.title}",
-            f"{claim.body} 〔{evidence_text(claim.evidence)}〕",
-            f"↩ [[{note_stem}#^claim-{claim.claim_id}|正文]]",
-            claim_marker(claim),
-        ]
-    )
+    summary = claim.canvas_summary if claim.canvas_summary is not None else claim.body
+    lines = [
+        f"### {claim.title}",
+        f"{summary} {inline_evidence(claim.evidence)}",
+        f"↩ [[{note_stem}#^claim-{claim.claim_id}|正文]]",
+    ]
+    lines.extend(point_canvas_line(claim, point, note_stem) for point in claim.points)
+    return "\n".join([*lines, claim_marker(claim)])
 
 
 def _node_height(text: str, *, minimum: int = 140) -> int:
@@ -127,7 +176,10 @@ def _node_height(text: str, *, minimum: int = 140) -> int:
     return max(minimum, 52 + wrapped_lines * 28)
 
 
-def _render_canvas(document: AnalysisDocument, note_stem: str) -> dict[str, list[dict[str, Any]]]:
+def _render_legacy_canvas(
+    document: AnalysisDocument, note_stem: str
+) -> dict[str, list[dict[str, Any]]]:
+    """Preserve existing v1-v3 Canvas bytes until an explicit reviewed cutover."""
     nodes: list[dict[str, Any]] = []
     edges: list[dict[str, Any]] = []
     root_path = "root"
@@ -224,7 +276,11 @@ def _render_canvas(document: AnalysisDocument, note_stem: str) -> dict[str, list
 def render_analysis(document: AnalysisDocument, *, note_stem: str) -> AnalysisBundle:
     """Render one validated IR without reading or writing external stores."""
     _safe_note_stem(note_stem)
+    if document.schema_version == 4:
+        from scholar_workflow.analysis.reference_rendering import render_reference_analysis
+
+        return render_reference_analysis(document, note_stem=note_stem)
     return AnalysisBundle(
-        markdown=_render_markdown(document),
-        canvas=_render_canvas(document, note_stem),
+        markdown=_render_legacy_markdown(document),
+        canvas=_render_legacy_canvas(document, note_stem),
     )

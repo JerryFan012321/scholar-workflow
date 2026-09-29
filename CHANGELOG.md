@@ -5,7 +5,48 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.29.0] — 2026-09-30
+
+Published for installed-product acceptance at the user's explicit request before the
+remaining Hub v3, human-facing presentation, and World Models Field migration gates
+have passed. This release does not authorize formal Vault migration or claim those
+pending outcomes are verified.
+
 ### Added
+- **Human-facing presentation contract (documentation only).** A shared result standard now
+  covers readable body text, consistent labels, adjacent evidence and usable source actions,
+  honest completion states, and preservation of human edits across skills, Hub, and CLI. It
+  defers concrete layouts to each format's accepted template. Existing Hub preview and CLI
+  presentation gaps remain pending implementation and visible-result acceptance; no tests or
+  formal Vault migration are claimed by this documentation change.
+- **Joint Field/provider bootstrap (development tree).** A trusted local transaction primitive
+  now binds the reviewed flat-paper-folder plan, selected v4 analysis bundle, provider snapshot,
+  Field manifest, host registration, link rewrites, and existing document inventory into one
+  digest and conditional journal. Synthetic tests cover stale previews, omitted/encoded old links,
+  interrupted staging, and recovery that refuses unowned files or directories. No public migration
+  command or formal Vault migration is claimed by this implementation.
+- **Reference-image paper analysis tree (development tree).** New IR v4 targets the user's full
+  Abstract / Introduction / Method / Limitation outline and nested slots instead of the previous
+  five-role generated view. Its paired Markdown and editable JSON Canvas keep claim/point evidence,
+  original-source links, and exact Markdown backlinks together; empty template slots do not invent
+  paper facts. IR v1–v3 remain readable and require an explicit reviewed cutover. A 33-node/32-edge
+  Advanced Canvas sample and a directly rendered v4 fixture were placed only in the `test` Vault.
+  Both were inspected in Obsidian's front window, and a generated claim node entered text-edit mode;
+  Advanced Canvas's automatically added `metadata` envelope is now narrowly validated and preserved
+  across managed updates, rather than making an otherwise editable Canvas fail conformance.
+  The user accepted the current v4 layout and editability as the `analyze-paper` format baseline;
+  ordinary Canvas fallback, formal Vault migration, and release remain pending; the previously
+  accepted V-JEPA 2 candidate's human content, appearance, and links were accepted on 2026-09-29.
+  A separate test-Vault revision now corrects eight source-attribution units and passes paired
+  conformance, but it has not inherited that earlier human acceptance automatically.
+- **Traceable analysis source locations (development tree).** Added IR v3 source spans and
+  deterministic inline Markdown/Canvas links for Zotero PDF physical pages, optional existing
+  annotations, and registered Vault Markdown blocks. Older IR remains readable. Structural tests
+  pass; the earlier V-JEPA 2 candidate's ZotFlow page links were user-verified. A one-paper
+  source audit has since checked all 68 claim/point units and produced eight precise corrections
+  in a new test-Vault candidate; formal Vault-block migration checks remain release gates. The new World Models overview homepage
+  was withdrawn; its existing `01-Paperlist.md` remains the Field catalog entrance. The real Vault
+  and installed plugin are unchanged.
 - **Hub v3 contract.** Added the accepted `HubDirectory` schema-3 architecture with document-only
   Papers/Fields Libraries, peer Projects/Tools collections, dynamic Obsidian Source/Field manifests,
   direct paper actions, independent capability reporting, and explicit `CmuxDestination`,
@@ -16,9 +57,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 - **ZotFlow and annotation boundary.** Added version-aware ZotFlow open actions, Local-API-derived
   read-only `AnnotationIR`, disjoint Source Note/Better Notes/Scholar writers, and hash-bound explicit
   annotated-PDF snapshots that never overwrite or silently re-import a Zotero attachment.
+- **ZotFlow Vault identity and routing (development tree).** The local-mode probe now compares
+  strict existing directory identities instead of path spelling, so legacy `documents` and Obsidian's
+  `Documents` alias can identify the same Vault without a global case-insensitive path rule.
+  An isolated real V-JEPA 2 Hub action canary passed with the legacy spelling and registered Source
+  Vault `02-科研技术文档`; the action returned HTTP 200, system open returned `opened=true`, and
+  Obsidian GUI showed the correct Reader and page 1/48 in the formal research Vault. The adapter adds
+  the server-selected registered Vault name and rejects ambiguous multiple Sources instead of
+  silently choosing the first. A continuous click from the development Hub page and formal release
+  remain gates.
 - **Explicit annotated-PDF export.** Added `zotero snapshot-annotations ATTACHMENT_KEY --output PATH`
   to generate a separate PDF and hash receipt from Local API annotations; unsupported annotation
-  types fail rather than producing a misleading complete export.
+  types fail rather than producing a misleading complete export. A V-JEPA 2 sample in the `test`
+  Vault includes two formal page-1 highlights and comments; Preview displays both while the
+  Zotero source PDF hash remains unchanged. The user confirmed the corresponding ZotFlow↔Zotero
+  manual annotation round trip.
 - **Trusted task setup and terminal routing.** Added `hub target list/add-source/add-project`,
   `hub codex configure/status`, v3 task-action/target/task/run endpoints, a bounded Codex task UI,
   and a long-lived cmux terminal-worker path. Task availability follows real runtime configuration
@@ -26,12 +79,71 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 - **Per-Field legacy-link migration.** Added read-only `hub field-migration plan` and digest-approved
   `apply`, with manifest-scoped Markdown/Canvas edits, unmapped-link conflict detection, CAS checks,
   sibling-Field isolation, synchronous rollback and an explicitly unverified recovery snapshot.
+  A private per-Field pending journal now blocks further plan/apply after an interrupted commit;
+  explicit `hub field-migration recover` verifies the snapshot and file states before conditionally
+  restoring only journal-owned changes, refusing external conflicts rather than overwriting them.
   Each distinct attachment key must be verified through Zotero Local API as a locally resolvable
   user-library PDF during planning and again before applying; unsupported links fail closed. Any
   residual 23128 loopback reference—including URL variants and JSON-escaped strings—blocks success;
   additional text formats are checked read-only, and unreadable Field subtrees fail closed.
+- **Operator-reviewed Field cutover.** Added `hub field-transaction plan/legacy-preview/legacy-stage/
+  apply/recover` for one recoverable Field commit covering legacy links, reviewed analysis
+  Markdown/Canvas/sidecar, optional home/navigation changes, portable manifest and host registration.
+  Separate legacy Markdown/Canvas conservation gates compose with bundle conformance and a sidecar
+  baseline; a cutover digest and a whole-Field plan digest are reviewed separately. Only the trusted
+  local operator can stage or apply, with an external-writer pause assertion and conditional recovery.
+  The browser cannot submit source bytes or an arbitrary analysis candidate. The new JEPA candidate's
+  human content/Canvas/links are accepted; old-draft conservation and exact Field migration remain gates.
+  A digest alone is not proof of human approval.
+- **Reviewed ordinary Field relocation (development tree).** A local-only transaction slice
+  now binds reviewed source/destination paths, content and inode, target absence, new directories,
+  link rewrites, and conditional v3 recovery; existing v2 journals remain readable. It refuses
+  managed analysis triples and ZotFlow notes. Moving a new v4 analysis bundle into an authoritative
+  paper folder remains blocked until provider snapshot and Field files share one CAS journal.
 
 ### Changed
+- **Skill development validation scope.** Authoring and iteration now use synthetic fixtures and
+  one controlled paper, repository, or test-Vault object for the inner loop. A real full collection
+  is reserved for one reviewed operational acceptance after implementation stabilizes; this does
+  not narrow a user's actual runtime batch request or waive release safety gates.
+- **analyze-paper v4 review corrections (development tree).** Human Markdown and editable Canvas
+  no longer expose `sw-analysis-claim` machine comments; block anchors, deterministic node IDs,
+  and the sidecar retain identity and conflict checks. The optional v4 reader projection now emits
+  ZotFlow Library Reader page links in both artifacts for an explicitly selected Vault, while
+  default Zotero-native links remain available and source spans stay authoritative. Ordinary updates
+  preserve the selected reader; changing it requires explicit migration. Canvas text sizing accounts
+  for CJK wrapping, reserves an extra clickable line, and is checked during conformance. The V-JEPA 2
+  `test` Vault candidate was regenerated and its latest links individually accepted by the user.
+  Advanced Canvas subsequently changed the raw Canvas bytes, so the older hash-bound cutover index
+  must be rebound before old-draft disposition and real Field migration.
+- **New-paper folder contract.** New v4 canonical commits require their Markdown, Canvas, and
+  sidecar in one Field-local `resources/papers/<stable-paper-segment>/` folder. Literature-tree
+  guidance places the paper companion note there. Development-tree v4 commits now verify a bound
+  Vault identity, unique PAPER `resource_id` folder owner, full provider snapshot revision, all
+  three target-file owners and the staged/catalog Zotero key before writing. v1–v3 receipt
+  fingerprints remain compatible. Existing unbound provider snapshots need trusted binding and
+  CLI still needs designated Source-registry resolution; new-folder initialization and the joint
+  provider/Field journal for old `paper_assets` and flat analyses remain WI-052 work. No real old
+  file is moved by this change.
+- **Reference-tree result and limitation detail capacity (development tree).** The existing
+  Experiment and Reasoned limitations branches can now contain repeated, bounded, individually
+  sourced result/reason claims without adding new framework categories. A real V-JEPA 2 v4
+  review-only bundle and 49-point traceability ledger live in the `test` Vault. The user accepted
+  its latest human content, appearance and links; structural conformance and that approval still do
+  not prove every old fragment's disposition, Field migration, or release.
+- **analyze-paper reader-link guidance (prior phase).** Recorded the user-accepted ZotFlow 1.6.6
+  Obsidian Library Reader page-link experiment for Scholar-owned test notes, with
+  zero-based page navigation, explicit Vault routing, Zotero fallback, and source
+  identity kept separate from viewer URLs. At that phase the managed renderer still
+  emitted Zotero-native links; this historical documentation change did not claim formal Field
+  migration, annotation round-trip, or release acceptance.
+- **cmux reader boundary clarified.** cmux local-PDF browser/preview is read-only, not an embedded
+  Zotero native reader or formal annotation-sync client; Zotero source links open the external
+  Zotero application. No cloud PDF fallback is added.
+- **Field ownership isolation.** Field previews now identify ZotFlow-managed Source Notes from
+  their frontmatter owner marker, show them separately from candidate Fields, and reject external
+  or conflicting ownership at manifest, transaction, read, and write boundaries. Directory names
+  are not treated as ownership evidence.
 - **Optional legacy Vault configuration.** `config init` no longer requires a singleton
   `research_vault_root`; pre-v3 projection commands fail closed with migration guidance,
   while the managed Hub can start against an isolated host-state compatibility root that
@@ -39,6 +151,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 - **Local-API annotation export.** `export-annotations` and its compatibility script now
   consume Zotero Local API data through read-only `AnnotationIR`, use stable item/attachment
   keys, and never open `zotero.sqlite` or request ZotFlow's Web API key.
+- **No cloud PDF download for reading actions.** Zotero native PDF is the primary paper action;
+  ZotFlow is optional only after a narrow, non-secret live probe proves its desktop local-storage
+  mode and the matching local imported attachment. Both launches revalidate the Local API PDF
+  identity and actual local bytes at invocation, then fail closed rather than retrieving a missing
+  PDF through Zotero Web API/WebDAV. ZotFlow metadata/annotation sync remains separate.
 - **cmux is routing, not authorization.** Replaced the global v2 workspace binding/read-only model
   with a default open destination. Registered folder/project targets, relative paths, CAS, and
   symlink defenses independently authorize Vault, project-document, and cwd operations.
@@ -47,24 +164,53 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   Field actions are available directly instead of requiring a human-visible landing page. New
   Obsidian/Notion paper projections persist stable Zotero attachment URIs/PdfRefs rather than
   fixed Hub-port links.
-- **Planning and manuals aligned to v3.** Added G15, INV47–INV51, NG17–NG19, WI-042–WI-049 and the
+- **Planning and manuals aligned to v3.** Added G15, INV47–INV52, NG17–NG20, WI-042–WI-049 and the
   Phase-9 rollout; marked Hub v2 as a historical compatibility specification and documented concrete
   service, Field-registration, direct-action, and shutdown workflows in both user guides.
 
 ### Fixed
+- **cmux service/window separation.** The managed HTTP service remains detached and
+  readable independently of a workspace. A separate cmux-descendant router provides
+  bounded window operations without relaxing cmux socket permissions; a disappearing
+  router cannot turn Vault or project file operations into global read-only mode.
+- **Lifecycle identity isolation.** A lightweight v3 identity endpoint now proves the managed
+  process without consulting providers or cmux. Slow detailed health cannot block safe status,
+  reuse or stop; window-route availability checks have a short timeout.
+- **Analysis projection readability.** Analysis IR now supports an optional bounded
+  `canvas_summary`: Markdown retains the complete claim body while Canvas can show a concise
+  projection with the same evidence and backlink. Existing IR without a summary renders unchanged.
+- **Mixed evidence attribution in paper analysis.** IR schema v2 adds stable evidence-bearing
+  points within a claim. Each point keeps its own inline evidence and exact Markdown backlink
+  inside the same Canvas node, while v1 claims and the 40-node budget remain compatible. Point
+  anchors use a distinct length-prefixed namespace, preventing claim/point ID collisions.
 - **Task recovery and routing.** Resume accepts a new bounded brief; unsuccessful continuations reach
   terminal states, command-construction failure cannot strand a queued run, and a crashed terminal
   worker reconciles its active marker only after ruling out a live process group. Worker slots include
   the cmux instance fingerprint, while runtime roots must match the Hub's trusted registries.
+- **Installed worker interpreter.** cmux terminal workers retain the installed virtual environment's
+  absolute Python path when launching, even when it is a symlink to a base interpreter, so the worker
+  can import its installed package without changing the trusted-path checks.
 - **PDF snapshot and service identity.** Ink annotations use validated PDF-to-page coordinates accepted
   by PyMuPDF. Hub health freezes the resolved service executable at startup so diagnostics remain
-  consistent even when a temporary installer environment disappears.
+  consistent even when a temporary installer environment disappears. Successful snapshot receipts
+  explicitly report an empty `omitted_types` list; unsupported types still fail before output.
 - **Field registration isolation.** Whole-Vault preview now requires confirming exactly one candidate
   Field per operation; subsequent previews can add siblings without rewriting registered Fields.
+  The compatibility browser confirmation refuses legacy Fields that need the unified operator
+  transaction; a proposed navigation override cannot silently drop previewed documents, and a
+  first-Field plan cannot skip legacy analysis markers. Review tokens allow a bounded 30-minute
+  window and still fail closed on expiry or source change.
+- **Analysis write boundaries.** Field single-document editing rejects managed analysis Markdown
+  and paired Canvas/sidecar identities. Legacy v1 artifact PUT, asset upload, and action POST now
+  return `410 Gone` instead of bypassing v3 Field or Destination checks. The old link-only CLI apply
+  separately requires an external-writer pause assertion and interactive confirmation.
   Existing portable manifests can be explicitly enrolled on a new host without changing their
   Field IDs or content. Concurrent registry updates, overlapping Vault/Field ownership and
   uncertain post-rename persistence fail closed; the UI distinguishes a completed confirmation
   from a subsequent list-refresh failure.
+- **Field preview revision.** Folder candidates now include Canvas and analysis sidecar bytes plus the
+  visible directory inventory in their content hash, while pruning ignored directories during
+  traversal; changes after selection invalidate confirmation.
 
 ### Security
 - **Zotero Web API key isolation.** Only ZotFlow may hold that key, exclusively in Obsidian

@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from referencing import Registry, Resource
 
 from scholar_workflow.analysis.models import (
+    ALL_ROLES,
     AnalysisCanonicalPaths,
     AnalysisClaim,
     AnalysisCommitFile,
@@ -128,6 +129,7 @@ def test_checked_in_knowledge_manifest_schema_accepts_runtime_model() -> None:
 
 def _analysis_document() -> AnalysisDocument:
     return AnalysisDocument(
+        schema_version=1,
         artifact_id="analysis:paper:contract",
         paper_title="Contract Paper",
         profile=AnalysisProfile(kind=ProfileKind.WHOLE),
@@ -143,7 +145,7 @@ def _analysis_document() -> AnalysisDocument:
                 ),
                 order=1 if role is AnalysisRole.WORKFLOW else None,
             )
-            for role in AnalysisRole
+            for role in ALL_ROLES
         ],
     )
 

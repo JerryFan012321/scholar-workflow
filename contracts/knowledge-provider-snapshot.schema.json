@@ -20,6 +20,22 @@
       "type": "string",
       "pattern": "^sha256:[0-9a-f]{64}$"
     },
+    "vault_binding": {
+      "description": "Optional host-local Vault identity; required for IR v4 commits. Null preserves legacy snapshots.",
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["root_path", "device", "inode"],
+          "properties": {
+            "root_path": {"type": "string", "minLength": 1, "pattern": "^/"},
+            "device": {"type": "integer", "minimum": 0},
+            "inode": {"type": "integer", "minimum": 0}
+          }
+        }
+      ]
+    },
     "manifest": {
       "$ref": "https://scholar-workflow.local/contracts/knowledge-manifest.schema.json"
     },
@@ -45,7 +61,49 @@
     "receipts": {
       "type": "array",
       "items": {
-        "$ref": "https://scholar-workflow.local/contracts/knowledge-apply-receipt.schema.json"
+        "oneOf": [
+          {"$ref": "https://scholar-workflow.local/contracts/knowledge-apply-receipt.schema.json"},
+          {"$ref": "#/$defs/jointPaperPlacementReceipt"}
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "vaultMarkdownPath": {
+      "type": "string",
+      "pattern": "^(?!\\.{1,2}(?:/|$))[^/\\\\]+(?:/(?!\\.{1,2}(?:/|$))[^/\\\\]+)*\\.md(?![\\s\\S])"
+    },
+    "jointPaperPlacementReceipt": {
+      "description": "Provider member of a joint Field transaction; durable only with its published snapshot. Field journal completion is separate.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version", "kind", "receipt_id", "change_id", "transaction_id",
+        "plan_digest", "before_snapshot_revision", "before_catalog_revision",
+        "after_catalog_revision", "resource_id", "zotero_item_key", "source_note_path",
+        "destination_note_path", "note_sha256", "applied_artifact_ids", "applied_at"
+      ],
+      "properties": {
+        "schema_version": {"const": 1},
+        "kind": {"const": "joint-paper-placement"},
+        "receipt_id": {"type": "string", "pattern": "^knowledge-placement:[0-9a-f]{64}$"},
+        "change_id": {"type": "string", "pattern": "^placement:[0-9a-f]{64}$"},
+        "transaction_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$"},
+        "plan_digest": {"$ref": "#/$defs/hash"},
+        "before_snapshot_revision": {"$ref": "#/$defs/hash"},
+        "before_catalog_revision": {"$ref": "#/$defs/hash"},
+        "after_catalog_revision": {"$ref": "#/$defs/hash"},
+        "resource_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "zotero_item_key": {"type": "string", "pattern": "^[A-Z0-9]{8}$"},
+        "source_note_path": {"$ref": "#/$defs/vaultMarkdownPath"},
+        "destination_note_path": {"$ref": "#/$defs/vaultMarkdownPath"},
+        "note_sha256": {"$ref": "#/$defs/hash"},
+        "applied_artifact_ids": {
+          "type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "applied_at": {"type": "string", "format": "date-time"}
       }
     }
   }

@@ -17,12 +17,13 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Literal, Self
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from scholar_workflow.analysis.models import (
+    AnalysisCommitRequest,
     KnowledgeArtifactChange,
     KnowledgeChangeSet,
     KnowledgeManifest,
@@ -30,6 +31,7 @@ from scholar_workflow.analysis.models import (
     KnowledgeRelation,
     KnowledgeSupportingDocument,
     SupportingDocumentKind,
+    _validate_vault_path,
 )
 from scholar_workflow.hub.models import (
     ArtifactFormat,
@@ -37,6 +39,7 @@ from scholar_workflow.hub.models import (
     HubArtifact,
     HubCatalog,
 )
+from scholar_workflow.models import ResourceKind
 
 _SNAPSHOT_NAME = "knowledge-provider.snapshot.json"
 _LOCK_NAME = ".knowledge-provider.apply.lock"
@@ -97,6 +100,70 @@ class KnowledgeApplyReceipt(BaseModel):
         return self
 
 
+class KnowledgeVaultBinding(BaseModel):
+    """Host-local filesystem identity of the Vault owning a provider snapshot."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    root_path: str = Field(min_length=1)
+    device: int = Field(ge=0)
+    inode: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def validate_root_path(self) -> Self:
+        if not os.path.isabs(self.root_path) or os.path.normpath(self.root_path) != self.root_path:
+            raise ValueError("Vault binding path must be an absolute normalized path")
+        return self
+
+
+class JointPaperPlacementReceipt(BaseModel):
+    """Provider member of a committed, recoverable Provider/Field transaction.
+
+    This receipt is durable only with the snapshot that contains it. It is not
+    proof that the enclosing Field journal has completed or that a backup exists.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal[1] = 1
+    kind: Literal["joint-paper-placement"] = "joint-paper-placement"
+    receipt_id: str = Field(pattern=r"^knowledge-placement:[0-9a-f]{64}$")
+    change_id: str = Field(pattern=r"^placement:[0-9a-f]{64}$")
+    transaction_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$")
+    plan_digest: str = Field(pattern=_HASH_PATTERN)
+    before_snapshot_revision: str = Field(pattern=_HASH_PATTERN)
+    before_catalog_revision: str = Field(pattern=_HASH_PATTERN)
+    after_catalog_revision: str = Field(pattern=_HASH_PATTERN)
+    resource_id: str = Field(min_length=1, max_length=256)
+    zotero_item_key: str = Field(pattern=r"^[A-Z0-9]{8}$")
+    source_note_path: str
+    destination_note_path: str
+    note_sha256: str = Field(pattern=_HASH_PATTERN)
+    applied_artifact_ids: list[str] = Field(min_length=3, max_length=3)
+    applied_at: AwareDatetime
+
+    @model_validator(mode="after")
+    def validate_placement(self) -> Self:
+        for path in (self.source_note_path, self.destination_note_path):
+            _validate_vault_path(path, suffix=".md")
+        if self.source_note_path == self.destination_note_path:
+            raise ValueError("joint placement requires a distinct owner note destination")
+        if self.applied_artifact_ids != sorted(set(self.applied_artifact_ids)):
+            raise ValueError("applied_artifact_ids must be sorted and unique")
+        semantic = self.model_dump(
+            mode="json", exclude={"schema_version", "receipt_id", "change_id", "applied_at"}
+        )
+        fingerprint = _hash_payload(semantic).removeprefix("sha256:")
+        if self.change_id != f"placement:{fingerprint}" or (
+            self.receipt_id != f"knowledge-placement:{fingerprint}"
+        ):
+            raise ValueError("joint placement receipt IDs do not match its content")
+        return self
+
+
+ProviderReceipt = KnowledgeApplyReceipt | JointPaperPlacementReceipt
+
+
 class KnowledgeProviderSnapshot(BaseModel):
     """One authoritative provider manifest and its derived catalog snapshot."""
 
@@ -104,12 +171,13 @@ class KnowledgeProviderSnapshot(BaseModel):
 
     schema_version: Literal[1] = 1
     snapshot_revision: str = Field(default="", pattern=r"^(?:|sha256:[0-9a-f]{64})$")
+    vault_binding: KnowledgeVaultBinding | None = None
     manifest: KnowledgeManifest
     artifacts: list[KnowledgeArtifactChange] = Field(default_factory=list)
     relations: list[KnowledgeRelation] = Field(default_factory=list)
     projections: list[KnowledgeProjection] = Field(default_factory=list)
     catalog: HubCatalog
-    receipts: list[KnowledgeApplyReceipt] = Field(default_factory=list)
+    receipts: list[ProviderReceipt] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_provider_graph(self) -> Self:
@@ -216,6 +284,18 @@ class KnowledgeProviderSnapshot(BaseModel):
                 raise ValueError(
                     f"provider receipt references unknown artifacts: {sorted(unknown)}"
                 )
+            if isinstance(receipt, JointPaperPlacementReceipt):
+                owner = next(
+                    (row for row in self.catalog.resources if row.resource_id == receipt.resource_id),
+                    None,
+                )
+                if owner is None or owner.kind is not ResourceKind.PAPER or (
+                    owner.zotero.item_key != receipt.zotero_item_key
+                ) or any(
+                    artifacts[value].resource_id != receipt.resource_id
+                    for value in receipt.applied_artifact_ids
+                ):
+                    raise ValueError("joint placement receipt has a different PAPER owner")
             receipt_ids.add(receipt.receipt_id)
             change_ids.add(receipt.change_id)
             previous_after_revision = receipt.after_catalog_revision
@@ -257,11 +337,269 @@ class KnowledgeProviderSnapshot(BaseModel):
                 key=lambda row: row["change_id"],
             ),
         }
+        if self.vault_binding is not None:
+            payload["vault_binding"] = self.vault_binding.model_dump(mode="json")
         return _hash_payload(payload)
 
 
 FaultInjector = Callable[[str], None]
 Clock = Callable[[], datetime]
+
+
+@dataclass(frozen=True)
+class PreparedJointPaperPlacement:
+    """Prospective graph only; never persist this as a provider snapshot.
+
+    The enclosing journal owns filesystem conformance, registration, writer
+    pause, source/destination CAS, and recovery. Preparation reads no files.
+    """
+
+    request: AnalysisCommitRequest
+    vault_binding: KnowledgeVaultBinding
+    transaction_id: str
+    plan_digest: str
+    source_note_path: str
+    destination_note_path: str
+    note_sha256: str
+    new_artifacts: tuple[KnowledgeArtifactChange, ...]
+    before_snapshot_revision: str
+    before_catalog_revision: str
+    after_catalog_revision: str
+    manifest: KnowledgeManifest
+    artifacts: tuple[KnowledgeArtifactChange, ...]
+    relations: tuple[KnowledgeRelation, ...]
+    projections: tuple[KnowledgeProjection, ...]
+    catalog: HubCatalog
+
+
+@dataclass(frozen=True)
+class FinalizedJointPaperPlacement:
+    """Validated commit payload; becomes durable only when the journal publishes it."""
+
+    before_snapshot_revision: str
+    after_snapshot_revision: str
+    snapshot: KnowledgeProviderSnapshot
+    payload: bytes
+    receipt: JointPaperPlacementReceipt
+
+
+def prepare_joint_paper_placement(
+    *,
+    snapshot: KnowledgeProviderSnapshot,
+    request: AnalysisCommitRequest,
+    vault_binding: KnowledgeVaultBinding,
+    transaction_id: str,
+    plan_digest: str,
+    source_note_path: str,
+    destination_note_path: str,
+    note_sha256: str,
+    new_artifacts: list[KnowledgeArtifactChange] | tuple[KnowledgeArtifactChange, ...],
+) -> PreparedJointPaperPlacement:
+    """Prepare an additive v4 graph and one PAPER note move without disk writes.
+
+    The caller supplies artifacts whose exact bytes passed bundle conformance.
+    This function validates provider identity and graph ownership, not the files.
+    Prior artifacts, relations, projections, and receipts cannot be removed here.
+    """
+    try:
+        snapshot = KnowledgeProviderSnapshot.model_validate(snapshot.model_dump(mode="json"))
+        request = AnalysisCommitRequest.model_validate(request.model_dump(mode="json"))
+        if request.document.schema_version != 4:
+            raise ValueError("joint placement requires IR v4")
+        if request.base_snapshot_revision != snapshot.snapshot_revision:
+            raise ValueError("full provider snapshot revision changed")
+        if request.base_catalog_revision != snapshot.catalog.revision:
+            raise ValueError("provider catalog revision changed")
+        if snapshot.vault_binding is None or snapshot.vault_binding != vault_binding:
+            raise ValueError("provider Vault binding differs from the registered Vault")
+        if any(isinstance(row, JointPaperPlacementReceipt) and
+               row.transaction_id == transaction_id for row in snapshot.receipts):
+            raise ValueError("joint transaction ID is already committed")
+        for path in (source_note_path, destination_note_path):
+            _validate_vault_path(path, suffix=".md")
+        if source_note_path == destination_note_path:
+            raise ValueError("joint placement requires a distinct owner note destination")
+        if PurePosixPath(destination_note_path).parent != PurePosixPath(request.paths.markdown).parent:
+            raise ValueError("owner note must share the new analysis paper folder")
+        owner = next(
+            (row for row in snapshot.manifest.atomic_resources
+             if row.resource_id == request.resource_id), None
+        )
+        catalog_owner = next(
+            (row for row in snapshot.catalog.resources if row.resource_id == request.resource_id),
+            None,
+        )
+        if owner is None or owner.kind is not ResourceKind.PAPER or (
+            owner.markdown_path != source_note_path
+        ) or catalog_owner is None or catalog_owner.kind is not ResourceKind.PAPER or (
+            not request.zotero_item_key or catalog_owner.zotero.item_key != request.zotero_item_key
+        ):
+            raise ValueError("joint placement has no matching PAPER owner and Zotero key")
+        incoming = [KnowledgeArtifactChange.model_validate(row.model_dump(mode="json"))
+                    for row in new_artifacts]
+        stem = request.document.artifact_id
+        expected = {
+            stem: ("analysis_markdown", request.paths.markdown),
+            f"{stem}:canvas": ("analysis_canvas", request.paths.canvas),
+            f"{stem}:sidecar": ("analysis_sidecar", request.paths.sidecar),
+        }
+        if len(incoming) != 3 or {row.artifact_id for row in incoming} != set(expected):
+            raise ValueError("joint placement requires exactly the v4 artifact triple")
+        if any(row.resource_id != request.resource_id or
+               (row.kind, row.vault_path) != expected[row.artifact_id] for row in incoming):
+            raise ValueError("joint placement artifacts differ from the v4 request")
+        if any(value is not None for value in request.base_revisions.values()):
+            raise ValueError("joint placement may only create new analysis artifacts")
+        existing_ids = _known_knowledge_ids(snapshot.manifest, snapshot.artifacts)
+        if existing_ids.intersection(expected):
+            raise ValueError("joint placement artifact identity is already declared")
+        existing_paths = {
+            *(row.markdown_path for row in snapshot.manifest.atomic_resources),
+            *(row.markdown_path for row in snapshot.manifest.core_documents),
+            *(row.vault_path for row in snapshot.manifest.supporting_documents),
+            *(row.vault_path for row in snapshot.artifacts),
+            *(row.vault_path for row in snapshot.catalog.assets),
+        }
+        target_paths = {destination_note_path, *request.paths.as_list()}
+        if len(target_paths) != 4 or target_paths.intersection(existing_paths):
+            raise ValueError("joint placement target path already has an owner")
+        target_folder = PurePosixPath(destination_note_path).parent
+        managed_owners = [
+            *((row.markdown_path, {row.resource_id}) for row in snapshot.manifest.atomic_resources),
+            *((row.markdown_path, {row.document_id}) for row in snapshot.manifest.core_documents),
+            *((row.vault_path, {row.owner_id}) for row in snapshot.manifest.supporting_documents),
+            *((row.vault_path, {row.resource_id}) for row in snapshot.artifacts),
+            *((row.vault_path, {row.resource_id or row.topic_id}) for row in snapshot.catalog.artifacts),
+        ]
+        catalog_artifacts = {row.artifact_id: row for row in snapshot.catalog.artifacts}
+        for asset in snapshot.catalog.assets:
+            asset_owners = {
+                catalog_artifacts[value].resource_id or catalog_artifacts[value].topic_id
+                if value in catalog_artifacts else None
+                for value in asset.owner_artifact_ids
+            }
+            managed_owners.append((asset.vault_path, asset_owners))
+        if any(
+            PurePosixPath(path).is_relative_to(target_folder)
+            and owners != {request.resource_id}
+            for path, owners in managed_owners
+        ):
+            raise ValueError("joint placement paper folder belongs to another resource")
+        # Reuse the additive artifact validator, then apply the explicitly reviewed note move.
+        change = KnowledgeChangeSet(
+            change_id="change:" + "0" * 64,
+            source_receipt=f"joint-field:{transaction_id}",
+            base_catalog_revision=snapshot.catalog.revision,
+            upsert_artifacts=incoming,
+            expected_base_hashes={row.vault_path: None for row in incoming},
+        )
+        manifest, artifacts = _apply_artifacts(snapshot, change)
+        for row in manifest.supporting_documents:
+            if row.document_id == stem:
+                row.title = f"{request.document.paper_title} analysis"
+            elif row.document_id == f"{stem}:canvas":
+                row.title = f"{request.document.paper_title} analysis Canvas"
+        for row in manifest.atomic_resources:
+            if row.resource_id == request.resource_id:
+                row.markdown_path = destination_note_path
+        manifest = KnowledgeManifest.model_validate(manifest.model_dump(mode="json"))
+        known_ids = _known_knowledge_ids(manifest, artifacts)
+        relations = _merge_relations(
+            snapshot.relations, request.relations, known_ids=known_ids,
+            artifacts={row.artifact_id: row for row in artifacts},
+        )
+        projections = _merge_projections(
+            snapshot.projections, request.projections, known_ids=known_ids,
+        )
+        catalog = _apply_catalog(
+            snapshot.catalog, manifest=manifest, artifacts=artifacts,
+            changed=incoming, generated_at=snapshot.catalog.generated_at,
+        )
+        # Validate the complete prospective graph without inventing an applied receipt.
+        KnowledgeProviderSnapshot(
+            vault_binding=vault_binding, manifest=manifest, artifacts=artifacts,
+            relations=relations, projections=projections, catalog=catalog,
+        )
+        prepared = PreparedJointPaperPlacement(
+            request=request, vault_binding=vault_binding.model_copy(deep=True),
+            transaction_id=transaction_id, plan_digest=plan_digest,
+            source_note_path=source_note_path, destination_note_path=destination_note_path,
+            note_sha256=note_sha256, new_artifacts=tuple(incoming),
+            before_snapshot_revision=snapshot.snapshot_revision,
+            before_catalog_revision=snapshot.catalog.revision,
+            after_catalog_revision=catalog.revision,
+            manifest=manifest, artifacts=tuple(artifacts), relations=tuple(relations),
+            projections=tuple(projections), catalog=catalog,
+        )
+        # Validate receipt-shaped identifiers without creating an applied receipt.
+        if not transaction_id or len(transaction_id) > 128 or any(
+            not (char.isascii() and (char.isalnum() or char in "_-"))
+            for char in transaction_id
+        ) or not transaction_id[0].isalnum():
+            raise ValueError("invalid joint transaction ID")
+        if any(len(value) != 71 or not value.startswith("sha256:") or any(
+            char not in "0123456789abcdef" for char in value[7:]
+        ) for value in (plan_digest, note_sha256)):
+            raise ValueError("joint placement hashes must use sha256:<hex>")
+        return prepared
+    except (ValueError, ValidationError) as exc:
+        raise KnowledgeApplyConflict(str(exc)) from None
+
+
+def finalize_joint_paper_placement(
+    prepared: PreparedJointPaperPlacement,
+    *,
+    current_snapshot: KnowledgeProviderSnapshot,
+    committed_at: datetime,
+) -> FinalizedJointPaperPlacement:
+    """Encode the provider commit member after the joint coordinator reacquires CAS.
+
+    No writes occur here. The coordinator must journal these exact bytes before
+    replacing any member, publish the provider last, and conditionally recover all
+    members on failure. Only that publication makes the enclosed receipt durable.
+    """
+    checked = prepare_joint_paper_placement(
+        snapshot=current_snapshot, request=prepared.request,
+        vault_binding=prepared.vault_binding, transaction_id=prepared.transaction_id,
+        plan_digest=prepared.plan_digest, source_note_path=prepared.source_note_path,
+        destination_note_path=prepared.destination_note_path, note_sha256=prepared.note_sha256,
+        new_artifacts=prepared.new_artifacts,
+    )
+    if checked != prepared:
+        raise KnowledgeApplyConflict("prospective joint placement changed after preparation")
+    if committed_at.utcoffset() is None:
+        raise KnowledgeApplySafetyError("joint commit clock must return an aware datetime")
+    semantic = {
+        "kind": "joint-paper-placement", "transaction_id": prepared.transaction_id,
+        "plan_digest": prepared.plan_digest,
+        "before_snapshot_revision": prepared.before_snapshot_revision,
+        "before_catalog_revision": prepared.before_catalog_revision,
+        "after_catalog_revision": prepared.after_catalog_revision,
+        "resource_id": prepared.request.resource_id,
+        "zotero_item_key": prepared.request.zotero_item_key,
+        "source_note_path": prepared.source_note_path,
+        "destination_note_path": prepared.destination_note_path,
+        "note_sha256": prepared.note_sha256,
+        "applied_artifact_ids": sorted(row.artifact_id for row in prepared.new_artifacts),
+    }
+    digest = _hash_payload(semantic).removeprefix("sha256:")
+    receipt = JointPaperPlacementReceipt(
+        **semantic, receipt_id=f"knowledge-placement:{digest}", change_id=f"placement:{digest}",
+        applied_at=committed_at,
+    )
+    catalog = prepared.catalog.model_copy(deep=True)
+    catalog.generated_at = committed_at
+    after = KnowledgeProviderSnapshot(
+        vault_binding=prepared.vault_binding, manifest=prepared.manifest,
+        artifacts=list(prepared.artifacts), relations=list(prepared.relations),
+        projections=list(prepared.projections), catalog=catalog,
+        receipts=[*current_snapshot.receipts, receipt],
+    )
+    return FinalizedJointPaperPlacement(
+        before_snapshot_revision=prepared.before_snapshot_revision,
+        after_snapshot_revision=after.snapshot_revision,
+        snapshot=after, payload=_json_bytes(after.model_dump(mode="json")), receipt=receipt,
+    )
 
 
 class KnowledgeSnapshotCatalogProvider:
@@ -277,6 +615,7 @@ class KnowledgeSnapshotCatalogProvider:
 def initialize_knowledge_provider_snapshot(
     *,
     state_root: Path,
+    vault_root: Path | None = None,
     manifest: KnowledgeManifest,
     catalog: HubCatalog,
     artifacts: list[KnowledgeArtifactChange] | None = None,
@@ -285,6 +624,7 @@ def initialize_knowledge_provider_snapshot(
 ) -> KnowledgeProviderSnapshot:
     """Create a provider snapshot once; an existing state is never overwritten."""
     snapshot = KnowledgeProviderSnapshot(
+        vault_binding=_vault_binding_for_root(vault_root) if vault_root is not None else None,
         manifest=manifest,
         artifacts=artifacts or [],
         relations=relations or [],
@@ -375,6 +715,7 @@ def apply_knowledge_change_set(
                 applied_at=applied_at,
             )
             updated = KnowledgeProviderSnapshot(
+                vault_binding=snapshot.vault_binding,
                 manifest=manifest,
                 artifacts=artifacts,
                 relations=relations,
@@ -902,6 +1243,25 @@ def _open_state_root(state_root: Path) -> Iterator[_StateRootBinding]:
         yield binding
     finally:
         os.close(root_fd)
+
+
+def _vault_binding_for_root(vault_root: Path) -> KnowledgeVaultBinding:
+    path = Path(os.path.abspath(vault_root))
+    try:
+        for component in (path, *path.parents):
+            if not stat.S_ISDIR(os.lstat(component).st_mode):
+                raise KnowledgeApplySafetyError(
+                    "Vault binding root cannot traverse a symlink or non-directory"
+                )
+        with _open_state_root(path) as root:
+            root.ensure_current()
+            return KnowledgeVaultBinding(
+                root_path=str(root.path),
+                device=root.device,
+                inode=root.inode,
+            )
+    except OSError as exc:
+        raise KnowledgeApplySafetyError(f"Vault binding root is unavailable: {exc}") from exc
 
 
 @contextmanager

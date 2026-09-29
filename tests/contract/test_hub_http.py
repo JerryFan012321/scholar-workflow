@@ -26,6 +26,7 @@ from scholar_workflow.hub.fields import (
 from scholar_workflow.hub.models import (
     ArtifactFormat,
     ArtifactKind,
+    AssetRole,
     HubArtifact,
     HubCatalog,
 )
@@ -131,6 +132,11 @@ def test_hub_static_ui_keeps_editing_and_attachments_secondary(hub_server):
     assert "renderReadable" in script
     assert "renderTable" in script
     assert 'node("strong")' in script
+    assert 'byId("preview-edit").hidden = editing || !fieldDocument' in script
+    assert 'upload.disabled = true' in script
+    assert 'byId("attachment-upload-label").hidden = true' in script
+    assert "uploadAttachments" not in script
+    assert "method: \"PUT\"" in script  # Field v3 saves remain available.
 
 
 def test_hub_static_ui_exposes_destination_without_global_binding(hub_server):
@@ -253,8 +259,11 @@ def test_action_surface_exposes_only_opaque_id_and_rejects_client_target(tmp_pat
                 "Origin": f"http://127.0.0.1:{port}",
             },
         )
-        assert json.loads(urllib.request.urlopen(request).read()) == {"opened": True}
-        assert seen == ["https://www.notion.so/0123456789abcdef0123456789abcdef"]
+        with pytest.raises(urllib.error.HTTPError) as error:
+            urllib.request.urlopen(request)
+        assert error.value.code == 410
+        assert json.loads(error.value.read())["code"] == "v1_read_only_compatibility"
+        assert seen == []
 
         bad = urllib.request.Request(
             f"http://127.0.0.1:{port}/api/v1/actions/act_public_only",
@@ -268,8 +277,8 @@ def test_action_surface_exposes_only_opaque_id_and_rejects_client_target(tmp_pat
         )
         with pytest.raises(urllib.error.HTTPError) as error:
             urllib.request.urlopen(bad)
-        assert error.value.code == 400
-        assert len(seen) == 1
+        assert error.value.code == 410
+        assert seen == []
 
         missing_origin = urllib.request.Request(
             f"http://127.0.0.1:{port}/api/v1/actions/act_public_only",
@@ -283,7 +292,7 @@ def test_action_surface_exposes_only_opaque_id_and_rejects_client_target(tmp_pat
         with pytest.raises(urllib.error.HTTPError) as error:
             urllib.request.urlopen(missing_origin)
         assert error.value.code == 403
-        assert len(seen) == 1
+        assert seen == []
     finally:
         server.shutdown()
         server.server_close()
@@ -402,14 +411,10 @@ def test_cmux_workspaces_and_workspace_scoped_actions_use_only_opaque_ids(tmp_pa
         assert actions["paper:one"][1]["workspace_policy"] == "none"
 
         token = json.loads(_request(port, "/api/v1/session").read())["csrf_token"]
-        response = _post_action(
-            port,
-            "act_open",
-            {"workspace_id": "ws_other"},
-            token=token,
-        )
-        assert json.loads(response.read()) == {"ok": True}
-        assert action_service.calls == [("act_open", "ws_other")]
+        with pytest.raises(urllib.error.HTTPError) as error:
+            _post_action(port, "act_open", {"workspace_id": "ws_other"}, token=token)
+        assert error.value.code == 410
+        assert action_service.calls == []
     finally:
         server.shutdown()
         server.server_close()
@@ -431,7 +436,7 @@ def _post_action(port: int, action_id: str, payload, *, token: str, origin=True)
     )
 
 
-def test_action_request_shape_and_workspace_policy_are_enforced(tmp_path):
+def test_v1_action_invocation_is_retired_regardless_of_payload_shape(tmp_path):
     storage = tmp_path / "storage"
     vault = tmp_path / "vault"
     storage.mkdir()
@@ -495,13 +500,13 @@ def test_action_request_shape_and_workspace_policy_are_enforced(tmp_path):
         ):
             with pytest.raises(urllib.error.HTTPError) as error:
                 _post_action(port, action_id, payload, token=token)
-            assert error.value.code == 400
+            assert error.value.code == 410
 
         assert service.calls == []
-        assert json.loads(
-            _post_action(port, "act_local", {}, token=token).read()
-        ) == {"ok": True}
-        assert service.calls == [("act_local", None)]
+        with pytest.raises(urllib.error.HTTPError) as error:
+            _post_action(port, "act_local", {}, token=token)
+        assert error.value.code == 410
+        assert service.calls == []
     finally:
         server.shutdown()
         server.server_close()
@@ -704,7 +709,7 @@ def _put_content(port: int, artifact_id: str, payload: dict, *, token: str, orig
     )
 
 
-def test_registered_markdown_can_be_saved_verbatim_with_revision_check(tmp_path):
+def test_registered_markdown_remains_readable_but_v1_put_is_gone(tmp_path):
     server, note, artifact = _editable_hub(tmp_path)
     try:
         port = server.server_address[1]
@@ -715,18 +720,82 @@ def test_registered_markdown_can_be_saved_verbatim_with_revision_check(tmp_path)
         token = json.loads(_request(port, "/api/v1/session").read())["csrf_token"]
         updated = "---\ntitle: 人类字段\n---\n# 人类标题\n\n编辑后的正文。  \n"
 
-        response = _put_content(
-            port,
-            artifact.artifact_id,
-            {"content": updated, "base_revision": before["revision"]},
-            token=token,
-        )
-        payload = json.loads(response.read())
+        with pytest.raises(urllib.error.HTTPError) as error:
+            _put_content(
+                port,
+                artifact.artifact_id,
+                {"content": updated, "base_revision": before["revision"]},
+                token=token,
+            )
+        assert error.value.code == 410
+        assert json.loads(error.value.read())["code"] == "v1_read_only_compatibility"
+        assert note.read_text(encoding="utf-8") == before["content"]
+    finally:
+        server.shutdown()
+        server.server_close()
 
-        assert note.read_text(encoding="utf-8") == updated
-        assert payload["content"] == updated
-        assert payload["revision"].startswith("sha256:")
-        assert payload["revision"] != before["revision"]
+
+def test_v1_put_rejects_managed_analysis_even_outside_any_field_manifest(tmp_path):
+    server, note, artifact = _editable_hub(tmp_path)
+    managed = "---\nsw_kind: paper-analysis\nsw_schema: 1\n---\n# Original\n"
+    note.write_text(managed, encoding="utf-8")
+    assert not (note.parents[1] / ".scholar-workflow" / "fields.yml").exists()
+    try:
+        port = server.server_address[1]
+        before = json.loads(
+            _request(
+                port,
+                f"/api/v1/artifacts/{urllib.parse.quote(artifact.artifact_id, safe='')}/content",
+            ).read()
+        )
+        token = json.loads(_request(port, "/api/v1/session").read())["csrf_token"]
+        with pytest.raises(urllib.error.HTTPError) as error:
+            _put_content(
+                port,
+                artifact.artifact_id,
+                {"content": managed + "# revised\n", "base_revision": before["revision"]},
+                token=token,
+            )
+        assert error.value.code == 410
+        assert note.read_text(encoding="utf-8") == managed
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_legacy_content_write_rejects_registered_field_files(tmp_path):
+    server, note, artifact = _editable_hub(tmp_path)
+    state = note.parents[1] / ".scholar-workflow"
+    state.mkdir()
+    (state / "fields.yml").write_text(
+        "schema_version: 1\n"
+        "source_id: 00000000-0000-4000-8000-000000000001\n"
+        "fields:\n"
+        "  - field_id: 00000000-0000-4000-8000-000000000002\n"
+        "    title: 研究\n"
+        "    relative_root: 研究\n"
+        "    home: 内容.md\n",
+        encoding="utf-8",
+    )
+    try:
+        port = server.server_address[1]
+        before = json.loads(
+            _request(
+                port,
+                f"/api/v1/artifacts/{urllib.parse.quote(artifact.artifact_id, safe='')}/content",
+            ).read()
+        )
+        token = json.loads(_request(port, "/api/v1/session").read())["csrf_token"]
+        with pytest.raises(urllib.error.HTTPError) as error:
+            _put_content(
+                port,
+                artifact.artifact_id,
+                {"content": "# forbidden\n", "base_revision": before["revision"]},
+                token=token,
+            )
+        assert error.value.code == 410
+        assert json.loads(error.value.read())["code"] == "v1_read_only_compatibility"
+        assert note.read_text(encoding="utf-8") == before["content"]
     finally:
         server.shutdown()
         server.server_close()
@@ -771,14 +840,14 @@ def test_legacy_artifact_write_is_denied_without_registered_source(tmp_path):
                 {"content": "changed\n", "base_revision": before["revision"]},
                 token=token,
             )
-        assert error.value.code == 403
+        assert error.value.code == 410
         assert note.read_text(encoding="utf-8") == "original\n"
     finally:
         server.shutdown()
         server.server_close()
 
 
-def test_managed_markdown_preserves_identity_and_projector_revision(tmp_path):
+def test_managed_markdown_is_readable_but_not_mutable_through_v1(tmp_path):
     server, note, artifact = _editable_hub(tmp_path)
     managed = (
         "---\n"
@@ -800,18 +869,15 @@ def test_managed_markdown_preserves_identity_and_projector_revision(tmp_path):
         token = json.loads(_request(port, "/api/v1/session").read())["csrf_token"]
         proposed = managed.replace("# 原正文\n", "# 新正文\n\n人类内容保持可读。\n")
 
-        response = _put_content(
-            port,
-            artifact.artifact_id,
-            {"content": proposed, "base_revision": before["revision"]},
-            token=token,
-        )
-        saved = json.loads(response.read())["content"]
-
-        assert "sw_catalog_id: artifact:editable" in saved
-        assert "sw_revision: sha256:old" in saved
-        assert saved.endswith("# 新正文\n\n人类内容保持可读。\n")
-        assert note.read_text(encoding="utf-8") == saved
+        with pytest.raises(urllib.error.HTTPError) as error:
+            _put_content(
+                port,
+                artifact.artifact_id,
+                {"content": proposed, "base_revision": before["revision"]},
+                token=token,
+            )
+        assert error.value.code == 410
+        assert note.read_text(encoding="utf-8") == managed
     finally:
         server.shutdown()
         server.server_close()
@@ -829,7 +895,7 @@ def test_managed_markdown_preserves_identity_and_projector_revision(tmp_path):
         lambda text: text.replace("sw_revision: sha256:old", "sw_revision: chosen-by-client"),
     ],
 )
-def test_managed_markdown_rejects_client_changes_to_sw_fields(tmp_path, mutate):
+def test_managed_markdown_v1_put_is_retired_for_any_client_fields(tmp_path, mutate):
     server, note, artifact = _editable_hub(tmp_path)
     managed = (
         "---\n"
@@ -859,14 +925,14 @@ def test_managed_markdown_rejects_client_changes_to_sw_fields(tmp_path, mutate):
                 },
                 token=token,
             )
-        assert error.value.code == 422
+        assert error.value.code == 410
         assert note.read_text(encoding="utf-8") == managed
     finally:
         server.shutdown()
         server.server_close()
 
 
-def test_stale_revision_returns_409_without_overwriting(tmp_path):
+def test_stale_revision_cannot_reenable_v1_write(tmp_path):
     server, note, artifact = _editable_hub(tmp_path)
     try:
         port = server.server_address[1]
@@ -879,7 +945,7 @@ def test_stale_revision_returns_409_without_overwriting(tmp_path):
                 {"content": "不应写入\n", "base_revision": "sha256:stale"},
                 token=token,
             )
-        assert error.value.code == 409
+        assert error.value.code == 410
         assert note.read_text(encoding="utf-8") == original
     finally:
         server.shutdown()
@@ -949,7 +1015,7 @@ def test_artifact_write_requires_csrf_and_explicit_same_origin(tmp_path, headers
         }),
     ],
 )
-def test_canvas_write_requires_a_valid_json_canvas(tmp_path, content):
+def test_canvas_v1_write_is_retired_regardless_of_payload(tmp_path, content):
     server, note, artifact = _editable_hub(
         tmp_path, artifact_format=ArtifactFormat.CANVAS, suffix=".canvas"
     )
@@ -968,14 +1034,14 @@ def test_canvas_write_requires_a_valid_json_canvas(tmp_path, content):
                 {"content": content, "base_revision": current["revision"]},
                 token=token,
             )
-        assert error.value.code == 422
+        assert error.value.code == 410
         assert note.read_text(encoding="utf-8") == original
     finally:
         server.shutdown()
         server.server_close()
 
 
-def test_canvas_write_accepts_standard_typed_nodes(tmp_path):
+def test_canvas_v1_write_rejects_standard_typed_nodes(tmp_path):
     server, note, artifact = _editable_hub(
         tmp_path, artifact_format=ArtifactFormat.CANVAS, suffix=".canvas"
     )
@@ -998,14 +1064,15 @@ def test_canvas_write_accepts_standard_typed_nodes(tmp_path):
             }],
             "edges": [],
         })
-        response = _put_content(
-            port,
-            artifact.artifact_id,
-            {"content": content, "base_revision": current["revision"]},
-            token=token,
-        )
-        assert response.status == 200
-        assert json.loads(note.read_text(encoding="utf-8"))["nodes"][0]["type"] == "text"
+        with pytest.raises(urllib.error.HTTPError) as error:
+            _put_content(
+                port,
+                artifact.artifact_id,
+                {"content": content, "base_revision": current["revision"]},
+                token=token,
+            )
+        assert error.value.code == 410
+        assert json.loads(note.read_text(encoding="utf-8")) == {"nodes": [], "edges": []}
     finally:
         server.shutdown()
         server.server_close()
@@ -1025,7 +1092,7 @@ def test_write_never_creates_unknown_or_missing_registered_file(tmp_path):
                     {"content": "must not exist", "base_revision": "sha256:any"},
                     token=token,
                 )
-            assert error.value.code == 404
+            assert error.value.code == 410
         assert not note.exists()
     finally:
         server.shutdown()
@@ -1048,14 +1115,14 @@ def test_write_rejects_symlink_even_when_target_stays_inside_vault(tmp_path):
                 {"content": "must not write", "base_revision": "sha256:any"},
                 token=token,
             )
-        assert error.value.code == 403
+        assert error.value.code == 410
         assert target.read_text(encoding="utf-8").startswith("# 人类标题")
     finally:
         server.shutdown()
         server.server_close()
 
 
-def test_write_rejects_oversized_content_before_replacing_file(tmp_path):
+def test_v1_put_rejects_legacy_content_without_replacing_file(tmp_path):
     server, note, artifact = _editable_hub(tmp_path)
     try:
         port = server.server_address[1]
@@ -1071,12 +1138,12 @@ def test_write_rejects_oversized_content_before_replacing_file(tmp_path):
                 port,
                 artifact.artifact_id,
                 {
-                    "content": "x" * (2 * 1024 * 1024 + 1),
+                    "content": "invalid legacy write",
                     "base_revision": before["revision"],
                 },
                 token=token,
             )
-        assert error.value.code == 413
+        assert error.value.code == 410
         assert note.read_text(encoding="utf-8") == original
     finally:
         server.shutdown()
@@ -1129,7 +1196,7 @@ def test_write_rejects_catalog_path_escape_even_if_validation_was_bypassed(tmp_p
                 {"content": "must not write", "base_revision": "sha256:any"},
                 token=token,
             )
-        assert error.value.code == 403
+        assert error.value.code == 410
         assert outside.read_text(encoding="utf-8") == "outside\n"
     finally:
         server.shutdown()
@@ -1164,12 +1231,12 @@ def _post_asset(
     )
 
 
-def test_vault_asset_upload_list_and_read_are_bound_to_registered_artifact(tmp_path):
+def test_v1_asset_post_is_gone_but_existing_assets_remain_readable(tmp_path):
     server, _note, artifact = _editable_hub(tmp_path)
     try:
         port = server.server_address[1]
         token = json.loads(_request(port, "/api/v1/session").read())["csrf_token"]
-        first = json.loads(
+        with pytest.raises(urllib.error.HTTPError) as error:
             _post_asset(
                 port,
                 artifact.artifact_id,
@@ -1177,40 +1244,35 @@ def test_vault_asset_upload_list_and_read_are_bound_to_registered_artifact(tmp_p
                 b"png-one",
                 token=token,
                 role="embed",
-            ).read()
-        )
-        second = json.loads(
-            _post_asset(
-                port,
-                artifact.artifact_id,
-                "方法概览.png",
-                b"png-two",
-                token=token,
-                role="embed",
-            ).read()
-        )
+            )
+        assert error.value.code == 410
+        assert json.loads(error.value.read())["code"] == "v1_read_only_compatibility"
+        assert not (tmp_path / "vault" / ".scholar-workflow" / "assets.yml").exists()
 
-        assert first["vault_path"].endswith("/方法概览.png")
-        assert second["vault_path"].endswith("/方法概览-2.png")
-        assert first["obsidian_link"] == f"![[{first['vault_path']}]]"
-        assert first["content_url"].startswith("/api/v1/assets/")
-        manifest = tmp_path / "vault" / ".scholar-workflow" / "assets.yml"
-        assert "方法概览.png" in manifest.read_text(encoding="utf-8")
+        first = server.runtime.asset_store.add_bytes(
+            artifact.artifact_id, "方法概览.png", b"png-one", role=AssetRole.EMBED
+        )
+        second = server.runtime.asset_store.add_bytes(
+            artifact.artifact_id, "方法概览.png", b"png-two", role=AssetRole.EMBED
+        )
 
         encoded_artifact = urllib.parse.quote(artifact.artifact_id, safe="")
         listed = json.loads(
             _request(port, f"/api/v1/artifacts/{encoded_artifact}/assets").read()
         )
         assert {row["asset_id"] for row in listed["assets"]} == {
-            first["asset_id"],
-            second["asset_id"],
+            first.asset_id,
+            second.asset_id,
         }
+        first_payload = next(row for row in listed["assets"] if row["asset_id"] == first.asset_id)
+        assert first_payload["obsidian_link"] == f"![[{first_payload['vault_path']}]]"
+        assert first_payload["content_url"].startswith("/api/v1/assets/")
 
-        content = _request(port, first["content_url"])
+        content = _request(port, first_payload["content_url"])
         assert content.headers["Content-Type"] == "image/png"
         assert content.headers["Content-Disposition"].startswith("inline;")
         assert content.read() == b"png-one"
-        head = _request(port, first["content_url"], method="HEAD")
+        head = _request(port, first_payload["content_url"], method="HEAD")
         assert head.headers["Content-Length"] == str(len(b"png-one"))
         assert head.read() == b""
     finally:
@@ -1275,7 +1337,7 @@ def test_legacy_asset_upload_rejects_subdirectory_only_source(tmp_path):
                 b"must not escape the registered source",
                 token=token,
             )
-        assert error.value.code == 403
+        assert error.value.code == 410
         assert not (vault / "attachments").exists()
         assert not (vault / ".scholar-workflow" / "assets.yml").exists()
     finally:
@@ -1286,11 +1348,11 @@ def test_legacy_asset_upload_rejects_subdirectory_only_source(tmp_path):
 @pytest.mark.parametrize(
     ("artifact_id", "name", "token_mode", "origin", "extra_query", "status"),
     [
-        ("artifact:missing", "safe.txt", "valid", True, "", 404),
-        ("artifact:editable", "../escape.txt", "valid", True, "", 422),
+        ("artifact:missing", "safe.txt", "valid", True, "", 410),
+        ("artifact:editable", "../escape.txt", "valid", True, "", 410),
         ("artifact:editable", "safe.txt", "wrong", True, "", 403),
         ("artifact:editable", "safe.txt", "valid", False, "", 403),
-        ("artifact:editable", "safe.txt", "valid", True, "&destination=/tmp", 400),
+        ("artifact:editable", "safe.txt", "valid", True, "&destination=/tmp", 410),
     ],
 )
 def test_vault_asset_upload_rejects_unregistered_or_client_chosen_targets(
@@ -1328,18 +1390,21 @@ def test_unsafe_asset_types_download_instead_of_inline(tmp_path):
     server, _note, artifact = _editable_hub(tmp_path)
     try:
         port = server.server_address[1]
-        token = json.loads(_request(port, "/api/v1/session").read())["csrf_token"]
-        uploaded = json.loads(
-            _post_asset(
+        asset = server.runtime.asset_store.add_bytes(
+            artifact.artifact_id,
+            "page.html",
+            b"<script>alert(1)</script>",
+        )
+        listed = json.loads(
+            _request(
                 port,
-                artifact.artifact_id,
-                "page.html",
-                b"<script>alert(1)</script>",
-                token=token,
+                f"/api/v1/artifacts/{urllib.parse.quote(artifact.artifact_id, safe='')}/assets",
             ).read()
         )
-
-        response = _request(port, uploaded["content_url"])
+        content_url = next(
+            row["content_url"] for row in listed["assets"] if row["asset_id"] == asset.asset_id
+        )
+        response = _request(port, content_url)
         assert response.headers["Content-Type"] == "text/html"
         assert response.headers["Content-Disposition"].startswith("attachment;")
         assert response.headers["X-Content-Type-Options"] == "nosniff"

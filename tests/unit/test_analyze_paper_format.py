@@ -20,13 +20,15 @@ def test_analyze_paper_references_versioned_format_and_conditional_batch_contrac
     assert BATCH.is_file()
 
 
-def test_format_uses_five_observable_roles_and_declared_profiles() -> None:
+def test_format_uses_reference_image_framework_and_declared_profiles() -> None:
     text = _format_text()
 
-    assert "**Task, Input, Workflow, Output, Boundary**" in text
-    assert "`whole` covers all five roles" in text
-    assert "`focused` names a non-empty subset" in text
-    assert "an output interface, not a reading sequence" in text
+    assert "**Abstract, Introduction, Method, Limitation**" in text
+    assert "`whole` renders all four sections" in text
+    assert "`focused` declares a non-empty subset" in text
+    assert "output organization, not a mandated analysis or reading sequence" in text
+    assert "Task / Input / Workflow / Output / Boundary" in text
+    assert "reference_tree" in text
     assert "${CLAUDE_PLUGIN_ROOT}/contracts/analysis-ir.schema.json" in text
 
 
@@ -41,19 +43,19 @@ def test_evidence_is_inline_and_canvas_links_back_to_markdown() -> None:
         "不适用",
     ):
         assert state in text
-    assert "standalone Evidence section" in text
-    assert "#^claim-<claim-id>|正文" in text
-    assert "same Markdown block and Canvas node" in text
+    assert "no detached Evidence" in text or "no detached Evidence section" in text
+    assert "#^claim-<claim-id>" in text
+    assert "same Markdown block" in text
 
 
 def test_canvas_contract_is_readable_bounded_and_does_not_invent_pipeline_nodes() -> None:
     text = _format_text()
 
-    assert "at most 40 semantic nodes" in text
-    assert "at least 360 px wide and 140 px high" in text
-    assert "Workflow steps form one visible ordered flow" in text
-    assert "`对应挑战`, `对应贡献`" in text
-    assert "exact top-level shape:" in text
+    assert "40 generated claim/detail Canvas nodes" in text
+    assert "96 total" in text
+    assert "square-routed, arrowless" in text
+    assert "corresponding-challenge or" in text
+    assert "top level" in text
     assert '{"nodes": [], "edges": []}' in text
 
 

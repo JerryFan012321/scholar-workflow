@@ -202,6 +202,14 @@ class AnalysisBatchStore:
             stage_path=row[4],
         )
 
+    def get_zotero_item_key(self, batch_id: str, item_id: str) -> str | None:
+        """Read the staged paper identity without changing the public result shape."""
+        row = self._db.execute(
+            "SELECT zotero_item_key FROM analysis_items WHERE batch_id=? AND item_id=?",
+            (batch_id, item_id),
+        ).fetchone()
+        return row[0] if row is not None else None
+
     def list_items(self) -> list[tuple[str, AnalysisItemResult]]:
         """Return state-only rows for an explicit, read-only maintenance audit."""
         rows = self._db.execute(
@@ -255,6 +263,7 @@ def _validate_targeted_repair(
         repaired.artifact_id != original.artifact_id
         or repaired.profile != original.profile
         or repaired.paper_title != original.paper_title
+        or repaired.language != original.language
     ):
         raise ValueError(
             "targeted repair cannot change artifact identity, profile, or paper title"
@@ -277,8 +286,11 @@ def _validate_targeted_repair(
         if (
             repaired_claim.role != original_claim.role
             or repaired_claim.order != original_claim.order
+            or repaired_claim.outline_path != original_claim.outline_path
         ):
-            raise ValueError("targeted repair cannot change claim roles or workflow order")
+            raise ValueError(
+                "targeted repair cannot change claim roles, outline paths, or workflow order"
+            )
         if repaired_claim != original_claim and claim_id not in repairable_claim_ids:
             raise ValueError(
                 f"targeted repair changed claim {claim_id!r} outside reported findings"

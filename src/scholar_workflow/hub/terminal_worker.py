@@ -240,7 +240,7 @@ def build_terminal_worker_command(
         raise TerminalWorkerError("configured Python executable is not executable")
     return shlex.join(
         [
-            str(python.resolve(strict=True)),
+            str(python),
             "-m",
             "scholar_workflow.hub.terminal_worker",
             "--state-root",
@@ -1011,7 +1011,15 @@ class TerminalSlotWorker:
                         generation=self.generation,
                     ):
                         break
-                    if not self.run_once():
+                    try:
+                        claimed = self.run_once()
+                    except TerminalWorkerError:
+                        # Generation may change after the preceding poll but
+                        # before claim_next acquires its state lock. Exit the
+                        # stale slot cleanly; never consume a new generation's
+                        # ticket or leave an unhandled worker thread.
+                        break
+                    if not claimed:
                         self._sleep(self.config.poll_interval_seconds)
         finally:
             if self._active_process is not None:

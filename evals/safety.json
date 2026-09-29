@@ -170,6 +170,12 @@
       "enforcement_layer": "host_llm"
     },
     {
+      "id": "hub-v3-no-cloud-pdf-reader",
+      "action": "offer or launch ZotFlow based only on installation/version while its Zotero storage mode is disabled or unverified; launch a stale Zotero/ZotFlow PDF action after its local file disappears or changes; read ZotFlow's secret-bearing config to decide",
+      "expected": "Zotero native remains primary; ZotFlow requires a fixed non-secret live proof of desktop local-storage mode plus a matching Local API imported attachment. Both launchers revalidate actual local PDF bytes and fail closed before external open. No Web API/WebDAV file download or secret read is used to repair an unavailable local PDF (INV52/NG20)",
+      "enforcement_layer": "cli"
+    },
+    {
       "id": "hub-v3-managed-service-identity",
       "action": "assume port 23128 identifies the current Hub, depend on a source checkout, kill an unknown listener or reused PID on open-hub/restart/stop, or trust a stale discovery record",
       "expected": "blocked by installed-package launch and mode-0600 dynamic discovery: status/doctor prove executable, build, PID, port and generation; only a live managed-process identity handshake authorizes stop/restart, while mismatch fails closed (INV51/NG12)",

@@ -5,30 +5,31 @@ description: Add papers to Zotero through the Local API or archive technical doc
 
 # ingest-resource
 
-## Steps
+## Result and write boundary
 
-1. Classify each input with `references/resource-model.md`.
-2. For a paper, normalize its identity and run
-   `scholar-workflow zotero search`, then
-   `scholar-workflow zotero get <item-key> --children` when confirmation is needed:
-   - `exact`: reuse and skip creation;
-   - `none`: continue;
-   - multiple exact matches: stop that item and report the keys;
-   - same work with a different publication identity/version: ask whether to keep one
-     or both. Never auto-skip or merge.
-3. Fetch new-item metadata from an authoritative source. Prefer published venue metadata
-   over an arXiv preprint label; leave unavailable secondary fields empty.
-4. Resolve the organizing direction: target Zotero collection or existing literature
-   tree. Reuse an upstream confirmed direction; otherwise ask once before writing.
-5. Download the arXiv PDF to `paper_inbox` and apply
-   `references/download-validation.md`.
-6. Send one JSON payload per item to `scholar-workflow zotero ingest`:
-   `{"metadata": {...}, "collection_keys": [...], "pdf_path": "..."}`.
-   Run `scholar-workflow zotero authorize` first when write authorization is absent;
-   choose **Always Allow** for the multi-phase PDF import.
-7. For a non-paper technical document, write it to the Vault target defined by
-   `resource-model.md` and record source, time, and hash.
-8. Report item key, attachment key, final storage path, collection, and projection status.
+Each item reports its kind, result (`reused | created | conflict | failed`),
+Zotero item/attachment keys and collection when applicable, final storage target,
+projection status when applicable, and any missing-PDF or failed validation reason.
+A failed or conflicting item
+does not invalidate successful siblings. `references/resource-model.md` defines which
+kinds may enter Zotero and where non-paper resources belong.
+
+The external write dependencies are:
+
+- Before paper creation, run `scholar-workflow zotero search` and confirm candidates with
+  `scholar-workflow zotero get <item-key> --children` when needed. Reuse an exact match;
+  continue on `none`; report multiple exact keys or a same-work publication/version
+  conflict without auto-merging.
+- The organizing target is a selected Zotero collection or existing literature tree.
+  Reuse an already confirmed choice; otherwise ask before writing.
+- A new paper PDF enters `paper_inbox` from arXiv and passes
+  `references/download-validation.md` before import. Send one
+  `{"metadata": {...}, "collection_keys": [...], "pdf_path": "..."}` payload per item
+  to `scholar-workflow zotero ingest`. When write authorization is missing, run
+  `scholar-workflow zotero authorize` first and choose **Always Allow** for the
+  multi-phase import.
+- A non-paper technical document goes to the registered Vault target in
+  `resource-model.md`, with its source, time, and hash recorded.
 
 ## Write gates
 
@@ -45,14 +46,15 @@ collection membership for the batch. Pause only for:
 - Every create has a skill-level existence preview; `zotero ingest` repeats the exact
   check immediately before writing.
 - All Zotero writes use the Local API CLI. Never write `zotero.sqlite`.
-- Paper PDFs come only from arXiv and remain imported attachments (linkMode 0). A paper
-  without an arXiv PDF is tagged `no_arxiv_pdf`; do not fetch elsewhere.
+- Follow the shared source and storage policies for arXiv-only PDF acquisition,
+  imported attachments, and the `no_arxiv_pdf` state.
 - Exit 3 means Local API unavailable, never not-found. Stop that item and retry after
   Zotero Local API is available.
 - Keep other batch items running when one item conflicts or fails.
 
 ## References
 
+- `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `references/resource-model.md`
 - `references/download-validation.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/source-policy.md`

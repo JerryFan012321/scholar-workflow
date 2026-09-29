@@ -1,6 +1,7 @@
 """Contract tests for opaque Hub actions and the cmux Notion launcher."""
 from __future__ import annotations
 
+import hashlib
 import json
 import socket
 import subprocess
@@ -10,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from scholar_workflow.adapters.zotero_local import ZoteroAttachmentLocator
 from scholar_workflow.hub.actions import (
     ActionError,
     ActionExecutor,
@@ -28,6 +30,8 @@ from scholar_workflow.hub.actions import (
     UnsupportedActionError,
     WorkspacePolicy,
     ZoteroLauncher,
+    ZoteroPdfLauncher,
+    ZotFlowLauncher,
     register_artifact_view_actions,
     register_codex_action,
     register_notion_actions,
@@ -49,6 +53,7 @@ from scholar_workflow.hub.models import (
     HubResource,
     ProjectionLinks,
 )
+from scholar_workflow.hub.zotflow import PdfRef, ZotFlowCapability
 
 
 def test_cmux_instance_fingerprint_changes_when_same_socket_path_is_recreated(
@@ -800,6 +805,139 @@ def test_zotero_launcher_failure_does_not_expose_key_or_deep_link():
     assert "zotero://" not in str(error.value)
 
 
+def _local_pdf_factory(locator: ZoteroAttachmentLocator):
+    class LocalPdfAdapter:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def resolve_attachment_locator(self, attachment_key: str):
+            assert attachment_key == locator.attachment_key
+            return locator
+
+    return LocalPdfAdapter
+
+
+def _pdf_ref_and_locator(path: Path, *, algorithm: str = "md5"):
+    locator = ZoteroAttachmentLocator(
+        attachment_key="PDFD2345",
+        library_id="1",
+        content_hash=f"{algorithm}:{hashlib.new(algorithm, path.read_bytes()).hexdigest()}",
+        path=path,
+        filename=path.name,
+    )
+    return PdfRef.from_locator(locator), locator
+
+
+@pytest.mark.parametrize("algorithm", ["md5", "sha256"])
+def test_zotero_pdf_action_rechecks_local_file_before_native_reader(
+    tmp_path: Path, algorithm: str
+):
+    path = tmp_path / "paper.pdf"
+    path.write_bytes(b"%PDF-1.7\n")
+    pdf_ref, locator = _pdf_ref_and_locator(path, algorithm=algorithm)
+    launches = []
+
+    def runner(argv, **kwargs):
+        launches.append(argv)
+        return _completed(argv)
+
+    launcher = ZoteroPdfLauncher(adapter_factory=_local_pdf_factory(locator), runner=runner)
+    assert launcher.open(pdf_ref.model_dump_json()).opened is True
+    assert launches == [["/usr/bin/open", "zotero://open-pdf/library/items/PDFD2345"]]
+
+    path.unlink()
+    with pytest.raises(InvalidActionTarget, match="local PDF"):
+        launcher.open(pdf_ref.model_dump_json())
+    assert len(launches) == 1
+
+
+@pytest.mark.parametrize("algorithm", ["md5", "sha256"])
+def test_zotero_pdf_action_rejects_replaced_bytes_with_unchanged_locator(
+    tmp_path: Path, algorithm: str
+):
+    path = tmp_path / "paper.pdf"
+    path.write_bytes(b"%PDF-1.7\noriginal")
+    pdf_ref, locator = _pdf_ref_and_locator(path, algorithm=algorithm)
+    launches = []
+    launcher = ZoteroPdfLauncher(
+        adapter_factory=_local_pdf_factory(locator),
+        runner=lambda argv, **_kwargs: launches.append(argv),
+    )
+    path.write_bytes(b"%PDF-1.7\nreplaced")
+
+    with pytest.raises(InvalidActionTarget, match="content changed"):
+        launcher.open(pdf_ref.model_dump_json())
+    assert launches == []
+
+
+def test_zotero_pdf_action_rejects_stale_identity_before_launch(tmp_path: Path):
+    path = tmp_path / "paper.pdf"
+    path.write_bytes(b"%PDF-1.7\n")
+    pdf_ref, locator = _pdf_ref_and_locator(path)
+    changed = ZoteroAttachmentLocator(
+        attachment_key=locator.attachment_key,
+        library_id=locator.library_id,
+        content_hash="md5:" + "b" * 32,
+        path=path,
+        filename=path.name,
+    )
+    launches = []
+    launcher = ZoteroPdfLauncher(
+        adapter_factory=_local_pdf_factory(changed),
+        runner=lambda argv, **_kwargs: launches.append(argv),
+    )
+
+    with pytest.raises(InvalidActionTarget, match="changed"):
+        launcher.open(pdf_ref.model_dump_json())
+    assert launches == []
+
+
+def test_zotflow_action_rechecks_local_pdf_and_mode_before_open(tmp_path: Path):
+    path = tmp_path / "paper.pdf"
+    path.write_bytes(b"%PDF-1.7\n")
+    pdf_ref, locator = _pdf_ref_and_locator(path)
+
+    class ZotFlowAdapter:
+        def __init__(self):
+            self.opened = []
+            self.available = True
+
+        def probe_attachment(self, actual_ref):
+            assert actual_ref == pdf_ref
+            return ZotFlowCapability(
+                available=self.available,
+                reason=None if self.available else "Local-only PDF mode is disabled",
+            )
+
+        def open_attachment(self, actual_ref):
+            self.opened.append(actual_ref)
+            return {"opened": True}
+
+    adapter = ZotFlowAdapter()
+    launcher = ZotFlowLauncher(adapter, adapter_factory=_local_pdf_factory(locator))
+    assert launcher.open(pdf_ref.model_dump_json()) == {"opened": True}
+    assert adapter.opened == [pdf_ref]
+
+    adapter.available = False
+    with pytest.raises(InvalidActionTarget, match="Local-only PDF mode"):
+        launcher.open(pdf_ref.model_dump_json())
+    assert adapter.opened == [pdf_ref]
+
+    adapter.available = True
+    path.write_bytes(b"%PDF-1.7\nreplaced")
+    with pytest.raises(InvalidActionTarget, match="content changed"):
+        launcher.open(pdf_ref.model_dump_json())
+    assert adapter.opened == [pdf_ref]
+
+    path.unlink()
+    with pytest.raises(InvalidActionTarget, match="local PDF"):
+        launcher.open(pdf_ref.model_dump_json())
+    assert adapter.opened == [pdf_ref]
+
+
 def test_codex_action_starts_blank_native_agent_with_fixed_trusted_cwd(tmp_path):
     trusted_cwd = tmp_path / "trusted-project"
     trusted_cwd.mkdir()
@@ -989,3 +1127,56 @@ def test_live_paper_actions_link_analysis_and_annotation_notes_directly():
     labels = [action.label for action in actions]
     assert "查看分析" in labels
     assert "打开批注笔记" in labels
+
+
+def test_live_paper_actions_keep_pdf_ref_server_side_and_probe_zotflow_per_attachment():
+    catalog = HubCatalog(generated_at=datetime(2026, 9, 23, tzinfo=UTC))
+
+    class Provider:
+        def load(self):
+            return catalog
+
+    class NativePdfLauncher:
+        def open(self, target):
+            return PdfRef.model_validate_json(target)
+
+    class UnavailableZotFlow:
+        def __init__(self):
+            self.probed = []
+
+        def availability(self, pdf_ref):
+            self.probed.append(pdf_ref)
+            return ZotFlowCapability(available=False, reason="Local-only PDF mode is disabled")
+
+    zotflow = UnavailableZotFlow()
+    service = CatalogActionService(
+        Provider(),
+        {
+            ActionKind.ZOTERO_PDF: NativePdfLauncher(),
+            ActionKind.ZOTFLOW_ATTACHMENT: zotflow,
+        },
+    )
+    pdf_ref = PdfRef(
+        library_id="1",
+        attachment_key="PDFD2345",
+        content_hash="md5:" + "a" * 32,
+    )
+
+    actions = service.paper_actions(
+        {
+            "zotero_item_key": "PAPR2345",
+            "attachment_key": pdf_ref.attachment_key,
+            "pdf_ref": pdf_ref.model_dump(),
+        }
+    )
+
+    assert zotflow.probed == [pdf_ref]
+    native = next(action for action in actions if action.kind is ActionKind.ZOTERO_PDF)
+    assert native.primary is True
+    assert service.execute(native.id) == pdf_ref
+    assert pdf_ref.attachment_key not in repr(native)
+    zotflow_action = next(
+        action for action in actions if action.kind is ActionKind.ZOTFLOW_ATTACHMENT
+    )
+    assert zotflow_action.available is False
+    assert zotflow_action.reason == "Local-only PDF mode is disabled"

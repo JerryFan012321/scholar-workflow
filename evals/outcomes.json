@@ -78,27 +78,47 @@
     },
     {
       "id": "paper-in-multiple-trees",
-      "description": "INV25 一文多树:同一 resource_id 可出现在同 topic 的技术树(02)与挑战树(03)、各自独立渲染不冲突;跨不同主题文件夹各有独立 paper_assets 附属笔记(内容随语境不同);01-Paperlist.md 按主题文件夹隔离(非全局单账本)。绝不加一个 resource_id 只归一节点/一树的唯一性检查",
+      "description": "INV25 一文多树:同一 resource_id 可出现在同一 Field 的技术树(02)与挑战树(03)、各自独立渲染并复用已声明的论文信息笔记路径;跨不同 Field 的导航和 01-Paperlist.md 按 Field 隔离，不加一个 resource_id 只归一节点/一树的唯一性检查。历史 paper_assets/*.md 路径继续读取，不因新目录规则自动搬迁",
+      "status": "pending"
+    },
+    {
+      "id": "literature-tree-paper-folder",
+      "description": "新文献树的 asset_note 指向已在清单持久声明的 <Field>/resources/papers/<stable-paper-segment>/论文信息.md；同篇分析 Markdown、Canvas、sidecar 与 Scholar 附属笔记共处该文件夹，PDF 仍在 Zotero。未能确认稳定映射或发生路径冲突时只预览、不写入；已有 paper_assets/*.md 保持旧路径与人工内容。须完成一次真实新建/重复运行/旧路径兼容验收后才可标 pass",
       "status": "pending"
     },
     {
       "id": "structured-paper-analysis-note",
-      "description": "INV24/INV40 论文分析 v2:每篇论文维护同源、人类可独立阅读的 Markdown 分析笔记与可编辑 JSON Canvas;whole profile 在两端覆盖 Task/Input/Workflow/Output/Boundary 五个可观察角色,Workflow 是一条有序端到端流程且不添加原论文流程中没有的对应挑战/贡献节点;Canvas 可压缩措辞但不得引入 Markdown 没有的主张,语义节点不超过 40,生成节点具备可读尺寸和间距",
+      "description": "INV24/INV40/INV54 新论文分析必须显式使用 IR v4/reference_tree：每篇维护同源、人类可独立阅读的 Markdown 与可编辑 JSON Canvas；whole 在两端覆盖参考图 Abstract/Introduction/Method/Limitation 全部结构槽位，空槽不造事实。Canvas 不引入 Markdown 没有的主张，不沿单轴摊平；最多 40 个受管 claim/detail 节点、96 个受管总节点。旧五角色仅供 v1–v3 兼容读取，不静默转版；真实论文语义验收前保持 pending",
       "status": "pending"
     },
     {
+      "id": "structured-paper-analysis-v4-layout-fixture",
+      "description": "INV54 的版式子门禁：v4 生成器直接输出的 test Vault 完整重复槽位样张经正式 bundle conformance，含 45 个可编辑 text 节点、44 条有效连线；Advanced Canvas 7.1.0 在 Obsidian 前台加载，claim 节点进入文本编辑，用户认可当前功能与审美。此 pass 仅固定 analyze-paper 的 v4 版式基线，不代表普通 Canvas 无插件外观、真实 PODIA-3D/V-JEPA 2 事实来源、正式 Vault 迁移或插件发布",
+      "status": "pass"
+    },
+    {
       "id": "structured-paper-analysis-focused-update",
-      "description": "INV24/INV40 局部精读投影:focused profile 明确声明角色子集,Markdown 与 Canvas 只更新相应 claim;未请求角色保持原样,并保留 Canvas 已有安全布局、稳定节点身份、人工节点和人工内容;缺失或异常 marker 以及 revision/baseline 冲突都作为一对 Markdown/Canvas 人工编辑冲突返回",
+      "description": "INV24/INV40/INV54/INV55 局部精读投影：v4 focused profile 明确声明章节子集，每个选中章节提交全部保留主张并作为完整章节更新；未选章节保持原样，保留安全 Canvas 布局、稳定身份、人工节点和人工内容。缺失/重复/移位的 claim 块锚点及 revision/baseline 冲突作为成对 Markdown/Canvas 人工编辑冲突返回；旧 v1–v3 marker 更新保持显式旧格式，不静默转版",
       "status": "pending"
     },
     {
       "id": "structured-paper-analysis-source-gap",
-      "description": "INV24/INV40 行内证据:每个 claim 在 Markdown 与 Canvas 的同一内容块内使用同一证据/availability suffix,Canvas 反链到 Markdown claim block;不存在独立 Evidence 分区/表/节点。结果明确区分「作者明确陈述」「分析推断」「论文未报告」「当前正文通道无法核实」「不适用」,不得把 Zotero 索引遗漏误写为论文未报告",
+      "description": "INV24/INV40/INV54 行内证据：每个 claim/point 在 Markdown 与 Canvas 同一论点旁保留证据或 availability；v4 的 point 有稳定 point_id、独立原文入口和准确 Markdown 反链，同一 claim 的多个 point 逐行并入一个可编辑 detail 节点。不存在独立 Evidence 分区/表/节点。结果区分作者陈述、分析推断、论文未报告、当前正文通道无法核实和不适用；Zotero 索引遗漏不可写成论文未报告",
+      "status": "pending"
+    },
+    {
+      "id": "structured-paper-analysis-original-source-links",
+      "description": "INV53/INV56 新论文分析 IR v4 的每条作者事实/分析推断及逐点论据有结构化来源位置；Markdown 与对应 Canvas claim/detail 节点行内提供原文链接和准确正文反链。已核实 Vault 可显式选择 ZotFlow Library Reader 页级渲染，默认保留 Zotero 原生入口，两者不得改变来源身份或冒充批注同步。Zotero PDF 以 Local API 核实 attachment、内容 hash、物理页数和批注 key 归属；Vault Markdown 块须由登记 Source/manifest 核实；旧 IR 仍可读。真实 V-JEPA 2 候选链接逐点 GUI 点击通过前保持 pending，cmux 本机 PDF 预览不得冒充正式批注同步",
       "status": "pending"
     },
     {
       "id": "structured-paper-analysis-human-edit-conflict",
-      "description": "INV24 人工编辑保护:每个生成 claim 在 Markdown/Canvas 两端具有同一稳定 claim identity;同一 claim 是一个更新单元,任一端无 marker、marker 异常、缺失或与维护的 revision/baseline 不符时两端均保持原样并返回冲突,只有用户明确接受后才替换;用户节点占用 canonical Canvas ID 时报告冲突,不得用 collision suffix 绕过并新建重复节点",
+      "description": "INV24/INV55 人工编辑保护：每个生成 claim 在 Markdown/Canvas 两端具有同一稳定身份；v4 不输出机器注释，使用唯一块锚点、确定性 Canvas ID 和 sidecar 校验，锚点或 revision/baseline 冲突时两端均保持原样并返回冲突。v1–v3 保留历史 marker 兼容；用户节点占用 canonical Canvas ID 时报告冲突，不用 collision suffix 建重复节点",
+      "status": "pending"
+    },
+    {
+      "id": "structured-paper-analysis-v4-review-corrections",
+      "description": "INV55–INV57：最新版 V-JEPA 2 test Vault 候选在 Obsidian 阅读视图和 Canvas 中无 sw-analysis-claim 机器注释；每个原文入口打开同 Vault ZotFlow Library Reader 的对应物理页，Canvas 文本框比可见文字多约一行且链接可点、整体未过度纵向摊平。新论文的资料/分析/Canvas/sidecar 同属一个持久映射的 resources/papers/<paper-segment> 文件夹；正式旧 Vault 的平铺文件只在获批 relocation 事务中搬迁。逐点人工点击与真实新论文目录验收前保持 pending",
       "status": "pending"
     },
     {
@@ -114,6 +134,11 @@
     {
       "id": "runtime-skill-result-contract-only",
       "description": "运行期 skill 只规定可观察输出与外部接口(路由、工具调用、权威来源、权限/安全、存储位置、字段/schema 和人类可读呈现),不要求模型采用特定内部分析框架、分类方式、思考步骤或推理顺序;只有真实工具依赖、安全/权限边界和脆弱外部操作顺序可以规定执行先后。结构化格式被表述为自由判断之后的结果投影",
+      "status": "pending"
+    },
+    {
+      "id": "human-facing-presentation-consistency",
+      "description": "INV58：单个受控样本分别检查所属具体格式契约与跨界面的共同可见结果契约。人类正文可独立阅读，同一产物语言/标签一致，论点旁有精度诚实且在当前阅读器可用的来源入口；Hub 不显示伪链接或把机器诊断当正文，CLI 给出对象、状态、原因与下一步。保留人工内容并区分完整、部分、失败、冲突和不可用；规范文本落地不等于渲染器通过，代码和可见样本验收前保持 pending",
       "status": "pending"
     },
     {
@@ -138,7 +163,7 @@
     },
     {
       "id": "hub-explicit-edit-and-vault-assets",
-      "description": "INV30 Hub 显式编辑与附件：已登记 Markdown/Canvas 只在人工保存时按 raw-file revision 原子写入，stale 返回 409，sw_* 不可由客户端更改；Vault assets 由显式 YAML manifest 关联，不解析正文，同名新增不覆盖，路径/owner/hash/size/symlink 均校验，Zotero PDF 保持只读。界面阅读优先，编辑和附件默认收起，安全 DOM Markdown 与实时预览已由静态 HTTP 契约和 Codex 内置浏览器人工 smoke 验证。由 test_hub_http.py、test_hub_attachments.py、test_hub_catalog.py、test_hub_vault.py、test_hub_artifact_manifest.py 守护",
+      "description": "INV30 Hub 显式编辑与附件：普通已登记 Markdown/Canvas 只在人工保存时按 raw-file revision 原子写入，stale 返回 409，sw_* 不可由客户端更改；受管论文分析 Markdown/Canvas/sidecar 不能由单文件 Field 编辑器、v1 artifact PUT 或旧 link-only 迁移拆开改写。Vault assets 由显式 YAML manifest 关联，不解析正文，同名新增不覆盖，路径/owner/hash/size/symlink 均校验，Zotero PDF 保持只读。界面阅读优先，编辑和附件默认收起，安全 DOM Markdown 与实时预览已由静态 HTTP 契约和 Codex 内置浏览器人工 smoke 验证。由 test_hub_http.py、test_hub_field_analysis_write.py、test_hub_field_migration_cli.py、test_hub_attachments.py、test_hub_catalog.py、test_hub_vault.py、test_hub_artifact_manifest.py 守护",
       "status": "pass"
     },
     {
@@ -148,7 +173,7 @@
     },
     {
       "id": "hub-v3-directory-and-dynamic-fields",
-      "description": "G15/INV48/NG19：唯一 schema-3 HubDirectory 只列 Papers 与动态 Fields 两个文档 Libraries，Projects/Tools 为平级集合；Zotero 负责 Papers，显式 Source registry 与便携 fields.yml 负责 Fields。整个 Vault 先零写入 preview，每次只确认一个候选 Field，第二个 Field 可在同一 Source 后续追加；现有 manifest 新主机登记保留身份。由 test_hub_v3.py、test_hub_v3_field_registration.py 和真实 World Models 逐 Field 验收守护；未验收真实迁移前保持 pending",
+      "description": "G15/INV48/NG19：唯一 schema-3 HubDirectory 只列 Papers 与动态 Fields 两个文档 Libraries，Projects/Tools 为平级集合；Zotero 负责 Papers，显式 Source registry 与便携 fields.yml 负责 Fields。整个 Vault 先零写入 preview，每次只确认一个候选 Field，第二个 Field 可在同一 Source 后续追加；现有 manifest 新主机登记保留身份。含旧分析/旧链接的首个 Field 必须走同一份本地 operator 事务，旧网页确认阻断，导航遗漏、旧分析跳过、摘要过期均失败关闭。由 test_hub_v3.py、test_hub_v3_field_registration.py、test_hub_field_transaction_public.py、test_legacy_field_transaction.py 和真实 World Models 逐 Field 验收守护；未验收真实迁移前保持 pending",
       "status": "pending"
     },
     {
@@ -158,12 +183,17 @@
     },
     {
       "id": "hub-v3-direct-resource-actions",
-      "description": "G15/INV49/NG19：论文卡片由稳定 EntityRef/PdfRef 直接打开 ZotFlow、Zotero、cmux、系统阅读器或分析/批注笔记，Fields 首页同屏给 manifest 导航和 Markdown 正文；正常 UI 无人类可见 landing、固定端口链接或固定公开分类树。由 test_hub_v3.py、test_hub_actions.py 和最终安装包的 UI/PDF/ZotFlow canary 守护；实际应用往返与最终构建仍待验收",
+      "description": "G15/INV49/NG19：论文卡片由稳定 EntityRef/PdfRef 以 Zotero 本机附件为主动作，直接打开 cmux、系统阅读器、分析/批注笔记及经本机模式验证的可选 ZotFlow；Fields 首页同屏给 manifest 导航和 Markdown 正文，正常 UI 无人类可见 landing、固定端口链接或固定公开分类树。由 test_hub_v3.py、test_hub_actions.py 和最终安装包的 UI/PDF/ZotFlow canary 守护；实际应用往返与最终构建仍待验收",
       "status": "pending"
     },
     {
       "id": "hub-v3-zotero-annotation-authority",
       "description": "G15/INV50/NG18：正式批注只以 Zotero 为权威；只有 ZotFlow 在 Obsidian SecretStorage 持有 Web API 密钥，Scholar Workflow 的 agent/CLI/Hub 只经 Local API 读取 AnnotationIR；Source Note、Better Notes 和 Scholar 分析路径无 writer 重叠；带批注 PDF 是独立 hash-bound 快照。由 test_zotero_local.py、test_hub_v3_fields_zotflow.py、test_annotations.py 与真实 ZotFlow 双向同步及独立阅读器测试守护；实机往返未完成前保持 pending",
+      "status": "pending"
+    },
+    {
+      "id": "hub-v3-local-only-pdf-reader",
+      "description": "INV52/NG20：ZotFlow 只在已审计版本及非秘密实时探针证明桌面本机 storage 模式、Local API PDF 身份和现存字节一致时可选；Zotero 原生为主动作，两种打开在执行前重验本机文件，不通过 Web API/WebDAV 下载缺失 PDF。由 test_hub_actions.py、test_hub_v3_fields_zotflow.py 和 V-JEPA 2 本机阅读 canary 守护；Reader GUI 已显示 48 页，真实注册 Source 下的 Hub 卡片动作及批注往返仍待验收，因此保持 pending",
       "status": "pending"
     },
     {

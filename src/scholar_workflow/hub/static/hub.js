@@ -1442,6 +1442,11 @@ function renderFieldRegistrationPreview() {
     detail.append(node("small", "", `${field.relative_root} · 首页 ${field.home}`));
     const groups = (field.navigation || []).map((group) => group.label).join(" · ");
     detail.append(node("span", "", groups || "无导航分组"));
+    const transactionReasons = (preview.transaction_required_fields || [])
+      .find((entry) => entry.field_id === field.field_id)?.reasons || [];
+    if (transactionReasons.length) {
+      detail.append(node("small", "action-diagnostic", "含受管论文分析或旧链接：须使用本机统一事务"));
+    }
     card.append(input, detail);
     fieldCards.append(card);
   }
@@ -1455,6 +1460,8 @@ function renderFieldRegistrationPreview() {
   const selected = (preview.fields || []).find(
     (field) => field.field_id === state.fieldRegistration.selectedFieldId,
   );
+  const selectedTransactionReasons = (preview.transaction_required_fields || [])
+    .find((entry) => entry.field_id === selected?.field_id)?.reasons || [];
   const linkChanges = (preview.legacy_link_changes || []).filter((change) => (
     preview.registration_only || (selected && (selected.relative_root === "."
       || change.relative_path.startsWith(`${selected.relative_root}/`))
@@ -1463,6 +1470,13 @@ function renderFieldRegistrationPreview() {
     `${change.relative_path} · ${change.occurrences} 处 · `
     + `${change.attachment_key} → ${change.replacement}`
   ));
+  const externalDocuments = preview.external_managed_documents || [];
+  const externalSummary = externalDocuments.slice(0, 8).map((entry) => (
+    `${entry.relative_path} · ${entry.owner === "zotflow" ? "ZotFlow 管理" : "ZotFlow 所有权标记待核验"}`
+  ));
+  if (externalDocuments.length > 8) {
+    externalSummary.push(`另有 ${externalDocuments.length - 8} 项外部管理文档；不会自动纳入 Field`);
+  }
   target.replaceChildren(
     summary,
     ...(preview.registration_only ? [] : [fields]),
@@ -1473,8 +1487,17 @@ function renderFieldRegistrationPreview() {
       registered,
     ),
     previewListSection("冲突", preview.conflicts, "error"),
+    ...(selectedTransactionReasons.length ? [previewListSection(
+      "所选 Field 需要统一事务",
+      [
+        "该 Field 含旧论文分析、旧 23128 链接，或无法安全完成检查。不能在这里先登记；"
+        + "请在本机运行 scholar-workflow hub field-transaction plan，逐项复核并统一提交。",
+      ],
+      "error",
+    )] : []),
     previewListSection("将发生的模板变更", preview.template_changes),
     previewListSection("未映射 Markdown", preview.unmapped_markdown),
+    previewListSection(`外部管理文档（不纳入 Field · ${externalDocuments.length}）`, externalSummary),
     previewListSection(
       preview.registration_only
         ? "现有 Source 的旧 23128 链接（本次不改写）"
@@ -1486,9 +1509,10 @@ function renderFieldRegistrationPreview() {
   const confirm = byId("field-register-confirm");
   confirm.textContent = preview.registration_only
     ? `登记现有 Source（${preview.registered_fields?.length || 0} 个 Fields）`
-    : "初始化所选 Field";
+    : selectedTransactionReasons.length ? "需使用本机统一事务" : "初始化所选 Field";
   confirm.disabled = state.fieldRegistration.busy || !preview.candidate_token
     || (!preview.registration_only && !selected)
+    || selectedTransactionReasons.length !== 0
     || (preview.conflicts || []).length !== 0;
 }
 
@@ -1535,9 +1559,12 @@ async function confirmFieldRegistration() {
   const preview = state.fieldRegistration.preview;
   const fieldId = state.fieldRegistration.selectedFieldId;
   const registerExistingSource = preview?.registration_only === true;
+  const transactionRequired = (preview?.transaction_required_fields || [])
+    .find((entry) => entry.field_id === fieldId)?.reasons?.length > 0;
   if (!preview?.candidate_token || state.fieldRegistration.busy
       || (!registerExistingSource && (!fieldId
         || !(preview.fields || []).some((field) => field.field_id === fieldId)))
+      || transactionRequired
       || (preview.conflicts || []).length !== 0) return;
   state.fieldRegistration.busy = true;
   syncFieldRegisterButton();
@@ -1655,7 +1682,7 @@ async function showPreview(artifact) {
     state.preview.content = payload.content;
     state.preview.revision = payload.revision;
     renderReadable(byId("preview-content"), artifact, payload.content);
-    byId("preview-edit").disabled = false;
+    setPreviewStatus("旧版文档只读；请使用 Field 文档或成对分析流程修改", "");
   } catch (error) {
     if (requestId !== state.preview.requestId || !dialog.open) return;
     byId("preview-content").replaceChildren(
@@ -1674,24 +1701,25 @@ function setPreviewStatus(message, tone = "") {
 
 function syncPreviewControls() {
   const editing = state.preview.mode === "edit";
+  const fieldDocument = state.preview.artifact?.field_document === true;
   byId("preview-content").hidden = editing;
   byId("preview-editor-layout").hidden = !editing;
-  byId("preview-edit").hidden = editing;
+  byId("preview-edit").hidden = editing || !fieldDocument;
   byId("preview-save").hidden = !editing;
   byId("preview-cancel").hidden = !editing;
   const vaultWrites = capability("vault_writes").available;
-  byId("preview-edit").disabled = state.preview.content === null || !vaultWrites;
+  byId("preview-edit").disabled = !fieldDocument || state.preview.content === null || !vaultWrites;
   byId("preview-save").disabled = !state.preview.dirty || state.preview.saving;
   byId("preview-cancel").disabled = state.preview.saving;
   const upload = byId("attachment-upload");
-  upload.disabled = !vaultWrites || state.preview.uploading
-    || state.preview.artifact === null || state.preview.artifact.field_document === true;
-  byId("attachment-upload-label").classList.toggle("disabled", upload.disabled);
+  upload.disabled = true;
+  byId("attachment-upload-label").hidden = true;
   renderAttachments();
 }
 
 function beginEditing() {
-  if (state.preview.content === null || state.preview.saving) return;
+  if (state.preview.artifact?.field_document !== true
+      || state.preview.content === null || state.preview.saving) return;
   state.preview.mode = "edit";
   state.preview.dirty = false;
   const editor = byId("preview-editor");
@@ -1738,22 +1766,18 @@ async function responseMessage(response) {
 async function savePreview() {
   if (state.preview.mode !== "edit" || !state.preview.dirty || state.preview.saving) return;
   const artifact = state.preview.artifact;
+  if (artifact?.field_document !== true) return;
   const proposed = byId("preview-editor").value;
   state.preview.saving = true;
   setPreviewStatus("正在保存…");
   syncPreviewControls();
   try {
-    const fieldDocument = artifact.field_document === true;
-    const endpoint = fieldDocument
-      ? `/api/v3/fields/${encodeURIComponent(artifact.field_id)}/documents`
-      : `/api/v1/artifacts/${encodeURIComponent(artifact.artifact_id)}/content`;
-    const requestBody = fieldDocument
-      ? {
-        relative_path: artifact.relative_path,
-        content: proposed,
-        base_revision: state.preview.revision,
-      }
-      : { content: proposed, base_revision: state.preview.revision };
+    const endpoint = `/api/v3/fields/${encodeURIComponent(artifact.field_id)}/documents`;
+    const requestBody = {
+      relative_path: artifact.relative_path,
+      content: proposed,
+      base_revision: state.preview.revision,
+    };
     const response = await fetch(
       endpoint,
       {
@@ -1776,23 +1800,21 @@ async function savePreview() {
     state.preview.dirty = false;
     renderReadable(byId("preview-content"), artifact, savedContent);
     byId("preview-editor").value = savedContent;
-    if (fieldDocument) {
-      const field = state.libraryItems.find((item) => (
-        (item.field_id || item.ref?.entity_id) === artifact.field_id
-      ));
-      if (field) {
-        field.selected_document_path = artifact.relative_path;
-        field.selected_document_content = savedContent;
-        field.selected_document_revision = payload.revision;
-        if (artifact.relative_path === field.home) {
-          field.home_content = savedContent;
-          field.home_revision = payload.revision;
-        }
-        artifact.content = savedContent;
-        artifact.revision = payload.revision;
-        state.selectedField = field;
-        renderFieldDetail();
+    const field = state.libraryItems.find((item) => (
+      (item.field_id || item.ref?.entity_id) === artifact.field_id
+    ));
+    if (field) {
+      field.selected_document_path = artifact.relative_path;
+      field.selected_document_content = savedContent;
+      field.selected_document_revision = payload.revision;
+      if (artifact.relative_path === field.home) {
+        field.home_content = savedContent;
+        field.home_revision = payload.revision;
       }
+      artifact.content = savedContent;
+      artifact.revision = payload.revision;
+      state.selectedField = field;
+      renderFieldDetail();
     }
     setPreviewStatus("已保存", "success");
     setAttachmentStatus("");
@@ -1884,43 +1906,6 @@ async function loadAttachments(artifact, requestId = state.preview.requestId) {
       state.preview.assetsLoading = false;
       renderAttachments();
     }
-  }
-}
-
-async function uploadAttachments(files) {
-  const artifact = state.preview.artifact;
-  if (!artifact || files.length === 0 || state.preview.uploading) return;
-  state.preview.uploading = true;
-  setAttachmentStatus(`正在添加 ${files.length} 个附件…`);
-  syncPreviewControls();
-  let added = 0;
-  try {
-    for (const file of files) {
-      const query = new URLSearchParams({
-        name: file.name,
-        role: file.type.startsWith("image/") ? "embed" : "supplement",
-      });
-      const response = await fetch(
-        `/api/v1/artifacts/${encodeURIComponent(artifact.artifact_id)}/assets?${query}`,
-        {
-          method: "POST",
-          credentials: "same-origin",
-          headers: stateChangingHeaders(file.type || "application/octet-stream"),
-          body: file,
-        },
-      );
-      if (!response.ok) throw new Error(await responseMessage(response));
-      added += 1;
-    }
-    await loadAttachments(artifact);
-    setAttachmentStatus(`已添加 ${added} 个附件`, "success");
-  } catch (error) {
-    await loadAttachments(artifact);
-    const prefix = added ? `已添加 ${added} 个；` : "";
-    setAttachmentStatus(`${prefix}添加失败：${String(error.message || error)}`, "error");
-  } finally {
-    state.preview.uploading = false;
-    syncPreviewControls();
   }
 }
 
@@ -2068,11 +2053,6 @@ byId("preview-editor").addEventListener("input", (event) => {
   state.preview.dirty = event.target.value !== state.preview.content;
   scheduleLivePreview(event.target.value);
   syncPreviewControls();
-});
-byId("attachment-upload").addEventListener("change", (event) => {
-  const files = Array.from(event.target.files || []);
-  event.target.value = "";
-  uploadAttachments(files);
 });
 byId("preview-dialog").addEventListener("cancel", (event) => {
   event.preventDefault();

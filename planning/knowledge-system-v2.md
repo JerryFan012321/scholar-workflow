@@ -166,6 +166,9 @@ Knowledge Space 在 Hub 中投影为动态 Field，不再依赖一个全局固�
 - 无 manifest 时必须先零写入 preview，展示候选 Field、入口、导航、重名、忽略项、模板变化、未映射
   正文和链接改写；已有 manifest 时也要发现尚未登记的同级候选。用户从预览中明确选择一个 Field，
   CAS 与根 inode 复核通过后才可逐 Field 创建或追加，不因选择整个 Vault 而批量登记其他候选。
+- ZotFlow Source Note 等有明确外部 writer owner 的 Markdown 在 preview 中单列诊断，不因所在目录或
+  `.md` 后缀自动成为 Field、导航或普通未映射正文；Field manifest 与保存/迁移事务不得接管它们。
+  owner 缺失必要身份、重复、非法或与 Scholar `sw_*` 身份冲突时失败关闭，而非按目录名猜测。
 - 旧 `research_vault_root` 仅用于生成迁移候选，不再是知识系统启动的必填唯一根。
 
 Field 首页直接显示 manifest navigation 与所选 Markdown 正文；不再增加文档 landing 中间页。内部对象
@@ -173,17 +176,22 @@ Field 首页直接显示 manifest navigation 与所选 Markdown 正文；不再�
 
 ## 5. 推荐 Vault 投影
 
-逻辑角色是硬契约，路径只是新主题的推荐默认值。实现前不自动重命名现有 `paper_assets/` 或
-`01-Paperlist.md`：
+逻辑角色是硬契约；用户现要求新论文使用所属 canonical owner Field 内的
+`resources/papers/<stable-paper-segment>/` 单篇目录，资料笔记、分析 Markdown、Canvas、
+sidecar 与 Scholar-owned 附属内容同处，PDF 仍由 Zotero 持有。一个资源只有一个 canonical
+owner 目录，其他 Field/topic 引用它而不复制真源。目录段由持久资源映射分配，不靠标题推断。
+以下示意中的 `<knowledge-root>` 可以是登记的 owner Field 根；既有 `paper_assets/`、平铺分析对及
+`01-Paperlist.md` 不在普通更新中自动重命名或移动：
 
 ```text
 <knowledge-root>/
 ├── resources/                          # 跨 topic 的 canonical resource-owned 产物
 │   ├── papers/<resource-segment>/
-│   │   └── attachments/
-│   │       ├── analysis.md
-│   │       ├── analysis.canvas
-│   │       └── annotations.md
+│   │   ├── 论文信息.md
+│   │   ├── <paper>分析.md
+│   │   ├── <paper>解析树.canvas
+│   │   ├── <paper>分析.analysis.json
+│   │   └── attachments/              # Vault-owned 补充材料；非 Zotero PDF
 │   ├── documents/<resource-segment>/
 │   └── blogs/<resource-segment>/
 └── topics/<topic>/
@@ -243,18 +251,44 @@ sidecar 缺失、损坏、版本不兼容或与 Markdown/Canvas revision 不一�
 一次 focused/whole update 实际触及的 Markdown、Canvas 与 sidecar 构成一个逻辑事务；中断后只能依据
 可信 journal 完成或回滚整组变更，否则保持零写入并输出 patch，不能留下任一文件领先的半提交状态。
 
-## 7. 论文分析 v2
+## 7. 论文分析：人类正文与参考图解析树
 
 ### 7.1 Markdown 是详细真源
 
-分析笔记从“字段清单”改为连续、可阅读的解释。全文 profile 固定覆盖五个语义角色；每个角色内的
-段落和 claim 数量可按论文内容伸缩：
+分析笔记从“字段清单”改为连续、可阅读的解释。新 IR v4 的 `whole` profile 固定覆盖用户选定
+参考图的四个主分支，`focused` 只声明并完整更新所选分支；框架标签按整篇选择英文或中文。旧 IR
+v1–v3 的“任务／输入／分步流程／输出／边界”五角色仅供历史分析对兼容读取，普通更新不静默转版。
+新 Markdown 与 Canvas 共用下列完整结构，具体方法、挑战、贡献和模块可随论文重复：
 
-1. **任务**：论文解决什么问题、处在端到端工作流的哪个位置。
-2. **输入**：方法消费什么观测、表示、先验或上下文，以及必要前提。
-3. **分步流程**：一段总体说明 + 连续编号流程；每一步把“做什么、产生什么中间状态、为何有效、证据”写在一起。
-4. **输出**：方法直接产出什么、如何使用或评估，不能把潜在下游用途冒充论文输出。
-5. **边界**：局限、未覆盖条件与能力边界，区分作者陈述和分析推断，并说明影响范围。
+```text
+Paper
+├─ Abstract
+│  ├─ Task
+│  ├─ Technical challenge for previous methods
+│  ├─ Key insight / motivation
+│  ├─ Technical contributions
+│  └─ Experiment
+├─ Introduction
+│  ├─ Task and application
+│  ├─ Technical challenge for previous methods
+│  └─ Our pipeline
+│     ├─ Key innovation / insight
+│     └─ Technical contributions
+├─ Method
+│  ├─ Overview
+│  └─ Pipeline modules
+└─ Limitation
+   └─ Reasoned limitations
+```
+
+这些是输出槽位，不规定模型的阅读或推理顺序。原图未填写的 Experiment 或 Method 槽位可保持结构标签
+而不生成事实性 claim；不能为了画满图而编造结果。Method 呈现论文实际流程，不增加原图没有的
+“对应挑战／贡献”pipeline 节点。
+
+反复出现的子槽位按原图保留：Abstract 的先前方法挑战可逐项展开，洞见可说明动机与优势，技术贡献
+各有一句概述与好处；Introduction 的每项先前方法挑战区分原方法、局限、技术原因，Our pipeline
+区分关键洞见与各贡献的目的、具体做法、优势；Method 的每个模块可分动机、做法、有效原因、技术
+优势；Limitation 说明限制及其合理解释。没有可靠内容的子槽位同样保持空缺，不用模板词替代证据。
 
 无法核实的内容仍必须区分“论文未报告”“当前正文通道无法核实”“不适用”，但只在相关主张处说明，
 不在每个字段重复状态后缀，也不为了填满模板制造空字段。
@@ -262,20 +296,33 @@ sidecar 缺失、损坏、版本不兼容或与 Markdown/Canvas revision 不一�
 ### 7.2 证据与反链
 
 - 证据紧跟对应主张，使用短括注、脚注或链接，例如 `（§3.2，Figure 4）`。
+- 新 IR v4 沿用 v3 引入的结构化 `source_spans`：每个有来源的 claim 与逐点陈述在行内证据后直接
+  提供原文入口。Zotero PDF span 持有 attachment/library 身份、内容 hash、零基物理页、显示页标签
+  与可选的真实批注 key；`zotero://open-pdf/...?...page=N` 仅承诺物理页定位，只有已核实批注键才
+  追加 `annotation=...`。节/图/表或短引补足页内人工定位；不得把页级链接说成逐句选中。
+- Vault 原生 Markdown 使用已登记 Source/artifact 身份和稳定 block ID 产生 Obsidian 块链接。
+  其他 PDF、EPUB、DOCX 或网页只在其阅读器确实支持且已核验的情况下使用格式特定深链；否则明确
+  降级为文档入口＋章节/短引，不伪造统一 page/rect 参数。原文件变化或锚点失效时重新核验。
 - 不再生成独立 Evidence 小节、Evidence 节点或 field-to-anchor 重复索引。
-- Markdown 脚注的回跳承担 evidence → claim 反链；Canvas 节点通过
-  `[[<分析笔记>#^<claim-id>|正文与证据]]` 回到对应主张。
+- Markdown 的 claim/point 块锚点承担准确反链；Canvas 的 claim text 节点和同一 claim 的 details text
+  节点分别保留原文入口，details 内每个 point 独占一行及其原文链接，并通过
+  `[[<分析笔记>#^<block-id>|正文与证据]]` 返回准确的正文块。
 - 论文证据与实现代码证据继续分层；代码行不能替代论文内锚点。
+- schema/Canvas conformance 只保证链接按身份正确投影；正式来源验收另须由 Zotero Local API 核实
+  附件与批注归属、本机字节 hash 和页数，并由 Vault manifest/正文核实块锚点。没有实测的候选不
+  因格式通过而算来源准确。
 
 ### 7.3 Canvas 是概览投影
 
 Canvas 不再逐字段复制 Markdown，而是让人快速理解论文：
 
-- 固定按“任务 → 输入 → 分步流程 → 输出 → 边界”组织五个顶层导航分支；
-- 每个节点对应一个完整语义单元，而不是一个字段标签；
-- 分步流程使用一个连续流程区，步骤按阅读顺序排列，每步在同一节点中合并做法、作用和证据；
+- 根节点展开 `Abstract / Introduction / Method / Limitation` 四分支，保留 §7.1 的各子槽位；
+- 框架标签和 factual claim/point 分开：无内容的槽位仅显示标签，不制造“未报告”的假事实；
+- 每个 claim 使用标准可编辑 text 节点；同一 claim 的逐点论据在另一个可编辑 details text 节点中
+  逐行呈现，每行分别带行内证据、原文入口和准确正文反链；
+- Method 的模块按实际步骤组织，保留动机、做法、为何有效与技术优势等原图槽位，但不在一个纵轴无限摊平；
 - 删除 pipeline 中的“对应挑战 / 贡献”，也不为它们另造解析树分支；
-- 证据写在主张节点内，并链接到 Markdown 的正文与证据；不单独占节点；
+- 不生成独立 Evidence 分区或节点；
 - 生成的文字节点必须使用标准 JSON Canvas `type: "text"` 与 `text` 字段；保留的人工节点也必须是
   合法的 `text/file/link/group` 节点，但不计入系统生成节点预算、尺寸或重叠规则；
 - Canvas 节点不得携带 `sw-analysis-field` marker，机器状态放 sidecar；
@@ -283,14 +330,16 @@ Canvas 不再逐字段复制 Markdown，而是让人快速理解论文：
 
 视觉默认值：
 
-- 分支标题和节点标题使用 Markdown heading 提升字号，不依赖私有 Canvas 样式字段；
-- 内容节点建议宽 420–560、高 180–320，节点间距不少于 80；
-- 使用 group 或清晰泳道组织五个分支，避免单列无限向下延伸；
-- 以 V-JEPA 2 为 golden case 时，全部生成语义节点默认不超过 40 个，且不牺牲五个导航分支；
-- 必须做真实 Obsidian 截图验收：常用窗口下标题可读、节点无重叠，分步流程无需来回跳列。
+- 使用与参考图接近的细线、无箭头、直角连接；节点与分支紧凑分布，避免任何单一方向过长；
+- 分支标题和节点标题使用 Markdown heading 提升字号，文字节点尺寸随内容变化；
+- 生成的 claim/details Canvas 语义节点不超过 40 个，含根、四分支、框架标签和 details 的全部受管 Canvas
+  节点不超过 96 个；
+- 必须做真实 Obsidian 前台截图验收：常用窗口下标签与内容可读、节点无重叠、全图不过度纵向展开。
 
-JSON Canvas 1.0 没有可移植的 `font-size` 字段。首版通过 heading、节点尺寸、文本密度与布局解决字号，
-不把私有 CSS 设为必需依赖；若仍不足，再单独决定是否提供可选受管 CSS。
+JSON Canvas 1.0 没有可移植的 `font-size` 或边线折点字段。标准节点/边是编辑与存档真源；已安装的
+Advanced Canvas 可增强方角走线与无边框标签，但只能作为可选呈现，不得让普通 Canvas 失去可编辑性。
+test Vault 的样张和 v4 直接渲染 fixture 已取得 Obsidian 前台截图并验证节点可编辑，
+但不能替代真实 JEPA 分析的截图、来源核验或用户审美审议。
 
 ## 8. Hub、PDF、ZotFlow 与资源入口
 
@@ -309,17 +358,21 @@ PdfRef {
 ```
 
 Zotero Local API 的 parent/child 关系负责实时解析附件；不得猜测 `Zotero/storage/<key>/*.pdf`。
-Hub 根据实体和 capability 生成进程内 opaque action，论文卡片直接提供 ZotFlow、Zotero、cmux 阅读、
+Hub 根据实体和 capability 生成进程内 opaque action，论文卡片以 Zotero 本机附件为默认动作，并提供
+经本机模式验证的 ZotFlow、cmux 阅读、
 系统阅读器、分析与批注笔记动作，不经过人类可见 paper/attachment landing。opaque action ID、动态端口、
 绝对路径和 loopback URL 均禁止进入 Markdown、manifest、Notion 或关系字段。
 
 旧 `/hub/item` 与 `/open/paper/<attachment-key>` 只保留一个版本周期用于兼容解析；新 UI 和新文档不再
-产生它们。现有 raw 链接在经批准的 Field 迁移中改为稳定 `zotero://open-pdf/...`；ZotFlow 管理内容
-可以使用其 `obsidian://zotflow?...` 动作协议；机器关系只存 `PdfRef`。
+产生它们。现有 raw 链接在经批准的 Field 迁移中默认改为稳定 `zotero://open-pdf/...`；ZotFlow
+管理内容可以使用其 `obsidian://zotflow?...` 动作协议。v4 受管分析现在也可显式选择已核验
+Vault 的 ZotFlow Library Reader 页级投影，Markdown/Canvas 必须由同一 IR 同时渲染并通过
+conformance；默认仍是 Zotero 原生链接，不能手改受管三件套或把阅读器 URI 当 PdfRef。
+旧 Field 迁移与旧平铺文件的 relocation 仍需独立审议。机器关系只存 `PdfRef`。
 
 ### 8.2 Zotero 批注权威与 ZotFlow 投影
 
-- Zotero 是正式批注唯一权威；ZotFlow 是首选人工编辑界面，Hub 不实现第二套浏览器批注器。
+- Zotero 是正式批注唯一权威；ZotFlow 可作本机 PDF 的人工编辑界面，Hub 不实现第二套浏览器批注器。
 - 只有 ZotFlow 可以持有 Zotero Web API 读写密钥，且密钥只能留在 Obsidian SecretStorage；Hub、CLI、
   agent、配置、环境、日志和诊断均不得读取或请求它。
 - 该独占规则只约束云端 Web API 密钥；Scholar Workflow 既有的 Zotero Local API 写密钥继续存于
@@ -327,8 +380,11 @@ Hub 根据实体和 capability 生成进程内 opaque action，论文卡片直�
 - Agent 经 Zotero Local API 读取 highlight/comment/underline 等批注并投影只读 `AnnotationIR`；IR 不是
   新事实源。`export-annotations` 不再直接读 `zotero.sqlite`。
 - `ZotFlowReaderAdapter` 使用 `obsidian://zotflow?type=open-attachment...` 与 `open-annotation`，调用前
-  检查 Obsidian、ZotFlow 版本、`minAppVersion` 与启用状态。版本不兼容时只报告升级条件，不自动升级。
-- ZotFlow Source Note 是“来源与批注投影”，不能冒充 Field 首页或 Scholar 深度分析真源。
+  检查 Obsidian、ZotFlow 版本、`minAppVersion`、启用状态、本机 storage 模式和当前本机附件。
+  无法通过非秘密探针证明本机模式或附件缺失时禁用动作，不退回 Web API/WebDAV PDF 下载；
+  元数据与批注的 Web API 同步仍允许。版本不兼容时只报告升级条件，不自动升级。
+- ZotFlow Source Note 是“来源与批注投影”，不能冒充 Field 首页、Field 受管导航或 Scholar 深度分析
+  真源；独立非受管关系能力未落地前，不得把它塞进 `fields.yml` 的受管路径来绕过 owner 边界。
   ZotFlow、Better Notes 与 Scholar Workflow 必须使用互不重叠的 writer/path 前缀。
 
 Zotero 原生批注位于数据库而非原 PDF。Preview、Acrobat 等阅读器只能消费显式生成的独立带批注
@@ -398,11 +454,13 @@ snapshot；snapshot 记录 `source_pdf_hash + annotation_set_hash`，永不覆�
 
 退出：去掉 frontmatter 后正文仍可独立理解；无逐字段 marker 或重复 Evidence 表；人工修改不被覆盖。
 
-### K-D — 解析树 v2
+### K-D — 参考图论文解析树 v4
 
-交付：概览 Canvas、连续 Method 流、内联证据与 claim backlink、视觉 fixture。
+交付：四分支完整槽位的 Markdown/可编辑 Canvas 成对投影、逐 claim/point 原文入口及正文反链、
+直角无箭头边与紧凑布局、test Vault 版式样张和视觉 fixture；旧 v1–v3 保持兼容读取。
 
-退出：JEPA golden case 满足节点预算和截图验收；无独立 Evidence 节点、无“对应挑战 / 贡献”。
+退出：JEPA golden case 满足结构、语言、节点预算和真实 Obsidian 前台截图验收；空槽位不造事实，
+无独立 Evidence 节点、无“对应挑战 / 贡献”，旧版不会被普通更新静默转版。
 
 ### K-E — 动态 Field provider 与稳定入口
 
@@ -451,18 +509,25 @@ CHANGELOG 清楚区分规划、实现和数据迁移。
   snapshot / journal 恢复，或等待用户显式 adopt/rebaseline，绝不从当前人工正文静默生成 baseline。
 - Canvas 无 dangling edge、节点/边 ID 唯一，节点具备标准 JSON Canvas type 与对应内容字段，用户布局与
   合法自建节点保留。
-- JEPA golden Canvas 不超过 40 个生成内容节点，无独立 Evidence 节点和“对应挑战 / 贡献”。
-- Obsidian 截图在默认主题、常用窗口下标题可读、节点不重叠、Method 连续。
+- 新 v4 `whole` 分析覆盖 Abstract/Introduction/Method/Limitation 及原图子槽位；英文/中文结构标签
+  与所选语言一致，空槽位不生成无依据 claim；旧 v1–v3 五角色 bundle 仍可读取且不能静默转版。
+- v4 Canvas 的 claim 与同 claim 的 points/details 均为可编辑 text 节点，point 逐行保留证据、原文
+  入口及对应 Markdown 块反链；生成的 claim/details Canvas 语义节点不超过 40 个，全部受管 Canvas 节点不超过
+  96 个，无独立 Evidence 节点或“对应挑战 / 贡献”。
+- Obsidian 前台截图在默认主题、常用窗口下标签可读、节点不重叠、直角无箭头连线，整图不沿单轴
+  过度摊平；test Vault 的 Advanced Canvas 实验不自动算真实 JEPA 视觉验收。
 - 技术文档和 Blog 能进入 `knowledge_catalog` 并获得 allowlisted 打开动作。
 - 一个显式 Source 可暴露多个 Field；整个 Vault 与子目录均可 preview，无 manifest 时任何初始化写入都被拒绝。
 - Field navigation 顺序来自 manifest，内部 owner role 不成为公开分类；Field 首页直接显示导航和 Markdown。
 - Zotero 附件必须经 Local API 关系解析为 PdfRef，不使用 storage glob；新 UI 不访问可见 landing。
-- ZotFlow 版本/启用状态不满足时动作禁用并给出精确诊断；Hub/CLI/agent/config/log 中没有 Web API 密钥。
+- ZotFlow 版本、启用状态、本机 storage 模式或附件定位不满足时动作禁用并给出精确诊断；
+  Zotero 原生打开前同样复验本机附件；Hub/CLI/agent/config/log 中没有 Web API 密钥。
 - AnnotationIR 只由 Local API 批注生成；ZotFlow Source Note、Better Notes 与 Scholar 分析路径无 writer 重叠。
 - 带批注 snapshot 不覆盖 Zotero 附件，内容变化后失效；不支持的批注类型明确失败。
 - Knowledge→Project 显式复制只选择人类产物及明确 owned assets，剥离 `sw_*`/sidecar/managed relation；
   同名目标拒绝，复制后不产生同步或托管来源关系。Project→Knowledge 归档创建新 identity。
-- whole-paper profile 覆盖五个角色；focused profile 只更新声明子集。
+- 新 v4 whole-paper profile 覆盖四个完整分支；focused profile 只完整更新声明分支并保留其余分支；
+  旧 v1–v3 五角色格式继续可读，转版需要显式审议。
 - batch item 逐项经历 queued/running/validated/failed/repaired，失败至多修复一次，失败临时产物被清理且
   不能影响其他 item。
 - 新投影不持久化 raw loopback URL 作为资源身份；legacy `/hub/item` 与 `/open/paper/` 仅在一个版本
@@ -482,7 +547,7 @@ CHANGELOG 清楚区分规划、实现和数据迁移。
 | K1 | 核心/原子/附属对象类型与关系 | schema、旧 kind 兼容映射和 provider CAS apply 已在 0.28.0 工作树实现；真实迁移未完成 | core=`charter/survey/catalog`；resource=`paper/technical-document/blog-post`；保留现有 `resource_id` 投影 ID，并显式映射 Zotero work/item identity，路径另用受检 `resource-segment`；同 ID 冲突 fail closed；resource-owned canonical artifact 不随 topic 分身；旧 file-like kinds 迁到 rendition/asset 层 |
 | K2 | 人类正文与机器状态的真源 | 人类正文优先已锁定 | Markdown 为必备正文；复杂身份、hash 与 edge 移入 manifest/sidecar；Canvas 不是第二份正文 |
 | K3 | 证据与反链 | 证据内联、不独立列已锁定 | 主张内短锚点/脚注；脚注回跳 + Canvas 到 claim block link；不生成 Evidence 节点 |
-| K4 | Canvas 拓扑与字号 | 连续流程、删对应挑战/贡献、增大可读性已锁定 | 任务/输入/分步流程/输出/边界 + 语义节点；heading/大节点/低密度/截图验收；首版不依赖私有 CSS |
+| K4 | Canvas 拓扑与字号 | 用户已改选参考图完整框架，真实视觉验收待做 | 新 v4 用 Abstract/Introduction/Method/Limitation 及原图子槽位；可编辑 text 节点、直角无箭头边、紧凑布局；Advanced Canvas 只作可选呈现，前台截图仍是门禁 |
 | K5 | Hub 接口 | 已冻结为 v3 | 输出动态 Source/Field provider 与 PdfRef；唯一根、direct actions、service lifecycle 和 Destination/Target 分离由 Hub v3 决定 |
 | K6 | 首个真实迁移对象 | 预览门 | 当前 `02-科研技术文档` Source 的“世界模型”Field，V-JEPA 2 为 golden case；展示完整 preview 并确认后才写真实 Vault |
 | K7 | 批量校验与维护 | 已冻结 | 每篇独立校验、最多一次修复、失败隔离；周期审计默认只读并生成计划 |
@@ -497,9 +562,10 @@ CHANGELOG 清楚区分规划、实现和数据迁移。
 2. 论文、重要文档、Blog 与附属产物有稳定身份和明确权威来源；
 3. 所有承载论述、分析或梳理的持久产物都有独立可读的人类正文；Canvas、图片与数据由 owner 正文说明，
    机器状态不淹没正文；
-4. 解析树是可读概览，不是字段 schema 的逐格绘图；
+4. 新解析树忠实使用参考图的四分支及完整子槽位、可编辑且不沿单轴摊平，不是字段 schema 的逐格绘图；
 5. 证据与主张共处并可反向导航；
-6. PDF/文档从稳定资源身份一跳打开 ZotFlow、Zotero、cmux、系统阅读器或分析产物，用户无需理解或维护 raw 端口 URL；
+6. PDF/文档从稳定资源身份一跳打开 Zotero、cmux、系统阅读器或分析产物；本机模式经验证后可选
+   ZotFlow，用户无需理解或维护 raw 端口 URL，也不会因此触发云端 PDF 下载；
 7. 单篇和批量输出都必须通过相同 conformance gate，失败不能被记作成功；
 8. Hub 能从稳定 identity 消费动态 Source/Field provider，而知识系统不承担 service/Destination/task 所有权；
 9. Zotero 是批注唯一权威；ZotFlow 独占 Web API 密钥，agent 只经 Local API 读取并投影；

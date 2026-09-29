@@ -12,6 +12,7 @@ from scholar_workflow.analysis.audit import (
 from scholar_workflow.analysis.batch import AnalysisBatchStore
 from scholar_workflow.analysis.commit import commit_analysis_bundle
 from scholar_workflow.analysis.models import (
+    ALL_ROLES,
     AnalysisAuditTarget,
     AnalysisBatchItem,
     AnalysisBatchRequest,
@@ -35,6 +36,7 @@ from scholar_workflow.analysis.updates import render_analysis_projection
 
 def _document() -> AnalysisDocument:
     return AnalysisDocument(
+        schema_version=1,
         artifact_id="analysis:paper:audit",
         paper_title="Audit Paper",
         profile=AnalysisProfile(kind=ProfileKind.WHOLE),
@@ -47,7 +49,7 @@ def _document() -> AnalysisDocument:
                 evidence=Evidence(kind=EvidenceKind.AUTHOR_STATED, anchor="Section 1"),
                 order=1 if role is AnalysisRole.WORKFLOW else None,
             )
-            for role in AnalysisRole
+            for role in ALL_ROLES
         ],
     )
 

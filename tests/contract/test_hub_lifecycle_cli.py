@@ -68,13 +68,51 @@ def test_hub_stop_is_publicly_idempotent(monkeypatch):
     monkeypatch.setattr(
         lifecycle,
         "HubServiceManager",
-        lambda: type("Manager", (), {"stop": lambda self: False})(),
+        lambda: type(
+            "Manager",
+            (),
+            {
+                "status": lambda self: lifecycle.HubStatus(False, None, None, "stopped"),
+                "stop": lambda self: False,
+            },
+        )(),
     )
 
     result = CliRunner().invoke(main, ["hub", "stop"])
 
     assert result.exit_code == 0, result.output
     assert "already stopped" in result.output
+
+
+def test_hub_restart_inside_cmux_keeps_window_routing(monkeypatch, tmp_path):
+    record = _record(tmp_path)
+    workspaces: list[str | None] = []
+    monkeypatch.setattr(
+        lifecycle,
+        "HubServiceManager",
+        lambda: type(
+            "Manager",
+            (),
+            {"restart": lambda self: record},
+        )(),
+    )
+    monkeypatch.setattr(
+        cli,
+        "_ensure_hub_router",
+        lambda _record, workspace: workspaces.append(workspace),
+    )
+
+    result = CliRunner().invoke(
+        main,
+        ["hub", "restart"],
+        env={
+            "CMUX_WORKSPACE_ID": "workspace:7",
+            "CMUX_SOCKET_PATH": "/tmp/cmux/socket",
+        },
+    )
+
+    assert result.exit_code == 0, result.output
+    assert workspaces == ["workspace:7"]
 
 
 def test_hub_doctor_proves_runtime_identity_build_and_private_files(tmp_path, monkeypatch):
@@ -136,7 +174,11 @@ def test_open_hub_outside_cmux_starts_service_and_uses_system_browser(
     monkeypatch.setattr(
         lifecycle,
         "HubServiceManager",
-        lambda: type("Manager", (), {"ensure_running": lambda self: record})(),
+        lambda: type(
+            "Manager",
+            (),
+            {"ensure_running": lambda self: record},
+        )(),
     )
     opened: list[tuple[str, int]] = []
     monkeypatch.setattr(
@@ -166,10 +208,23 @@ def test_open_hub_inside_cmux_registers_destination_then_opens_there(
     monkeypatch,
 ):
     record = _record(tmp_path)
+    startup_calls: list[bool] = []
+    startup_workspaces: list[str] = []
     monkeypatch.setattr(
         lifecycle,
         "HubServiceManager",
-        lambda: type("Manager", (), {"ensure_running": lambda self: record})(),
+        lambda: type(
+            "Manager",
+            (),
+            {
+                "ensure_running": lambda self: startup_calls.append(True) or record
+            },
+        )(),
+    )
+    monkeypatch.setattr(
+        cli,
+        "_ensure_hub_router",
+        lambda _record, workspace: startup_workspaces.append(workspace),
     )
     registrations: list[tuple[int, str, str]] = []
     monkeypatch.setattr(
@@ -199,6 +254,8 @@ def test_open_hub_inside_cmux_registers_destination_then_opens_there(
     )
 
     assert result.exit_code == 0, result.output
+    assert startup_calls == [True]
+    assert startup_workspaces == ["workspace:7"]
     assert registrations == [(45678, "instance_A234567890abcdef", "workspace:7")]
     argv, kwargs = calls[0]
     assert argv == [

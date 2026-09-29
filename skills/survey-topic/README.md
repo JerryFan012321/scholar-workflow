@@ -1,14 +1,12 @@
 # survey-topic
 
-The front door for an open-ended "research X" request. When you say *"survey world
-models"* or *"get me up to speed on 3D reconstruction"*, this skill scopes the request
-before any work starts, then routes it through the other skills.
+The front door for an open-ended "research X" request. It identifies the requested
+scope and deliverable, then routes the work to the skill that owns that deliverable.
 
 ## What it does
 
-A broad research ask is under-specified: the same topic can mean a 10-minute skim or a
-weeks-long deep dive. This skill runs a short **grill** and **converges on the scope with
-you** — proposing, letting you correct, confirming — across:
+A broad research ask may need a scope choice before it can be routed. Only missing
+choices that change the deliverable need confirmation:
 
 - **Depth** — which leg of field-vision you want: the *technical-evolution* view (milestones,
   how the technique evolved) or the *key-problem* view (what's solved, what's open, what's
@@ -17,16 +15,12 @@ you** — proposing, letting you correct, confirming — across:
 - **Breadth** — one problem / one direction / a whole field
 - **Time window** — classics / recent / ongoing tracking
 
-Arriving cold, you often can't scope blind. The skill may first run a quick **breadth-recon
-sweep** — reading broadly, including non-arXiv sources (models with no paper, benchmark or
-project pages, lab blogs) — to surface the landscape's shape. That sweep is throwaway: it
-feeds the scoping conversation, enters no library, and leaves no file.
+When topic context is needed to choose the route, a read-only web reconnaissance may
+inform it. That reconnaissance enters no library and leaves no file.
 
-Once you've agreed on a plan, it hands each step to the skill that owns it:
-`recommend-papers`, `find-resource`, `ingest-resource`, `build-literature-tree`, or
-`analyze-paper`. When mapping a landscape, one move it uses is the **citation snowball** —
-starting from a milestone paper and mining its introduction and related-work section for
-same-direction references to seed the search.
+The chosen product belongs to `recommend-papers`, `find-resource`, `ingest-resource`,
+`build-literature-tree`, or `analyze-paper`. The router reports that product and its
+location rather than imposing a fixed research method.
 
 ## What it does NOT do
 

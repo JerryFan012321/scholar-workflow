@@ -7,18 +7,18 @@ The audit checks these invariants against the canonical rules in the shared
 
 | System | Check |
 |---|---|
-| Zotero | item exists; no duplicates; correct Collection assignment |
+| Zotero | item exists; no duplicates; Collection assignment matches an explicitly recorded/approved target when one exists (otherwise report it as unverified, not incorrect) |
 | Attachments | file resolves on disk; linked files (linkMode 2) store a **relative** path (`attachments:…`), not absolute |
 | Files | attachment file exists at its resolved path; not a size-0 ghost |
 | Inbox | PDFs under `paper_inbox` that no Zotero item claims. Claimed = the paper identity parsed from the filename (arXiv id / DOI, per `identity-policy.md`) resolves via `scholar-workflow zotero search` — not a path match. Unresolved = never-ingested orphan; resolved = ingested-but-uncleared. Scope is paper_inbox ONLY — never reverse-scan Zotero `storage/` |
-| Obsidian | index-row Zotero item keys resolve; PDF link-service URLs resolve (attachment key globs a real PDF under storage_root); content outside managed markers untouched |
-| Notion | no duplicate Resource IDs; local-link URLs resolve |
+| Obsidian | index-row Zotero item keys resolve; stable attachment-key PDF URIs refer to a Local API attachment whose local file resolves; old fixed-port Hub URLs are reported as migration drift; content outside managed markers untouched |
+| Notion | no duplicate Resource IDs; stable attachment-key PDF URIs refer to a Local API attachment; old fixed-port Hub URLs are reported as migration drift |
 | Hierarchy | parent index descriptions match actual sub-directory contents |
 
 ## Drift categories
 
 Inbox-orphan PDFs (in `paper_inbox` only), dead Zotero keys, stale index rows, broken
-local links, duplicate Resource IDs, plus two cross-machine attachment risks:
+stable PDF links, old fixed-port links, duplicate Resource IDs, plus two cross-machine attachment risks:
 
 - **Absolute-path linked file** — a linkMode-2 attachment whose Local API path
   is absolute (`/Users/…`, `C:\…`) instead of relative. It resolves on its origin

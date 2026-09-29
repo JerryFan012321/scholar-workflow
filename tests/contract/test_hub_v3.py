@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
+import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -10,9 +13,11 @@ from pathlib import Path
 
 import pytest
 
+from scholar_workflow import __version__
 from scholar_workflow.adapters.zotero_local import ServerInfo, ZoteroAttachmentLocator
 from scholar_workflow.hub.actions import ActionKind, PublicAction
 from scholar_workflow.hub.catalog import StaticCatalogProvider
+from scholar_workflow.hub.cmux import CmuxControlError
 from scholar_workflow.hub.directory import (
     HubDirectoryService,
     ProjectRegistration,
@@ -20,6 +25,15 @@ from scholar_workflow.hub.directory import (
     ToolRegistry,
 )
 from scholar_workflow.hub.fields import FieldService, KnowledgeSourceRegistry
+from scholar_workflow.hub.lifecycle import (
+    DISCOVERY_SCHEMA_VERSION,
+    HUB_PROTOCOL_VERSION,
+    SERVICE_NAME,
+    HubDiscoveryRecord,
+    HubServiceManager,
+    installed_build_hash,
+    write_discovery,
+)
 from scholar_workflow.hub.models import HubCatalog, HubResource
 from scholar_workflow.hub.routing import (
     ExecutionTarget,
@@ -269,6 +283,219 @@ def test_v3_health_direct_pdf_and_action_input_allowlist(tmp_path: Path):
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_router_loss_does_not_stop_hub_reading_or_vault_capability(tmp_path: Path):
+    class MissingRouter:
+        @staticmethod
+        def instance_fingerprint() -> str:
+            raise CmuxControlError("cmux router is unavailable")
+
+        @staticmethod
+        def tree_all():
+            raise CmuxControlError("cmux router is unavailable")
+
+    storage = tmp_path / "storage"
+    vault = tmp_path / "vault"
+    storage.mkdir()
+    vault.mkdir()
+    (vault / "00-领域入口.md").write_text("# World Models\n", encoding="utf-8")
+    field_service = FieldService(KnowledgeSourceRegistry(tmp_path / "sources.json"))
+    preview = field_service.preview(vault)
+    field_service.confirm(preview.candidate_token, preview.fields[0].field_id)
+    server = start_hub_server(
+        port=0,
+        storage_root=storage,
+        vault_root=vault,
+        catalog_provider=StaticCatalogProvider(_catalog()),
+        field_service=field_service,
+        cmux_control=MissingRouter(),
+        zotero_adapter_factory=_FakeZotero,
+    )
+    try:
+        port = server.server_address[1]
+        assert _request(port, "/hub/").status == 200
+        directory = json.loads(_request(port, "/api/v3/directory").read())
+        assert directory["capabilities"]["cmux_launches"]["available"] is False
+        assert directory["capabilities"]["vault_writes"]["available"] is True
+        destinations = json.loads(_request(port, "/api/v3/destinations").read())
+        assert destinations["available"] is False
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_field_select_public_preview_reports_external_zotflow_owner(tmp_path: Path):
+    class FixedPicker:
+        selected: Path
+
+        def choose(self) -> Path:
+            return self.selected
+
+    storage = tmp_path / "storage"
+    vault = tmp_path / "vault"
+    projection = vault / "any external projection"
+    field = vault / "World Models"
+    storage.mkdir()
+    (vault / ".obsidian").mkdir(parents=True)
+    projection.mkdir()
+    field.mkdir()
+    (field / "00-领域入口.md").write_text("# World Models\n", encoding="utf-8")
+    (projection / "@paper.md").write_text(
+        "---\nzotflow-locked: true\nzotero-key: T3RY3HUA\nlibrary-id: 17685951\n---\n# Source Note\n",
+        encoding="utf-8",
+    )
+    picker = FixedPicker()
+    picker.selected = vault
+    service = FieldService(KnowledgeSourceRegistry(tmp_path / "sources.json"))
+    server = start_hub_server(
+        port=0,
+        storage_root=storage,
+        vault_root=vault,
+        catalog_provider=StaticCatalogProvider(_catalog()),
+        field_service=service,
+        folder_picker=picker,
+        zotero_adapter_factory=_FakeZotero,
+    )
+    try:
+        port = server.server_address[1]
+        token = json.loads(_request(port, "/api/v1/session").read())["csrf_token"]
+        headers = {
+            "Content-Type": "application/json",
+            "Origin": f"http://127.0.0.1:{port}",
+            "X-Scholar-Hub-Token": token,
+        }
+        preview = json.loads(_request(
+            port, "/api/v3/fields/select", method="POST", data=b"{}", headers=headers
+        ).read())["preview"]
+        assert [row["relative_root"] for row in preview["fields"]] == ["World Models"]
+        assert preview["external_managed_documents"] == [
+            {"relative_path": "any external projection/@paper.md", "owner": "zotflow"}
+        ]
+        assert preview["unmapped_markdown"] == []
+        picker.selected = projection
+        direct = json.loads(_request(
+            port, "/api/v3/fields/select", method="POST", data=b"{}", headers=headers
+        ).read())["preview"]
+        assert direct["fields"] == []
+        assert direct["external_managed_documents"] == [
+            {"relative_path": "@paper.md", "owner": "zotflow"}
+        ]
+        assert not service.registry.path.exists()
+        assert not (vault / ".scholar-workflow").exists()
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+@pytest.mark.parametrize("blocked_dependency", ["provider", "router"])
+def test_identity_and_lifecycle_remain_live_when_detailed_health_blocks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, blocked_dependency: str
+):
+    entered = threading.Event()
+    release = threading.Event()
+
+    class BlockingProvider:
+        def load(self):
+            entered.set()
+            assert release.wait(10), "blocked provider was not released"
+            return _catalog()
+
+    class BlockingRouter:
+        def instance_fingerprint(self):
+            entered.set()
+            assert release.wait(10), "blocked router was not released"
+            return "sha256:" + "a" * 64
+
+        def tree_all(self):
+            return {"workspaces": []}
+
+    storage = tmp_path / "storage"
+    vault = tmp_path / "vault"
+    storage.mkdir()
+    vault.mkdir()
+    generation = "service_abcdefghijklmnop"
+    server = start_hub_server(
+        port=0,
+        storage_root=storage,
+        vault_root=vault,
+        catalog_provider=(
+            BlockingProvider()
+            if blocked_dependency == "provider"
+            else StaticCatalogProvider(_catalog())
+        ),
+        cmux_control=BlockingRouter() if blocked_dependency == "router" else None,
+        zotero_adapter_factory=_FakeZotero,
+        service_generation=generation,
+    )
+    detailed_result: list[object] = []
+
+    def request_detailed_health() -> None:
+        try:
+            detailed_result.append(
+                urllib.request.urlopen(
+                    f"http://127.0.0.1:{server.server_address[1]}/api/v3/health",
+                    timeout=10,
+                ).read()
+            )
+        except Exception as exc:  # noqa: BLE001 - captured for deterministic teardown
+            detailed_result.append(exc)
+
+    request_thread = threading.Thread(target=request_detailed_health, daemon=True)
+    try:
+        request_thread.start()
+        assert entered.wait(2), "detailed health did not reach blocked dependency"
+        port = server.server_address[1]
+        record = HubDiscoveryRecord(
+            schema_version=DISCOVERY_SCHEMA_VERSION,
+            service_name=SERVICE_NAME,
+            pid=os.getpid(),
+            port=port,
+            executable=str(Path(sys.executable).resolve()),
+            package_version=__version__,
+            build_hash=installed_build_hash(),
+            protocol_version=HUB_PROTOCOL_VERSION,
+            service_generation=generation,
+            started_at="2026-09-27T00:00:00Z",
+            log_path=str(tmp_path / "hub.log"),
+        )
+        discovery = tmp_path / "runtime" / "hub.json"
+        write_discovery(record, discovery)
+        monkeypatch.setattr(
+            "scholar_workflow.hub.lifecycle.process_exists", lambda _pid: True
+        )
+        begin = time.monotonic()
+        identity = json.loads(_request(port, "/api/v3/identity").read())
+        manager = HubServiceManager(record_path=discovery)
+        status = manager.status()
+        elapsed = time.monotonic() - begin
+        assert elapsed < 1.0
+        assert identity["service_generation"] == generation
+        assert identity["service"]["name"] == SERVICE_NAME
+        assert set(identity) == {
+            "status", "service", "process", "protocol", "build", "service_generation"
+        }
+        assert status.running is True
+        assert status.health == identity
+        assert request_thread.is_alive()
+        assert manager.ensure_running() == record
+        retired: list[tuple[HubDiscoveryRecord, dict[str, object] | None]] = []
+        monkeypatch.setattr(
+            manager,
+            "_stop_record",
+            lambda proven_record, proven_health: retired.append(
+                (proven_record, proven_health)
+            ),
+        )
+        assert manager.stop() is True
+        assert retired == [(record, identity)]
+    finally:
+        release.set()
+        request_thread.join(3)
+        server.shutdown()
+        server.server_close()
+    assert detailed_result and isinstance(detailed_result[0], bytes)
+
 
 def test_field_navigation_reads_only_manifest_declared_markdown(tmp_path: Path):
     storage = tmp_path / "storage"

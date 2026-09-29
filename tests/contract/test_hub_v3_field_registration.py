@@ -432,7 +432,7 @@ def test_field_registration_failure_rolls_back_only_selected_field(
     def fail(*_args, **_kwargs):
         raise OSError("disk full")
 
-    monkeypatch.setattr(registry, "save", fail)
+    monkeypatch.setattr(registry, "_save_locked", fail)
     with pytest.raises(FieldRegistryError, match="rolled back"):
         service.confirm(preview.candidate_token, selected.field_id)
 

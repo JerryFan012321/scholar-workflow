@@ -7,6 +7,8 @@ same renderer, keyed off node kind.
 """
 from __future__ import annotations
 
+from copy import deepcopy
+
 from scholar_workflow.adapters.obsidian import ObsidianAdapter
 from scholar_workflow.workflows.novelty_tree import (
     plan_novelty_tree,
@@ -115,6 +117,16 @@ def test_tree_note_uses_assets_column_not_doi(tmp_path):
     assert "| DOI |" not in body
     assert "zotero://open-pdf/library/items/S6LZUS6S" in body  # render_table reuse
     assert "127.0.0.1:23128" not in body
+
+
+def test_new_paper_folder_path_is_preserved_in_tree_and_ledger():
+    document = deepcopy(DOC)
+    paper_path = "resources/papers/2020-mildenhall-nerf/论文信息.md"
+    document["paper_list"][0]["asset_note"] = paper_path
+
+    assert f"[[{paper_path}]]" in render_tree_note(document, PORT)
+    assert f"[[{paper_path}]]" in render_paperlist(document, PORT)
+    assert document["paper_list"][0]["resource_id"] == NERF["resource_id"]
 
 
 # --- paper list ledger body ---

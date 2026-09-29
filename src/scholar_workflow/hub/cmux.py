@@ -84,6 +84,28 @@ class CmuxControl:
             raise CmuxControlError("cmux returned invalid workspace JSON")
         return payload
 
+    def instance_fingerprint(self) -> str:
+        """Identify the current cmux socket without exposing its path."""
+        socket_path = os.environ.get("CMUX_SOCKET_PATH")
+        if not socket_path:
+            raise CmuxControlError("cmux instance socket is unavailable")
+        try:
+            socket_stat = os.stat(socket_path, follow_symlinks=False)
+        except OSError as exc:
+            raise CmuxControlError("cmux instance socket is unavailable") from exc
+        if stat.S_ISLNK(socket_stat.st_mode) or not stat.S_ISSOCK(socket_stat.st_mode):
+            raise CmuxControlError("cmux instance socket is not a trusted Unix socket")
+        identity = (
+            socket_stat.st_dev,
+            socket_stat.st_ino,
+            stat.S_IFMT(socket_stat.st_mode),
+            socket_stat.st_ctime_ns,
+            socket_stat.st_mtime_ns,
+            getattr(socket_stat, "st_birthtime", 0),
+        )
+        material = f"cmux-socket-v2\0{socket_path}\0{identity!r}".encode()
+        return "sha256:" + hashlib.sha256(material).hexdigest()
+
     def open(self, target: str, *, workspace_id: str) -> subprocess.CompletedProcess[str]:
         """Open one server-validated target in an already resolved workspace."""
         self._clean_value(target, "cmux target")
@@ -141,6 +163,7 @@ class CmuxControl:
         workspace_id: str,
         working_directory: Path,
         command: str,
+        focus: bool = True,
     ) -> subprocess.CompletedProcess[str]:
         """Open one server-constructed terminal worker in a cmux workspace.
 
@@ -172,7 +195,7 @@ class CmuxControl:
                 "--command",
                 command,
                 "--focus",
-                "true",
+                "true" if focus else "false",
             ]
         )
         self._require_success(
@@ -336,6 +359,9 @@ class WorkspaceRegistry:
 
     def instance_fingerprint(self) -> str:
         """Return an opaque fingerprint for the server-owned cmux instance."""
+        remote_fingerprint = getattr(self._control, "instance_fingerprint", None)
+        if callable(remote_fingerprint):
+            return remote_fingerprint()
         socket_path = os.environ.get("CMUX_SOCKET_PATH")
         if not socket_path:
             raise CmuxControlError("cmux instance socket is unavailable")

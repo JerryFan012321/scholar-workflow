@@ -35,7 +35,7 @@
           "arxiv":          { "type": ["string", "null"] },
           "doi":            { "type": ["string", "null"], "description": "Retained as a dedup identity field; NOT rendered as a table column." },
           "synced":         { "type": ["string", "null"] },
-          "asset_note":     { "type": ["string", "null"], "description": "vault-relative path of this paper's assets note (paper_assets/<year>-<first-author>-<title>.md), authored by the skill. The paper list links to it in the Assets column." },
+          "asset_note":     { "type": ["string", "null"], "description": "Vault-relative path of this paper's companion note. New papers use <Field>/resources/papers/<stable-segment>/论文信息.md; legacy paper_assets/<year>-<first-author>-<title>.md paths remain readable until explicitly migrated. The paper list links to it in the Assets column." },
           "classified":     { "type": "boolean", "default": false }
         }
       }

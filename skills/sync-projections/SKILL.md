@@ -33,9 +33,9 @@ description: Rebuild Obsidian paper indexes or push the one-way Notion managemen
    according to `references/notion-schema.md`.
 2. Pipe it to
    `SCHOLAR_WORKFLOW_NOTION_TOKEN=… ${CLAUDE_PLUGIN_ROOT}/bin/notion-project.py`.
-   The script upserts papers by `Resource ID`, then related documents by `Doc ID`,
-   wires relations, and returns page-id maps.
-3. Build the topic page from those page IDs. Each paper entry links to its Papers page,
+   The returned page-id maps must contain the requested Papers and Related Docs rows
+   with their declared relations; the script owns the upsert order and wiring.
+3. The resulting topic page links each paper entry to its Papers page,
    Web Source, and stable Zotero PDF URI; related material links to its Related Docs page.
 4. Report Obsidian and Notion results independently.
 
@@ -54,6 +54,7 @@ description: Rebuild Obsidian paper indexes or push the one-way Notion managemen
 
 ## References
 
+- `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `references/obsidian-index-format.md`
 - `references/notion-schema.md`
 - `references/link-format.md`

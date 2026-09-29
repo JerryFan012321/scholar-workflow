@@ -1,18 +1,10 @@
 # Resource Model
 
-## Kind classification
+## Object boundary
 
-| Kind | How to recognize |
-|---|---|
-| `paper` | Has DOI / arXiv ID, or is clearly scholarly (abstract, authors, venue) |
-| `technical_document` | Technical report, official doc, tutorial, spec, whitepaper |
-| `snapshot` | Web page snapshot (HTML / MHTML / PDF of a page) |
-| `drawio` | draw.io / diagrams.net file |
-| `image` | Image, screenshot, figure |
-| `dataset` | Dataset file or descriptor |
-
-A technical PDF (e.g. CUDA docs, an official manual) is a `technical_document`
-even though it is a PDF — it never enters the paper flow.
+A technical PDF such as an official manual is a `technical_document`, not a paper
+merely because its file format is PDF. It does not enter the Zotero paper flow.
+If the object's intended kind or owner remains ambiguous, report the ambiguity before writing.
 
 ## Storage target
 
@@ -30,4 +22,3 @@ Resolve the selected Source through its trusted `folder_id` and the Field throug
 target. If no Field is registered or initialized, show the zero-write preview and
 obtain confirmation before initialization. Do not silently migrate existing files.
 Which root is authoritative for each object is the shared `storage-policy.md`.
-On classification conflict, stop and report — never guess.

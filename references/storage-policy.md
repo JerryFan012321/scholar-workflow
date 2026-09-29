@@ -43,6 +43,12 @@ Canonical rule for where every object lives. Applies to all skills and agents.
    `.scholar-workflow/fields.yml`.
 9. ZotFlow Source Notes, Better Notes output, and Scholar analysis/annotation documents
    have separate writer ownership and non-overlapping path prefixes.
+10. ZotFlow may read an imported PDF from Zotero's local `storage` only when its desktop
+    local-storage mode is positively verified. Hub actions must not download a missing
+    attachment through Zotero Web API/WebDAV; metadata/annotation sync remains separate.
+    Zotero native and ZotFlow launches revalidate the Local API attachment locator and
+    the presence of local bytes before opening. This does not change the user's independent
+    Zotero File Syncing configuration.
 
 ## PDF handling
 

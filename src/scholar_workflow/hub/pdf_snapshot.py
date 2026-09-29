@@ -166,6 +166,7 @@ class AnnotationSnapshotService:
                     "output_hash": output_hash,
                     "annotation_count": added,
                     "supported_types": sorted(self.supported_types),
+                    "omitted_types": [],
                     "authority": "zotero",
                     "import_back": False,
                 },

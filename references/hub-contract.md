@@ -12,7 +12,8 @@ Zotero / Obsidian Field manifests / project manifests / explicit tool registry /
 ```
 
 Legacy v1/v2 responses are derived read-only views of this root. They never form a
-second state store.
+second state store. Legacy v1 artifact PUT, asset upload, and action POST are retired with
+`410 Gone`; writes and launches must use the corresponding v3 capability-checked routes.
 
 ## Information architecture
 
@@ -57,8 +58,8 @@ PdfRef {
 
 A paper card invokes pre-registered actions directly:
 
-- Annotate in ZotFlow (primary when available)
-- Open in Zotero
+- Open the local PDF in Zotero (primary; revalidate the attachment at launch)
+- Annotate in ZotFlow (optional, only after local-storage mode is positively verified)
 - Read in cmux
 - Open in the system PDF reader
 - View analysis
@@ -100,8 +101,8 @@ fields:
         items: []
 ```
 
-The browser never submits an absolute path. A system folder picker returns a one-use,
-short-lived, process-local candidate token. If no manifest exists, Hub must perform a zero-write
+The browser never submits an absolute path. A system folder picker returns a bounded-lifetime,
+process-local candidate token. If no manifest exists, Hub must perform a zero-write
 preview and show the proposed Fields, home documents, navigation, collisions, ignored
 files, template changes, unmapped prose, and link rewrites. Confirmation becomes stale
 if the candidate, root inode, or content revision changes.
@@ -112,12 +113,28 @@ If a portable manifest already exists on a new host, a separate registration-onl
 preview explicitly shows every existing Field. Confirmation registers that Source in
 the host registry without rewriting the manifest, Field IDs, or document content.
 
-Legacy paper-link cleanup is a separate, explicit per-Field CLI transaction. A read-only
-plan reports the exact digest, managed Markdown/Canvas changes, unresolved links in
-unmapped files, and conflicts. Apply recomputes the plan and requires that digest;
-only manifest-owned files can change. It creates an unverified recovery snapshot,
-rolls back synchronous failures, and never claims crash-atomic multi-file replacement.
-It does not normalize paper-analysis templates or silently migrate another Field.
+For a first registration containing legacy links or a managed legacy analysis pair,
+the browser's compatibility confirmation must not split registration from migration.
+The trusted local operator instead reviews one `hub field-transaction plan`: its digest
+covers the portable manifest, host registry, managed Markdown/Canvas/sidecar changes,
+and link rewrites. A legacy analysis candidate must pass separate old-field/node/edge
+conservation and new bundle conformance before it can join the same Field plan. Its
+candidate is reviewed and staged through the local operator CLI, not the browser. A
+proposed navigation change cannot silently omit any previewed managed document.
+Commit requires the exact plan digest, a manually arranged external-writer pause,
+per-file CAS, an unverified recovery snapshot, and a private per-Field journal.
+An interrupted commit blocks new plans/applies until explicit recovery. The
+`hub field-transaction recover SOURCE_ID FIELD_ID --confirm-recovery --external-writers-paused`
+command requires the operator's external-writer pause assertion and conditionally restores
+journal-owned files; external edits or damaged recovery data fail closed. Multi-file replacement is
+not instantaneously atomic to external Vault readers. The local operator credential
+and interactive CLI confirmation assume processes running as that OS user are trusted;
+they do not cryptographically prove an independent human approval.
+
+The older `hub field-migration` command is link-only compatibility for an already
+registered Field. It cannot normalize an analysis pair or initialize a Field in one
+transaction. Managed analysis Markdown/Canvas/sidecar cannot be changed through a
+single-file Hub editor; use the paired Knowledge update workflow.
 
 `home`, `resource`, and `support` are ownership/template roles, not public filters.
 Navigation labels and order belong to each Field. The legacy `research_vault_root` is
@@ -212,15 +229,21 @@ not expose permanent deletion in this version.
 
 ## ZotFlow and annotation authority
 
-Zotero owns formal annotations. ZotFlow is the preferred editor and the only client
+Zotero owns formal annotations. ZotFlow is an optional local-PDF editor and the only client
 allowed to hold the Zotero Web API read/write key; that key remains in Obsidian
 SecretStorage. Hub, CLI, agents, configuration, environment, logs, and diagnostics must
 not obtain it. Scholar Workflow's separate Local API ingest authorization remains in
 macOS Keychain.
 
 `ZotFlowReaderAdapter` opens `obsidian://zotflow` attachment and annotation actions only
-after checking Obsidian version, ZotFlow version, `minAppVersion`, and enabled state.
-It reports an upgrade requirement but never upgrades Obsidian. Obsidian CLI is optional.
+after checking Obsidian version, ZotFlow version, `minAppVersion`, enabled state, and a
+non-secret positive proof that the desktop local-storage mode points at the attachment's
+actual Zotero storage root. It revalidates the local PDF at launch, fails closed if missing
+or changed, and never falls back to Web API/WebDAV PDF download. A narrow Obsidian CLI probe
+may provide the mode proof; its absence only disables ZotFlow, not Zotero or Hub reading.
+Zotero native actions also revalidate the local attachment before launch. Metadata and
+annotation Web API synchronization remain distinct from PDF file download. The adapter
+reports upgrade requirements but never upgrades Obsidian.
 
 Agents read annotations from Zotero Local API and may render a read-only `AnnotationIR`.
 The IR is not another authority. ZotFlow Source Notes, Better Notes files, and Scholar
@@ -250,14 +273,18 @@ service, discovers the current URL, and opens the Hub. It does not accept or dep
 code repository root.
 
 The service binds a dynamically selected loopback port. A mode-0600 runtime discovery
-record includes port, PID, executable, package/plugin/service build, protocol,
-generation, start time, and log path. Browser authentication is separate from cmux
-Destination state.
+record includes port, PID, executable, installed package version and build hash,
+protocol, generation, start time, and log path. Plugin manifest versions are checked
+by release validation, not claimed as a runtime discovery field. Browser
+authentication is separate from cmux Destination state.
 
 `status` reports actual process facts. `stop` is idempotent and removes a stale record
 only after validation. Stop/restart may signal a PID only when discovery and a live
 identity/generation handshake prove it is the Scholar Workflow managed process. Unknown
 listeners, PID reuse, or mismatched builds fail closed and are never terminated.
+The v3 identity handshake is independent of providers and cmux; detailed health is
+diagnostic only and cannot invalidate a verified service merely because a provider or
+window router is slow.
 
 ## HTTP and browser boundary
 
@@ -276,12 +303,13 @@ GET  /api/v3/task-actions
 POST /api/v3/actions/<action-id>
 POST /api/v3/fields/select
 POST /api/v3/fields/confirm
+GET  /api/v3/identity
 GET  /api/v3/health
 ```
 
 State-changing routes require loopback Host validation, same-origin `Origin`, the
 service's anti-CSRF token, strict schemas, and bounded bodies. Task creation additionally
-uses an idempotency key. Folder candidate tokens are one-use/short-lived process-local
+uses an idempotency key. Folder candidate tokens are bounded-lifetime process-local
 handles; Action and Destination IDs are server-generated, and Destinations expire and
 revalidate their cmux instance. The anti-CSRF token is shared by same-origin Hub pages
 for one service generation, not a per-browser session identity.
@@ -290,6 +318,10 @@ The UI label is “default open location”, never “workspace bound”. Fields
 navigation and selected Markdown together. Cards expose primary actions immediately;
 metadata drawers are optional rather than required landing pages. Raw UUIDs, absolute
 paths, ports, tokens, shell text, and unfiltered stderr are not displayed.
+All human-visible Hub content also follows `references/human-presentation.md`: a displayed
+link must be actionable in that surface, or have a distinct supported open action or
+unavailable reason. Diagnostics and machine identifiers do not substitute for the
+object's readable content and status.
 
 ## Migration boundary
 
@@ -298,9 +330,13 @@ with JEPA/V-JEPA as its acceptance sample. Each Field is previewed and transacte
 A recovery snapshot is explicitly not a verified backup. Unmapped original prose is
 preserved in original order under a retained-content section.
 
-Existing fixed loopback links are rewritten only inside an approved Field transaction:
-human Markdown uses stable `zotero://open-pdf/...` (or ZotFlow's own `obsidian://zotflow`
-protocol where it owns the content), while machine relations store only `PdfRef`.
+Existing fixed loopback links are rewritten only inside an approved Field transaction.
+The managed v4 analysis renderer defaults to stable `zotero://open-pdf/...` links and
+may explicitly project verified `obsidian://zotflow` Library Reader page links into its
+paired Markdown and Canvas. The target Vault, audited local-PDF mode, attachment, and
+reader route must be verified; using that reader does not transfer writer ownership
+of the note. Machine relations store only `PdfRef`. The optional v4 projection is not
+an automatic Field-wide link migration target.
 
 This contract does not authorize automatic Obsidian upgrades, plugin removal, another
 Vault/project migration, permanent deletion, or a verified-backup claim.

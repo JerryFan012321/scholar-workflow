@@ -51,6 +51,11 @@ _LEGACY_PAPER_LINK = re.compile(
     r"http://127\.0\.0\.1:23128/open/paper/"
     r"(?P<attachment>[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8})"
 )
+_ANALYSIS_KIND = re.compile(rb"(?m)^\s*sw_kind\s*:\s*['\"]?paper-analysis\b")
+_LEGACY_ANALYSIS_MARKER = b"sw-analysis-field"
+_OWNER_HEADER_LIMIT = 64 * 1024
+_ZOTERO_KEY = re.compile(r"[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}\Z")
+_SCHOLAR_OWNER_FIELD = re.compile(rb"(?m)^sw_[a-z][a-z0-9_]*[ \t]*:")
 
 
 class FieldRegistryError(RuntimeError):
@@ -63,6 +68,78 @@ class FieldRegistryCommitUncertain(FieldRegistryError):
 
 class FieldCandidateExpired(FieldRegistryError):
     """A one-time folder candidate no longer exists or was already consumed."""
+
+
+def _external_markdown_owner(content: bytes) -> str | None:
+    """Classify only explicit top-level owner metadata, never body text or folder names.
+
+    ZotFlow Source Notes are projections, even when their edit-lock setting is
+    false. Incomplete or duplicated owner metadata remains external but cannot
+    be silently treated as a verified ZotFlow projection.
+    """
+    lines = content[:_OWNER_HEADER_LIMIT].splitlines()
+    if not lines or lines[0] != b"---":
+        return None
+    closing = next((index for index, line in enumerate(lines[1:], 1) if line in {b"---", b"..."}), None)
+    header = b"\n".join(lines[1:closing] if closing is not None else lines[1:])
+    if closing is None:
+        return "unverified-zotflow" if b"zotflow-locked" in header else None
+    try:
+        text = header.decode("utf-8")
+        document = yaml.compose(text, Loader=yaml.SafeLoader)
+    except (UnicodeDecodeError, yaml.YAMLError):
+        return "unverified-zotflow" if b"zotflow-locked" in header else None
+    if not isinstance(document, yaml.MappingNode):
+        return "unverified-zotflow" if b"zotflow-locked" in header else None
+    keys = [node.value for node, _value in document.value if isinstance(node, yaml.ScalarNode)]
+    if "zotflow-locked" not in keys:
+        return None
+    if any(keys.count(name) != 1 for name in ("zotflow-locked", "zotero-key", "library-id")):
+        return "unverified-zotflow"
+    try:
+        metadata = yaml.safe_load(text)
+    except yaml.YAMLError:
+        return "unverified-zotflow"
+    if not isinstance(metadata, dict) or type(metadata.get("zotflow-locked")) is not bool:
+        return "unverified-zotflow"
+    key = metadata.get("zotero-key")
+    library = metadata.get("library-id")
+    if (
+        not isinstance(key, str)
+        or _ZOTERO_KEY.fullmatch(key) is None
+        or type(library) not in {int, str}
+        or not str(library).isdigit()
+        or int(library) <= 0
+    ):
+        return "unverified-zotflow"
+    return "zotflow"
+
+
+def _has_scholar_frontmatter_identity(content: bytes) -> bool:
+    lines = content[:_OWNER_HEADER_LIMIT].splitlines()
+    if not lines or lines[0] != b"---":
+        return False
+    closing = next((index for index, line in enumerate(lines[1:], 1) if line in {b"---", b"..."}), len(lines))
+    header = b"\n".join(lines[1:closing])
+    try:
+        document = yaml.compose(header.decode("utf-8"), Loader=yaml.SafeLoader)
+    except (UnicodeDecodeError, yaml.YAMLError):
+        return bool(_SCHOLAR_OWNER_FIELD.search(header))
+    return isinstance(document, yaml.MappingNode) and any(
+        isinstance(node, yaml.ScalarNode) and node.value.startswith("sw_")
+        for node, _value in document.value
+    )
+
+
+def _assert_field_owned_markdown(content: bytes) -> None:
+    owner = _external_markdown_owner(content)
+    if owner is None:
+        return
+    if _has_scholar_frontmatter_identity(content):
+        raise FieldRegistryError("Markdown has conflicting Scholar and external ZotFlow owners")
+    if owner == "unverified-zotflow":
+        raise FieldRegistryError("Markdown has an incomplete or invalid ZotFlow owner marker")
+    raise FieldRegistryError("ZotFlow-managed Source Note cannot be owned or written by a Field")
 
 
 def _canonical_uuid(value: str, *, name: str) -> str:
@@ -88,6 +165,13 @@ def _safe_relative(value: str, *, allow_dot: bool = False) -> str:
         return normalized
     if normalized in {"", "."}:
         raise ValueError("Field path cannot be empty")
+    return normalized
+
+
+def _markdown_relative(value: str) -> str:
+    normalized = _safe_relative(value)
+    if PurePosixPath(normalized).suffix.casefold() != ".md":
+        raise ValueError("Field home and navigation must reference Markdown documents")
     return normalized
 
 
@@ -247,24 +331,58 @@ class KnowledgeSourceRegistry:
         expected_revision: str | None = None,
     ) -> None:
         validated = KnowledgeSourceRegistryDocument.model_validate(document)
+        with self._write_guard() as parent_fd:
+            self._save_locked(validated, parent_fd, expected_revision=expected_revision)
+
+    @contextmanager
+    def _write_guard(self) -> Iterator[int]:
+        """Hold the registry lock before taking any dependent Vault lock.
+
+        The yielded directory descriptor anchors writes to the same parent as
+        the lock. Callers must use _save_locked instead of reacquiring flock.
+        """
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        temporary_name = f".{self.path.name}.{secrets.token_hex(8)}.tmp"
         lock_name = f".{self.path.name}.lock"
         parent_fd: int | None = None
         lock_fd: int | None = None
+        try:
+            try:
+                parent_fd = _open_directory_chain(self.path.parent)
+                lock_fd = os.open(
+                    lock_name,
+                    os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0)
+                    | getattr(os, "O_CLOEXEC", 0),
+                    0o600,
+                    dir_fd=parent_fd,
+                )
+                if not stat.S_ISREG(os.fstat(lock_fd).st_mode):
+                    raise FieldRegistryError("source registry lock is not a regular file")
+                fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            except OSError as exc:
+                raise FieldRegistryError("source registry could not be saved safely") from exc
+            yield parent_fd
+        finally:
+            if lock_fd is not None:
+                try:
+                    fcntl.flock(lock_fd, fcntl.LOCK_UN)
+                except OSError:
+                    pass
+                os.close(lock_fd)
+            if parent_fd is not None:
+                os.close(parent_fd)
+
+    def _save_locked(
+        self,
+        document: KnowledgeSourceRegistryDocument,
+        parent_fd: int,
+        *,
+        expected_revision: str | None = None,
+    ) -> None:
+        """Save while the caller holds _write_guard, without a second flock."""
+        validated = KnowledgeSourceRegistryDocument.model_validate(document)
+        temporary_name = f".{self.path.name}.{secrets.token_hex(8)}.tmp"
         replaced = False
         try:
-            parent_fd = _open_directory_chain(self.path.parent)
-            lock_fd = os.open(
-                lock_name,
-                os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0)
-                | getattr(os, "O_CLOEXEC", 0),
-                0o600,
-                dir_fd=parent_fd,
-            )
-            if not stat.S_ISREG(os.fstat(lock_fd).st_mode):
-                raise FieldRegistryError("source registry lock is not a regular file")
-            fcntl.flock(lock_fd, fcntl.LOCK_EX)
             if expected_revision is not None and self._revision_at(parent_fd) != expected_revision:
                 raise FieldRegistryError("source registry changed after preview")
             descriptor = os.open(
@@ -293,19 +411,10 @@ class KnowledgeSourceRegistry:
                 ) from exc
             raise FieldRegistryError("source registry could not be saved safely") from exc
         finally:
-            if parent_fd is not None:
-                try:
-                    os.unlink(temporary_name, dir_fd=parent_fd)
-                except OSError:
-                    pass
-            if lock_fd is not None:
-                try:
-                    fcntl.flock(lock_fd, fcntl.LOCK_UN)
-                except OSError:
-                    pass
-                os.close(lock_fd)
-            if parent_fd is not None:
-                os.close(parent_fd)
+            try:
+                os.unlink(temporary_name, dir_fd=parent_fd)
+            except OSError:
+                pass
 
     def _revision_at(self, parent_fd: int) -> str:
         try:
@@ -356,7 +465,7 @@ class FieldNavigationGroup(HubModel):
     @field_validator("items")
     @classmethod
     def _items(cls, values: list[str]) -> list[str]:
-        normalized = [_safe_relative(value) for value in values]
+        normalized = [_markdown_relative(value) for value in values]
         if len(normalized) != len(set(normalized)):
             raise ValueError("duplicate navigation item")
         return normalized
@@ -389,7 +498,7 @@ class FieldDefinition(HubModel):
     @field_validator("home")
     @classmethod
     def _home(cls, value: str) -> str:
-        return _safe_relative(value)
+        return _markdown_relative(value)
 
 
 class FieldManifest(HubModel):
@@ -423,6 +532,11 @@ class FieldManifest(HubModel):
         return self
 
 
+class ExternalManagedDocument(HubModel):
+    relative_path: str
+    owner: Literal["zotflow", "unverified-zotflow"]
+
+
 class FieldPreview(HubModel):
     candidate_token: str
     source_id: str
@@ -435,6 +549,7 @@ class FieldPreview(HubModel):
     template_changes: list[str] = Field(default_factory=list)
     ignored_files: list[str] = Field(default_factory=list)
     unmapped_markdown: list[str] = Field(default_factory=list)
+    external_managed_documents: list[ExternalManagedDocument] = Field(default_factory=list)
     legacy_link_changes: list[LegacyLinkChange] = Field(default_factory=list)
     manifest_base_hash: str
     registry_base_hash: str
@@ -572,7 +687,8 @@ class FieldService:
         manifest_hash = self._manifest_hash(root)
         registry_hash = self.registry.revision()
         conflicts: list[str] = []
-        fields, ignored, unmapped = self._infer_preview(root)
+        fields, ignored, unmapped, external, owner_conflicts = self._infer_preview(root)
+        conflicts.extend(owner_conflicts)
         registered_fields: list[FieldDefinition] = []
         if existing:
             manifest = self._load_manifest(root)
@@ -628,6 +744,7 @@ class FieldService:
             ],
             ignored_files=ignored,
             unmapped_markdown=unmapped,
+            external_managed_documents=external,
             legacy_link_changes=self._legacy_link_changes(root),
             manifest_base_hash=manifest_hash,
             registry_base_hash=registry_hash,
@@ -678,7 +795,12 @@ class FieldService:
         selected = next((field for field in preview.fields if field.field_id == field_id), None)
         if selected is None:
             raise FieldRegistryError("Field candidate is not in the preview")
-        with self._write_lock:
+        # Keep registry EX across manifest publication, registry publication,
+        # and any rollback. A v4 analysis writer takes registry SH before
+        # the Vault inode, so it must never observe a provisional Field.
+        with self._write_lock, self.registry._write_guard() as registry_parent_fd:
+            if self.registry._revision_at(registry_parent_fd) != preview.registry_base_hash:
+                raise FieldRegistryError("source registry changed after preview")
             candidate = self.candidates.consume(token)
             root = self._validate_candidate(candidate)
             previous_manifest = self._manifest_bytes(root)
@@ -700,8 +822,9 @@ class FieldService:
                     expected_root_identity=candidate.root_identity,
                     expected_content_hash=candidate.content_base_hash,
                 )
-                self.registry.save(
+                self.registry._save_locked(
                     registration,
+                    registry_parent_fd,
                     expected_revision=preview.registry_base_hash,
                 )
             except FieldRegistryCommitUncertain:
@@ -719,7 +842,9 @@ class FieldService:
                     raise FieldRegistryError(
                         "Field initialization failed and manifest rollback failed"
                     ) from rollback_exc
-                raise FieldRegistryError("Field initialization failed; Field was rolled back") from exc
+                raise FieldRegistryError(
+                    "Field initialization failed; Field was rolled back"
+                ) from exc
             return manifest
 
     def confirm_source(self, token: str, source_id: str) -> FieldManifest:
@@ -727,14 +852,20 @@ class FieldService:
         preview = candidate.preview
         if not preview.registration_only or source_id != preview.source_id:
             raise FieldRegistryError("Source registration is not in the preview")
-        with self._write_lock:
+        with self._write_lock, self.registry._write_guard() as registry_parent_fd:
+            if self.registry._revision_at(registry_parent_fd) != preview.registry_base_hash:
+                raise FieldRegistryError("source registry changed after preview")
             candidate = self.candidates.consume(token)
             root = self._validate_candidate(candidate)
             manifest = self._load_manifest(root)
             if manifest.source_id != source_id or manifest.fields != preview.registered_fields:
                 raise FieldRegistryError("Existing Source manifest changed after preview")
             registration = self._planned_registration(root, manifest, preview.folder_id)
-            self.registry.save(registration, expected_revision=preview.registry_base_hash)
+            self.registry._save_locked(
+                registration,
+                registry_parent_fd,
+                expected_revision=preview.registry_base_hash,
+            )
             return manifest
 
     def _validate_candidate(self, candidate: _Candidate) -> Path:
@@ -777,35 +908,51 @@ class FieldService:
 
     @staticmethod
     def _preview_content_hash(root: Path) -> str:
-        """Bind a candidate to the names and bytes that informed its preview."""
-        digest = hashlib.sha256(b"scholar-field-preview-v1\0")
+        """Bind a candidate to its visible tree and managed artifact bytes.
+
+        A Canvas or analysis sidecar can be changed between folder selection and
+        confirmation just like Markdown.  The directory inventory also catches
+        additions that would change the selected Field's file set.
+        """
+        digest = hashlib.sha256(b"scholar-field-preview-v2\0")
         obsidian = root / ".obsidian"
         digest.update(b"obsidian\0")
         digest.update(b"1" if obsidian.is_dir() and not obsidian.is_symlink() else b"0")
-        for path in sorted(root.rglob("*.md")):
-            try:
+        def traversal_failed(exc: OSError) -> None:
+            raise FieldRegistryError("selected folder changed during preview") from exc
+
+        for current, directories, files in os.walk(
+            root, followlinks=False, onerror=traversal_failed
+        ):
+            directories[:] = sorted(name for name in directories if name not in _IGNORED_NAMES)
+            for name in sorted([*directories, *files]):
+                path = Path(current) / name
                 relative = path.relative_to(root)
-            except ValueError:
-                continue
-            if any(part in _IGNORED_NAMES for part in relative.parts):
-                continue
-            digest.update(b"\0path\0")
-            digest.update(relative.as_posix().encode("utf-8"))
-            try:
-                metadata = path.lstat()
-            except OSError as exc:
-                raise FieldRegistryError("selected folder changed during preview") from exc
-            digest.update(f"\0mode={stat.S_IFMT(metadata.st_mode)}\0".encode())
-            if stat.S_ISLNK(metadata.st_mode):
-                digest.update(b"symlink")
-                continue
-            if not stat.S_ISREG(metadata.st_mode):
-                continue
-            try:
-                encoded = path.read_bytes()
-            except OSError as exc:
-                raise FieldRegistryError("selected Markdown is not readable") from exc
-            digest.update(hashlib.sha256(encoded).digest())
+                digest.update(b"\0path\0")
+                digest.update(relative.as_posix().encode("utf-8"))
+                try:
+                    metadata = path.lstat()
+                except OSError as exc:
+                    raise FieldRegistryError("selected folder changed during preview") from exc
+                digest.update(f"\0mode={stat.S_IFMT(metadata.st_mode)}\0".encode())
+                if stat.S_ISLNK(metadata.st_mode):
+                    try:
+                        target = os.readlink(path)
+                    except OSError as exc:
+                        raise FieldRegistryError("selected folder changed during preview") from exc
+                    digest.update(target.encode("utf-8", errors="surrogateescape"))
+                    continue
+                if not stat.S_ISREG(metadata.st_mode):
+                    continue
+                managed_suffix = path.suffix.casefold() in {".md", ".canvas"}
+                managed_sidecar = path.name.casefold().endswith(".analysis.json")
+                if not managed_suffix and not managed_sidecar:
+                    continue
+                try:
+                    encoded = path.read_bytes()
+                except OSError as exc:
+                    raise FieldRegistryError("selected Field artifact is not readable") from exc
+                digest.update(hashlib.sha256(encoded).digest())
         return "sha256:" + digest.hexdigest()
 
     @staticmethod
@@ -1064,6 +1211,7 @@ class FieldService:
                 try:
                     if not stat.S_ISREG(os.fstat(descriptor).st_mode):
                         raise FieldRegistryError("Field document is not a regular file")
+                    _assert_field_owned_markdown(os.read(descriptor, _OWNER_HEADER_LIMIT))
                 finally:
                     os.close(descriptor)
             finally:
@@ -1094,7 +1242,42 @@ class FieldService:
     def _infer_preview(
         cls,
         root: Path,
-    ) -> tuple[list[FieldDefinition], list[str], list[str]]:
+    ) -> tuple[
+        list[FieldDefinition], list[str], list[str], list[ExternalManagedDocument], list[str]
+    ]:
+        all_markdown = {
+            path for path in root.rglob("*.md")
+            if path.is_file() and not path.is_symlink()
+            and not any(part in _IGNORED_NAMES for part in path.relative_to(root).parts)
+        }
+        external: list[ExternalManagedDocument] = []
+        owner_conflicts: list[str] = []
+        human_markdown: set[Path] = set()
+        for path in sorted(all_markdown):
+            relative = path.relative_to(root)
+            try:
+                parent_fd = _open_directory_chain(root, relative.parts[:-1])
+                try:
+                    descriptor = os.open(relative.name, _READ_FLAGS, dir_fd=parent_fd)
+                    try:
+                        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+                            raise FieldRegistryError("Field preview document is not regular")
+                        header = os.read(descriptor, _OWNER_HEADER_LIMIT)
+                    finally:
+                        os.close(descriptor)
+                finally:
+                    os.close(parent_fd)
+            except OSError as exc:
+                raise FieldRegistryError("Field preview document changed during owner check") from exc
+            owner = _external_markdown_owner(header)
+            if owner is None:
+                human_markdown.add(path)
+                continue
+            external.append(ExternalManagedDocument(relative_path=relative.as_posix(), owner=owner))
+            if owner == "unverified-zotflow":
+                owner_conflicts.append(f"ZotFlow owner marker is incomplete or invalid: {relative}")
+            elif _has_scholar_frontmatter_identity(header):
+                owner_conflicts.append(f"Scholar and ZotFlow ownership conflict: {relative}")
         if (root / ".obsidian").is_dir() and not (root / ".obsidian").is_symlink():
             directories = [
                 entry
@@ -1104,19 +1287,19 @@ class FieldService:
                 and entry.name not in _IGNORED_NAMES
             ]
             candidates = [
-                directory for directory in directories if list(directory.rglob("*.md"))
+                directory for directory in directories
+                if any(directory in path.parents for path in human_markdown)
             ]
         else:
             # A selected subdirectory is one Field, regardless of its internal
             # navigation folders.  Public categories come only from its manifest.
-            candidates = [root] if list(root.rglob("*.md")) else []
+            candidates = [root] if human_markdown else []
         fields: list[FieldDefinition] = []
         mapped: set[Path] = set()
         for candidate in candidates:
             markdown = [
-                path for path in sorted(candidate.rglob("*.md"))
-                if path.is_file() and not path.is_symlink()
-                and not any(part in _IGNORED_NAMES for part in path.relative_to(root).parts)
+                path for path in sorted(human_markdown)
+                if candidate in path.parents
             ]
             if not markdown:
                 continue
@@ -1144,17 +1327,14 @@ class FieldService:
                 )
             )
             mapped.update(markdown)
-        all_markdown = {
-            path for path in root.rglob("*.md")
-            if path.is_file() and not path.is_symlink()
-            and not any(part in _IGNORED_NAMES for part in path.relative_to(root).parts)
-        }
-        unmapped = sorted(path.relative_to(root).as_posix() for path in all_markdown - mapped)
+        unmapped = sorted(
+            path.relative_to(root).as_posix() for path in human_markdown - mapped
+        )
         ignored = sorted(
             entry.name for entry in root.iterdir()
             if entry.name.startswith(".") and entry.name not in {".", ".."}
         )
-        return fields, ignored, unmapped
+        return fields, ignored, unmapped, external, owner_conflicts
 
     @staticmethod
     def _legacy_link_changes(root: Path) -> list[LegacyLinkChange]:
@@ -1360,8 +1540,50 @@ class FieldService:
             content = encoded.decode("utf-8")
         except (OSError, UnicodeDecodeError) as exc:
             raise FieldRegistryError("Field document is not readable UTF-8") from exc
+        _assert_field_owned_markdown(encoded)
         revision = "sha256:" + hashlib.sha256(encoded).hexdigest()
         return {"content": content, "revision": revision}
+
+    @staticmethod
+    def _reject_single_file_analysis_write(
+        parent_fd: int,
+        markdown_name: str,
+        current: bytes,
+        proposed: bytes,
+    ) -> None:
+        """Keep managed analysis triples on the Field transaction path.
+
+        The parent is an already verified directory descriptor.  A peer of any
+        filesystem type, including a symlink, is enough to make a one-file edit
+        unsafe; the caller must use the validated bundle transaction instead.
+        """
+        _assert_field_owned_markdown(current)
+        _assert_field_owned_markdown(proposed)
+        if (
+            _ANALYSIS_KIND.search(current)
+            or _ANALYSIS_KIND.search(proposed)
+            or _LEGACY_ANALYSIS_MARKER in current
+            or _LEGACY_ANALYSIS_MARKER in proposed
+        ):
+            raise FieldRegistryError(
+                "Managed paper analysis requires a validated Field transaction"
+            )
+        stem = markdown_name[:-3]  # caller already accepts only a case-insensitive .md suffix
+        peer_names = {stem + ".analysis.json", stem + ".canvas"}
+        if stem.endswith("分析") and stem != "分析":
+            peer_names.add(stem.removesuffix("分析") + "解析树.canvas")
+        for peer_name in peer_names:
+            try:
+                os.stat(peer_name, dir_fd=parent_fd, follow_symlinks=False)
+            except FileNotFoundError:
+                continue
+            except OSError as exc:
+                raise FieldRegistryError(
+                    "Analysis peer could not be checked safely"
+                ) from exc
+            raise FieldRegistryError(
+                "Managed paper analysis requires a validated Field transaction"
+            )
 
     def write_document(
         self,
@@ -1404,6 +1626,9 @@ class FieldService:
                 current_revision = "sha256:" + hashlib.sha256(current).hexdigest()
                 if base_revision != current_revision:
                     raise FieldRegistryError("Field document changed after it was loaded")
+                self._reject_single_file_analysis_write(
+                    parent_fd, parts[-1], current, encoded
+                )
                 descriptor = os.open(
                     temporary_name,
                     os.O_WRONLY
@@ -1430,6 +1655,9 @@ class FieldService:
                         or latest_metadata.st_ino != current_metadata.st_ino
                     ):
                         raise FieldRegistryError("Field document changed after it was loaded")
+                    self._reject_single_file_analysis_write(
+                        parent_fd, parts[-1], latest, encoded
+                    )
                     check_fd = _open_directory_chain(root, parts[:-1])
                     try:
                         verified_parent = os.fstat(check_fd)

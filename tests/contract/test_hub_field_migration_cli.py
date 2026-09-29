@@ -67,6 +67,33 @@ def test_field_migration_cli_requires_fresh_approved_digest(tmp_path: Path) -> N
     assert _LEGACY in (selected / "00-领域入口.md").read_text(encoding="utf-8")
     assert not (hub_root / "field-migration-private").exists()
 
+    missing_pause = runner.invoke(
+        main,
+        [*args, "apply", source_id, field_id, "--approved-digest", plan["plan_digest"]],
+        env=env,
+    )
+    assert missing_pause.exit_code != 0
+    assert "External Field writers must be paused" in missing_pause.output
+    assert not (hub_root / "field-migration-private").exists()
+
+    declined = runner.invoke(
+        main,
+        [
+            *args,
+            "apply",
+            source_id,
+            field_id,
+            "--approved-digest",
+            plan["plan_digest"],
+            "--external-writers-paused",
+        ],
+        env=env,
+        input="n\n",
+    )
+    assert declined.exit_code != 0
+    assert "not confirmed" in declined.output
+    assert not (hub_root / "field-migration-private").exists()
+
     approved = runner.invoke(
         main,
         [
@@ -76,12 +103,14 @@ def test_field_migration_cli_requires_fresh_approved_digest(tmp_path: Path) -> N
             field_id,
             "--approved-digest",
             plan["plan_digest"],
+            "--external-writers-paused",
         ],
         env=env,
+        input="y\n",
     )
 
     assert approved.exit_code == 0, approved.output
-    result = json.loads(approved.output)
+    result = json.loads(approved.output.splitlines()[-1])
     assert result["changed_files"] == ["00-领域入口.md", "analysis.md"]
     assert result["replaced_links"] == 2
     assert result["recovery_is_verified_backup"] is False
@@ -113,6 +142,25 @@ def test_field_migration_cli_rejects_digest_after_user_edit(tmp_path: Path) -> N
     assert not (hub_root / "field-migration-private").exists()
 
 
+def test_field_migration_cli_explicit_recover_is_idempotent_without_journal(
+    tmp_path: Path,
+) -> None:
+    selected, source_id, field_id, hub_root = _registered_field(tmp_path)
+    result = CliRunner().invoke(
+        main,
+        ["hub", "field-migration", "recover", source_id, field_id],
+        env={"SCHOLAR_WORKFLOW_HOME": str(tmp_path / "home")},
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["recovered_files"] == []
+    assert payload["recovery_snapshot"] is None
+    assert payload["recovery_is_verified_backup"] is False
+    assert _LEGACY in (selected / "00-领域入口.md").read_text(encoding="utf-8")
+    assert not (hub_root / "field-migration-private").exists()
+
+
 def test_field_migration_cli_reports_offline_zotero_as_plan_conflict(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -137,4 +185,34 @@ def test_field_migration_cli_reports_offline_zotero_as_plan_conflict(
     )
     assert attempted.exit_code != 0
     assert _LEGACY in (selected / "00-领域入口.md").read_text(encoding="utf-8")
+    assert not (hub_root / "field-migration-private").exists()
+
+
+def test_field_migration_cli_rejects_analysis_sidecar_without_partial_write(
+    tmp_path: Path,
+) -> None:
+    selected, source_id, field_id, hub_root = _registered_field(tmp_path)
+    (selected / "analysis.analysis.json").write_text("{}", encoding="utf-8")
+    home_before = (selected / "00-领域入口.md").read_bytes()
+    analysis_before = (selected / "analysis.md").read_bytes()
+    args = ["hub", "field-migration"]
+    env = {"SCHOLAR_WORKFLOW_HOME": str(tmp_path / "home")}
+    runner = CliRunner()
+
+    planned = runner.invoke(main, [*args, "plan", source_id, field_id], env=env)
+
+    assert planned.exit_code == 0, planned.output
+    plan = json.loads(planned.output)
+    assert any(
+        "analysis.md" in conflict and "validated Field transaction" in conflict
+        for conflict in plan["conflicts"]
+    )
+    attempted = runner.invoke(
+        main,
+        [*args, "apply", source_id, field_id, "--approved-digest", plan["plan_digest"]],
+        env=env,
+    )
+    assert attempted.exit_code != 0
+    assert (selected / "00-领域入口.md").read_bytes() == home_before
+    assert (selected / "analysis.md").read_bytes() == analysis_before
     assert not (hub_root / "field-migration-private").exists()

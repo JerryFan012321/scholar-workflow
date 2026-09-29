@@ -13,6 +13,7 @@ from scholar_workflow.analysis.batch import (
     _validate_targeted_repair,
 )
 from scholar_workflow.analysis.models import (
+    ALL_ROLES,
     AnalysisBatchItem,
     AnalysisBatchRequest,
     AnalysisClaim,
@@ -31,7 +32,7 @@ from scholar_workflow.analysis.rendering import AnalysisBundle, render_analysis
 
 def _document(title: str) -> AnalysisDocument:
     claims = []
-    for role in AnalysisRole:
+    for role in ALL_ROLES:
         claims.append(
             AnalysisClaim(
                 claim_id=role.value,
@@ -43,6 +44,7 @@ def _document(title: str) -> AnalysisDocument:
             )
         )
     return AnalysisDocument(
+        schema_version=1,
         artifact_id=f"analysis:paper:{title.lower().replace(' ', '-')}",
         paper_title=title,
         profile=AnalysisProfile(kind=ProfileKind.WHOLE),

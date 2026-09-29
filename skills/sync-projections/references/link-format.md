@@ -20,7 +20,10 @@ ZotFlow-managed notes may use its own registered action protocol:
 obsidian://zotflow?type=open-attachment&...
 ```
 
-Only ZotFlow writes those links. Scholar-generated general Markdown uses the Zotero URI.
+Scholar-generated general indexes and Notion projections use the Zotero URI. The
+separately selected, verified v4 paper-analysis reader projection may emit ZotFlow
+Library Reader links in its paired Markdown and Canvas. This does not make a reader
+URI the PDF identity or authorize an automatic Field-wide link rewrite.
 
 ## Machine identity
 

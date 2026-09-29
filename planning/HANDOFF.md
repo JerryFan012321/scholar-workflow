@@ -1,7 +1,248 @@
 # HANDOFF — 从这里接着干
 
 > 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
-> `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-09-25。
+> `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-09-29。
+
+## 2026-09-29 面向人类的共同呈现规范（文本已固化，运行验收未做）
+
+新增 `references/human-presentation.md` 作为笔记、Canvas、文献树、报告、Hub 和 CLI
+文本的共同可见结果契约；各自的专用模板仍决定结构与版式。运行期产物 skill 已引用
+该共享规范，修正了普通索引与已验证 v4 论文分析 ZotFlow Reader 链接的文档矛盾。
+GOALS 的 INV58 与 `human-facing-presentation-consistency` eval 仍为目标态/pending。
+只读审查发现 Hub Markdown 预览的 Obsidian 链接可能显示成不可点击文字，旧机器注释
+可能显露，非 Markdown 可能退化成原始 JSON；部分主界面直接暴露技术 ID，CLI 状态/诊断
+混排机器字段与人类文本。这些是代码/界面缺口，不因规范文本更新而算通过。
+本轮未执行测试或真实业务写入。下一步先提出单篇 `test` Vault 现有 V-JEPA 2 与合成
+CLI 输出的测试对象、输入、步骤、通过标准、影响和可见产物，获用户批准后再做小范围
+代码修订及验证；不对正式 Vault、整库或发布状态作推定。
+
+## 2026-09-29 运行期 skill 结果契约审查（未测试）
+
+依用户确认的 V-JEPA 2 模板原则，运行期 skill 以可复现的最终产物、身份、来源、
+字段、链接、失败状态及安全边界为主；只在真实工具依赖或写入安全要求下规定步骤。
+已定向修订 AGENT/dev-guide 与研究路由、查找、入库、文献树、论文分析、批注导出、
+推荐、投影、一致性审计及协作 skill 的相关说明；没有更改 CLI/Hub 代码、运行测试、
+触碰真实 Zotero/Vault 或改变发布状态。`evals/outcomes.json` 的
+`runtime-skill-result-contract-only` 继续 pending，不能因文案已改就标为通过。
+
+另有两项跨代码的结构冲突待单独界定：`init-project` 仍生成以 `AGENTS.md` 为真源、
+`AGENT.md` 为兼容指针的拓扑，与本次已确立的分层 `AGENT.md` 规则不一致；
+`project-backlog` 随运行期 `skills/` 打包，但唯一工作项库 `planning/BACKLOG.md`
+不进入 release。两者不宜只修改 skill 文字以制造与代码/安装包不一致的假象。
+后续任何验证须先展示对象、输入、步骤、通过标准、影响与产物并取得用户批准。
+
+## 2026-09-29 开发验证范围纠偏
+
+用户指出此前把 skill 开发验证与真实业务执行混在一起，反复运行大规模业务操作使每轮
+验证成本过高。今后内循环只用合成 fixture 和 `test` Vault 的单篇 V-JEPA 2（或单个
+仓库/对象）验证改动，必要时增补定向边界测试；不再为每个代码迭代重扫 39 篇笔记、
+122 条链接或反复运行正式 Field 迁移。已取得的只读映射作为当前参考，不冒充最终摘要。
+此前用户要求的“完整迁移验收后才发布”不变：联合事务及安全测试稳定后，才对正式
+World Models Field 生成一次当前全量预览，在外部 writer 停写、用户审议和 CAS 门禁
+满足后执行一次正式迁移；若输入或实现变化使摘要失效，必须重新预览审议。现在仍未
+写正式 Vault，也未提交、发布或安装。
+
+本轮按此边界完成单对象和合成回归：`test` Vault 新建未覆盖旧稿的
+`V-JEPA 2/v4-科学归因复核候选-20260929/`，对 68 个 claim/point 单元逐项核对来源，
+仅修订 8 个归因单元；新 Markdown/Canvas/sidecar 成对 conformance 通过，但正式 Vault
+阅读器路由和用户对新修订的接受尚未据此推定。联合 Field/Provider 引擎仅在合成 Vault
+中验证，首次 bootstrap 强制绑定完整 `PaperFolderingPlan`，并对目录清单、候选字节、
+旧链接、CAS 和中断恢复作 fail-closed 检查；其中没有 inode 收据的目录遇到中断后
+保留 pending、等待人工确认，不误删外部空目录。四组相关定向测试 **75 passed**、
+改动模块 Ruff 通过；完整 `tests/unit tests/contract` 为 **1165 passed、11 warnings**。
+这仍不包括正式 World Models 全量事务预览、外部 writer 停写、真实 apply 或发布。
+旧根层 V-JEPA 2 Markdown/Canvas 精确只读检索未见 `23128` 或 `paper_assets` 字符串；
+它们是否搬入论文文件夹的 `legacy/`，仍待用户选择，不能基于先前的错误假设增加归档逻辑。
+
+## 2026-09-29 用户批准机器生成旧稿调整；迁移技术门禁仍未通过
+
+用户确认世界模型旧稿及同等级文件集没有人工撰写痕迹，因此原则批准对机器生成内容作
+调整和处置；不需要再逐字段/节点向用户请求语义签字。此原则只适用于经只读检查确认边界、
+并核实确为机器生成的内容。其他同等级集合须先识别文件集、核验来源并给出精确预览，不能
+据此自动改动整库。旧稿原件仍须保留，当前旧/新字节 digest、科学来源核验、完整 Provider+Field
+联合 CAS journal 与条件恢复、外部 writer 停写窗口均是未通过的技术门禁；原则批准不授权
+写入正式 Vault 或发布。
+
+Vault ID 路由已加入开发树；最新完整 unit/contract/eval/integration 回归为 **1089 passed**。
+这不改变前述 Hub 页面连续点击未验证的状态，也不替代 Source 绑定、联合事务和 Field 迁移门禁。
+
+## 2026-09-29 第二项安全实现进度：普通文档可规划搬迁，分析三件套仍拒绝
+
+开发树的 Field 事务新增本地审议用普通 Scholar-owned Markdown/Canvas 搬迁路径：
+源／目标、字节、inode、目标缺席、新目录和链接改写进入同一摘要；v3 journal 可在
+外部 writer 停写断言下条件恢复，既有 v2 journal 兼容。合成单元与公开契约共 75 项
+通过。该路径拒绝受管分析三件套与 ZotFlow Source Note，且当前 CLI/HTTP 不提供 v3
+恢复所需的停写断言，因此尚不作为真实 Field 的可操作入口。
+
+v4 论文新目录归属在 Knowledge provider manifest，而 Field 事务目前只持有
+`fields.yml` 和 host registry。若分两次提交，可能产生已写文件却未发布权威归属、
+或已改归属但文件缺失的裂脑状态。下一步需要一个同时绑定 provider snapshot、
+旧 v2 原件身份（保留不删）、新 v4 三件套、Field manifest、目录和 registry 的
+单一 CAS journal；provider 最后发布，条件恢复同样覆盖全部参与者。旧 v2 原件中的
+固定端口链接也须有明确的保留／隔离策略。真实 Vault 和 provider 未因此改动。
+
+同日安全审阅修复了独立 v4 `commit-bundle` 的四项缺口：provider 快照需绑定目标 Vault
+的路径／设备／inode；请求需匹配完整 snapshot revision；Markdown、Canvas、sidecar
+路径不能占用其他 primary/core/support/asset/artifact；批次 Zotero key 必须匹配权威
+论文。旧 v1–v3 receipt fingerprint 保持兼容，旧未绑定 provider 可读但不能授权 v4。
+**仍缺用户侧 Source provider bootstrap/bind 命令、指定 Source registry 解析和旧 provider 的可信绑定流程**；仅凭 CLI 自选同 Vault
+provider root 不足以宣称端到端权威。该轮安全审阅当时完整 unit+contract 1036 项、eval+integration
+5 项通过，合计 1041；其后新增 Vault ID 路由与回归后，当前总数为 1089 passed。没有正式 Vault 写入。
+
+世界模型只读映射已写入 `test` Vault 的 `Scholar Workflow 实验/世界模型-Field-零写入映射审议.md`：
+43 篇 Paperlist 中 39 篇有一份唯一 `paper_assets` 笔记、4 篇无笔记，拟按同名段进入
+`resources/papers/<slug>/`，目标目录当前不存在、无现有目标冲突。三份导航文件仍有
+122 条旧链接；V-JEPA 2 旧根层分析/Canvas、`artifacts.yml` 和测试 Vault 中仍指向
+`vault=test` 的新候选须进入同一精确审议。此笔记不是 manifest、事务 digest 或迁移批准。
+
+## 2026-09-29 第三项新增验收：科研 Vault Reader 路由、手动双向批注与 Preview 副本
+
+用户确认已在 Zotero 原生阅读器修改 V-JEPA 2 测试批注，并在 ZotFlow 完成反向同步的手工验证；
+结合先前确认 `EHTAYL2L` 最初由 ZotFlow Library Reader 创建，两个方向的**本次手工往返**
+记为通过，不推断持续自动同步或 Hub 集成已验收。过滤的 Zotero Local API 现返回该附件
+两条第 1 页正式高亮（`EHTAYL2L`、`SSL5GQA5`）；前一条仍在 ZotFlow 来源笔记中，
+其备注与 Local API 一致。不能使用旧版 CLI 的空 children 结果推翻过滤查询。
+
+使用开发树 Local API 读取和独立快照命令，在 test Vault 的 V-JEPA 2 文件夹创建
+`V-JEPA 2带批注副本-20260929.pdf` 与 hash-bound receipt；没有覆盖或回写 Zotero 附件。
+副本 48 页，包含两条第 1 页 Highlight，源 PDF SHA-256 保持
+`9cfcfde5fb0d9730637da5b9e7317825c3f3d09e91f3553e22eeba42c74d2226`。
+Poppler 渲染目视正常；macOS Preview 实际打开副本，显示两处高亮，且“高亮标记和备注”
+侧栏列出两条备注。这通过 V-JEPA 2 的独立 PDF GUI 样本验收，但不覆盖未取得真实样本的
+ink/image 等全部类型。隔离临时状态下，真实科研 Vault 的只读 Source（注册 Vault=`02-科研技术文档`）+ 真实 Zotero Local
+API + Obsidian CLI 本机模式/PDF 字节探针已让 Hub V-JEPA 2 卡片将 ZotFlow 设为首选；
+HTTP 动作返回 200，系统打开返回 `opened=true`。Obsidian CLI 确认正式科研 Vault 的活动视图为
+`zotflow-zotero-reader-view`，身份为 `libraryID=17685951`、`itemKey=QR4ZU2S9`，标题为
+`2506.09985.pdf`；Obsidian GUI 目视确认 ZotFlow Reader 渲染论文第 1 页/48 页。
+这通过注册 Source 的服务端动作及系统打开到正式 Vault Reader 的 canary。仍未由真人
+从开发版 Hub 页面连续点击至 Reader，因此产品 UI 连续点击验收仍未通过。科研 Vault 的近期
+Obsidian 错误缓冲未再出现旧 `Pull Collections failed / ERR_CONNECTION_CLOSED`，
+但这只是有限缓冲内未复现；另有不同条目的 Source Note 打开错误，须另行区分。
+旧配置的小写 `documents` 与 Obsidian CLI 报告的大写 `Documents`
+曾使纯路径字符串比较误拒；开发树已改为严格解析后 `samefile` 核验，并用旧小写路径
+重新跑通真实卡片隔离 canary，其他目录仍拒绝。第三项仍需页面连续点击、未决 Collections 错误复查及其余类型
+契约边界；第二项真实 Field 迁移仍未通过。没有改正式科研 Vault、安装版或发布状态。
+
+## 2026-09-29 第一项用户验收完成；第二、第三项并行检查
+
+用户明确表示第一项已完成，并确认最新版 V-JEPA 2 候选链接在 Obsidian 内可用且跳转正确；
+此前亦认可正文内容与 Canvas 版式。按此把**新 v4 候选的人类内容、版式和链接验收**记为通过，
+不再要求用户重复点击已确认的链接，也不把旧稿逐项清单误当成新版内容的第二次验收。
+用户现已原则批准处置经核实为机器生成的旧稿，不需要逐字段/节点人工签字；这不证明旧 v2
+的 194 字段、1 段前言、194 节点、193 边已逐项无损迁入。旧稿原件须完整保留；当前字节摘要、
+科学来源核验和精确预览仍须完成。完整 Provider+Field 联合 journal、条件恢复及外部 writer
+停写窗口仍是技术门禁；未满足前不可 apply，也不授权正式 Vault 写入或发布。
+
+只读复核发现 test Vault 当前候选 Canvas SHA-256 为
+`0f7f240db78a10b9d42415593cd901990461bd81b0c7e6f1afa81ecff7c4da12`，而旧
+`CUTOVER-V4-REVIEW` 记录 `522011b4…`；当前 Canvas 带 Advanced Canvas metadata。
+旧索引的字节绑定已失效，不能当 cutover 批准凭证。第二项须先校验当前受管内容、重建
+逐对象审议索引，再生成完整单 Field 计划；这不撤销用户对可见候选的验收。
+本节所记为当时开始第二、第三项的**只读并行检查**；后续 test Vault 快照见上节。
+
+并行检查结果：世界模型零写入预览仍为 `01-Paperlist.md` 入口、43 项导航、122 条旧链接，
+但当前 Field 计划仅覆盖三份导航文档与 manifest，报两项 JEPA 成对 cutover 冲突，未包含
+新版分析三件套或 39 份平铺 `paper_assets` 的搬迁。全 Vault 最新预览为 6 个候选 Field、
+291 篇外部 ZotFlow 笔记、8 篇普通未映射 Markdown 与 168 条旧链接，旧 5/305 快照不可
+用于最终批准。候选当前 bundle/sidecar 在 Advanced Canvas metadata 后仍通过 conformance；
+须重建的是原始字节切换索引。第三项发现 V-JEPA 2 附件已有 Zotero 正式高亮
+`EHTAYL2L`（物理第 1 页），同 key 出现在 ZotFlow 来源笔记；用户确认它在 ZotFlow
+Library Reader 创建，因此 ZotFlow→Zotero 创建同步已有证据。当时的反向编辑及独立
+PDF GUI 检查状态已由上节新增验收取代。该轮只读检查没有写正式 Vault 或批注。
+
+## 2026-09-28 审阅修订：无机器注释、ZotFlow 内部页链、点击留白与论文目录
+
+> 下文保留 9 月 28 日的阶段快照；第一项及新候选链接的最新状态以上方 9 月 29 日记录为准。
+
+用户认可 v4 内容和整体 Canvas 风格，并提出四项落地修订。开发树现将 v4
+`sw-analysis-claim` 从人类 Markdown/Canvas 文本移除，以唯一块锚点、确定性 Canvas ID
+和 sidecar 校验身份；保留 v1–v3 历史标记兼容。v4 `reader` 可显式选择 Vault 的
+ZotFlow Library Reader，来源 span 本身不变，Markdown/Canvas 一起由渲染器输出
+`obsidian://zotflow` 物理页链接；普通更新继承阅读器选择，不能静默切回 Zotero。
+默认仍是 Zotero 原生入口；页链不意味着批注同步。提交入口尚未独立证明所选 Vault 的
+ZotFlow 能力，最新候选仍需实点验收。Canvas 中文换行估算后多留约一行点击空间，
+conformance 拒绝被缩小至无法点击的文本框；更新可扩高节点，若引发重叠则报冲突。
+
+`test` Vault 的 V-JEPA 2 候选已重生：22 claims / 46 points，58 节点 / 57 边，
+约 2224×4125、长宽比约 1.85，成对 conformance 通过；Markdown/Canvas 均无机器
+claim 注释和 `zotero://` 链接，现使用已手工验证过 URI 形状的 ZotFlow 页级入口。
+旧/新字节绑定的 `CUTOVER-V4-REVIEW` 已重建，但 194 个旧字段、1 段前言、194 节点、
+193 边的处置仍全部 pending。新候选需要逐点 GUI 点击和可读性审查，不因结构通过而算
+第一门禁完成。正式科研 Vault 未更改。
+
+新论文归档规范为 `<Field>/resources/papers/<stable-paper-segment>/` 一篇一目录；
+论文信息、分析 Markdown、Canvas、sidecar 同处，PDF 继续在 Zotero。
+新 v4 canonical commit 已拒绝平铺/分散三件套，但现阶段尚不能证明所选论文目录与
+`resource_id` 的权威归属一致：提交入口未接入持久 resource→folder 映射，因此不得宣称
+整套「一篇一目录」已端到端完成。旧 `paper_assets` 和分析文件在正式 Vault 继续原位兼容；
+现有 Field transaction 不支持安全 relocation，WI-052 专门跟踪权威映射、提交校验、
+CAS/journal/条件恢复与链接改写。不得手动 `mv` 或趁 JEPA 第一门禁未过
+迁移其他 Field。
+
+## 2026-09-28 发布门禁顺序：先 JEPA，后 Field 与批注/PDF 并行
+
+> 下文记录当时的阻断状态；第一项现按 9 月 29 日的用户确认通过，旧稿守恒移入第二项真实迁移安全门禁。
+
+用户要求：**只有第一项 JEPA 内容与旧稿迁移审议真正完成，第二项世界模型 Field 事务和第三项
+ZotFlow 批注往返／独立 PDF GUI 验收才并行开展。**目前第一项未通过，因此不得以本轮 test
+Vault 候选或单纯结构测试为由启动第二、第三项。
+
+本轮在 `test/Scholar Workflow 实验/V-JEPA 2/v4-审议候选/` 生成真实 V-JEPA 2 的 IR v4、
+人类 Markdown、可编辑 Canvas、sidecar、49 条旧 v2 逐点去向表及审议说明。候选为 22 claims /
+46 points，3 组旧 point 合并或并入新点，Canvas 58 节点/57 边；最新尺寸与链接见上节，
+成对 conformance 通过。Obsidian 前台及 Advanced Canvas metadata 后的 sidecar
+内容摘要曾在前版候选通过；最新版尚未逐点 GUI 复验。Zotero
+Local API 确认附件 `QR4ZU2S9` 属于 V-JEPA 2，48 页、MD5 与本机字节一致；15 claims/49
+points 均有**候选**物理来源页，但页级定位不是逐句或批注 key。来源核查已发现并改写部分
+事实/推断混写、重规划误引 §7 与“人工提供子目标”缺乏证据等问题；只读复核后又修正
+Figure 3 扩展顺序、EK100/动作架构的来源页、DROID 动作口径及旧相机消融数值。仍须逐条
+人工科学审议。
+v4 契约现在允许既有 Experiment 和 Reasoned limitations 分支下重复陈述及每条最多 4 个
+独立来源点，不新增顶层框架。当前全量 unit/contract 为 **1003 passed、11 warnings**，改动文件 Ruff 及
+`git diff --check` 通过。真实 Field HTTP `legacy/preview` 与 `legacy/stage` 共用的入口现拒绝 v2
+旧五角色候选，只接受 IR v4、`reference_tree`、全文分析；通用历史读取/校验器仍保留 v2 兼容。
+
+第一项还缺：旧正式 Markdown 194 字段、1 段未标记前言、Canvas 194 节点/193 边的每项
+处置已在 test Vault 的 `CUTOVER-V4-REVIEW.md`/`.json` 中绑定当前 v4 候选字节，但**全部仍为
+`pending`**；15 多目标字段、25 独立 Evidence、5 个旧 mapping 被列为高风险，建议目标不是
+裁决。还须逐字节拆分/处置并取得精确 cutover digest；用户对正文、来源和 Canvas 视觉作
+语义审议。现有旧 v2 处置包不能直接批准，新索引 digest 也不是审批或 cutover token。
+第一项的完成界限是**候选与处置获得审议批准、摘要锁定**，不要求先写真实 Vault；正式
+Field apply 与真实迁移 receipt 属第二项。避免把第二项的结果反过来作为第一项的前置条件。
+真实科研 Vault、Field registry、链接、安装版与发布状态均未变。入口格式门禁已补，但不能
+替代候选的逐片段守恒、来源语义核查、用户审议或真实迁移 receipt。
+
+## 2026-09-28 论文解析树参考图框架改造（版式已验收，其余门禁进行中）
+
+用户明确废弃新分析默认的「任务／输入／分步流程／输出／边界」可视框架，要求直接改
+`analyze-paper` 生成器：新论文解析树采用参考图的开放式
+`Abstract / Introduction / Method / Limitation` 四分支及其完整子层级；
+英文图内标签和内容统一英文，保留原图未填写的模板槽位，不编造论文事实。连线为直角，
+画幅不沿单轴过度伸展；证据随对应论点、保留原文入口和正文反链，不另设 Evidence 分支。
+test Vault 已安装 Advanced Canvas，先在
+`test/Scholar Workflow 实验/论文解析树版式样张/` 验证真正可编辑的 `.canvas`
+与方角边线；现有 SVG 只作视觉参照。
+
+进度：`PODIA-3D editable analysis tree.canvas` 已在 test Vault 实验目录生成，结构核对为 33 个
+标准 text 节点、32 条边；Advanced Canvas 7.1.0 识别方角路由与无边框标签配置。仅 test Vault 的
+`edgeStyleSquarePathRounded` 已从 true 改为 false，可能影响该 Vault 的其他 Canvas；正式 Vault 未改。
+Obsidian 1.13.7 前台已加载该样张和由 v4 渲染器直接输出的
+`PODIA-3D v4 生成器实验.canvas` / `.md`；实验目录中的两张前台截图留作版式证据。
+曾双击生成的 claim 节点进入可编辑文本框，再无修改退出，证明不是静态图片；用户现已认可当前
+功能与 Canvas 版式，将其定为 `analyze-paper` 新分析的 v4 版式基线。实验文本仍不是源文核实后的论文结论。新 IR v4 的源码、契约、运行文档与测试已落在
+同一工作树；unit+contract 共 978 项通过，Ruff 与 `git diff --check` 通过。新建 IR 必须显式提供版本，不再因省略字段静默落回旧树。渲染器把同 claim 的 points 逐行合并到一个可编辑 details text 节点，各行仍有独立
+证据短标签、原文入口和 Markdown 块反链；完整证据理由留在同一 Markdown 段落。40 的预算是生成的 claim/details Canvas 节点，不是 IR 的逐点陈述数。
+按原图三组重复槽位填满的测试画布有 45 个节点、44 条边，计算边界约 2540×2432；生成器对超高节点和长宽比超过 2:1 的树直接拒绝。实际 v4 fixture 已在前台目视确认，用户已接受其审美与可编辑性；无 Advanced Canvas 的普通 Canvas 连线外观尚未单独实机验收。
+真实打开后 Advanced Canvas 会自动添加 `metadata: {version, frontmatter}` 顶层扩展；原严格
+JSON Canvas 校验曾误判，现已限定形状验收并在 focused update 保留，不放行任意额外顶层身份。
+test Vault 的已打开 fixture 再次通过正式 bundle conformance；空的 Experiment/Overview/Limitation
+只保留框架标签，不生成无依据的陈述。
+
+实施边界：当前工作树已有大量未提交修改，逐项保留。新分析使用版本化参考图契约，
+旧 IR v1–v3 和既有分析对仍可读，不能通过原地重渲染静默迁移。新契约须同时更新
+IR/schema、Markdown/Canvas 渲染、conformance、focused update、baseline/批量门禁、
+测试与运行文档。目标由 INV54/WI-051 跟踪，原五角色输出仅作 v1–v3 兼容读取。此阶段只写开发仓和 `test` Vault 实验目录，不改正式科研 Vault、
+不迁移 JEPA、不发布或安装插件。
 >
 > Scholar Workflow `0.28.1` 是已发布的历史基线，但其“workspace binding 决定整个 Hub 是否可写”
 > 模型已经被真实使用否定：cmux workspace 只应决定浏览器、终端、Codex 或 CLI 窗口出现在哪里，
@@ -13,26 +254,149 @@
 > stopped/disabled；在真实 Field 预览获用户验收前，不改写 `02-科研技术文档` Vault，不迁移 JEPA、
 > 不批量替换 168 条旧链接；不自动升级 Obsidian、不卸载插件、不迁移真实项目，也不把 recovery
 > snapshot 冒充 verified backup。
+>
+> 2026-09-27 用户新增明确边界：**仅禁止为阅读从云端下载 PDF**，允许 ZotFlow 读取本机
+> Zotero `storage`，也允许 ZotFlow 继续同步元数据/批注。ZotFlow 不因此退场；Hub 默认使用经本机
+> 附件复验的 Zotero 原生动作，ZotFlow 只有在非秘密本机模式证明和附件检查通过后才成为可选动作。
+>
+> 2026-09-27 用户撤回世界模型“方案 B”的新综述首页：**不新增 `00-领域入口.md`**，继续使用现有
+> `01-Paperlist.md` 作为 Field 的目录入口；四项 JEPA 重构原则总体获同意，但逐条旧/新内容与 Field
+> 精确摘要仍待验收。新增硬要求是论点/逐点论据可追到原文 PDF 或其他文档的具体可验证位置。
+> 仅有的私有首页草稿已撤销，真实 Vault 未修改。cmux 0.64.25 只验证有本机 PDF 只读浏览能力，未发现
+> 受支持的 Zotero 原生 reader 内嵌或正式批注写回；Zotero 深链会打开独立 Zotero 应用。
 
-## 2026-09-25 Hub v3 实施状态（发布前）
+## 2026-09-27 Hub v3 验收状态（发布前）
 
-- 当前开发树的版本目标是 `0.29.0`，但尚未完成 main 提交、runtime-only release、已安装插件/CLI 更新及
-  真实 cmux/Codex/ZotFlow 的端到端验收；已安装的 `0.28.1` 仍是历史基线。不要用源码版本推断正在运行
-  的服务版本。拟发布 wheel 已在隔离 venv 上完成动态端口 `start/status/doctor/stop`、Hub 页面和 v3
-  Directory/Papers 的只读 canary；最终重建的 0.29.0 wheel 又在独立 venv/state 以动态端口通过
-  `start/status/doctor/stop`、Directory schema 3/Papers=305、Fields 空库入口与浏览器 UI 检查，
-  临时服务与目录均已清理。该证据不等于用户安装已更新。
+逐项发布门禁与证据见 [`hub-v3-acceptance.md`](hub-v3-acceptance.md)；该验收单尚未通过。
+
+### 2026-09-27 最新实现与阻断
+
+- Analysis IR v3 的结构层已新增 `source_spans`：作者事实与分析推断必须携带来源；Zotero PDF 保存
+  library/attachment 身份、内容 hash、零基物理页与可选批注 key，Vault Markdown 保存 Source/artifact
+  身份和块锚点。Markdown/Canvas 生成同行原文链接，Canvas 同时回链正文；旧 IR v1/v2 可读。
+  当前 conformance 只验证格式和投影，不验证 Zotero Local API 中的附件/批注归属、实际 hash/页数或
+  Vault 块仍存在。V-JEPA 2 原附件目前 0 条正式批注，隔离候选仍为 IR v2，须逐点核对页码并通过
+  来源核验后才能升级，不能把当前测试通过写成完整深链验收。
+
+- 2026-09-28 用户在 Obsidian `test` Vault 逐一手动验收 V-JEPA 2 的五条 ZotFlow Library Reader
+  页级链接（物理页 4、5、6、15、44）：Scholar 自有实验笔记可通过 `obsidian://zotflow` 在 Obsidian 内打开本机 Zotero PDF，
+  不需要由 ZotFlow 拥有笔记。实验记录保存在 `test/Scholar Workflow 实验/V-JEPA 2/`，
+  `analyze-paper` 格式参考保留 URI 形状、零基页索引、显式 Vault 和 Zotero 回退规则。
+  自动化中曾出现的空白 Reader 是暂态观察，不再作为本实验失败结论；但当前受管
+  `render_analysis`/conformance 仍固定输出 `zotero://`，尚未实现可选 ZotFlow 投影。
+  此次手动验收仅完成阅读入口实验，不放行全部来源核验、真实 Field 迁移、批注双向往返或正式发布；
+  发布验收单中的其他事项仍须各自完成。
+
+- 单 Field 事务现有本地操作员 CLI/HTTP 路径：`plan → legacy-preview → legacy-stage → apply → recover`。
+  旧 Markdown/Canvas 守恒、正式 Analysis IR/bundle/sidecar、可选首页/导航、旧链接、manifest 与 host
+  registry 可归入一份 Field 计划；cutover 摘要和完整 Field 摘要分别审议。源文件由服务端从候选 Field
+  读取，浏览器不能提交原始字节或调用 operator 写端点。候选与计划审议窗口为 30 分钟，过期或服务
+  重启需重新预览；真实 apply 须人工确认 Obsidian/同步器停写。operator credential 对同一 OS 用户进程
+  并非独立真人审批证明。
+- 旧网页 `fields/confirm` 遇到旧链接或受管分析会拒绝先行登记，转向统一事务；覆盖定义不得遗漏预览
+  文档，未携带 validated payload 的旧分析阻断提交。Field 单文件编辑不能拆开改写受管分析 triple；
+  v1 artifact PUT、asset upload 和 action POST 已退役为 `410 Gone`，不能绕过 v3 授权。旧 link-only
+  迁移 apply 需操作者声明外部写入者已停写并交互确认；普通 Field Markdown CAS 保存仍可用。
+- 外部 owner 门禁已修：Field 预览按 ZotFlow frontmatter 身份识别 Source Note，不按 `Source` 目录名硬编码；
+  305 篇 ZotFlow 管理文档单列诊断，不纳入 Field/导航，也不能经 manifest、单文件写入或统一事务接管。
+  对真实科研 Vault 的零写入复验仍为 5 个候选 Field、世界模型导航 43 项及旧链接 122 处，
+  另有 8 篇普通未映射 Markdown；真实 Vault 字节未改。完整 unit/contract/eval 回归现为
+  **935 passed、11 条第三方/运行时弃用警告**（增加 IR v3 来源深链契约测试后）；本轮改动路径的
+  Ruff、Hub JS 语法与 diff check 通过。
+  全库 Ruff 仍有 81 项，独立对照 HEAD 的 81 项精确相同、无本轮新增，不能声称全库 lint 通过。
+- 新增仅用合成内容的 194 旧字段/194 Canvas
+  节点/193 边规模守恒与拒绝测试；它不证明真实 JEPA 语义或人工审批。Hub JS 语法、diff check、
+  plugin validator 通过。另新增本机 PDF 防云端回退测试、ZotFlow 1.6.6 审计版本门禁和实际字节摘要复验；
+  开发树与隔离 wheel 的非秘密 ZotFlow 探针均已对 V-JEPA 2 返回可用；因真实 Source 还未登记，
+  真实受管服务进程内的 ZotFlow capability/CLI PATH 仍待 Field canary 复验。
+  本轮从开发树重新构建的临时 wheel 在隔离 Source/fake Obsidian CLI PATH 下完成动态端口、
+  schema-3 Directory、Field 首页/导航与 Hub 论文卡片 canary；模拟空本机 storage 时 ZotFlow 动作
+  正确禁用并退回 Zotero。仓库 `dist/` 中同为 0.29.0 的旧 wheel 缺逐附件门禁，**不能用于发布**；
+  最终包必须在代码冻结后重新构建并复验。隔离服务、页面和临时目录已清理。正式安装仍为
+  0.28.1，工作树仍未提交，未生成 release 分支或切换用户服务。
+- JEPA 真实文件保持只读。仓库 `jepa-v2-migration-decisions.md` 仅为可公开的脱敏门禁摘要；完整逐字段
+  台账与完整隔离草案只在私有临时目录，不进 Git/release。逐对象提案现对 194 旧字段、1 段未标记
+  前言、194 Canvas 节点和 193 边逐一列出原文/ID/哈希与拟议处置，15 条多目标拆分、25 条独立
+  Evidence 与 30 条推断路径另有高风险语义表。正式 Analysis IR v2 草案为 15 claims/49 points，
+  生成人类 Markdown 和 21 节点/20 边 Canvas，`validate_bundle` 实测 `ok=true`、0 findings，sidecar
+  与此草案基线一致。**这不是旧内容无损迁移 receipt**：用户后来已原则批准经核实为机器生成的旧稿调整/处置，不再要求逐片段语义签字；但194→49 的映射仍须逐项验证来源、内容守恒并生成当前字节精确摘要，不能将草案 conformance 当作发布通过。独立本机 PDF
+  目视核查涵盖 Figure 2/3/5/6/7/16、Eq. 1–5、Tables 1–8/20 的指定页；其余图表不自动算已核。
+  旧决策稿混淆的“16 秒”已分为 §2.4 训练片段、§9 约略预测时域和 Table 3 单动作规划耗时。
+  用户已批准添加 V-JEPA 2 测试批注，但尚未写入；Zotero Local API 本轮核查仍为 0 条。
+  一条 ZotFlow Source Note 中已有的批注投影 key 在 Local API 查询为 404，不能据此声称双向同步完成。
+  ZotFlow 曾显示
+  “No libraries found”，随后同步个人库时报 `Pull Collections failed: net::ERR_CONNECTION_CLOSED`。
+  Obsidian CLI 现已启用；Obsidian 应用内无密钥 `fetch` 和 ZotFlow 所用 `requestUrl` 通道访问 Zotero
+  API 根均返回 200，无密钥个人 Collections 返回预期 403，只证明基础通道可用，不证明 ZotFlow
+  的带授权同步成功。本机 Obsidian 1.13.7 / ZotFlow 1.6.6 已启用 `Use Zotero Storage Directory`，
+  非秘密探针核验了开关、Vault 与本机路径，V-JEPA 2 PDF 实际存在，且该插件运行态的附件元数据
+  与 Local API 文件名一致。Library Reader 曾短暂显示通用 `Download failed`，但同一附件随后在
+  ZotFlow/PDF.js 内实际显示 48 页；无需重载插件，**本机 GUI 阅读已见证，云端文件请求是否发生
+  仍需谨慎区分，双向批注同步更未验收**。本机 ZotFlow 1.6.6 源码的已审计分支在本机模式下
+  直接读取 `storage`，缺文件不回退云；Hub 仅对白名单版本和实时非秘密探针放行动作。
+  此前 Collections 错误是否仍发生尚未复验；不要把本地 PDF 设置误当作元数据同步修复。
+  Web API Key 只能由 ZotFlow/Obsidian SecretStorage 持有，不能交给 agent。测试批注的 Zotero Local
+  API 往返核验和正式 PDF GUI 阅读器验收仍缺；带批注副本已在 Preview 打开，但桌面自动化读取
+  批注控件超时，不能把打开文档冒充完成交互验收。
+- 在完整 JEPA 语义提案、用户视觉/Field diff/停写批准、本机 PDF/ZotFlow 往返及其余发布门禁完成前，
+  不写真实 Vault、不提交 main、不发布或安装 0.29.0。旧固定端口 listener 不自动恢复或切换。
+
+### 早期 fixture-only 实现记录（历史快照）
+
+> 本节的“真实世界模型/JEPA 语义拆分仍须人工裁决”等审批状态为当时记录，已由上方
+> 2026-09-29 用户原则批准更新；机器生成内容可在边界/来源核实和精确预览后调整，技术门禁仍有效。
+
+用户要求先继续实现功能，仍不授权正式发布/安装或真实 Vault 写入。按
+[`hub-control-plane-v3.md`](hub-control-plane-v3.md) §10.2 的现有规格，补齐首次单 Field 的统一事务：
+只读预览明确列出将写入的 host registry、便携 manifest、受管 Markdown/Canvas/sidecar 与旧链接；
+经同一次摘要批准后做 CAS、私有快照/持久 journal、条件提交与中断恢复。现有独立 Field 登记和
+legacy-link API 须保持兼容，不得把先登记、后迁移的两个成功回执冒充“统一提交”。代码与测试只用
+临时 fixture；真实世界模型/JEPA 的语义拆分仍须人工裁决，无法无损映射时计划必须阻断，不得静默
+保留一个看似合格但丢失证据的 Canvas。非协作外部 writer 的最终 CAS→rename 窗口不能声称硬原子，
+真实迁移必须另安排停写窗口；snapshot 不等于 verified backup。实现后重跑全量回归和隔离 wheel，
+再请用户验收，不能据此直接发布。
+
+本轮已新增内部 `FieldTransactionService`，使用临时 fixture 验证单 Field 的只读计划、摘要批准、
+受管旧链接替换/新普通文件、manifest、host registry、私有 journal 与条件恢复。`apply` 默认拒绝，
+调用方须明确确认外部 writer 已停写；journal 逐项记录写入 inode，私有恢复目录逐级 fsync。
+它尚未接 CLI/HTTP，拒绝未经正式 conformance 的分析 sidecar、任何既有 Markdown/Canvas 的裸改写
+以及新 home/navigation 重排，因此**不是**可用于真实世界模型的完整迁移流程。另新增旧 Markdown 字段与旧 Canvas 两道只读守恒门禁；
+前者按历史 `base_sha256` 规则识别人类修改和未标记正文，后者逐节点/边要求保留或显式人工裁决。
+两道门禁已在纯内存 `legacy_cutover` 中与正式 bundle conformance、sidecar baseline 合成同一摘要；
+该合成门禁仍未接入 Field 提交路径，也不能自行证明人工批准来源或论文事实，不能据此放行 JEPA。
+Field 预览的候选哈希现覆盖 Canvas、分析 sidecar 和目录清单，防止选取后静默变化。完整回归
+**825 passed、5 条既有 SWIG/PyMuPDF 警告**；这证明代码测试通过，不代表 release/真实 Vault 验收。
+
+- 当前 `main` 有本地开发提交 `d2d595e`，另有未提交的验收修复；`0.29.0` 尚未进入 runtime-only
+  release，也未更新用户安装的插件/CLI。已安装的 `0.28.1` 仍是历史基线；不要用源码版本推断运行
+  版本。隔离安装包已完成动态端口 `start/status/doctor/stop`、Directory schema 3/Papers=305、Fields
+  空库和浏览器 UI 检查。早期 canary 发现 HTTP 服务被错误地放进 cmux workspace，关闭它会中断
+  阅读；现已改为独立 HTTP 服务与受限 cmux 路由 helper。重建隔离 wheel 后的真实 cmux canary 已
+  验证：关闭测试 workspace 后 HTTP PID/端口/generation 不变，`/hub/` 和 v3 Directory 仍返回 200，
+  仅 `cmux_launches` 变为不可用；在另一测试 workspace 运行 `open-hub` 复用同一服务并重新打开 PDF。
+  随后从 cmux 内 `hub restart` 产生新 generation/端口，再运行 `open-hub` 与 PDF 动作亦通过。
+  测试服务已停止、两处临时 workspace 已关闭。审查发现详细 health 可能被单线程路由器阻塞；
+  现用独立 `/api/v3/identity` 证明受管进程身份，详细诊断不再参与启停授权，路由能力查询设短
+  超时。最终 journal 加固后的隔离 wheel 已通过 start/status/doctor、轻量身份端点、详细 health、
+  Directory、Hub 页面和 stop；同一 wheel 的真实 cmux 临时 workspace canary 也通过 `open-hub` 默认目的地、
+  Papers 305/Fields 0/Projects 0/Tools 0、一跳 PDF。关闭测试 workspace 后 HTTP 仍 200，只有
+  `cmux_launches` 变为不可用；服务随后已停止，临时 workspace 已关闭。
 - 动态端口 lifecycle、schema-3 Directory、Papers/Fields 与平级 Projects/Tools、显式 Source/Field
   preview/confirm、直接论文/PDF/ZotFlow 动作、Zotero Local API 批注 IR 与独立批注 PDF snapshot、
   可信 ExecutionTarget 命令、任务 HTTP API、Codex 配置与长期 cmux terminal worker 路径均已进入开发树。
-  完整 `tests` 回归为 **710 passed**；新/关键 v3 模块 Ruff、JavaScript 语法、wheel/sdist 构建与
-  runtime 文件边界检查已通过。真实 cmux/Codex/ZotFlow canary 仍待执行；任务可用性由实际配置与
-  probe 决定，不能因接口存在就宣称可执行。全仓 Ruff 仍有旧代码基线问题，不应把局部通过写成
-  全仓零告警。
+  身份探针加固、worker generation 竞态、IR v2 逐点证据及 Field 恢复 journal 修正后的完整
+  `tests` 回归为 **764 passed**（5 条既有 SWIG/PyMuPDF 弃用警告）；变更 Python 文件的 Ruff 与
+  `git diff --check` 通过。若后续再修改代码，需重跑。
+  fake Codex UI→cmux worker→TaskRun 已在隔离 wheel/临时项目通过；真实 Codex、ZotFlow 双向批注、
+  独立 PDF 阅读器和 Obsidian 真实 UI 验收仍待执行；任务可用性由
+  实际配置与 probe 决定，不能因接口存在就宣称可执行。全仓 Ruff 仍有旧代码基线问题，不应把局部
+  通过写成全仓零告警。
 - 使用流程已补入双语 README：`open-hub` 自动发现受管服务并记录当前 cmux 默认打开位置；如需
   Codex 任务，管理员另用 `hub target add-source|add-project` 登记 cwd Target、`hub codex configure`
   登记显式可执行文件与服务端策略，然后 `hub restart`；页面只提交任务、目标、打开位置、effort
-  和有界 brief。`zotero snapshot-annotations` 只产出带哈希收据的独立 PDF。
+  和有界 brief。`zotero snapshot-annotations` 只产出带哈希收据的独立 PDF。隔离 wheel 的 cmux
+  `restart → open-hub → 同工作区 PDF` 已实测通过；旧浏览器页使用旧动态端口，重启后应重新运行
+  `open-hub` 获取新页面。
 - 当前科研技术 Vault 已只读预览，世界模型为首个 Field 候选；未写入
   `.scholar-workflow/fields.yml`、JEPA/V-JEPA 文档或 168 条旧端口链接。WI-048 等待用户验收精确
   Field 预览后才可逐 Field 事务迁移。WI-041 的外部备份介质、保留规则和恢复演练仍未决定；
@@ -43,9 +407,16 @@
   可解析 locator，apply 前复验；缺失、组库、非 PDF 或本机未下载附件均安全拒绝。尾斜杠、未知路由、
   localhost/IPv6 回环与 JSON 转义的旧端口链接不能漏报；常见其他文本格式只读检查、发现后阻断，
   不自动改写。同步失败回滚；
-  进程崩溃后可能需要从未验证快照人工恢复。它不做 JEPA
+  多文件中断现有私有 pending journal；`plan/apply` 拒绝继续，须显式 `recover` 按原/目标 hash、元数据
+  与快照条件回滚，外部冲突或损坏快照安全停止。它不提供任意外部 writer 并发下的硬原子 CAS；真实
+  迁移需停写窗口，快照仍不是 verified backup。它不做 JEPA
   正文模板重排，真实 Vault 尚无已登记 Field，因此不能把 CLI 存在误写成迁移完成。
-- 最新只读预览在整个 Vault 识别 5 个候选 Field，其中“世界模型”首页为 `01-Paperlist.md`，入口 1 项、
+- 真实 Zotero PDF 的临时 snapshot 验收已覆盖 49 个 highlight + 4 个 note、另一个样本的 31 个
+  highlight + 9 个 underline：pypdf 结构检查、Poppler 与 macOS PDFKit/Quick Look 渲染均识别；
+  原附件哈希不变。含 image 批注的样本被明确拒绝且未产出假完整副本；真实 ink 样本和
+  Preview/Acrobat 等正式 GUI 阅读器核验仍缺，ZotFlow 双向往返亦未做。成功 sidecar 已显式写
+  `omitted_types: []`；这项修正包含在最新隔离 wheel 中。
+- 较早的只读预览在整个 Vault 识别 5 个候选 Field，其中“世界模型”以现有 `01-Paperlist.md` 为目录入口，入口 1 项、
   文档 42 项、旧链接 122 处（Paperlist 43、挑战洞见树 44、技术路线树 35）；43 个不同附件 key
   在本次只读 Zotero Local API 核验中均为 user-library PDF 且 locator 可解析。全 Vault 另有 8 个
   未映射 Markdown。确认整个 Vault 的预览不能隐式
@@ -54,7 +425,14 @@
 - V-JEPA 2 只读拓扑候选已在仓库与 Vault 外的临时目录生成（临时产物不进入 Git）：原 Canvas
   194 节点/193 边，候选为 20 节点/19 边，14/14 个证据反链在候选 Markdown 中可解析。它只通过
   JSON Canvas 结构校验；未复核原论文、未完整保留原分析细节、未通过正式 Analysis IR/sidecar/receipt
-  conformance 或 Obsidian 截图，因此不得直接覆盖原 Vault 文件。映射报告列出仍需逐项处理的正文与实验细节。
+  conformance 或 Obsidian 截图，因此不得直接覆盖原 Vault 文件。原文另含大量 legacy 字段与独立
+  Evidence 区；候选无法无损保留全部正文。Analysis IR 已补 `canvas_summary`，允许完整 Markdown 与
+  简明 Canvas 分离；IR v2 又补充 claim 内稳定 point_id、逐点证据和准确反链，旧 v1 可读。
+  进一步只读映射确认旧 Markdown 与 Canvas 的 194/194 个 path/marker 一一对应，
+  无孤儿边；28 claim + 5 role + root 的 34 节点只是候选。18 个复合块需拆分、25 条独立 Evidence
+  需内联，16 个混合作者陈述/分析推断 claim 无法由旧单证据 IR 无损表示；IR v2 提供了逐点表达能力，
+  但逐段人工语义验收完成前，不得应用候选或宣称迁移通过。首次 Field 登记与内容迁移目前仍是两个独立
+  提交，尚未满足正式规格的单 Field manifest/Markdown/Canvas/sidecar 统一事务。
 
 ## 2026-09-22 Hub v3 架构纠偏（0.29.0 实施中）
 
@@ -514,7 +892,10 @@ cmux E2E。正式 23128 仍由 0.18.0 `serve-links` LaunchAgent 占用，统一 
   curl-直连仅留 break-glass)。security-policy zotero-mcp boundary 重写(纠正 v0.18.0 错指引)。memory 加
   `reference_httpmcp_scope_trap`。测试 119→**123**(+4 doctor)。诊断反馈文档已标记已阅读。
 
-## 立即待办（下次优先）
+## 历史待办快照（0.28.1 阶段；不再作为当前执行清单）
+
+以下保留当时的状态和措辞作追溯；当前门禁与下一步以本文顶部的“2026-09-27 Hub v3 验收状态”
+及 WI-042–WI-049 为准，尤其不得据此重新占用 23128 或启动旧前台服务。
 
 1. **继续受门禁的真实验收**：0.28.0 已通过 582 项回归及 schema/plugin/skill validation；Knowledge
    下一步是 V-JEPA 临时 golden/可读性验收和周度 scheduler/repair-plan，Hub 下一步是正式 23128

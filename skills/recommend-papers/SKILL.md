@@ -5,7 +5,7 @@ description: Produce an ephemeral daily paper feed from configured sources, skim
 
 # recommend-papers
 
-## Feed
+## Feed result and required source boundary
 
 1. Use arXiv IDs supplied by the user or returned by
    `scholar-workflow zotero search "<requested-or-configured-topic>" --fulltext` as Semantic
@@ -14,14 +14,15 @@ description: Produce an ephemeral daily paper feed from configured sources, skim
    `echo '{"seed_arxiv_ids":[...]}' | python3 ${CLAUDE_PLUGIN_ROOT}/bin/recommend-papers.py`.
    It returns `{candidates,count,skipped}`; source failures remain in `skipped` and do
    not discard successful sources.
-3. Apply explicit user filters, configured interests, and the configured limit to produce a
-   shortlist. Retain source scores and match signals in the result. Do not skim the whole
-   candidate pool.
+3. The shortlist identifies the explicit user filters, configured interests and limit
+   applied to the candidate pool, and retains source scores and match signals. Only
+   shortlisted papers may receive the costly skim.
 4. Skim only the shortlist with NotebookLM using arXiv URLs. Reuse a same-topic notebook
    when available. If NotebookLM is unavailable, use Zotero indexed full text for a
    smaller shortlist or return metadata-only recommendations.
 5. Return an ephemeral Markdown Reading Report: title, one-line grounded description,
-   why relevant, source, and arXiv link. Never write the report to Zotero or the Vault.
+   why relevant, source, arXiv link, and any skipped-source or skim limitation. Never
+   write the report to Zotero or the Vault.
 6. Send user-selected papers to `find-resource` / `ingest-resource`; this skill never
    ingests directly.
 
@@ -50,6 +51,7 @@ Credentials and session state never belong in these YAML files.
 
 ## References
 
+- `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/source-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md`
 - `references/recommend.example.yml`

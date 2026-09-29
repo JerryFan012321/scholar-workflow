@@ -5,6 +5,8 @@ and are resolved immediately before execution.
 """
 from __future__ import annotations
 
+import hashlib
+import hmac
 import os
 import re
 import secrets
@@ -389,11 +391,19 @@ class CatalogActionService:
         pdf_payload = item.get("pdf_ref")
         if not isinstance(item_key, str) or not _ZOTERO_KEY_RE.fullmatch(item_key):
             return []
+        try:
+            pdf_ref = PdfRef.model_validate(pdf_payload) if isinstance(pdf_payload, dict) else None
+        except ValueError:
+            pdf_ref = None
         zotflow_available = False
         zotflow_reason = "ZotFlow is unavailable"
         zotflow_launcher = self._launchers.get(ActionKind.ZOTFLOW_ATTACHMENT)
-        if zotflow_launcher is not None and hasattr(zotflow_launcher, "availability"):
-            capability = zotflow_launcher.availability()
+        if (
+            pdf_ref is not None
+            and zotflow_launcher is not None
+            and hasattr(zotflow_launcher, "availability")
+        ):
+            capability = zotflow_launcher.availability(pdf_ref)
             zotflow_available = bool(getattr(capability, "available", False))
             zotflow_reason = str(getattr(capability, "reason", None) or zotflow_reason)
         fingerprint = (
@@ -409,12 +419,8 @@ class CatalogActionService:
             if registry is None:
                 return []
             actions: list[PublicAction] = []
-            if isinstance(pdf_payload, dict) and isinstance(attachment_key, str):
-                try:
-                    pdf_ref = PdfRef.model_validate(pdf_payload)
-                except ValueError:
-                    pdf_ref = None
-                if pdf_ref is not None and zotflow_launcher is not None:
+            if pdf_ref is not None and attachment_key == pdf_ref.attachment_key:
+                if zotflow_launcher is not None:
                     actions.append(
                         registry.register(
                             kind=ActionKind.ZOTFLOW_ATTACHMENT,
@@ -430,7 +436,7 @@ class CatalogActionService:
                         registry.register(
                             kind=ActionKind.ZOTERO_PDF,
                             label="在 Zotero 打开",
-                            target=attachment_key,
+                            target=pdf_ref.model_dump_json(),
                             primary=not zotflow_available,
                         )
                     )
@@ -630,10 +636,25 @@ class ZoteroLauncher:
 class ZoteroPdfLauncher(ZoteroLauncher):
     """Open a specific attachment in Zotero's native reader."""
 
+    def __init__(
+        self,
+        *,
+        adapter_factory=ZoteroLocalAdapter,
+        timeout: float = 5.0,
+        runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+    ) -> None:
+        super().__init__(timeout=timeout, runner=runner)
+        self._adapter_factory = adapter_factory
+
     def open(self, target: str) -> ZoteroLaunchResult:
-        if not isinstance(target, str) or not _ZOTERO_KEY_RE.fullmatch(target):
-            raise InvalidActionTarget("Zotero PDF target is not an attachment key")
-        return self._open_uri(f"zotero://open-pdf/library/items/{target}")
+        try:
+            pdf_ref = PdfRef.model_validate_json(target)
+        except (TypeError, ValueError) as exc:
+            raise InvalidActionTarget("Zotero PDF target is not a PDF reference") from exc
+        _require_current_local_pdf(pdf_ref, self._adapter_factory)
+        return self._open_uri(
+            f"zotero://open-pdf/library/items/{pdf_ref.attachment_key}"
+        )
 
     def _open_uri(self, uri: str) -> ZoteroLaunchResult:
         try:
@@ -655,19 +676,64 @@ class ZoteroPdfLauncher(ZoteroLauncher):
         return ZoteroLaunchResult(opened=True)
 
 
+def _require_current_local_pdf(pdf_ref: PdfRef, adapter_factory) -> None:
+    """Verify current local bytes before handing a PDF to an external reader."""
+    try:
+        with adapter_factory() as adapter:
+            locator = adapter.resolve_attachment_locator(pdf_ref.attachment_key)
+        path = Path(locator.path)
+        if not path.is_absolute() or not path.is_file():
+            raise OSError("local PDF is unavailable")
+    except (OSError, TypeError, ValueError, ZoteroLocalError) as exc:
+        raise InvalidActionTarget(
+            "Zotero local PDF is unavailable; no cloud download was attempted"
+        ) from exc
+    if (
+        locator.attachment_key != pdf_ref.attachment_key
+        or locator.library_id != pdf_ref.library_id
+        or locator.content_hash != pdf_ref.content_hash
+    ):
+        raise InvalidActionTarget("Zotero PDF identity changed; refresh the paper")
+    algorithm, expected_digest = pdf_ref.content_hash.split(":", 1)
+    digest = (
+        hashlib.md5(usedforsecurity=False)
+        if algorithm == "md5"
+        else hashlib.sha256()
+    )
+    try:
+        with path.open("rb") as source:
+            for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                digest.update(chunk)
+    except OSError as exc:
+        raise InvalidActionTarget(
+            "Zotero local PDF is unavailable; no cloud download was attempted"
+        ) from exc
+    if not hmac.compare_digest(digest.hexdigest(), expected_digest):
+        raise InvalidActionTarget("Zotero local PDF content changed; refresh the paper")
+
+
 class ZotFlowLauncher:
     def __init__(
         self,
         adapter: ZotFlowReaderAdapter | RegisteredSourceZotFlowAdapter,
+        *,
+        adapter_factory=ZoteroLocalAdapter,
     ) -> None:
         self._adapter = adapter
+        self._adapter_factory = adapter_factory
 
-    def availability(self):
+    def availability(self, pdf_ref: PdfRef | None = None):
+        if pdf_ref is not None:
+            return self._adapter.probe_attachment(pdf_ref)
         return self._adapter.probe()
 
     def open(self, target: str) -> dict[str, bool]:
         try:
             pdf_ref = PdfRef.model_validate_json(target)
+            capability = self.availability(pdf_ref)
+            if not capability.available:
+                raise ZotFlowError(capability.reason or "ZotFlow local PDF mode is unavailable")
+            _require_current_local_pdf(pdf_ref, self._adapter_factory)
             return self._adapter.open_attachment(pdf_ref)
         except (ValueError, ZotFlowError) as exc:
             raise InvalidActionTarget(str(exc)) from exc

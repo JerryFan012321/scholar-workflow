@@ -1,4 +1,2 @@
-@RTK.md
+@/Users/jerryfan/.codex/RTK.md
 @AGENT.md
-
-所有修改都放到 AGENT.md 中。

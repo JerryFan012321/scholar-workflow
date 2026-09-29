@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import shlex
 import signal
 import stat
 import subprocess
@@ -225,13 +226,32 @@ def test_worker_command_contains_only_fixed_runtime_coordinates(tmp_path: Path):
         generation="generation-001",
     )
 
-    assert command.startswith(str(Path(sys.executable).resolve()))
+    assert shlex.split(command)[0] == sys.executable
     assert "-m scholar_workflow.hub.terminal_worker" in command
     assert "--slot slot-001" in command
     assert "--generation generation-001" in command
     assert "private approved brief" not in command
     assert "gpt-test" not in command
     assert "project-target" not in command
+
+
+def test_worker_command_preserves_venv_python_symlink_for_site_packages(tmp_path: Path):
+    venv_bin = tmp_path / "venv" / "bin"
+    venv_bin.mkdir(parents=True)
+    venv_python = venv_bin / "python"
+    venv_python.symlink_to(Path(sys.executable).resolve(strict=True))
+    state_root = tmp_path / "private-state"
+    state_root.mkdir(mode=0o700)
+
+    command = build_terminal_worker_command(
+        python_executable=venv_python,
+        state_root=state_root,
+        slot_id="slot-001",
+        generation="generation-001",
+    )
+
+    assert shlex.split(command)[0] == str(venv_python)
+    assert venv_python.resolve(strict=True) == Path(sys.executable).resolve(strict=True)
 
 
 def test_private_ticket_is_consumed_and_jsonl_is_not_persisted(tmp_path: Path):
@@ -620,6 +640,31 @@ def test_stale_generation_worker_exits_without_reusing_slot(tmp_path: Path):
     thread.join(timeout=2)
 
     assert not thread.is_alive()
+    assert state.worker_alive(slot_id="slot-001", generation="generation-002") is False
+
+
+def test_worker_exits_cleanly_if_generation_changes_during_claim(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    runtime = _runtime(tmp_path)
+    state = runtime["state"]
+    worker = TerminalSlotWorker(
+        state=state,
+        slot_id="slot-001",
+        generation="generation-001",
+        capabilities=CAPABILITIES,
+        stdout=io.StringIO(),
+        stderr=io.StringIO(),
+    )
+
+    def stale_claim(**_kwargs: object) -> None:
+        current = state.load_runtime(generation="generation-001")
+        state.save_runtime(current.model_copy(update={"generation": "generation-002"}))
+        raise TerminalWorkerError("terminal worker generation is stale")
+
+    monkeypatch.setattr(state, "claim_next", stale_claim)
+    worker.run_forever()
+
     assert state.worker_alive(slot_id="slot-001", generation="generation-002") is False
 
 

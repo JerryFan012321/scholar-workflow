@@ -6,35 +6,127 @@
   "additionalProperties": false,
   "required": ["schema_version", "artifact_id", "paper_title", "profile", "claims"],
   "properties": {
-    "schema_version": {"const": 1},
+    "schema_version": {"enum": [1, 2, 3, 4]},
     "artifact_id": {"type": "string", "pattern": "^analysis:[^\\s]+$"},
     "paper_title": {"type": "string", "minLength": 1, "maxLength": 1000},
+    "language": {"type": ["string", "null"], "enum": ["en", "zh", null]},
+    "reader": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": {"const": "zotero_native"},
+            "vault_name": {"type": "null"},
+            "vault_id": {"type": "null"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": {"const": "zotflow_library"},
+            "vault_name": {
+              "oneOf": [
+                {"type": "null"},
+                {"type": "string", "minLength": 1, "maxLength": 100, "pattern": "^(?!\\.\\.?$)(?!\\s)(?!.*\\s$)[^/\\\\\\u0000\\r\\n]+$"}
+              ]
+            },
+            "vault_id": {
+              "oneOf": [
+                {"type": "null"},
+                {"type": "string", "pattern": "^[0-9a-f]{16}$"}
+              ]
+            }
+          },
+          "oneOf": [
+            {"required": ["vault_name"], "properties": {"vault_name": {"type": "string"}}},
+            {"required": ["vault_id"], "properties": {"vault_id": {"type": "string"}}}
+          ]
+        }
+      ]
+    },
     "profile": {
       "type": "object",
       "additionalProperties": false,
       "required": ["kind", "roles"],
       "properties": {
         "kind": {"enum": ["whole", "focused"]},
+        "framework": {"enum": ["legacy", "reference_tree"]},
         "roles": {
           "type": "array",
           "uniqueItems": true,
-          "items": {"enum": ["task", "input", "workflow", "output", "boundary"]}
+          "items": {"enum": ["task", "input", "workflow", "output", "boundary", "abstract", "introduction", "method", "limitation"]}
         }
       }
     },
     "claims": {
       "type": "array",
       "minItems": 1,
-      "maxItems": 38,
+      "maxItems": 40,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["claim_id", "role", "title", "body", "evidence"],
         "properties": {
           "claim_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"},
-          "role": {"enum": ["task", "input", "workflow", "output", "boundary"]},
+          "role": {"enum": ["task", "input", "workflow", "output", "boundary", "abstract", "introduction", "method", "limitation"]},
+          "outline_path": {"type": ["string", "null"], "minLength": 1, "maxLength": 160},
           "title": {"type": "string", "minLength": 1, "maxLength": 200},
           "body": {"type": "string", "minLength": 1, "maxLength": 20000},
+          "canvas_summary": {"type": ["string", "null"], "minLength": 1, "maxLength": 400},
+          "points": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["point_id", "text", "evidence"],
+              "properties": {
+                "point_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"},
+                "text": {"type": "string", "minLength": 1, "maxLength": 5000, "pattern": "^(?=.*\\S)[^\\r\\n]+$"},
+                "canvas_summary": {"type": ["string", "null"], "minLength": 1, "maxLength": 180, "pattern": "\\S"},
+                "evidence": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind"],
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "author_stated",
+                        "analysis_inference",
+                        "not_reported",
+                        "unverifiable",
+                        "not_applicable"
+                      ]
+                    },
+                    "anchor": {"type": ["string", "null"], "minLength": 1, "maxLength": 512},
+                    "detail": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048},
+                    "source_spans": {
+                      "type": "array",
+                      "maxItems": 8,
+                      "items": {"oneOf": [
+                        {"$ref": "#/$defs/zotero_pdf_span"},
+                        {"$ref": "#/$defs/vault_markdown_span"}
+                      ]}
+                    }
+                  }
+                }
+              },
+              "allOf": [
+                {
+                  "if": {"properties": {"text": {"minLength": 181}}},
+                  "then": {
+                    "required": ["canvas_summary"],
+                    "properties": {"canvas_summary": {"type": "string"}}
+                  }
+                }
+              ]
+            }
+          },
           "evidence": {
             "type": "object",
             "additionalProperties": false,
@@ -50,12 +142,195 @@
                 ]
               },
               "anchor": {"type": ["string", "null"], "minLength": 1, "maxLength": 512},
-              "detail": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048}
+              "detail": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048},
+              "source_spans": {
+                "type": "array",
+                "maxItems": 8,
+                "items": {"oneOf": [
+                  {"$ref": "#/$defs/zotero_pdf_span"},
+                  {"$ref": "#/$defs/vault_markdown_span"}
+                ]}
+              }
             }
           },
           "order": {"type": ["integer", "null"], "minimum": 1}
         }
       }
     }
-  }
+  },
+  "$defs": {
+    "reference_tree_path": {
+      "type": "string",
+      "maxLength": 160,
+      "pattern": "^(?:abstract/(?:task|insight|experiment(?:/[a-z0-9]+(?:-[a-z0-9]+)*)?|previous_methods/[a-z0-9]+(?:-[a-z0-9]+)*|contributions/[a-z0-9]+(?:-[a-z0-9]+)*)|introduction/(?:task_application|previous_methods/[a-z0-9]+(?:-[a-z0-9]+)*|our_pipeline/(?:insight|contributions/[a-z0-9]+(?:-[a-z0-9]+)*))|method/(?:overview|modules/[a-z0-9]+(?:-[a-z0-9]+)*)|limitation/explanation(?:/[a-z0-9]+(?:-[a-z0-9]+)*)?)$"
+    },
+    "reference_tree_claim": {
+      "required": ["outline_path"],
+      "properties": {"outline_path": {"$ref": "#/$defs/reference_tree_path"}},
+      "allOf": [
+        {
+          "if": {"properties": {"role": {"const": "abstract"}}},
+          "then": {"properties": {"outline_path": {"pattern": "^abstract/"}}}
+        },
+        {
+          "if": {"properties": {"role": {"const": "introduction"}}},
+          "then": {"properties": {"outline_path": {"pattern": "^introduction/"}}}
+        },
+        {
+          "if": {"properties": {"role": {"const": "method"}}},
+          "then": {"properties": {"outline_path": {"pattern": "^method/"}}}
+        },
+        {
+          "if": {"properties": {"role": {"const": "limitation"}}},
+          "then": {"properties": {"outline_path": {"pattern": "^limitation/"}}}
+        },
+        {
+          "if": {"properties": {"outline_path": {"pattern": "^abstract/previous_methods/"}}},
+          "then": {"properties": {"points": {"items": {"properties": {"point_id": {"enum": ["challenge-1", "challenge-2", "challenge-3"]}}}}}}
+        },
+        {
+          "if": {"properties": {"outline_path": {"const": "abstract/insight"}}},
+          "then": {"properties": {"points": {"items": {"properties": {"point_id": {"enum": ["motivation", "advantage"]}}}}}}
+        },
+        {
+          "if": {"properties": {"outline_path": {"pattern": "^abstract/contributions/"}}},
+          "then": {"properties": {"points": {"items": {"properties": {"point_id": {"enum": ["summary", "advantage"]}}}}}}
+        },
+        {
+          "if": {"properties": {"outline_path": {"pattern": "^abstract/experiment/"}}},
+          "then": {"properties": {"points": {"items": {"properties": {"point_id": {"enum": ["finding-1", "finding-2", "finding-3", "finding-4"]}}}}}}
+        },
+        {
+          "if": {"properties": {"outline_path": {"pattern": "^introduction/previous_methods/"}}},
+          "then": {"properties": {"points": {"items": {"properties": {"point_id": {"enum": ["previous-method", "limitation", "technical-reason"]}}}}}}
+        },
+        {
+          "if": {"properties": {"outline_path": {"pattern": "^introduction/our_pipeline/contributions/"}}},
+          "then": {"properties": {"points": {"items": {"properties": {"point_id": {"enum": ["purpose", "how", "advantage"]}}}}}}
+        },
+        {
+          "if": {"properties": {"outline_path": {"pattern": "^method/modules/"}}},
+          "then": {"properties": {"points": {"items": {"properties": {"point_id": {"enum": ["motivation", "method", "why-it-works", "technical-advantage"]}}}}}}
+        },
+        {
+          "if": {"properties": {"outline_path": {"pattern": "^limitation/explanation/"}}},
+          "then": {"properties": {"points": {"items": {"properties": {"point_id": {"enum": ["reason-1", "reason-2", "reason-3", "reason-4"]}}}}}}
+        },
+        {
+          "if": {"properties": {"outline_path": {"enum": ["abstract/task", "abstract/experiment", "introduction/task_application", "introduction/our_pipeline/insight", "method/overview", "limitation/explanation"]}}},
+          "then": {"properties": {"points": {"maxItems": 0}}}
+        }
+      ]
+    },
+    "reference_canvas_evidence": {
+      "properties": {
+        "anchor": {"maxLength": 160, "pattern": "^[^\\r\\n]*$"},
+        "detail": {"maxLength": 180, "pattern": "^[^\\r\\n]*$"},
+        "source_spans": {"maxItems": 3}
+      }
+    },
+    "v3_traceable_evidence": {
+      "if": {"properties": {"kind": {"enum": ["author_stated", "analysis_inference"]}}},
+      "then": {
+        "required": ["source_spans"],
+        "properties": {"source_spans": {"type": "array", "minItems": 1}}
+      }
+    },
+    "zotero_pdf_span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "library_type", "library_id", "attachment_key", "content_hash", "page_index"],
+      "properties": {
+        "kind": {"const": "zotero_pdf"},
+        "library_type": {"enum": ["personal", "group"]},
+        "library_id": {"type": "string", "pattern": "^[0-9]+$"},
+        "attachment_key": {"type": "string", "pattern": "^[A-Z0-9]{8}$"},
+        "content_hash": {"type": "string", "pattern": "^(?:md5:[0-9a-f]{32}|sha256:[0-9a-f]{64})$"},
+        "page_index": {"type": "integer", "minimum": 0},
+        "page_label": {"type": ["string", "null"], "minLength": 1, "maxLength": 64},
+        "annotation_key": {"type": ["string", "null"], "pattern": "^[A-Z0-9]{8}$"},
+        "section": {"type": ["string", "null"], "minLength": 1, "maxLength": 160},
+        "quote": {"type": ["string", "null"], "minLength": 1, "maxLength": 400}
+      }
+    },
+    "vault_markdown_span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "source_id", "artifact_id", "vault_path", "block_id"],
+      "properties": {
+        "kind": {"const": "vault_markdown"},
+        "source_id": {"type": "string", "format": "uuid"},
+        "artifact_id": {"type": "string", "minLength": 1, "maxLength": 240, "pattern": "^[^\\s]+$"},
+        "vault_path": {"type": "string", "minLength": 4, "maxLength": 512, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.?/)(?!.*//)[^\\\\#|\\[\\]\\r\\n]+\\.md$"},
+        "block_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,127}$"}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"schema_version": {"const": 1}}},
+      "then": {
+        "properties": {
+          "claims": {"items": {"properties": {"points": {"maxItems": 0}}}}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"schema_version": {"enum": [1, 2, 3]}}},
+      "then": {"properties": {
+        "reader": {"type": "null"},
+        "profile": {"properties": {
+          "framework": {"const": "legacy"},
+          "roles": {"items": {"enum": ["task", "input", "workflow", "output", "boundary"]}}
+        }},
+        "claims": {"items": {"properties": {
+          "role": {"enum": ["task", "input", "workflow", "output", "boundary"]},
+          "outline_path": {"const": null}
+        }}}
+      }}
+    },
+    {
+      "if": {"properties": {"schema_version": {"const": 4}}},
+      "then": {
+        "required": ["language"],
+        "properties": {
+          "language": {"enum": ["en", "zh"]},
+          "profile": {
+            "required": ["framework"],
+            "properties": {
+              "framework": {"const": "reference_tree"},
+              "roles": {"items": {"enum": ["abstract", "introduction", "method", "limitation"]}}
+            }
+          },
+          "claims": {"items": {
+            "allOf": [
+              {"properties": {"role": {"enum": ["abstract", "introduction", "method", "limitation"]}}},
+              {"$ref": "#/$defs/reference_tree_claim"},
+              {"properties": {
+                "title": {"maxLength": 120, "pattern": "^[^\\r\\n]*$"},
+                "body": {"not": {"pattern": "(?:^|\\n)#{1,6}\\s|sw-analysis-claim"}},
+                "canvas_summary": {"maxLength": 180, "pattern": "^[^\\r\\n]*$"},
+                "evidence": {"$ref": "#/$defs/reference_canvas_evidence"},
+                "points": {"items": {"properties": {
+                  "canvas_summary": {"pattern": "^[^\\r\\n]*$"},
+                  "evidence": {"$ref": "#/$defs/reference_canvas_evidence"}
+                }}}
+              }},
+              {"if": {"properties": {"body": {"minLength": 181}}},
+               "then": {"required": ["canvas_summary"], "properties": {"canvas_summary": {"type": "string"}}}}
+            ]
+          }}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"schema_version": {"enum": [3, 4]}}},
+      "then": {"properties": {"claims": {"items": {"properties": {
+        "evidence": {"$ref": "#/$defs/v3_traceable_evidence"},
+        "points": {"items": {"properties": {
+          "evidence": {"$ref": "#/$defs/v3_traceable_evidence"}
+        }}}
+      }}}}}
+    }
+  ]
 }

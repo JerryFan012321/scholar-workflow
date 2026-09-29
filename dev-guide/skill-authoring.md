@@ -40,12 +40,15 @@ only when it is specific to that one skill. (See AGENT.md 插件结构 / Skill A
    triggers in **both English and Chinese** — the phrases a user would actually type —
    since users work bilingually. Every word is permanent context load, so carry triggers
    and disambiguation ("Not X"), not a restatement of the steps.
-2. **Triggers** — bullet list of when this skill fires.
-3. **Steps** — the procedure, numbered. Additive writes (download / create / import /
-   metadata / add-to-collection) run directly once the user has given the ingest
-   instruction — no per-write gate. Split into an approval phase only around a
-   **destructive / irreversible** action (delete, overwrite-conflict, merge identity),
-   which must be confirmed one by one. See AGENT.md Ask First, GOALS G4/G9/INV9/NG5.
+2. **Result contract** — make the deliverables, owner/identity, required fields or links,
+   completion/failure states, and observable acceptance criteria precise enough to reproduce.
+   A reviewed sample can establish appearance or structure, but its paper-specific facts,
+   counts, and source verdicts are not generic requirements.
+3. **External dependencies and gates** — name exact tools, required permissions, and fragile
+   ordering only where deviation would cause an actual error or unsafe write. Do not turn the
+   model's research, analysis, ranking, or writing judgment into a mandatory step sequence.
+   Additive ingest writes follow the user's ingest instruction; destructive or irreversible
+   actions need their own confirmation. See AGENT.md Ask First and GOALS G4/G9/INV9/NG5.
 4. **Constraints** — the runtime safety rules this skill must obey.
 5. **References** — list the exact files to load at runtime (see below).
 
@@ -80,3 +83,15 @@ loaded at skill runtime.
   and readable layouts constrain the emitted artifact, not the model's internal reasoning
   framework or analysis order.
 - After authoring, add a routing case to `evals/routing.json`.
+
+## Development validation scope
+
+Prove a new skill's route, observable output, and safety boundary with synthetic fixtures and
+one controlled paper, repository, or `test` Vault object first. Add focused negative cases for
+the changed interface. Do not repeatedly run a real batch, scan a whole production collection,
+or migrate a formal Vault just to tune the skill. Those are operational or release-acceptance
+steps, not the development loop. When full-scope acceptance is required, run it after the
+implementation is stable against a current reviewed preview; never reuse a stale digest or skip
+a required gate to save time. This rule does not narrow a user's actual runtime batch request.
+Before any test run, show its inputs, procedure, expected results, impact and artifacts, and
+obtain the user's approval; preparing fixtures alone does not authorize execution.

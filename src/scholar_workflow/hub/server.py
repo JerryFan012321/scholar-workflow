@@ -6,9 +6,10 @@ import mimetypes
 import os
 import re
 import secrets
+import stat
 import sys
 import threading
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 from html import escape
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib import resources
@@ -19,6 +20,7 @@ from urllib.parse import parse_qs, quote, unquote, urlencode, urlparse
 
 from pydantic import ValidationError
 
+from scholar_workflow import __version__
 from scholar_workflow.adapters.obsidian import VaultPathError, safe_vault_path
 from scholar_workflow.adapters.zotero_local import ZoteroLocalAdapter, ZoteroLocalError
 from scholar_workflow.hub.actions import (
@@ -40,7 +42,6 @@ from scholar_workflow.hub.artifact_manifest import VaultArtifactManifestProvider
 from scholar_workflow.hub.assets import (
     AssetIntegrityError,
     AssetManifestError,
-    InvalidAssetNameError,
     UnknownAssetError,
     VaultAssetCatalogProvider,
     VaultAssetManifestStore,
@@ -53,14 +54,11 @@ from scholar_workflow.hub.catalog import (
 )
 from scholar_workflow.hub.cmux import CmuxControl, CmuxControlError, WorkspaceRegistry
 from scholar_workflow.hub.content import (
-    MAX_WRITE_REQUEST_BYTES,
     ArtifactContentStore,
     ArtifactEncodingError,
     ArtifactMissingError,
     ArtifactPathRejectedError,
     ArtifactTooLargeError,
-    InvalidArtifactContentError,
-    RevisionConflictError,
     UnknownArtifactError,
     UnsupportedArtifactError,
 )
@@ -78,8 +76,23 @@ from scholar_workflow.hub.directory import (
     UnknownLibraryError,
     ZoteroPaperLibraryProvider,
 )
+from scholar_workflow.hub.field_migration import (
+    FieldMigrationError,
+    FieldMigrationService,
+    _has_legacy_hub_reference,
+)
+from scholar_workflow.hub.field_transaction import (
+    FieldTransactionError,
+    FieldTransactionService,
+    _has_analysis_identity,
+    _open_private_directory,
+    _read_target,
+)
 from scholar_workflow.hub.fields import (
     FieldCandidateExpired,
+    FieldCandidateStore,
+    FieldDefinition,
+    FieldManifest,
     FieldRegistryCommitUncertain,
     FieldRegistryError,
     FieldService,
@@ -112,12 +125,16 @@ _V3_CAPABILITIES = (
     "hub-directory-v3",
     "typed-provider-pagination-v2",
     "dynamic-fields-v1",
+    "field-transaction-plan-v1",
     "direct-paper-actions-v1",
     _DESTINATION_CAPABILITY,
     "trusted-execution-targets-v1",
 )
 _MAX_V2_WRITE_BYTES = 2 * 1024 * 1024 + 16 * 1024
 _MAX_TASK_REQUEST_BYTES = 12 * 1024
+_MAX_LEGACY_PROPOSAL_REQUEST_BYTES = 8 * 1024 * 1024
+_FIELD_REVIEW_TTL_SECONDS = 30 * 60
+OPERATOR_CREDENTIAL_NAME = "field-operator.json"
 _STATIC_TYPES = {
     ".css": "text/css; charset=utf-8",
     ".js": "text/javascript; charset=utf-8",
@@ -161,6 +178,9 @@ class HubRuntime:
     project_document_service: ProjectDocumentService | None = None
     destination_registry: DestinationRegistry | None = None
     field_service: FieldService | None = None
+    field_transaction_service: FieldTransactionService | None = None
+    operator_token: str | None = None
+    operator_credential_path: Path | None = None
     folder_picker: SystemFolderPicker | None = None
     task_service: Any | None = None
     zotero_adapter_factory: Any = ZoteroLocalAdapter
@@ -204,6 +224,104 @@ class HubHTTPServer(ThreadingHTTPServer):
     def __init__(self, address: tuple[str, int], runtime: HubRuntime) -> None:
         self.runtime = runtime
         super().__init__(address, HubRequestHandler)
+
+    def server_close(self) -> None:
+        try:
+            path = self.runtime.operator_credential_path
+            token = self.runtime.operator_token
+            if path is not None and token is not None:
+                _remove_operator_credential(path, self.runtime.service_generation, token)
+        finally:
+            super().server_close()
+
+
+def _operator_record_bytes(generation: str, token: str) -> bytes:
+    return json.dumps(
+        {"service_generation": generation, "pid": os.getpid(), "token": token},
+        sort_keys=True,
+    ).encode("utf-8")
+
+
+def _private_operator_directory(path: Path) -> int:
+    descriptor = _open_private_directory(path)
+    metadata = os.fstat(descriptor)
+    if metadata.st_uid != os.geteuid() or stat.S_IMODE(metadata.st_mode) & 0o077:
+        os.close(descriptor)
+        raise ValueError("Hub operator credential parent is not private")
+    return descriptor
+
+
+def _write_operator_credential(path: Path, generation: str, token: str) -> None:
+    """Publish a generation-bound operator secret, never returned to browsers."""
+    parent_fd = _private_operator_directory(path.parent)
+    temporary = f".{OPERATOR_CREDENTIAL_NAME}.{secrets.token_hex(16)}.tmp"
+    try:
+        try:
+            existing = os.stat(path.name, dir_fd=parent_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            existing = None
+        if existing is not None and (
+            not stat.S_ISREG(existing.st_mode)
+            or existing.st_uid != os.geteuid()
+            or stat.S_IMODE(existing.st_mode) != 0o600
+            or existing.st_nlink != 1
+        ):
+            raise ValueError("Hub operator credential target is unsafe")
+        descriptor = os.open(
+            temporary,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+            0o600,
+            dir_fd=parent_fd,
+        )
+        with os.fdopen(descriptor, "wb") as handle:
+            os.fchmod(handle.fileno(), 0o600)
+            handle.write(_operator_record_bytes(generation, token))
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path.name, src_dir_fd=parent_fd, dst_dir_fd=parent_fd)
+        os.fsync(parent_fd)
+    finally:
+        try:
+            os.unlink(temporary, dir_fd=parent_fd)
+        except FileNotFoundError:
+            pass
+        os.close(parent_fd)
+
+
+def _remove_operator_credential(path: Path, generation: str, token: str) -> None:
+    try:
+        parent_fd = _private_operator_directory(path.parent)
+    except (FileNotFoundError, OSError, ValueError):
+        return
+    try:
+        try:
+            descriptor = os.open(
+                path.name,
+                os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+                dir_fd=parent_fd,
+            )
+        except (FileNotFoundError, OSError):
+            return
+        with os.fdopen(descriptor, "rb") as handle:
+            metadata = os.fstat(handle.fileno())
+            if (
+                not stat.S_ISREG(metadata.st_mode)
+                or metadata.st_uid != os.geteuid()
+                or stat.S_IMODE(metadata.st_mode) != 0o600
+                or metadata.st_size > 1024
+                or handle.read(1025) != _operator_record_bytes(generation, token)
+            ):
+                return
+        try:
+            current = os.stat(path.name, dir_fd=parent_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            return
+        if (current.st_dev, current.st_ino) != (metadata.st_dev, metadata.st_ino):
+            return
+        os.unlink(path.name, dir_fd=parent_fd)
+        os.fsync(parent_fd)
+    finally:
+        os.close(parent_fd)
 
 
 class HubRequestHandler(BaseHTTPRequestHandler):
@@ -269,6 +387,8 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             self._handle_v3_task_status(path)
         elif path.startswith("/api/v3/task-runs/"):
             self._handle_v3_task_run_status(path)
+        elif path == "/api/v3/identity":
+            self._respond_json(200, self._v3_identity_payload())
         elif path == "/api/v3/health":
             self._respond_json(200, self._v3_health_payload())
         elif path == "/api/v2/directory":
@@ -329,78 +449,22 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         if path.startswith("/api/v3/fields/") and path.endswith("/documents"):
             self._handle_v3_field_write(path)
             return
-        artifact_id = self._artifact_content_id(path)
-        if artifact_id is None:
+        if self._artifact_content_id(path) is None:
             self._respond_text(404, "Not found")
             return
-        supplied_token = self.headers.get("X-Scholar-Hub-Token", "")
-        if not secrets.compare_digest(supplied_token, self.server.runtime.session_token):
-            self._respond_text(403, "Invalid session token")
+        if not self._require_session_token():
             return
-        if self.headers.get("Content-Type", "").split(";", 1)[0] != "application/json":
-            self._respond_text(415, "Expected application/json")
-            return
-        try:
-            length = int(self.headers.get("Content-Length", "0"))
-        except ValueError:
-            self._respond_text(400, "Invalid content length")
-            return
-        if length < 0:
-            self._respond_text(400, "Invalid content length")
-            return
-        if length > MAX_WRITE_REQUEST_BYTES:
-            self._respond_text(413, "Request body too large")
-            return
-        try:
-            body = json.loads(self.rfile.read(length))
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            self._respond_text(400, "Invalid JSON")
-            return
-        if not isinstance(body, dict) or set(body) != {"content", "base_revision"}:
-            self._respond_text(400, "Expected content and base_revision only")
-            return
-        content = body.get("content")
-        base_revision = body.get("base_revision")
-        if not isinstance(content, str) or not isinstance(base_revision, str):
-            self._respond_text(400, "content and base_revision must be strings")
-            return
-        try:
-            if not self._legacy_artifact_source_authorized(
-                artifact_id,
-                capability="write",
-            ):
-                self._respond_text(
-                    403,
-                    "Artifact is not inside a registered writable knowledge source",
-                )
-                return
-            saved = self.server.runtime.content_store.write(
-                artifact_id,
-                content=content,
-                base_revision=base_revision,
-            )
-        except RevisionConflictError as exc:
-            self._respond_json(
-                409,
-                {"error": str(exc), "current_revision": exc.current_revision},
-            )
-            return
-        except InvalidArtifactContentError as exc:
-            self._respond_text(422, str(exc))
-            return
-        except (ArtifactPathRejectedError, FieldRegistryError):
-            self._respond_text(403, "Artifact path was rejected")
-            return
-        except (UnknownArtifactError, ArtifactMissingError):
-            self._respond_text(404, "Unknown or missing artifact")
-            return
-        except (UnsupportedArtifactError, ArtifactEncodingError):
-            self._respond_text(415, "Artifact format is not editable")
-            return
-        except ArtifactTooLargeError:
-            self._respond_text(413, "Artifact is too large for the Hub editor")
-            return
-        self._respond_json(200, saved.as_payload())
+        self._respond_json(
+            410,
+            {
+                "ok": False,
+                "code": "v1_read_only_compatibility",
+                "error": (
+                    "Hub v1 artifact content is read-only compatibility; "
+                    "use the Field v3 document or paired analysis workflow"
+                ),
+            },
+        )
 
     def _handle_v3_field_read(self, path: str, query: str) -> None:
         segments = path.strip("/").split("/")
@@ -492,6 +556,39 @@ class HubRequestHandler(BaseHTTPRequestHandler):
                 return
             self._handle_v3_field_confirm()
             return
+        if path == "/api/v3/field-transactions/plan":
+            if not self._request_origin_allowed(require_origin=True):
+                return
+            self._handle_v3_field_transaction_plan()
+            return
+        if path == "/api/v3/field-transactions/apply":
+            if not self._request_origin_allowed(require_origin=True):
+                return
+            self._handle_v3_field_transaction_apply()
+            return
+        if path == "/api/v3/field-transactions/recover":
+            if not self._request_origin_allowed(require_origin=True):
+                return
+            self._handle_v3_field_transaction_recover()
+            return
+        if path == "/api/v3/field-transactions/legacy/preview":
+            if not self._request_origin_allowed(require_origin=True):
+                return
+            self._handle_v3_legacy_field_proposal(stage=False)
+            return
+        if path == "/api/v3/field-transactions/legacy/stage":
+            if not self._request_origin_allowed(require_origin=True):
+                return
+            if not self._require_session_token() or not self._require_operator_token():
+                return
+            self._respond_json(503, {
+                "ok": False,
+                "error": (
+                    "Legacy analysis staging is unavailable until Provider and Field "
+                    "changes share one recoverable transaction journal"
+                ),
+            })
+            return
         if path.startswith("/api/v3/actions/"):
             if not self._request_origin_allowed(require_origin=True):
                 return
@@ -534,86 +631,32 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         if artifact_id is not None:
             if not self._request_origin_allowed(require_origin=True):
                 return
-            self._handle_asset_upload(artifact_id, parsed.query)
+            if not self._require_session_token():
+                return
+            self._respond_v1_read_only(
+                "Legacy attachment uploads are retired; use a supported v3 workflow"
+            )
             return
         if not self._request_origin_allowed(require_origin=True):
             return
         if not path.startswith("/api/v1/actions/"):
             self._respond_text(404, "Not found")
             return
-        supplied_token = self.headers.get("X-Scholar-Hub-Token", "")
-        if not secrets.compare_digest(supplied_token, self.server.runtime.session_token):
-            self._respond_text(403, "Invalid session token")
+        if not self._require_session_token():
             return
-        if self.headers.get("Content-Type", "").split(";", 1)[0] != "application/json":
-            self._respond_text(415, "Expected application/json")
-            return
-        try:
-            length = int(self.headers.get("Content-Length", "0"))
-        except ValueError:
-            self._respond_text(400, "Invalid content length")
-            return
-        if length < 0:
-            self._respond_text(400, "Invalid content length")
-            return
-        if length > 1024:
-            self._respond_text(413, "Request body too large")
-            return
-        try:
-            body = json.loads(self.rfile.read(length) or b"{}")
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            self._respond_text(400, "Invalid JSON")
-            return
-        if not isinstance(body, dict) or set(body) - {"workspace_id"}:
-            self._respond_text(400, "Expected no fields or workspace_id only")
-            return
-        workspace_supplied = "workspace_id" in body
-        workspace_id = body.get("workspace_id")
-        if workspace_supplied and (
-            not isinstance(workspace_id, str)
-            or not workspace_id
-            or workspace_id != workspace_id.strip()
-            or len(workspace_id) > 256
-        ):
-            self._respond_text(400, "workspace_id must be a non-empty opaque id")
-            return
-        service = self.server.runtime.action_service
-        if service is None:
-            self._respond_text(503, "Actions are unavailable")
-            return
-        action_id = unquote(path.removeprefix("/api/v1/actions/"))
-        action = _find_public_action(service, action_id)
-        if action is None:
-            self._respond_text(404, "Unknown action")
-            return
-        workspace_policy = _action_workspace_policy(action)
-        if workspace_policy == "required" and not workspace_supplied:
-            self._respond_text(400, "This action requires workspace_id")
-            return
-        if workspace_supplied and workspace_policy not in {"required", "selectable"}:
-            self._respond_text(400, "This action does not accept workspace_id")
-            return
-        try:
-            if workspace_id is None:
-                result = service.execute(action_id)
-            else:
-                result = service.execute(action_id, workspace_id=workspace_id)
-        except (KeyError, UnknownActionError):
-            self._respond_text(404, "Unknown action")
-            return
-        except InvalidActionTarget as exc:
-            self._respond_json(400, {"ok": False, "error": str(exc)})
-            return
-        except Exception as exc:  # noqa: BLE001 - HTTP boundary for launcher plugins
-            self._respond_json(503, {"ok": False, "error": str(exc)})
-            return
-        if hasattr(result, "model_dump"):
-            payload = result.model_dump(mode="json")
-        elif hasattr(result, "__dict__"):
-            payload = vars(result)
-        else:
-            payload = result
-        self._respond_json(200, payload)
+        self._respond_v1_read_only(
+            "Legacy action invocation is retired; use /api/v3/actions"
+        )
+
+    def _respond_v1_read_only(self, detail: str) -> None:
+        self._respond_json(
+            410,
+            {
+                "ok": False,
+                "code": "v1_read_only_compatibility",
+                "error": detail,
+            },
+        )
 
     def _handle_v2_workspace_binding(self, path: str) -> None:
         runtime = self.server.runtime
@@ -689,6 +732,15 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         supplied = self.headers.get("X-Scholar-Hub-Token", "")
         if not secrets.compare_digest(supplied, self.server.runtime.session_token):
             self._respond_text(403, "Invalid session token")
+            return False
+        return True
+
+    def _require_operator_token(self) -> bool:
+        """A browser session is never sufficient to commit or restore a Field."""
+        token = self.server.runtime.operator_token
+        supplied = self.headers.get("X-Scholar-Hub-Operator", "")
+        if token is None or not secrets.compare_digest(supplied, token):
+            self._respond_text(403, "Local Field operator credential required")
             return False
         return True
 
@@ -954,7 +1006,55 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         except FieldRegistryError as exc:
             self._respond_json(409, {"ok": False, "error": str(exc)})
             return
-        self._respond_json(200, {"ok": True, "preview": preview.model_dump(mode="json")})
+        payload = preview.model_dump(mode="json")
+        payload["transaction_required_fields"] = [
+            {"field_id": field.field_id, "reasons": self._field_transaction_reasons(
+                service, preview.candidate_token, field.field_id
+            )}
+            for field in preview.fields
+        ]
+        self._respond_json(200, {"ok": True, "preview": payload})
+
+    @staticmethod
+    def _field_transaction_reasons(
+        service: FieldService, candidate_token: str, field_id: str
+    ) -> list[str]:
+        """Inspect only the selected Field before allowing legacy two-step confirm."""
+        try:
+            candidate = service.candidates.peek(candidate_token)
+            selected = next(
+                (row for row in candidate.preview.fields if row.field_id == field_id),
+                None,
+            )
+            if selected is None:
+                raise FieldRegistryError("Selected Field is absent from this preview")
+            root = service._validate_candidate(candidate)
+            manifest = FieldManifest(
+                source_id=candidate.preview.source_id,
+                fields=[*candidate.preview.registered_fields, selected],
+            )
+            inventory, _digest, conflicts = FieldMigrationService._inventory(
+                root, manifest, selected
+            )
+            reasons: set[str] = set()
+            if conflicts:
+                reasons.add("inspection_conflict")
+            for relative in inventory:
+                name = PurePosixPath(relative).name
+                if name.endswith(("分析.md", "解析树.canvas")):
+                    reasons.add("legacy_analysis")
+                if name.casefold().endswith(".analysis.json"):
+                    reasons.add("managed_analysis")
+                old = _read_target(root, relative)
+                if old is not None and b"sw-analysis-field" in old[0]:
+                    reasons.add("legacy_analysis")
+                elif old is not None and _has_analysis_identity(old[0]):
+                    reasons.add("managed_analysis")
+                if old is not None and _has_legacy_hub_reference(old[0], relative):
+                    reasons.add("legacy_hub_link")
+            return sorted(reasons)
+        except (FieldRegistryError, FieldMigrationError, FieldTransactionError, OSError):
+            return ["inspection_failed"]
 
     def _handle_v3_field_confirm(self) -> None:
         if not self._require_session_token():
@@ -980,6 +1080,23 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             service = self.server.runtime.field_service
             if service is None:
                 raise FieldRegistryError("Field initialization is unavailable")
+            if field_registration:
+                reasons = self._field_transaction_reasons(
+                    service, body["candidate_token"], body["field_id"]
+                )
+                if reasons:
+                    self._respond_json(409, {
+                        "ok": False,
+                        "code": "field_transaction_required",
+                        "error": (
+                            "Managed paper analysis or old Hub links require a validated "
+                            "local-operator Field transaction; run "
+                            "`scholar-workflow hub field-transaction plan` and review "
+                            "the proposal before apply. No Field was registered."
+                        ),
+                        "reasons": reasons,
+                    })
+                    return
             manifest = (
                 service.confirm(body["candidate_token"], body["field_id"])
                 if field_registration
@@ -996,6 +1113,227 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             self._respond_json(409, {"ok": False, "error": str(exc)})
             return
         self._respond_json(200, {"ok": True, "manifest": manifest.model_dump(mode="json")})
+
+    def _handle_v3_field_transaction_plan(self) -> None:
+        if not self._require_session_token():
+            return
+        try:
+            body = self._read_v2_json_body()
+        except (TypeError, ValueError) as exc:
+            self._respond_text(400, str(exc))
+            return
+        if body is None:
+            return
+        if set(body) != {"candidate_token", "field_id"}:
+            self._respond_text(400, "Expected candidate_token and field_id only")
+            return
+        try:
+            _require_string_fields(body, "candidate_token", "field_id")
+            service = self.server.runtime.field_transaction_service
+            if service is None:
+                self._respond_text(503, "Field transactions are unavailable")
+                return
+            plan = service.plan(body["candidate_token"], body["field_id"])
+        except (FieldTransactionError, FieldRegistryError, OSError, ValueError) as exc:
+            self._respond_json(409, {"ok": False, "error": str(exc)})
+            return
+        self._respond_json(200, {"ok": True, "plan": asdict(plan)})
+
+    def _handle_v3_field_transaction_apply(self) -> None:
+        if not self._require_session_token() or not self._require_operator_token():
+            return
+        try:
+            body = self._read_v2_json_body()
+        except (TypeError, ValueError) as exc:
+            self._respond_text(400, str(exc))
+            return
+        if body is None:
+            return
+        if set(body) != {"plan_token", "approved_digest"}:
+            self._respond_text(400, "Expected plan_token and approved_digest only")
+            return
+        try:
+            _require_string_fields(body, "plan_token", "approved_digest")
+            service = self.server.runtime.field_transaction_service
+            if service is None:
+                self._respond_text(503, "Field transactions are unavailable")
+                return
+            # The separate operator credential is issued only to the local
+            # installed-package CLI. Its operator must explicitly assert a
+            # quiet external-writer window before this request is sent.
+            result = service.apply(
+                body["plan_token"],
+                approved_digest=body["approved_digest"],
+                external_writers_paused=True,
+            )
+        except (FieldTransactionError, FieldRegistryError, OSError, ValueError) as exc:
+            self._respond_json(409, {"ok": False, "error": str(exc)})
+            return
+        payload = asdict(result)
+        payload["recovery_snapshot"] = str(result.recovery_snapshot)
+        self._respond_json(200, {"ok": True, "result": payload})
+
+    def _handle_v3_field_transaction_recover(self) -> None:
+        if not self._require_session_token() or not self._require_operator_token():
+            return
+        try:
+            body = self._read_v2_json_body()
+        except (TypeError, ValueError) as exc:
+            self._respond_text(400, str(exc))
+            return
+        if body is None:
+            return
+        if set(body) != {"source_id", "field_id", "external_writers_paused"}:
+            self._respond_text(400, "Expected source_id, field_id, and external_writers_paused")
+            return
+        try:
+            _require_string_fields(body, "source_id", "field_id")
+            if body["external_writers_paused"] is not True:
+                raise FieldTransactionError("external Field writers must be paused before recovery")
+            service = self.server.runtime.field_transaction_service
+            if service is None:
+                self._respond_text(503, "Field transactions are unavailable")
+                return
+            result = service.recover(
+                body["source_id"], body["field_id"], external_writers_paused=True
+            )
+        except (FieldTransactionError, FieldRegistryError, OSError, ValueError) as exc:
+            self._respond_json(409, {"ok": False, "error": str(exc)})
+            return
+        payload = asdict(result)
+        if result.recovery_snapshot is not None:
+            payload["recovery_snapshot"] = str(result.recovery_snapshot)
+        self._respond_json(200, {"ok": True, "result": payload})
+
+    def _handle_v3_legacy_field_proposal(self, *, stage: bool) -> None:
+        """Validate old bytes server-side; only the local operator may stage them."""
+        if not self._require_session_token() or not self._require_operator_token():
+            return
+        try:
+            body = self._read_strict_field_proposal_body()
+        except (TypeError, ValueError) as exc:
+            self._respond_text(400, str(exc))
+            return
+        if body is None:
+            return
+        expected = {"candidate_token", "field_id", "package"}
+        if stage:
+            expected.add("approved_cutover_digest")
+        if set(body) - ({"field_definition"} if stage else set()) != expected:
+            self._respond_text(400, "Unexpected Field proposal request fields")
+            return
+        try:
+            from scholar_workflow.analysis.legacy_cutover import (
+                LegacyFieldPayloadError,
+                LegacyFieldProposalError,
+                parse_legacy_field_proposal,
+                prepare_legacy_field_payload,
+                validate_legacy_cutover,
+            )
+
+            _require_string_fields(body, "candidate_token", "field_id")
+            if stage:
+                _require_string_fields(body, "approved_cutover_digest")
+            proposal = parse_legacy_field_proposal(body["package"])
+            if (
+                proposal.document.schema_version != 4
+                or proposal.document.profile.framework != "reference_tree"
+                or proposal.document.profile.kind.value != "whole"
+            ):
+                raise FieldTransactionError(
+                    "legacy Field cutover requires an IR v4 reference_tree whole-paper candidate"
+                )
+            field_service = self.server.runtime.field_service
+            transaction = self.server.runtime.field_transaction_service
+            if field_service is None or transaction is None:
+                self._respond_text(503, "Field transactions are unavailable")
+                return
+            candidate = field_service.candidates.peek(body["candidate_token"])
+            root = field_service._validate_candidate(candidate)
+            selected = next(
+                (
+                    row for row in candidate.preview.fields
+                    if row.field_id == body["field_id"]
+                ),
+                None,
+            )
+            if selected is None:
+                raise FieldTransactionError("Field was not selected in this preview")
+            prefix = () if selected.relative_root == "." else PurePosixPath(selected.relative_root).parts
+            source_paths = (
+                proposal.markdown_path,
+                proposal.canvas_path,
+                proposal.sidecar_path,
+            )
+            sources: list[bytes | None] = []
+            for name in source_paths:
+                relative = PurePosixPath(*prefix, *PurePosixPath(name).parts).as_posix()
+                old = _read_target(root, relative)
+                sources.append(None if old is None else old[0])
+            source_markdown, source_canvas, source_sidecar = sources
+            if source_markdown is None or source_canvas is None:
+                raise FieldTransactionError("legacy Markdown and Canvas must already exist")
+            if not stage:
+                report = validate_legacy_cutover(
+                    source_markdown,
+                    source_canvas,
+                    proposal.document,
+                    proposal.bundle,
+                    proposal.markdown_plan,
+                    proposal.canvas_plan,
+                    note_stem=proposal.note_stem,
+                )
+                self._respond_json(200, {
+                    "ok": True,
+                    "ready_for_approval": report.cutover_digest is not None,
+                    "cutover_digest": report.cutover_digest,
+                    "findings": [asdict(row) for row in report.findings],
+                })
+                return
+            prepared = prepare_legacy_field_payload(
+                markdown_path=proposal.markdown_path,
+                canvas_path=proposal.canvas_path,
+                sidecar_path=proposal.sidecar_path,
+                source_markdown=source_markdown,
+                source_canvas=source_canvas,
+                source_sidecar=source_sidecar,
+                document=proposal.document,
+                bundle=proposal.bundle,
+                markdown_plan=proposal.markdown_plan,
+                canvas_plan=proposal.canvas_plan,
+                note_stem=proposal.note_stem,
+                approved_cutover_digest=body["approved_cutover_digest"],
+            )
+            field_definition = (
+                FieldDefinition.model_validate(body["field_definition"])
+                if "field_definition" in body
+                else None
+            )
+            plan = transaction.plan(
+                body["candidate_token"],
+                body["field_id"],
+                field_definition=field_definition,
+                legacy_payloads=(prepared,),
+            )
+        except LegacyFieldProposalError as exc:
+            self._respond_json(400, {"ok": False, "error": str(exc)})
+            return
+        except LegacyFieldPayloadError as exc:
+            findings = (
+                [] if exc.report is None
+                else [asdict(row) for row in exc.report.findings]
+            )
+            self._respond_json(409, {"ok": False, "error": str(exc), "findings": findings})
+            return
+        except (FieldTransactionError, FieldRegistryError, OSError, TypeError, ValueError) as exc:
+            self._respond_json(409, {"ok": False, "error": str(exc)})
+            return
+        self._respond_json(200, {
+            "ok": True,
+            "plan": asdict(plan),
+            "cutover_digest": prepared.cutover_digest,
+            "payload_digest": prepared.payload_digest,
+        })
 
     def _handle_v2_directory(self, query: str) -> None:
         service = self.server.runtime.directory_service
@@ -1088,6 +1426,22 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             self._respond_text(503, "Library provider failed")
             return
         self._respond_json(200, page)
+
+    def _v3_identity_payload(self) -> dict[str, Any]:
+        """Prove process identity without consulting providers or cmux."""
+        runtime = self.server.runtime
+        return {
+            "status": "ok",
+            "service": {"name": "scholar-workflow-hub", "version": __version__},
+            "build": {"version": __version__},
+            "protocol": {"name": "hub-http", "version": 3},
+            "service_generation": runtime.service_generation,
+            "process": {
+                "pid": os.getpid(),
+                "executable": runtime.process_executable
+                or str(Path(sys.executable).resolve()),
+            },
+        }
 
     def _v3_health_payload(self) -> dict[str, Any]:
         runtime = self.server.runtime
@@ -1418,6 +1772,45 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             raise ValueError("Invalid JSON") from exc
         if not isinstance(body, dict):
             raise TypeError("Expected a JSON object")
+        return body
+
+    def _read_strict_field_proposal_body(self) -> dict[str, Any] | None:
+        if self.headers.get("Content-Type", "").split(";", 1)[0] != "application/json":
+            self._respond_text(415, "Expected application/json")
+            return None
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError as exc:
+            raise ValueError("Invalid content length") from exc
+        if length < 0:
+            raise ValueError("Invalid content length")
+        if length > _MAX_LEGACY_PROPOSAL_REQUEST_BYTES:
+            self._respond_text(413, "Field proposal request is too large")
+            return None
+
+        def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+            result: dict[str, Any] = {}
+            for key, value in pairs:
+                if key in result:
+                    raise ValueError("Duplicate Field proposal JSON key")
+                result[key] = value
+            return result
+
+        try:
+            encoded = self.rfile.read(length)
+            if len(encoded) != length:
+                raise ValueError("Incomplete Field proposal request")
+            body = json.loads(
+                encoded,
+                object_pairs_hook=unique_object,
+                parse_constant=lambda _value: (_ for _ in ()).throw(
+                    ValueError("Non-finite Field proposal number")
+                ),
+            )
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            raise ValueError("Invalid Field proposal JSON") from exc
+        if not isinstance(body, dict):
+            raise TypeError("Expected a Field proposal JSON object")
         return body
 
     def _read_task_json_body(self) -> dict[str, Any] | None:
@@ -1860,35 +2253,6 @@ class HubRequestHandler(BaseHTTPRequestHandler):
                 return True
         return False
 
-    def _legacy_vault_root_authorized(self, *, capability: str) -> bool:
-        """Require an exact Source root for compatibility stores rooted at the Vault.
-
-        Legacy attachments and their manifest are written relative to
-        ``runtime.vault_root`` rather than the owning artifact directory. A
-        subdirectory registration therefore cannot authorize those writes.
-        """
-        try:
-            legacy_root = self.server.runtime.vault_root.resolve(strict=True)
-        except OSError as exc:
-            raise FieldRegistryError("legacy Vault root is unavailable") from exc
-        service = self.server.runtime.field_service
-        if service is None:
-            return False
-        document = service.registry.load_document()
-        for source in document.sources:
-            if not source.enabled or capability not in source.capabilities:
-                continue
-            try:
-                root = service.registry.resolve(
-                    source.source_id,
-                    capability=capability,
-                )
-            except FieldRegistryError:
-                continue
-            if root == legacy_root:
-                return True
-        return False
-
     def _handle_artifact_content(self, artifact_id: str) -> None:
         try:
             content = self.server.runtime.content_store.read(artifact_id)
@@ -1921,89 +2285,6 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             200,
             {"artifact_id": artifact_id, "assets": [_asset_payload(row) for row in assets]},
         )
-
-    def _handle_asset_upload(self, artifact_id: str, query: str) -> None:
-        supplied_token = self.headers.get("X-Scholar-Hub-Token", "")
-        if not secrets.compare_digest(supplied_token, self.server.runtime.session_token):
-            self._respond_text(403, "Invalid session token")
-            return
-        try:
-            self._legacy_artifact_path(artifact_id)
-            source_authorized = self._legacy_vault_root_authorized(capability="write")
-        except UnknownArtifactError:
-            self._respond_text(404, "Unknown artifact")
-            return
-        except ArtifactMissingError:
-            self._respond_text(404, "Artifact is unavailable")
-            return
-        except (ArtifactPathRejectedError, FieldRegistryError):
-            self._respond_text(403, "Artifact path was rejected")
-            return
-        if not source_authorized:
-            self._respond_text(
-                403,
-                "Artifact is not inside a registered writable knowledge source",
-            )
-            return
-        parameters = parse_qs(query, keep_blank_values=True)
-        if set(parameters) - {"name", "role"} or len(parameters.get("name", [])) != 1:
-            self._respond_text(400, "Expected one attachment name")
-            return
-        name = parameters["name"][0]
-        role_values = parameters.get("role", [AssetRole.SUPPLEMENT.value])
-        if len(role_values) != 1:
-            self._respond_text(400, "Expected one attachment role")
-            return
-        try:
-            role = AssetRole(role_values[0])
-        except ValueError:
-            self._respond_text(422, "Unsupported attachment role")
-            return
-        raw_length = self.headers.get("Content-Length")
-        if raw_length is None:
-            self._respond_text(411, "Content-Length is required")
-            return
-        try:
-            length = int(raw_length)
-        except ValueError:
-            self._respond_text(400, "Invalid content length")
-            return
-        if length < 0:
-            self._respond_text(400, "Invalid content length")
-            return
-        if length > self.server.runtime.asset_store.max_bytes:
-            self._respond_text(413, "Attachment is too large")
-            return
-        content = self.rfile.read(length)
-        if len(content) != length:
-            self._respond_text(400, "Incomplete attachment body")
-            return
-        try:
-            asset = self.server.runtime.asset_store.add_bytes(
-                artifact_id,
-                name,
-                content,
-                role=role,
-            )
-        except KeyError:
-            self._respond_text(404, "Unknown artifact")
-            return
-        except InvalidAssetNameError as exc:
-            self._respond_text(422, str(exc))
-            return
-        except ValueError as exc:
-            if "too large" in str(exc):
-                self._respond_text(413, "Attachment is too large")
-            else:
-                self._respond_text(422, str(exc))
-            return
-        except (AssetManifestError, AssetIntegrityError) as exc:
-            self._respond_json(409, {"error": str(exc)})
-            return
-        except OSError as exc:
-            self._respond_json(503, {"error": f"Attachment storage failed: {exc}"})
-            return
-        self._respond_json(201, _asset_payload(asset))
 
     def _handle_asset_content(self, asset_id: str, *, send_body: bool) -> None:
         try:
@@ -2240,9 +2521,11 @@ def start_hub_server(
     directory_service: HubDirectoryService | None = None,
     project_document_service: ProjectDocumentService | None = None,
     field_service: FieldService | None = None,
+    field_transaction_service: FieldTransactionService | None = None,
     destination_registry: DestinationRegistry | None = None,
     folder_picker: SystemFolderPicker | None = None,
     task_service: Any | None = None,
+    cmux_control: CmuxControl | None = None,
     zotero_adapter_factory: Any = ZoteroLocalAdapter,
     binding_registry: WorkspaceBindingRegistry | None = None,
     binding_coordinator: WorkspaceBindingCoordinator | None = None,
@@ -2306,8 +2589,16 @@ def start_hub_server(
     project_registry = ProjectRegistry(home / "hub" / "projects.json")
     tool_registry = ToolRegistry(home / "hub" / "tools.json")
     resolved_field_service = field_service or FieldService(
-        KnowledgeSourceRegistry(home / "hub" / "sources.json")
+        KnowledgeSourceRegistry(home / "hub" / "sources.json"),
+        candidates=FieldCandidateStore(ttl_seconds=_FIELD_REVIEW_TTL_SECONDS),
     )
+    resolved_transaction_service = field_transaction_service or FieldTransactionService(
+        resolved_field_service,
+        state_root=home / "runtime" / "field-transactions-private",
+        ttl_seconds=_FIELD_REVIEW_TTL_SECONDS,
+    )
+    if resolved_transaction_service.field_service is not resolved_field_service:
+        raise ValueError("Field transaction and Field services must share one candidate store")
     zotflow_adapter = RegisteredSourceZotFlowAdapter(resolved_field_service.registry)
     destination_holder: dict[str, DestinationRegistry | None] = {
         "registry": destination_registry
@@ -2427,6 +2718,12 @@ def start_hub_server(
     else:
         resolved_bindings = None
         resolved_generation = service_generation or f"service_{secrets.token_urlsafe(18)}"
+    operator_path = (
+        Path(log_path).parent / OPERATOR_CREDENTIAL_NAME
+        if log_path is not None and service_generation is not None
+        else None
+    )
+    operator_token = secrets.token_urlsafe(48) if operator_path is not None else None
     if action_service is not None and (
         action_executor is not None or public_actions is not None
     ):
@@ -2460,6 +2757,9 @@ def start_hub_server(
         project_document_service=resolved_project_documents,
         destination_registry=destination_registry,
         field_service=resolved_field_service,
+        field_transaction_service=resolved_transaction_service,
+        operator_token=operator_token,
+        operator_credential_path=operator_path,
         folder_picker=folder_picker or SystemFolderPicker(),
         task_service=task_service,
         zotero_adapter_factory=zotero_adapter_factory,
@@ -2477,7 +2777,7 @@ def start_hub_server(
     if configure_default_actions:
         actual_port = server.server_address[1]
         hub_origin = f"http://127.0.0.1:{actual_port}"
-        control = CmuxControl()
+        control = cmux_control or CmuxControl()
         workspaces = WorkspaceRegistry(
             control,
             hub_url=f"{hub_origin}/hub/",
@@ -2568,6 +2868,12 @@ def start_hub_server(
             destination_registry=resolved_destinations,
             task_service=resolved_task_service,
         )
+    if operator_path is not None and operator_token is not None:
+        try:
+            _write_operator_credential(operator_path, resolved_generation, operator_token)
+        except BaseException:
+            server.server_close()
+            raise
     threading.Thread(target=server.serve_forever, daemon=True, name="scholar-hub").start()
     return server
 

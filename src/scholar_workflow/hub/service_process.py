@@ -10,6 +10,7 @@ from pathlib import Path
 
 from scholar_workflow import __version__
 from scholar_workflow.config import Config, ConfigNotFound, load_config
+from scholar_workflow.hub.cmux_router import RouterControl
 from scholar_workflow.hub.compatibility import compatibility_vault_root
 from scholar_workflow.hub.lifecycle import (
     DISCOVERY_SCHEMA_VERSION,
@@ -46,6 +47,7 @@ def run(argv: list[str] | None = None) -> int:
         port=0,
         storage_root=cfg.link_service.storage_root,
         vault_root=vault_root,
+        cmux_control=RouterControl(discovery.parent, options.generation),
         owner_mode="headless",
         require_workspace_binding=False,
         service_generation=options.generation,
