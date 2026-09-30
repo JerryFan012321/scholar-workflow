@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import os
 import re
 import secrets
@@ -83,9 +84,11 @@ class ActionKind(str, Enum):
     RESOURCE_CMUX = "resource.cmux"
     ARTIFACT_CMUX = "artifact.cmux"
     OBSIDIAN_NOTE = "obsidian.note"
+    OBSIDIAN_RELATED_FILE = "obsidian.related-file"
     ZOTERO_ITEM = "zotero.item"
     ZOTERO_PDF = "zotero.pdf"
     ZOTFLOW_ATTACHMENT = "zotflow.attachment"
+    ZOTFLOW_SOURCE_NOTE = "zotflow.source-note"
     SYSTEM_PDF = "system.pdf"
     CODEX_SESSION = "codex.session"
 
@@ -240,7 +243,7 @@ def register_resource_view_actions(
             continue
         action = registry.register(
             kind=ActionKind.RESOURCE_CMUX,
-            label="在 cmux 中查看 PDF",
+            label="Read original PDF in cmux (no Zotero annotations)",
             target=attachment_key,
             workspace_policy=WorkspacePolicy.REQUIRED,
         )
@@ -352,6 +355,7 @@ class CatalogActionService:
         self._executor: ActionExecutor | None = None
         self._registry: ActionRegistry | None = None
         self._paper_actions: dict[str, tuple[str, list[PublicAction]]] = {}
+        self._related_actions: dict[tuple[Any, ...], PublicAction] = {}
 
     def public_actions(self) -> dict[str, list[PublicAction]]:
         catalog = self._catalog_provider.load()
@@ -377,6 +381,7 @@ class CatalogActionService:
                 self._registry = registry
                 self._public_actions = public_actions
                 self._paper_actions = {}
+                self._related_actions = {}
                 self._revision = catalog.revision
             return {
                 entity_id: list(actions)
@@ -444,7 +449,7 @@ class CatalogActionService:
                     actions.append(
                         registry.register(
                             kind=ActionKind.RESOURCE_CMUX,
-                            label="在 cmux 阅读",
+                            label="Read original PDF in cmux (no Zotero annotations)",
                             target=attachment_key,
                             workspace_policy=WorkspacePolicy.REQUIRED,
                         )
@@ -474,7 +479,10 @@ class CatalogActionService:
             ]
             artifacts = {artifact.artifact_id: artifact for artifact in catalog.artifacts}
             for resource in matching_resources:
-                actions.extend(self._public_actions.get(resource.resource_id, []))
+                actions.extend(
+                    action for action in self._public_actions.get(resource.resource_id, [])
+                    if action.kind not in {ActionKind.RESOURCE_CMUX, ActionKind.ZOTERO_ITEM}
+                )
                 if ActionKind.OBSIDIAN_NOTE not in self._launchers:
                     continue
                 for artifact_id in resource.artifact_ids:
@@ -501,6 +509,40 @@ class CatalogActionService:
             self._paper_actions[entity_id] = (fingerprint, list(actions))
             self._public_actions[entity_id] = list(actions)
             return list(actions)
+
+    def add_launcher(self, kind: ActionKind, launcher: Launcher) -> None:
+        """Install a trusted lazy provider launcher without exposing its resolver."""
+        with self._lock:
+            self._launchers[kind] = launcher
+            if self._registry is not None:
+                self._executor = ActionExecutor(self._registry, self._launchers)
+
+    def register_related_action(
+        self,
+        *,
+        kind: ActionKind,
+        label: str,
+        target: str,
+        available: bool = True,
+        reason: str | None = None,
+        workspace_policy: WorkspacePolicy = WorkspacePolicy.NONE,
+    ) -> PublicAction | None:
+        """Register an action from a server-owned, explicitly related document."""
+        self.public_actions()
+        with self._lock:
+            if self._registry is None or kind not in self._launchers:
+                return None
+            cache_key = (kind, label, target, available, reason, workspace_policy)
+            if cache_key in self._related_actions:
+                return self._related_actions[cache_key]
+            action = self._registry.register(
+                kind=kind, label=label, target=target,
+                available=available, reason=reason,
+                workspace_policy=workspace_policy,
+            )
+            self._related_actions[cache_key] = action
+            self._public_actions.setdefault("__related__", []).append(action)
+            return action
 
     def public_workspaces(
         self,
@@ -591,6 +633,79 @@ class ObsidianLauncher:
                 f"(exit {result.returncode})"
             )
         return ObsidianLaunchResult(opened=True)
+
+
+class RelatedObsidianLauncher:
+    """Open a provider-owned document through a server-only identity resolver."""
+
+    def __init__(
+        self,
+        resolver: Callable[[str], Path],
+        *,
+        runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+        timeout: float = 5.0,
+    ) -> None:
+        self._resolver = resolver
+        self._runner = runner
+        self._timeout = timeout
+
+    def open(self, target: str) -> ObsidianLaunchResult:
+        try:
+            path = self._resolver(target)
+        except (OSError, TypeError, ValueError, RuntimeError) as exc:
+            raise InvalidActionTarget("Related document is unavailable or no longer registered") from exc
+        if path.suffix.lower() not in {".md", ".canvas"}:
+            raise InvalidActionTarget("Related document is not a Markdown or Canvas file")
+        uri = "obsidian://open?" + urlencode({"path": str(path)})
+        try:
+            result = self._runner(
+                ["/usr/bin/open", uri], shell=False,
+                timeout=self._timeout, env=minimal_child_environment(),
+                capture_output=True, text=True, check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise ActionError("Could not open the related document in Obsidian") from exc
+        if result.returncode != 0:
+            raise ActionError("Obsidian rejected the related document")
+        return ObsidianLaunchResult(opened=True)
+
+
+class ZotFlowSourceNoteLauncher:
+    """Open a ZotFlow-owned source note by exact Zotero identity."""
+
+    def __init__(self, adapter: Any) -> None:
+        self._adapter = adapter
+
+    def availability(
+        self, library_id: int, item_key: str, *, source_id: str | None = None
+    ) -> Any:
+        probe = getattr(self._adapter, "probe_source_note", None)
+        if probe is not None:
+            return probe(str(library_id), item_key, source_id=source_id)
+        return self._adapter.probe()
+
+    def open(self, target: str) -> dict[str, bool]:
+        try:
+            payload = json.loads(target)
+        except (TypeError, ValueError) as exc:
+            raise InvalidActionTarget("ZotFlow source note identity is invalid") from exc
+        if (
+            not isinstance(payload, dict)
+            or set(payload) - {"library_id", "item_key", "source_id"}
+            or type(payload.get("library_id")) is not int
+            or payload["library_id"] <= 0
+            or not isinstance(payload.get("item_key"), str)
+            or not _ZOTERO_KEY_RE.fullmatch(payload["item_key"])
+            or (payload.get("source_id") is not None and not isinstance(payload["source_id"], str))
+        ):
+            raise InvalidActionTarget("ZotFlow source note identity is invalid")
+        try:
+            return self._adapter.open_source_note(
+                str(payload["library_id"]), payload["item_key"],
+                source_id=payload.get("source_id"),
+            )
+        except ZotFlowError as exc:
+            raise InvalidActionTarget(str(exc)) from exc
 
 
 class ZoteroLauncher:

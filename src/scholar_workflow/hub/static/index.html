@@ -61,10 +61,14 @@
           <div class="task-panel-heading">
             <div>
               <h2 id="task-panel-title">Codex 任务</h2>
-              <p>选择受控任务与目标；工作目录由已登记目标解析，窗口位置由上方 cmux 选项决定。</p>
+              <p>选择论文、Field 或项目作为上下文，然后确认运行目标与模型。</p>
             </div>
-            <span id="task-destination" class="task-destination">正在读取打开位置…</span>
+            <div class="task-heading-actions">
+              <span id="task-destination" class="task-destination">正在读取打开位置…</span>
+              <button id="codex-setup" class="preview-button" type="button">首次配置 / 设置</button>
+            </div>
           </div>
+          <p id="task-context" class="task-context">尚未选择任务上下文</p>
           <form id="task-form" class="task-form">
             <label>任务用途
               <select id="task-action" disabled>
@@ -74,6 +78,11 @@
             <label>目标文件夹 / 项目
               <select id="task-target" disabled>
                 <option value="">正在读取目标…</option>
+              </select>
+            </label>
+            <label>模型
+              <select id="task-model" disabled>
+                <option value="">正在读取模型…</option>
               </select>
             </label>
             <label>思考强度
@@ -87,6 +96,7 @@
             </label>
             <button id="task-submit" class="action-button primary task-submit" type="submit" disabled>运行任务</button>
           </form>
+          <p id="task-summary" class="task-summary"></p>
           <p id="task-status" class="task-status" role="status" aria-live="polite">正在读取 Codex 任务能力…</p>
         </section>
         <section class="content">
@@ -114,6 +124,33 @@
         </section>
       </main>
     </div>
+    <dialog id="codex-setup-dialog" class="codex-setup-dialog" aria-labelledby="codex-setup-title">
+      <div class="preview-header">
+        <div class="preview-heading">
+          <h2 id="codex-setup-title">配置 Codex 任务</h2>
+          <p class="preview-path">确认本机 Codex、模型和允许访问的目标；之后可以直接从 Hub 启动任务。</p>
+        </div>
+        <button id="codex-setup-close" class="close-button" type="button" aria-label="关闭 Codex 设置">×</button>
+      </div>
+      <p id="codex-setup-status" class="preview-status" role="status" aria-live="polite"></p>
+      <div class="codex-setup-body">
+        <label>本机 Codex<select id="codex-setup-candidate" disabled></select></label>
+        <label>默认模型<select id="codex-setup-model" disabled></select></label>
+        <label>文件访问范围<select id="codex-setup-sandbox" disabled></select></label>
+        <fieldset class="codex-setup-targets">
+          <legend>允许任务访问的目标</legend>
+          <div id="codex-setup-target-list"></div>
+          <button id="codex-target-picker" class="preview-button" type="button">选择其他文件夹…</button>
+          <p id="codex-target-preview" class="action-diagnostic"></p>
+          <button id="codex-target-confirm" class="preview-button" type="button" hidden>登记所选文件夹</button>
+        </fieldset>
+        <label class="codex-setup-confirm"><input id="codex-setup-approved" type="checkbox"> 我确认这些模型设置和文件访问范围</label>
+        <p class="action-diagnostic">模型目录表示可选模型；任务成功运行后才能确认当前账户可用。工作区只决定窗口打开位置。</p>
+      </div>
+      <div class="field-register-actions">
+        <button id="codex-setup-save" class="preview-action primary" type="button" disabled>保存配置</button>
+      </div>
+    </dialog>
     <dialog id="field-register-dialog" class="field-register-dialog" aria-labelledby="field-register-title">
       <div class="preview-header">
         <div class="preview-heading">

@@ -646,10 +646,11 @@ class SystemFolderPicker:
     ) -> None:
         self._runner = runner
 
-    def choose(self) -> Path:
+    def choose(self, *, prompt: str = "Choose an Obsidian Vault or Field folder") -> Path:
         if sys.platform != "darwin":
             raise FieldRegistryError("system folder selection is currently available on macOS")
-        script = 'POSIX path of (choose folder with prompt "选择 Obsidian Vault 或领域目录")'
+        escaped_prompt = prompt.replace("\\", "\\\\").replace('"', '\\"')
+        script = f'POSIX path of (choose folder with prompt "{escaped_prompt}")'
         result = self._runner(
             ["/usr/bin/osascript", "-e", script],
             shell=False,

@@ -135,7 +135,13 @@ class VaultCatalogProvider:
             row.resource_id: row.model_dump() for row in catalog.resources
         }
         topic_payloads = {row.topic_id: row.model_dump() for row in catalog.topics}
-        controlled_ids = rejected_ids | {row.artifact_id for row in discovered}
+        removed_snapshot_ids = {
+            row.artifact_id for row in catalog.artifacts
+            if row.artifact_id not in artifact_by_id
+        }
+        controlled_ids = (
+            rejected_ids | removed_snapshot_ids | {row.artifact_id for row in discovered}
+        )
         for payload in resource_payloads.values():
             payload["artifact_ids"] = [
                 value for value in payload["artifact_ids"] if value not in controlled_ids

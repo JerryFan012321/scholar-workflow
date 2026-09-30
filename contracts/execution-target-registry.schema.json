@@ -29,6 +29,8 @@
         "target_id": {"$ref": "#/$defs/portable_id"},
         "kind": {"enum": ["project", "vault", "folder"]},
         "registered_root_id": {"$ref": "#/$defs/portable_id"},
+        "source_id": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/portable_id"}]},
+        "field_id": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/portable_id"}]},
         "capabilities": {
           "type": "array",
           "items": {"$ref": "#/$defs/capability"},

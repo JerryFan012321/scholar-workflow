@@ -3,7 +3,49 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
-## [Unreleased]
+## [0.30.0] - 2026-09-30
+
+Hotfix version sourced from `codex/hotfix-hub-paper-tasks`. Both host manifests and the CLI
+package share this version. All 1,217 unit/contract tests passed; installed-product human
+acceptance remains pending. Release packaging does not require merging this branch to main.
+
+### Fixed
+- **Vault rejection isolation (synthetic regression passed; installed validation pending).** Removing a snapshot artifact by a rejected
+  Vault path also removes its stale resource/topic references, even when the declared ID differs.
+  All six focused Vault tests passed; no real Vault content is rewritten.
+
+### Added
+- **Hub paper entry and related-file controls (unvalidated development changes).** Lazy per-paper
+  related documents derive from explicit Knowledge/provider ownership, preserve missing-file
+  diagnostics and expose controlled preview/open actions. ZotFlow Source Notes use registered
+  Vault/library/item identities. Zotero child listings paginate instead of omitting later rows.
+- **Guided Codex configuration (unvalidated development changes).** Detection/confirmation uses
+  fixed known installations, capability probes and a bounded paginated model catalog, with only
+  confirmed local fallback models. Server-owned profiles, supported reasoning choices, persistent
+  preferences and explicit registered-Field/folder approvals feed contextual task suggestions.
+  Existing tasks pin actual model/effort; the CLI configuration fallback shares the same registry.
+
+### Changed
+- **Hotfix candidate validation.** Started `codex/hotfix-hub-paper-tasks` without changing main.
+  Readable Markdown previews render trailing Obsidian block IDs as DOM anchors rather than body
+  text; Zotero item selection and PDF reading now have distinct labels. Installed-candidate
+  single-paper revalidation is approved; no formal release or merge is implied.
+- **Installed-product acceptance policy (development only).** Installation-dependent integration
+  changes iterate on an isolated hotfix branch, install identifiable candidate builds before
+  approved real-app acceptance, retain rollback, and merge into main only after the agreed gates
+  pass. Candidate installation is distinct from a formal release; no installation or branch
+  switch is performed by this policy update.
+- **Hub presentation.** Paper cards expand related files inline, Markdown previews preserve safe
+  source deep links and hide legacy machine claim comments. Task summary shows recipe, scope,
+  model, reasoning and destination; ambiguous targets/recipes no longer select an arbitrary first
+  row. cmux labels explicitly describe original PDFs without Zotero database annotations.
+- **Validation boundary.** The user-approved focused synthetic/regression sets have 213 passing
+  cases after targeted fixes, plus passing compilation/diff checks. Updated registry/store JSON
+  contracts for model/Field metadata and corrected fixture serialization without relaxing safety.
+  Ruff was unavailable. Partial real reader checks now confirm ZotFlow Library Reader and default
+  cmux PDF rendering; preview block IDs and duplicate attachment actions failed presentation
+  acceptance. Remaining GUI/Codex gates, formal Vault changes, release and candidate installation
+  remain unperformed and are not claimed by this batch.
 
 ## [0.29.0] — 2026-09-30
 

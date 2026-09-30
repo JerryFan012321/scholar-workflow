@@ -447,6 +447,44 @@ class ZoteroLocalAdapter:
         )
         return response.json()
 
+    def get_children_all(self, item_key: str) -> list[dict[str, Any]]:
+        """Read every child page for one paper without a library-wide scan."""
+        item_key = _validate_key(item_key)
+        rows: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        start = 0
+        for _page in range(100):
+            response = self._request(
+                "GET", f"users/0/items/{item_key}/children",
+                headers={"Zotero-API-Version": API_VERSION},
+                params={"start": start, "limit": 100},
+            )
+            payload = response.json()
+            if not isinstance(payload, list) or any(not isinstance(row, dict) for row in payload):
+                raise ZoteroLocalError("Zotero children returned an unexpected response")
+            try:
+                total_header = response.headers.get("Total-Results")
+                total = int(total_header) if total_header is not None else None
+            except ValueError as exc:
+                raise ZoteroLocalError("Zotero children returned an invalid total") from exc
+            if total is not None and total < 0:
+                raise ZoteroLocalError("Zotero children returned an invalid total")
+            keys = [row.get("key") for row in payload]
+            if any(not isinstance(key, str) or key in seen for key in keys):
+                raise ZoteroLocalError("Zotero children changed during pagination; retry")
+            if len(set(keys)) != len(keys):
+                raise ZoteroLocalError("Zotero children returned duplicate identities")
+            seen.update(keys)
+            rows.extend(payload)
+            start += len(payload)
+            if not payload and total is not None and start < total:
+                raise ZoteroLocalError("Zotero children changed during pagination; retry")
+            if not payload or (total is not None and start >= total) or (
+                total is None and len(payload) < 100
+            ):
+                return rows
+        raise ZoteroLocalError("Paper child listing exceeds the bounded page limit")
+
     def get_annotations(self, attachment_key: str) -> list[dict[str, Any]]:
         """Read Zotero-owned annotations for one attachment through the Local API."""
         attachment_key = _validate_key(attachment_key)

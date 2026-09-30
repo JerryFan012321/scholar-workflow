@@ -1493,7 +1493,6 @@ def _allow_default_recipe_target(root: Path, target_id: str) -> None:
     from scholar_workflow.hub.tasks import (
         TaskContractError,
         TaskRecipeRegistry,
-        TaskRecipeRegistryDocument,
     )
 
     registry_path = root / "task-recipes.json"
@@ -1517,12 +1516,7 @@ def _allow_default_recipe_target(root: Path, target_id: str) -> None:
             changed = True
         recipes.append(recipe)
     if changed:
-        registry.save(
-            TaskRecipeRegistryDocument(
-                recipes=recipes,
-                safety_policies=document.safety_policies,
-            )
-        )
+        registry.save(document.model_copy(update={"recipes": recipes}))
 
 
 @hub_lifecycle.group(name="target")
@@ -1732,7 +1726,7 @@ def hub_codex() -> None:
 @click.option(
     "--model",
     required=True,
-    help="Server-owned model for the registered recipe; never exposed to the browser.",
+    help="Approve a local model for server-owned profiles; task requests use profile IDs.",
 )
 @click.option(
     "--sandbox",
@@ -1741,197 +1735,36 @@ def hub_codex() -> None:
     show_default=True,
 )
 def hub_codex_configure(executable: Path, model: str, sandbox: str) -> None:
-    """Register and probe Codex once; task pages only select recipe/target/effort."""
-    from scholar_workflow.hub.directory import (
-        ToolDefinition,
-        ToolRegistry,
-    )
-    from scholar_workflow.hub.tasks import (
-        CodexCapabilityProbe,
-        TaskContractError,
-        TaskEffort,
-        TaskRecipe,
-        TaskRecipeRegistry,
-        TaskRecipeRegistryDocument,
-        TaskSafetyPolicy,
-    )
-    from scholar_workflow.hub.terminal_worker import (
-        TerminalWorkerError,
-        TerminalWorkerRuntimeConfig,
-        TerminalWorkerState,
-    )
-
-    candidate = executable.expanduser()
-    if not candidate.is_absolute():
-        raise InputError("--executable must be an explicit absolute path")
-    try:
-        resolved_executable = candidate.resolve(strict=True)
-    except OSError:
-        raise DependencyError("The configured Codex executable is unavailable") from None
-    if not resolved_executable.is_file() or not os.access(resolved_executable, os.X_OK):
-        raise DependencyError("The configured Codex executable is not executable")
-
-    capabilities = CodexCapabilityProbe(resolved_executable).probe()
-    if not (
-        capabilities.available
-        and capabilities.create
-        and capabilities.resume
-        and capabilities.fork
-    ):
-        raise DependencyError(
-            capabilities.detail or "Configured Codex lacks required exec capabilities"
-        )
+    """CLI fallback: approve an explicit installation, model and existing targets."""
+    from scholar_workflow.hub.codex_setup import CodexSetupService
+    from scholar_workflow.hub.directory import ProjectRegistry
+    from scholar_workflow.hub.fields import KnowledgeSourceRegistry
+    from scholar_workflow.hub.routing import ExecutionTargetRegistry
 
     root = _hub_state_root() / "hub"
-    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    projects = ProjectRegistry(root / "projects.json")
+    sources = KnowledgeSourceRegistry(root / "sources.json")
+    targets = ExecutionTargetRegistry(
+        root / "execution-targets.json", project_registry=projects, source_registry=sources,
+    )
+    service = CodexSetupService(
+        root, project_registry=projects, source_registry=sources, target_registry=targets,
+    )
     try:
-        root.chmod(0o700)
-    except OSError:
-        pass
-    target_path = root / "execution-targets.json"
-    target_ids: list[str] = []
-    if target_path.is_file():
-        from scholar_workflow.hub.directory import ProjectRegistry
-        from scholar_workflow.hub.fields import KnowledgeSourceRegistry
-        from scholar_workflow.hub.routing import ExecutionTargetRegistry
-
-        targets = ExecutionTargetRegistry(
-            target_path,
-            project_registry=ProjectRegistry(root / "projects.json"),
-            source_registry=KnowledgeSourceRegistry(root / "sources.json"),
-        ).load()
-        target_ids = sorted(
-            target.target_id
-            for target in targets.targets
-            if "codex" in target.capabilities
+        target_ids = [row["target_id"] for row in service.public_targets()
+                      if row.get("available", True)]
+        result = service.register_explicit(
+            executable=executable.expanduser(), model=model, sandbox=sandbox,
+            target_ids=target_ids,
         )
-
-    worker_state = TerminalWorkerState(root / "task-worker")
-    try:
-        if worker_state.runtime_path.exists() or worker_state.runtime_path.is_symlink():
-            current_runtime = worker_state.current_runtime()
-            if worker_state.slots_path.is_dir():
-                slot_ids = sorted(
-                    path.name
-                    for path in worker_state.slots_path.iterdir()
-                    if path.is_dir() and not path.is_symlink()
-                )
-                statuses = [
-                    worker_state.public_status(
-                        slot_id=slot_id,
-                        generation=current_runtime.generation,
-                    )
-                    for slot_id in slot_ids
-                ]
-                if any(status.active_run_id or status.queued_run_ids for status in statuses):
-                    raise TerminalWorkerError(
-                        "Codex task policy cannot change while a run is active or queued"
-                    )
-                for status in statuses:
-                    if status.worker_alive:
-                        worker_state.request_stop(
-                            slot_id=status.slot_id,
-                            generation=current_runtime.generation,
-                        )
-    except (OSError, ValueError, TerminalWorkerError) as exc:
+    except (OSError, RuntimeError, ValueError) as exc:
         raise SafetyRefusalError(str(exc)) from None
-
-    policy = TaskSafetyPolicy(
-        policy_id=_DEFAULT_TASK_POLICY_ID,
-        policy_version=1,
-        model=model,
-        sandbox=sandbox,
-        approval_policy="never",
-    )
-    recipe = TaskRecipe(
-        recipe_id=_DEFAULT_TASK_RECIPE_ID,
-        title="General research task",
-        project_required=True,
-        allowed_provider_ids=[
-            "field-manifest",
-            "obsidian",
-            "project-registry",
-            "tool-registry",
-            "zotero",
-        ],
-        allowed_target_ids=target_ids,
-        allowed_tool_ids=["codex"],
-        context_policy_id="selected-only",
-        safety_policy_id=policy.policy_id,
-        allowed_efforts=[TaskEffort.FAST, TaskEffort.STANDARD, TaskEffort.DEEP],
-    )
-    recipes = TaskRecipeRegistry(root / "task-recipes.json")
-    try:
-        existing = recipes.load() if recipes.path.is_file() else None
-        other_recipes = (
-            [row for row in existing.recipes if row.recipe_id != recipe.recipe_id]
-            if existing is not None
-            else []
-        )
-        other_policies = (
-            [row for row in existing.safety_policies if row.policy_id != policy.policy_id]
-            if existing is not None
-            else []
-        )
-        recipes.save(
-            TaskRecipeRegistryDocument(
-                recipes=[*other_recipes, recipe],
-                safety_policies=[*other_policies, policy],
-            )
-        )
-    except (TaskContractError, ValueError) as exc:
-        raise InputError(str(exc)) from None
-
-    generation = f"worker_{secrets.token_urlsafe(24)}"
-    try:
-        worker_state.save_runtime(
-            TerminalWorkerRuntimeConfig(
-                generation=generation,
-                codex_executable=resolved_executable,
-                recipe_registry_path=recipes.path.resolve(),
-                task_store_path=(root / "tasks.json").resolve(),
-                execution_target_registry_path=target_path.resolve(),
-                project_registry_path=(root / "projects.json").resolve(),
-                source_registry_path=(root / "sources.json").resolve(),
-            )
-        )
-    except (OSError, ValueError, TerminalWorkerError) as exc:
-        raise SafetyRefusalError(str(exc)) from None
-
-    tools = ToolRegistry(root / "tools.json")
-    try:
-        existing_tools = tools.load()
-        codex_tool = ToolDefinition(
-            tool_id="codex",
-            display_name="Codex",
-            source="host-registration",
-            tool_type="codex",
-            capabilities=["task.execute"],
-            recipe_ids=[recipe.recipe_id],
-            healthcheck="codex.exec",
-            enabled=True,
-        )
-        tools.save(
-            [row for row in existing_tools if row.tool_id != codex_tool.tool_id]
-            + [codex_tool]
-        )
-    except (OSError, ValueError) as exc:
-        raise SafetyRefusalError("Could not update the explicit Tool registry") from exc
-
-    click.echo(
-        json.dumps(
-            {
-                "configured": True,
-                "available": True,
-                "recipe_id": recipe.recipe_id,
-                "allowed_target_ids": recipe.allowed_target_ids,
-                "efforts": [effort.value for effort in recipe.allowed_efforts],
-                "restart_required": True,
-            },
-            ensure_ascii=False,
-            sort_keys=True,
-        )
-    )
+    # A running HTTP service owns its task-service snapshot; CLI registration is out of process.
+    click.echo(json.dumps({
+        "configured": result["configured"], "available": True,
+        "recipe_id": _DEFAULT_TASK_RECIPE_ID, "allowed_target_ids": target_ids,
+        "efforts": ["fast", "standard", "deep"], "restart_required": True,
+    }, ensure_ascii=False, sort_keys=True))
 
 
 @hub_codex.command(name="status")
