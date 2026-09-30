@@ -19,8 +19,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from pydantic import Field
+
 from scholar_workflow.hub.cmux import CmuxControl, CmuxControlError
 from scholar_workflow.hub.destinations import DestinationRegistry
+from scholar_workflow.hub.directory import EntityRef, ProjectRegistry
+from scholar_workflow.hub.fields import FieldService, KnowledgeSourceRegistry
 from scholar_workflow.hub.models import HubModel
 from scholar_workflow.hub.routing import (
     ExecutionTargetError,
@@ -53,7 +57,12 @@ class PublicExecutionTarget(HubModel):
     """Browser-safe execution target metadata without its registered root."""
 
     target_id: str
+    title: str = "Execution target"
     kind: str
+    registered_root_id: str | None = None
+    source_id: str | None = None
+    field_id: str | None = None
+    project_id: str | None = None
     capabilities: list[str]
     available: bool
     reason: str | None = None
@@ -66,6 +75,7 @@ class PublicTaskAction(HubModel):
     title: str
     allowed_efforts: list[TaskEffort]
     allowed_target_ids: list[str]
+    allowed_model_profile_ids: list[str] = Field(default_factory=list)
     destination_required: bool = True
     available: bool
     reason: str | None = None
@@ -89,6 +99,9 @@ class PublicTask(HubModel):
     action_id: str
     title: str
     effort: TaskEffort
+    model_profile_id: str | None = None
+    model_title: str | None = None
+    reasoning_effort: str | None = None
     archived: bool
     thread_available: bool
     runs: list[PublicTaskRun]
@@ -149,6 +162,7 @@ class TaskControlService:
         sleep: Callable[[float], None] = time.sleep,
         worker_start_timeout: float = 5.0,
         worker_poll_interval: float = 0.05,
+        context_resolver: Callable[[EntityRef], bool] | None = None,
     ) -> None:
         if worker_start_timeout <= 0 or worker_poll_interval <= 0:
             raise ValueError("worker startup timing must be positive")
@@ -170,6 +184,7 @@ class TaskControlService:
         self._worker_start_timeout = worker_start_timeout
         self._worker_poll_interval = worker_poll_interval
         self._launch_lock = threading.RLock()
+        self._context_resolver = context_resolver
         self._capabilities = CodexCapabilities(
             available=False,
             create=False,
@@ -288,7 +303,28 @@ class TaskControlService:
         except (ExecutionTargetError, OSError, ValueError):
             return []
         public: list[PublicExecutionTarget] = []
+        try:
+            projects = {
+                row.project_id: row
+                for row in ProjectRegistry(self._targets.project_registry_path).load()
+            }
+            sources = KnowledgeSourceRegistry(self._targets.source_registry_path).load_document()
+        except (OSError, RuntimeError, ValueError):
+            projects = {}
+            sources = None
         for target in sorted(targets, key=lambda row: row.target_id):
+            folder = next((row for row in sources.folders if row.folder_id == target.registered_root_id), None) if sources else None
+            title = (
+                projects[target.registered_root_id].display_name
+                if target.kind == "project" and target.registered_root_id in projects
+                else folder.root.name if folder else target.target_id
+            )
+            if target.field_id and folder:
+                try:
+                    manifest = FieldService._load_manifest(folder.root)
+                    title = next(row.title for row in manifest.fields if row.field_id == target.field_id)
+                except (OSError, RuntimeError, ValueError, StopIteration):
+                    pass
             available = False
             if "codex" in target.capabilities:
                 try:
@@ -300,7 +336,15 @@ class TaskControlService:
             public.append(
                 PublicExecutionTarget(
                     target_id=target.target_id,
+                    title=title,
                     kind=target.kind,
+                    registered_root_id=target.registered_root_id,
+                    field_id=target.field_id,
+                    project_id=target.registered_root_id if target.kind == "project" else None,
+                    source_id=target.source_id or next(
+                        (row.source_id for row in sources.sources if row.folder_id == target.registered_root_id and row.enabled),
+                        None,
+                    ) if sources is not None and target.kind == "vault" else None,
                     capabilities=[
                         capability
                         for capability in target.capabilities
@@ -337,11 +381,27 @@ class TaskControlService:
                     title=recipe.title,
                     allowed_efforts=recipe.allowed_efforts,
                     allowed_target_ids=allowed,
+                    allowed_model_profile_ids=recipe.allowed_model_profile_ids or [],
                     available=available,
                     reason=reason,
                 )
             )
         return public
+
+    def public_options(self) -> dict[str, Any]:
+        """Expose only explicitly approved model profiles to the task page."""
+
+        try:
+            document = self._recipes.load()
+        except (TaskContractError, OSError, ValueError):
+            return {"model_profiles": [], "default_profile_id": None, "available": False,
+                    "reason": "Task recipe registry is unavailable"}
+        return {
+            "model_profiles": [row.public() for row in document.model_profiles],
+            "default_profile_id": next((row.profile_id for row in document.model_profiles if row.is_default), None),
+            "available": self.available,
+            "reason": self.unavailable_reason,
+        }
 
     def create(self, request: TaskActionRequest) -> TaskDispatchResult:
         recipe, task_request, raw_workspace, fingerprint, cwd = self._prepare(request)
@@ -360,7 +420,8 @@ class TaskControlService:
     def resume(
         self, task_id: str, request: TaskActionRequest
     ) -> TaskDispatchResult:
-        _recipe, task_request, raw_workspace, fingerprint, cwd = self._prepare(request)
+        task = self._store.get_task(task_id)
+        _recipe, task_request, raw_workspace, fingerprint, cwd = self._prepare(request, pinned_task=task)
         return self._dispatch(
             request=request,
             task_request=task_request,
@@ -409,7 +470,7 @@ class TaskControlService:
         return self._public_run(run)
 
     def _prepare(
-        self, request: TaskActionRequest
+        self, request: TaskActionRequest, *, pinned_task: LogicalTask | None = None,
     ) -> tuple[TaskRecipe, TaskRequest, str, str, Path]:
         if not self.available:
             raise RuntimeError(
@@ -422,6 +483,26 @@ class TaskControlService:
             )
         if TaskEffort(request.effort) not in recipe.allowed_efforts:
             raise ValueError("Selected effort is not allowed for this task action")
+        if request.model_profile_id is not None:
+            if request.model_profile_id not in (recipe.allowed_model_profile_ids or ()):
+                raise ValueError("Selected model profile is not allowed for this task action")
+            profile = self._recipes.model_profile_map().get(request.model_profile_id)
+            pinned = pinned_task is not None and pinned_task.model_profile_id == request.model_profile_id
+            if profile is None or (
+                not pinned and request.reasoning_effort is not None
+                and request.reasoning_effort not in profile.supported_reasoning_efforts
+            ):
+                raise ValueError("Selected reasoning effort is not supported by this model")
+        elif request.reasoning_effort is not None:
+            raise ValueError("Select an approved model profile before choosing reasoning effort")
+        for reference in request.entity_refs:
+            if (
+                reference.provider_id not in recipe.allowed_provider_ids
+                and reference.provider_id.split(":", 1)[0] not in recipe.allowed_provider_ids
+            ):
+                raise ValueError("Selected context provider is not allowed for this task action")
+            if self._context_resolver is None or not self._context_resolver(reference):
+                raise ValueError("Selected task context is unavailable")
         try:
             resolved_target = self._targets.resolve(
                 request.target_id,
@@ -444,6 +525,9 @@ class TaskControlService:
             recipe_id=recipe.recipe_id,
             target_id=request.target_id,
             effort=request.effort,
+            model_profile_id=request.model_profile_id,
+            reasoning_effort=request.reasoning_effort,
+            entity_refs=request.entity_refs,
             brief=request.brief,
             idempotency_key=request.idempotency_key,
         )
@@ -559,6 +643,9 @@ class TaskControlService:
             action_id=action_id,
             title=task.title,
             effort=task.effort,
+            model_profile_id=task.model_profile_id,
+            model_title=task.resolved_model,
+            reasoning_effort=task.reasoning_effort,
             archived=task.archived,
             thread_available=task.codex_thread_id is not None,
             runs=[

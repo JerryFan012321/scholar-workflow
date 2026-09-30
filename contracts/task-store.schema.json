@@ -51,6 +51,9 @@
           "oneOf": [{"type": "null"}, {"$ref": "#/$defs/portable_id"}]
         },
         "effort": {"enum": ["fast", "standard", "deep"]},
+        "model_profile_id": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/portable_id"}]},
+        "resolved_model": {"type": ["string", "null"], "minLength": 1, "maxLength": 100},
+        "reasoning_effort": {"type": ["string", "null"], "pattern": "^[a-z][a-z0-9_-]{0,31}$"},
         "configuration_fingerprint": {"$ref": "#/$defs/sha256"},
         "approved_summary": {"type": ["string", "null"], "maxLength": 2000},
         "brief_hash": {"$ref": "#/$defs/sha256"},
@@ -102,6 +105,9 @@
         "request_fingerprint": {"$ref": "#/$defs/sha256"},
         "configuration_fingerprint": {"$ref": "#/$defs/sha256"},
         "source_thread_id": {"$ref": "#/$defs/thread_id"},
+        "model_profile_id": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/portable_id"}]},
+        "resolved_model": {"type": ["string", "null"], "minLength": 1, "maxLength": 100},
+        "reasoning_effort": {"type": ["string", "null"], "pattern": "^[a-z][a-z0-9_-]{0,31}$"},
         "codex_thread_id": {"$ref": "#/$defs/thread_id"},
         "result_summary": {"type": ["string", "null"], "maxLength": 2000},
         "result_summary_hash": {

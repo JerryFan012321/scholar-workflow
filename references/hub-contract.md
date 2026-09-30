@@ -157,6 +157,8 @@ ExecutionTarget {
   target_id,
   kind: "project" | "vault" | "folder",
   registered_root_id,
+  source_id?,
+  field_id?,
   capabilities
 }
 
@@ -182,11 +184,47 @@ Obsidian, Zotero, Preview, and other native applications do not belong to a cmux
 workspace. Notion and other Web tools use registered URL recipes. CLI and Codex use
 registered terminal recipes, with cwd derived only from the selected Target.
 
-The browser may submit only opaque action/destination/target/recipe IDs, an idempotency
-key, an allowed effort value, and a UTF-8 brief of at most 8 KiB. It never submits an
+The browser may submit only opaque action/destination/target/recipe/model-profile IDs,
+validated context EntityRefs, an idempotency key, a supported reasoning effort, and a UTF-8 brief of at most 8 KiB. It never submits an
 arbitrary URL, command, cwd/path, model, sandbox, permission, environment, or raw Codex
 configuration. Briefs use stdin, argv is fixed with `shell=False`, and resume/fork uses
 an explicitly saved thread ID rather than `--last`.
+
+### Paper-related files
+
+Expand **Related files** on a paper card to fetch its explicit manifest/provider relations.
+The response contains typed document references, titles, source names, availability/reasons,
+opaque action IDs and optional preview IDs. It includes companion notes, analysis Markdown,
+editable Canvas, annotation/reading notes, ZotFlow-owned Source Notes and Zotero child notes or
+attachments when those relations exist. Identical names do not establish a relation. Missing
+declared files stay visible with diagnostics. Preview/open revalidate the relation and no-symlink
+root; Markdown is read-only in the Hub and can open in Obsidian, Canvas edits in Obsidian.
+
+The ZotFlow action uses the registered Vault identity plus Zotero library/attachment key to
+open the **Library Reader**, not a Vault-local PDF. The cmux action displays the original local
+PDF and explicitly excludes Zotero database annotations. Neither OS dispatch success nor a
+mock action result proves that the intended reader actually rendered; visible acceptance is separate.
+
+### Guided Codex setup and selection
+
+**Configure Codex** detects only the registered executable and fixed known install locations,
+probes capabilities and asks Codex `model/list` for paginated choices. It reads only local scalar
+model/effort defaults, never auth files. If the catalog is unavailable, only a confirmed local model
+is offered. Detection is read-only; explicit confirmation saves reviewed profiles, policy and target
+approvals. Registered Field suggestions preserve Field scope; a system-selected folder requires its
+own preview/confirmation. Disabled roots are not silently enabled.
+
+Task menus offer **Default** (the confirmed CLI model, not proprietary desktop auto-routing) and
+specific approved profiles, with only their supported reasoning levels. Preferences persist in the
+private state directory across dynamic ports. Legacy `fast/standard/deep` requests still map to
+fixed efforts. A catalog entry proves selectability, not account access; a successful real run is needed.
+
+Current Project/Field context suggests its exact target; a paper suggests a Field only if exactly
+one registered relation matches. Multiple targets or recipes require a choice; empty lists guide
+registration. Selected resource identities accompany the bounded brief via stdin. Before launch,
+the page shows recipe, target, model, reasoning and opening destination together. Existing tasks
+persist actual resolved model/effort; resume pins them even after Default changes. A changed
+configuration requires a new task or explicit fork. Setup cannot race an HTTP task reservation.
 
 ## Independent capabilities
 
@@ -300,6 +338,14 @@ GET  /api/v3/destinations
 GET  /api/v3/actions
 GET  /api/v3/execution-targets
 GET  /api/v3/task-actions
+GET  /api/v3/task-options
+GET  /api/v3/papers/<item-key>/related
+GET  /api/v3/paper-documents/<preview-id>/content
+GET  /api/v3/codex/setup
+POST /api/v3/codex/setup
+POST /api/v3/task-options/preferences
+POST /api/v3/execution-targets/preview
+POST /api/v3/execution-targets/confirm
 POST /api/v3/actions/<action-id>
 POST /api/v3/fields/select
 POST /api/v3/fields/confirm

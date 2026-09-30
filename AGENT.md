@@ -81,8 +81,15 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
 - 新论文的资料笔记、分析 Markdown、Canvas 和 sidecar 同处 Field 内
   `resources/papers/<stable-paper-segment>/`；PDF 仍归 Zotero。目录段须与资源 ID 持久映射，旧平铺
   产物只原位兼容，正式搬迁需显式 CAS/恢复事务及链接清理，不能靠普通分析更新顺手移动。
-- TaskRecipe 只接受 allowlisted target、最多 8 KiB 的 bounded brief 和 `fast/standard/deep` effort；
-  浏览器不能提交命令、cwd/path、model、sandbox、permission、环境变量或任意 config。
+- TaskRecipe 只接受 allowlisted target、已验证的上下文 EntityRef、最多 8 KiB 的 bounded brief、
+  已批准的 `model_profile_id` 和该模型支持的 reasoning effort；`fast/standard/deep` 仅作旧请求兼容。
+  浏览器不能提交命令、cwd/path、原始 model、sandbox、permission、环境变量或任意 config。
+  首次设置另经用户确认安装候选、模型目录、目标及有界的读写策略，不在任务请求中开放权限配置。
+  模型目录不是账号可调用性证明；已有线程固定实际模型和思考强度，改变配置须新建或显式 fork。
+- 论文卡片相关文件只由 manifest/provider 的明确归属产生，按需加载；同名不证明同一论文。
+  缺失文件保留诊断，Markdown 可正文预览及 Obsidian 打开，Canvas 在 Obsidian 编辑；
+  ZotFlow 来源笔记与 Scholar 分析分属不同 writer。cmux 原 PDF 动作明确不含 Zotero 数据库批注。
+  任务只自动选择唯一匹配的 recipe/target；歧义须选择，无目标须登记，禁止任取列表首项。
 
 ## 设计哲学(上位准则)
 
@@ -110,6 +117,16 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
 过程契约,才值得规定执行步骤。
 
 ### 开发验证与真实执行分离
+
+必须安装后才能验证的 Hub/CLI/插件集成，遵守全局安装态验收原则：在独立
+`codex/hotfix-<scope>` 分支上迭代，每轮实机验收前安装该分支的候选构建，标明
+分支、source SHA/build、安装包和实际服务身份，保留上一安装版本的回退方式。
+hotfix 按可正式发布的独立版本打包并通过正常安装/更新入口部署到实际使用环境；
+必须有可识别版本、确定源码提交和完整 runtime-only 产物，临时 venv 或源码直跑不算
+产品安装。hotfix 发布/安装与 main 合并分离，约定验收通过后才合并；不得在验收前
+冒称稳定主线已完成。发布脚本从当前已提交且干净的开发分支生成 runtime-only release，
+可用于 hotfix，不得为发布而提前合并。测试范围与安装/服务切换影响先按测试独立原则展示并获批；
+只复验受影响的单对象功能及必要回归，不重做仍有效的整批业务验收。
 
 开发或迭代 skill、CLI、Hub 契约时，内循环先用合成 fixture 和一个受控对象
 （一篇论文、一个仓库或一个 `test` Vault 样本）验证路由、格式、安全和失败恢复；
@@ -295,7 +312,7 @@ contains **only runtime files**: `.agents/plugins/marketplace.json`, `.claude-pl
 
 **Never commit to `release` by hand.** Build it from `main` with `scripts/make-release.sh`
 (idempotent; each release commit records the source `main` SHA). Flow: land changes on
-`main` → run the script → review `release` → push `release`. Keep the runtime manifest in
+`main` or an approved hotfix branch → run the script → review `release` → push `release`. Keep the runtime manifest in
 the script and the boundary in both READMEs' "Development" section in sync. Personal data
 (machine paths, proxy ports, real tokens/interests) must never reach runtime files, since
 those ship — audit before releasing.

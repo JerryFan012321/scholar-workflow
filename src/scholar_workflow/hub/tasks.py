@@ -37,6 +37,7 @@ from scholar_workflow.hub.routing import (
 
 MAX_BRIEF_BYTES = 8 * 1024
 _TASK_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$")
+_MODEL_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$")
 _THREAD_ID = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
 )
@@ -104,6 +105,7 @@ class TaskRecipe(HubModel):
     allowed_project_ids: list[str] | None = None
     allowed_target_ids: list[str] | None = None
     allowed_tool_ids: list[str] = Field(default_factory=list)
+    allowed_model_profile_ids: list[str] | None = None
     context_policy_id: str = "selected-only"
     safety_policy_id: str = "default"
     allowed_efforts: list[TaskEffort] = Field(
@@ -130,6 +132,7 @@ class TaskRecipe(HubModel):
         "allowed_project_ids",
         "allowed_target_ids",
         "allowed_tool_ids",
+        "allowed_model_profile_ids",
         "context_policy_id",
         "safety_policy_id",
     )
@@ -159,11 +162,82 @@ class TaskSafetyPolicy(HubModel):
     sandbox: Literal["read-only", "workspace-write"]
     approval_policy: Literal["never"] = "never"
 
-    @field_validator("policy_id", "model")
+    @field_validator("policy_id")
     @classmethod
     def _clean_values(cls, value: str) -> str:
         if not _TASK_ID.fullmatch(value):
             raise ValueError("task safety policy values must be portable identifiers")
+        return value
+
+    @field_validator("model")
+    @classmethod
+    def _model(cls, value: str) -> str:
+        if not _MODEL_ID.fullmatch(value):
+            raise ValueError("task models must be portable identifiers")
+        return value
+
+
+class CodexModelProfile(HubModel):
+    """One explicitly approved model choice, separate from sandbox policy."""
+
+    profile_id: str
+    title: str = Field(min_length=1, max_length=200)
+    model: str = Field(min_length=1, max_length=100)
+    supported_reasoning_efforts: list[str] = Field(min_length=1, max_length=16)
+    default_reasoning_effort: str
+    is_default: bool = False
+    source: Literal["codex-catalog", "local-config", "explicit"] = "explicit"
+
+    @field_validator("profile_id")
+    @classmethod
+    def _identifiers(cls, value: str) -> str:
+        if not _TASK_ID.fullmatch(value):
+            raise ValueError("model profiles require portable model and profile identifiers")
+        return value
+
+    @field_validator("model")
+    @classmethod
+    def _model(cls, value: str) -> str:
+        if not _MODEL_ID.fullmatch(value):
+            raise ValueError("model profiles require a portable model identifier")
+        return value
+
+    @field_validator("supported_reasoning_efforts")
+    @classmethod
+    def _efforts(cls, values: list[str]) -> list[str]:
+        if len(values) != len(set(values)) or any(
+            not re.fullmatch(r"[a-z][a-z0-9_-]{0,31}", value) for value in values
+        ):
+            raise ValueError("model reasoning efforts must be unique named values")
+        return values
+
+    @model_validator(mode="after")
+    def _supported_default(self) -> Self:
+        if self.default_reasoning_effort not in self.supported_reasoning_efforts:
+            raise ValueError("default reasoning effort is not supported by the model")
+        return self
+
+    def public(self) -> dict[str, Any]:
+        return self.model_dump(exclude={"model", "source"})
+
+
+class ResolvedModelConfiguration(HubModel):
+    model_profile_id: str | None = None
+    model: str
+    reasoning_effort: str
+
+    @field_validator("model")
+    @classmethod
+    def _model(cls, value: str) -> str:
+        if not _MODEL_ID.fullmatch(value):
+            raise ValueError("resolved model must be a portable identifier")
+        return value
+
+    @field_validator("reasoning_effort")
+    @classmethod
+    def _effort(cls, value: str) -> str:
+        if not re.fullmatch(r"[a-z][a-z0-9_-]{0,31}", value):
+            raise ValueError("resolved reasoning effort must be a named value")
         return value
 
 
@@ -172,15 +246,24 @@ class TaskRequest(HubModel):
     project_id: str | None = None
     target_id: str | None = None
     entity_refs: list[EntityRef] = Field(default_factory=list, max_length=32)
-    effort: TaskEffort
+    effort: TaskEffort = TaskEffort.STANDARD
+    model_profile_id: str | None = None
+    reasoning_effort: str | None = None
     brief: str = Field(min_length=1)
     idempotency_key: str
 
-    @field_validator("recipe_id", "project_id", "target_id", "idempotency_key")
+    @field_validator("recipe_id", "project_id", "target_id", "idempotency_key", "model_profile_id")
     @classmethod
     def _ids(cls, value: str | None) -> str | None:
         if value is not None and not _TASK_ID.fullmatch(value):
             raise ValueError("task request identifiers must be portable")
+        return value
+
+    @field_validator("reasoning_effort")
+    @classmethod
+    def _reasoning(cls, value: str | None) -> str | None:
+        if value is not None and not re.fullmatch(r"[a-z][a-z0-9_-]{0,31}", value):
+            raise ValueError("reasoning effort must be a supported named value")
         return value
 
     @field_validator("brief")
@@ -219,6 +302,9 @@ class LogicalTask(HubModel):
     project_id: str | None = None
     target_id: str | None = None
     effort: TaskEffort
+    model_profile_id: str | None = None
+    resolved_model: str | None = None
+    reasoning_effort: str | None = None
     configuration_fingerprint: str
     approved_summary: str | None = Field(default=None, max_length=2000)
     brief_hash: str
@@ -227,12 +313,25 @@ class LogicalTask(HubModel):
     created_at: datetime
     updated_at: datetime
 
-    @field_validator("task_id", "recipe_id")
+    @field_validator("task_id", "recipe_id", "model_profile_id")
     @classmethod
-    def _portable_ids(cls, value: str) -> str:
-        if not _TASK_ID.fullmatch(value):
+    def _portable_ids(cls, value: str | None) -> str | None:
+        if value is not None and not _TASK_ID.fullmatch(value):
             raise ValueError("task identifiers must be portable")
         return value
+
+    @model_validator(mode="after")
+    def _resolved_configuration(self) -> Self:
+        if (self.resolved_model is None) != (self.reasoning_effort is None):
+            raise ValueError("resolved model and reasoning effort must be recorded together")
+        if self.model_profile_id is not None and self.resolved_model is None:
+            raise ValueError("model-profile tasks must record the resolved model")
+        if self.resolved_model is not None:
+            ResolvedModelConfiguration(
+                model_profile_id=self.model_profile_id, model=self.resolved_model,
+                reasoning_effort=self.reasoning_effort,
+            )
+        return self
 
     @field_validator("configuration_fingerprint", "brief_hash")
     @classmethod
@@ -255,6 +354,9 @@ class TaskRun(HubModel):
     idempotency_key: str
     request_fingerprint: str
     configuration_fingerprint: str
+    model_profile_id: str | None = None
+    resolved_model: str | None = None
+    reasoning_effort: str | None = None
     source_thread_id: str | None = None
     codex_thread_id: str | None = None
     result_summary: str | None = Field(default=None, max_length=2000)
@@ -275,6 +377,15 @@ class TaskRun(HubModel):
 
     @model_validator(mode="after")
     def _thread_required_for_continuation(self) -> Self:
+        if (self.resolved_model is None) != (self.reasoning_effort is None):
+            raise ValueError("run model and reasoning effort must be recorded together")
+        if self.model_profile_id is not None and self.resolved_model is None:
+            raise ValueError("model-profile runs must record the resolved model")
+        if self.resolved_model is not None:
+            ResolvedModelConfiguration(
+                model_profile_id=self.model_profile_id, model=self.resolved_model,
+                reasoning_effort=self.reasoning_effort,
+            )
         if self.mode in {"resume", "fork"} and not self.source_thread_id:
             raise ValueError("resume and fork require an explicit codex_thread_id")
         if self.mode == "create" and self.source_thread_id is not None:
@@ -315,10 +426,10 @@ class TaskRun(HubModel):
                 raise ValueError("unsuccessful runs cannot claim a Codex thread ID")
         return self
 
-    @field_validator("run_id", "task_id", "idempotency_key")
+    @field_validator("run_id", "task_id", "idempotency_key", "model_profile_id")
     @classmethod
-    def _portable_ids(cls, value: str) -> str:
-        if not _TASK_ID.fullmatch(value):
+    def _portable_ids(cls, value: str | None) -> str | None:
+        if value is not None and not _TASK_ID.fullmatch(value):
             raise ValueError("run identifiers must be portable")
         return value
 
@@ -345,6 +456,9 @@ class CodexInvocation(HubModel):
     cwd: Path
     recipe_id: str
     effort: TaskEffort
+    model_profile_id: str | None = None
+    resolved_model: str | None = None
+    reasoning_effort: str | None = None
 
 
 class CodexCommandBuilder:
@@ -363,6 +477,7 @@ class CodexCommandBuilder:
         project_registry: ProjectRegistry | None = None,
         target_registry: ExecutionTargetRegistry | None = None,
         safety_policies: dict[str, TaskSafetyPolicy],
+        model_profiles: dict[str, CodexModelProfile] | None = None,
         runtime_cwd: Path | None = None,
     ) -> None:
         executable = Path(codex_executable)
@@ -377,21 +492,30 @@ class CodexCommandBuilder:
         ):
             raise ValueError("safety policies must be an explicit keyed registry")
         self._safety_policies = dict(safety_policies)
+        self._model_profiles = dict(model_profiles or {})
+        if any(key != profile.profile_id for key, profile in self._model_profiles.items()):
+            raise ValueError("model profiles must be an explicit keyed registry")
         self._runtime_cwd = Path(runtime_cwd).resolve() if runtime_cwd is not None else None
 
-    def build_new(self, recipe: TaskRecipe, request: TaskRequest) -> CodexInvocation:
+    def build_new(
+        self, recipe: TaskRecipe, request: TaskRequest,
+        *, resolved: ResolvedModelConfiguration | None = None,
+    ) -> CodexInvocation:
         self._validate_recipe_request(recipe, request)
         cwd = self._trusted_cwd(recipe, request)
-        effort = self._EFFORT_MAP[request.effort]
+        resolved = resolved or self.resolve_model_configuration(recipe, request)
         policy = self.policy_for(recipe)
         return CodexInvocation(
-            argv=self._base_argv(cwd=cwd, policy=policy, effort=effort) + (
+            argv=self._base_argv(cwd=cwd, policy=policy, resolved=resolved) + (
                 "-",
             ),
-            stdin=request.brief,
+            stdin=self._stdin(request),
             cwd=cwd,
             recipe_id=recipe.recipe_id,
             effort=request.effort,
+            model_profile_id=resolved.model_profile_id,
+            resolved_model=resolved.model,
+            reasoning_effort=resolved.reasoning_effort,
         )
 
     def build_continuation(
@@ -401,6 +525,7 @@ class CodexCommandBuilder:
         *,
         mode: str,
         codex_thread_id: str,
+        resolved: ResolvedModelConfiguration | None = None,
     ) -> CodexInvocation:
         self._validate_recipe_request(recipe, request)
         if mode not in {"resume", "fork"}:
@@ -408,18 +533,48 @@ class CodexCommandBuilder:
         if codex_thread_id == "--last" or not _THREAD_ID.fullmatch(codex_thread_id):
             raise ValueError("an explicit saved Codex thread ID is required")
         cwd = self._trusted_cwd(recipe, request)
-        effort = self._EFFORT_MAP[request.effort]
+        resolved = resolved or self.resolve_model_configuration(recipe, request)
         policy = self.policy_for(recipe)
         return CodexInvocation(
-            argv=self._base_argv(cwd=cwd, policy=policy, effort=effort) + (
+            argv=self._base_argv(cwd=cwd, policy=policy, resolved=resolved) + (
                 mode,
                 codex_thread_id,
                 "-",
             ),
-            stdin=request.brief,
+            stdin=self._stdin(request),
             cwd=cwd,
             recipe_id=recipe.recipe_id,
             effort=request.effort,
+            model_profile_id=resolved.model_profile_id,
+            resolved_model=resolved.model,
+            reasoning_effort=resolved.reasoning_effort,
+        )
+
+    def resolve_model_configuration(
+        self, recipe: TaskRecipe, request: TaskRequest,
+        *, pinned_model: str | None = None, pinned_reasoning_effort: str | None = None,
+    ) -> ResolvedModelConfiguration:
+        """Resolve approved profiles; continuation can retain a saved default model."""
+
+        if request.model_profile_id is None:
+            if request.reasoning_effort is not None:
+                raise TaskContractError("a reasoning effort requires a registered model profile")
+            return ResolvedModelConfiguration(
+                model=pinned_model or self.policy_for(recipe).model,
+                reasoning_effort=pinned_reasoning_effort or self._EFFORT_MAP[request.effort],
+            )
+        if request.model_profile_id not in (recipe.allowed_model_profile_ids or ()):
+            raise TaskContractError("model profile is not allowlisted by the recipe")
+        profile = self._model_profiles.get(request.model_profile_id)
+        if profile is None:
+            raise TaskContractError("model profile is not registered")
+        effort = request.reasoning_effort or pinned_reasoning_effort or profile.default_reasoning_effort
+        if pinned_model is None and effort not in profile.supported_reasoning_efforts:
+            raise TaskContractError("reasoning effort is not supported by the selected model")
+        return ResolvedModelConfiguration(
+            model_profile_id=profile.profile_id,
+            model=pinned_model or profile.model,
+            reasoning_effort=effort,
         )
 
     def policy_for(self, recipe: TaskRecipe) -> TaskSafetyPolicy:
@@ -430,12 +585,22 @@ class CodexCommandBuilder:
                 f"recipe safety policy is not registered: {recipe.safety_policy_id}"
             ) from None
 
+    @staticmethod
+    def _stdin(request: TaskRequest) -> str:
+        if not request.entity_refs:
+            return request.brief
+        context = json.dumps(
+            [row.model_dump(mode="json") for row in request.entity_refs],
+            ensure_ascii=False, sort_keys=True,
+        )
+        return f"Selected context (registered resource identities):\n{context}\n\nTask:\n{request.brief}"
+
     def _base_argv(
         self,
         *,
         cwd: Path,
         policy: TaskSafetyPolicy,
-        effort: str,
+        resolved: ResolvedModelConfiguration,
     ) -> tuple[str, ...]:
         return (
             str(self._executable),
@@ -447,13 +612,13 @@ class CodexCommandBuilder:
             "-C",
             str(cwd),
             "-m",
-            policy.model,
+            resolved.model,
             "-s",
             policy.sandbox,
             "-c",
             f'approval_policy="{policy.approval_policy}"',
             "-c",
-            f'model_reasoning_effort="{effort}"',
+            f'model_reasoning_effort="{resolved.reasoning_effort}"',
         )
 
     def _validate_recipe_request(self, recipe: TaskRecipe, request: TaskRequest) -> None:
@@ -482,6 +647,7 @@ class CodexCommandBuilder:
                 raise ValueError("project is not allowlisted by the recipe")
         if any(
             reference.provider_id not in recipe.allowed_provider_ids
+            and reference.provider_id.split(":", 1)[0] not in recipe.allowed_provider_ids
             for reference in request.entity_refs
         ):
             raise ValueError("entity reference provider is not allowlisted by the recipe")
@@ -597,14 +763,15 @@ class CodexCapabilityProbe:
 class TaskRecipeRegistryDocument(HubModel):
     """Checked host configuration; recipes are never inferred from PATH or executables."""
 
-    schema_version: int = 2
+    schema_version: int = 3
     recipes: list[TaskRecipe] = Field(default_factory=list)
     safety_policies: list[TaskSafetyPolicy] = Field(default_factory=list)
+    model_profiles: list[CodexModelProfile] = Field(default_factory=list)
 
     @field_validator("schema_version")
     @classmethod
     def _version(cls, value: int) -> int:
-        if value != 2:
+        if value not in {2, 3}:
             raise ValueError("unsupported task recipe registry schema")
         return value
 
@@ -621,6 +788,16 @@ class TaskRecipeRegistryDocument(HubModel):
         } - set(policy_ids)
         if unknown:
             raise ValueError("task recipe references an unknown safety policy")
+        profile_ids = [row.profile_id for row in self.model_profiles]
+        if len(profile_ids) != len(set(profile_ids)):
+            raise ValueError("duplicate model profile ID")
+        if sum(row.is_default for row in self.model_profiles) > 1:
+            raise ValueError("model profiles have multiple defaults")
+        if any(
+            set(recipe.allowed_model_profile_ids or ()) - set(profile_ids)
+            for recipe in self.recipes
+        ):
+            raise ValueError("task recipe references an unknown model profile")
         return self
 
 
@@ -671,6 +848,9 @@ class TaskRecipeRegistry:
     def safety_policy_map(self) -> dict[str, TaskSafetyPolicy]:
         return {policy.policy_id: policy for policy in self.load().safety_policies}
 
+    def model_profile_map(self) -> dict[str, CodexModelProfile]:
+        return {profile.profile_id: profile for profile in self.load().model_profiles}
+
 
 class IdempotencyRecord(HubModel):
     idempotency_key: str
@@ -717,6 +897,7 @@ class TaskStoreDocument(HubModel):
         if len(keys) != len(set(keys)):
             raise ValueError("duplicate idempotency key")
         task_set = set(task_ids)
+        tasks_by_id = {task.task_id: task for task in self.tasks}
         run_set = set(run_ids)
         if any(run.task_id not in task_set for run in self.runs):
             raise ValueError("task run references an unknown logical task")
@@ -728,6 +909,11 @@ class TaskStoreDocument(HubModel):
         for run in self.runs:
             if idempotency_by_run[run.run_id].request_fingerprint != run.request_fingerprint:
                 raise ValueError("idempotency fingerprint does not match its task run")
+            owner = tasks_by_id[run.task_id]
+            if (run.model_profile_id, run.resolved_model, run.reasoning_effort) != (
+                owner.model_profile_id, owner.resolved_model, owner.reasoning_effort
+            ):
+                raise ValueError("task run model configuration differs from its logical task")
 
         successful_threads: dict[str, str] = {}
         threads_by_task: dict[str, set[str]] = {}
@@ -1190,19 +1376,27 @@ def task_configuration_fingerprint(
     request: TaskRequest,
     *,
     safety_policy: TaskSafetyPolicy,
+    resolved: ResolvedModelConfiguration | None = None,
 ) -> str:
     """Hash immutable continuation configuration without retaining the brief."""
 
-    return _canonical_digest(
-        {
-            "recipe": recipe.model_dump(mode="json"),
-            "safety_policy": safety_policy.model_dump(mode="json"),
+    recipe_payload = recipe.model_dump(mode="json", exclude={"allowed_model_profile_ids"})
+    policy_payload = safety_policy.model_dump(mode="json")
+    if resolved is not None:
+        policy_payload["model"] = resolved.model
+    payload = {
+            "recipe": recipe_payload,
+            "safety_policy": policy_payload,
             "project_id": request.project_id,
             "target_id": request.target_id,
-            "entity_refs": request.entity_refs,
+            "entity_refs": [row.model_dump(mode="json") for row in request.entity_refs],
             "effort": request.effort.value,
         }
-    )
+    if request.model_profile_id is not None or request.reasoning_effort is not None:
+        if resolved is None:
+            raise TaskContractError("model-profile fingerprints need a resolved model configuration")
+        payload["model_configuration"] = resolved.model_dump(mode="json")
+    return _canonical_digest(payload)
 
 
 def task_request_fingerprint(
@@ -1217,7 +1411,13 @@ def task_request_fingerprint(
 
     return _canonical_digest(
         {
-            "request": request.model_dump(mode="json", exclude={"idempotency_key"}),
+            "request": request.model_dump(
+                mode="json",
+                exclude={"idempotency_key"} | {
+                    key for key in ("model_profile_id", "reasoning_effort")
+                    if getattr(request, key) is None
+                },
+            ),
             "mode": mode,
             "task_id": task_id,
             "source_task_id": source_task_id,
@@ -1250,10 +1450,12 @@ class TaskCoordinator:
 
     def create(self, request: TaskRequest, *, title: str) -> TaskSubmission:
         recipe = self._recipes.get(request.recipe_id)
+        resolved = self._commands.resolve_model_configuration(recipe, request)
         configuration = task_configuration_fingerprint(
             recipe,
             request,
             safety_policy=self._commands.policy_for(recipe),
+            resolved=resolved,
         )
         now = self._clock()
         task = LogicalTask(
@@ -1263,6 +1465,9 @@ class TaskCoordinator:
             project_id=request.project_id,
             target_id=request.target_id,
             effort=request.effort,
+            model_profile_id=resolved.model_profile_id,
+            resolved_model=resolved.model,
+            reasoning_effort=resolved.reasoning_effort,
             configuration_fingerprint=configuration,
             brief_hash=_digest_text(request.brief),
             created_at=now,
@@ -1278,12 +1483,15 @@ class TaskCoordinator:
                 request, mode="create", title=title
             ),
             configuration_fingerprint=configuration,
+            model_profile_id=resolved.model_profile_id,
+            resolved_model=resolved.model,
+            reasoning_effort=resolved.reasoning_effort,
             created_at=now,
         )
         reservation = self._store.reserve(task, run)
         return self._prepare_reserved_submission(
             reservation,
-            lambda: self._commands.build_new(recipe, request),
+            lambda: self._commands.build_new(recipe, request, resolved=resolved),
         )
 
     def resume(self, task_id: str, request: TaskRequest) -> TaskSubmission:
@@ -1293,10 +1501,20 @@ class TaskCoordinator:
         if task.codex_thread_id is None:
             raise TaskContractError("task has no saved Codex thread ID")
         recipe = self._recipes.get(request.recipe_id)
+        if task.model_profile_id != request.model_profile_id:
+            raise TaskContractError("resume cannot change the task model profile; create or fork a task")
+        if request.reasoning_effort is not None and task.reasoning_effort != request.reasoning_effort:
+            raise TaskContractError("resume cannot change reasoning effort; create or fork a task")
+        resolved = self._commands.resolve_model_configuration(
+            recipe, request,
+            pinned_model=task.resolved_model if task.model_profile_id is not None else None,
+            pinned_reasoning_effort=task.reasoning_effort if task.model_profile_id is not None else None,
+        )
         configuration = task_configuration_fingerprint(
             recipe,
             request,
             safety_policy=self._commands.policy_for(recipe),
+            resolved=resolved,
         )
         if configuration != task.configuration_fingerprint:
             raise TaskContractError("resume cannot silently change task configuration")
@@ -1311,6 +1529,9 @@ class TaskCoordinator:
                 request, mode="resume", task_id=task.task_id
             ),
             configuration_fingerprint=configuration,
+            model_profile_id=task.model_profile_id,
+            resolved_model=task.resolved_model,
+            reasoning_effort=task.reasoning_effort,
             source_thread_id=task.codex_thread_id,
             created_at=now,
         )
@@ -1322,6 +1543,7 @@ class TaskCoordinator:
                 request,
                 mode="resume",
                 codex_thread_id=task.codex_thread_id,
+                resolved=resolved,
             ),
         )
 
@@ -1336,10 +1558,12 @@ class TaskCoordinator:
         if source.codex_thread_id is None:
             raise TaskContractError("source task has no saved Codex thread ID")
         recipe = self._recipes.get(request.recipe_id)
+        resolved = self._commands.resolve_model_configuration(recipe, request)
         configuration = task_configuration_fingerprint(
             recipe,
             request,
             safety_policy=self._commands.policy_for(recipe),
+            resolved=resolved,
         )
         now = self._clock()
         task = LogicalTask(
@@ -1349,6 +1573,9 @@ class TaskCoordinator:
             project_id=request.project_id,
             target_id=request.target_id,
             effort=request.effort,
+            model_profile_id=resolved.model_profile_id,
+            resolved_model=resolved.model,
+            reasoning_effort=resolved.reasoning_effort,
             configuration_fingerprint=configuration,
             brief_hash=_digest_text(request.brief),
             created_at=now,
@@ -1364,6 +1591,9 @@ class TaskCoordinator:
                 request, mode="fork", source_task_id=source.task_id, title=title
             ),
             configuration_fingerprint=configuration,
+            model_profile_id=resolved.model_profile_id,
+            resolved_model=resolved.model,
+            reasoning_effort=resolved.reasoning_effort,
             source_thread_id=source.codex_thread_id,
             created_at=now,
         )
@@ -1375,6 +1605,7 @@ class TaskCoordinator:
                 request,
                 mode="fork",
                 codex_thread_id=source.codex_thread_id,
+                resolved=resolved,
             ),
         )
 
@@ -1789,8 +2020,10 @@ def task_request_from_action(
     return TaskRequest(
         recipe_id=recipe_id,
         target_id=request.target_id,
-        entity_refs=list(entity_refs or []),
+        entity_refs=list(entity_refs if entity_refs is not None else request.entity_refs),
         effort=request.effort,
+        model_profile_id=request.model_profile_id,
+        reasoning_effort=request.reasoning_effort,
         brief=request.brief,
         idempotency_key=request.idempotency_key,
     )
@@ -2042,10 +2275,12 @@ __all__ = [
     "CodexCapabilityProbe",
     "CodexCommandBuilder",
     "CodexInvocation",
+    "CodexModelProfile",
     "IdempotencyRecord",
     "LogicalTask",
     "ProcessGroupReaper",
     "ProcessRecoveryError",
+    "ResolvedModelConfiguration",
     "TaskContractError",
     "TaskCoordinator",
     "TaskEffort",

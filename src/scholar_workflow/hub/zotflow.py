@@ -461,6 +461,50 @@ class ZotFlowReaderAdapter:
             quote_via=quote,
         )
 
+    def probe_source_note(self, library_id: str, item_key: str) -> ZotFlowCapability:
+        """Check a ZotFlow-owned note without reading its secrets or downloading PDFs."""
+        library_id = str(library_id)
+        capability = self._version_probe()
+        if not capability.available:
+            return capability
+        try:
+            self._vault_id()
+            if not ZOTERO_KEY_RE.fullmatch(item_key):
+                raise ZotFlowError("Invalid Zotero item identity")
+            with self._zotero_factory() as zotero:
+                payload = zotero.get_item(item_key)
+            if not isinstance(payload, dict):
+                raise ZotFlowError("Zotero returned an invalid item")
+            data = payload.get("data", {})
+            if (not isinstance(data, dict) or payload.get("deleted") or data.get("deleted")
+                    or data.get("itemType") in {"attachment", "note", "annotation"}):
+                raise ZotFlowError("Zotero source item is unavailable or is not a parent resource")
+            library = payload.get("library")
+            actual_id = library.get("id") if isinstance(library, dict) else None
+            if str(actual_id) != library_id or payload.get("key") != item_key:
+                raise ZotFlowError("Zotero item does not belong to the requested library")
+        except (OSError, ZoteroLocalError, ZotFlowError) as exc:
+            return capability.model_copy(update={"available": False, "reason": str(exc)})
+        return capability
+
+    def source_note_uri(self, library_id: str, item_key: str) -> str:
+        library_id = str(library_id)
+        if not ZOTERO_KEY_RE.fullmatch(item_key) or not library_id or any(
+            ord(char) < 32 for char in library_id
+        ):
+            raise ZotFlowError("Invalid Zotero source note identity")
+        return "obsidian://zotflow?" + urlencode(
+            {"vault": self._vault_id(), "type": "open-note", "libraryID": library_id,
+             "key": item_key},
+            quote_via=quote,
+        )
+
+    def open_source_note(self, library_id: str, item_key: str) -> dict[str, bool]:
+        capability = self.probe_source_note(library_id, item_key)
+        if not capability.available:
+            raise ZotFlowError(capability.reason or "ZotFlow source note is unavailable")
+        return self._open(self.source_note_uri(library_id, item_key))
+
     def open_attachment(self, pdf_ref: PdfRef) -> dict[str, bool]:
         capability = self.probe_attachment(pdf_ref, verify_content=True)
         if not capability.available:
@@ -613,6 +657,53 @@ class RegisteredSourceZotFlowAdapter:
         if adapter is None:
             raise ZotFlowError(capability.reason or "ZotFlow is unavailable")
         return adapter.open_annotation(annotation)
+
+    def _source_note_adapter(
+        self, library_id: str, item_key: str, *, source_id: str | None = None,
+    ) -> tuple[ZotFlowReaderAdapter | None, ZotFlowCapability]:
+        try:
+            if source_id is None:
+                adapters = self._adapters()
+            else:
+                root = self.registry.resolve(source_id, capability="read")
+                adapters = [ZotFlowReaderAdapter(
+                    root, app_path=self.app_path, runner=self._runner,
+                    cli_runner=self._cli_runner, zotero_factory=self._zotero_factory,
+                    timeout=self._timeout, obsidian_config_path=self._obsidian_config_path,
+                )]
+        except (FieldRegistryError, ZotFlowError) as exc:
+            return None, ZotFlowCapability(available=False, reason=str(exc))
+        eligible: list[tuple[ZotFlowReaderAdapter, ZotFlowCapability]] = []
+        failures: list[str] = []
+        for adapter in adapters:
+            capability = adapter.probe_source_note(library_id, item_key)
+            if capability.available:
+                eligible.append((adapter, capability))
+            elif capability.reason:
+                failures.append(capability.reason)
+        if len(eligible) == 1:
+            return eligible[0]
+        reason = (
+            "Multiple ZotFlow Vaults are available; select a Source before opening"
+            if eligible else "; ".join(dict.fromkeys(failures))
+            or "Register an Obsidian Source before opening ZotFlow notes"
+        )
+        return None, ZotFlowCapability(available=False, reason=reason)
+
+    def probe_source_note(
+        self, library_id: str, item_key: str, *, source_id: str | None = None,
+    ) -> ZotFlowCapability:
+        return self._source_note_adapter(library_id, item_key, source_id=source_id)[1]
+
+    def open_source_note(
+        self, library_id: str, item_key: str, *, source_id: str | None = None,
+    ) -> dict[str, bool]:
+        adapter, capability = self._source_note_adapter(
+            library_id, item_key, source_id=source_id,
+        )
+        if adapter is None:
+            raise ZotFlowError(capability.reason or "ZotFlow source note is unavailable")
+        return adapter.open_source_note(library_id, item_key)
 
 
 def load_annotation_ir(

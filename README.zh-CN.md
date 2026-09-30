@@ -94,6 +94,12 @@ cmux 内的 PDF 是本机只读预览，不是嵌入的 Zotero 阅读器，也�
 持有 Zotero Web API 密钥，Scholar Workflow 只经 Local API 读取批注，绝不请求该密钥。旧
 `/hub/item` 与 `/open/paper/...` 只保留一版兼容解析，正常 UI 不再产生它们。
 
+展开论文卡片的 **相关文件**，即可查看明确关联的资料笔记、分析 Markdown、Canvas、批注/阅读笔记、
+ZotFlow 来源笔记和 Zotero 子附件。每项显示来源及可用状态：Markdown 点 **正文预览** 在 Hub 阅读，
+点 **在 Obsidian 打开**进入原笔记；Canvas 在 Obsidian 中编辑。缺失文件会显示原因，不按同名猜归属。
+**在 ZotFlow 标注**打开已登记 Vault 内的 Library Reader；**在 cmux 阅读**将原 PDF 放到所选
+workspace 的浏览器中，明确不含 Zotero 数据库批注。动作旁可临时选择打开位置；原生应用不属于 cmux。
+
 若要让 ZotFlow 在桌面端只读本机 PDF：打开 Obsidian 设置 → ZotFlow → General → Source Notes →
 Library Source Note，启用 **Use Zotero Storage Directory**，将 **Zotero Storage Path** 设为 Zotero
 数据目录下 `storage` 的绝对路径（不是上一层，也不要写 `~`）。对已导入附件，找不到本机文件会报错，
@@ -115,7 +121,23 @@ Notion 等 Web 工具通过预登记 URL recipe 在所选 cmux browser surface �
 cwd、model、sandbox、permission、环境变量或原始 Codex 配置。项目文件操作仍只接受已注册
 `project_id + docs 相对路径`，拒绝覆盖和 symlink 逃逸，删除进入可恢复 trash，Hub 不执行 Git 写入。
 
-要在 Hub 中运行 Codex 任务，先在运行 Hub 的主机上登记一次可信工作目录，并配置本机 Codex：
+要在 Hub 中运行 Codex 任务，先打开 **Codex 任务 → 配置 Codex**：
+
+1. 查看检测到的安装版本和模型选项。检测不会保存设置或启动任务；未检测到时使用下方 CLI 备用入口。
+2. 勾选允许的已登记目标，或点 **选择文件夹**，在系统选择器中选择工作目录并确认预览。
+   Field 建议目标仅覆盖该 Field 的目录；目录授权与 cmux 打开位置无关。
+3. 选择模型和读写策略后确认。只读任务选择 **只读**；需要写工作目录的任务选择 **工作区写入**。
+4. 返回任务区。当前 Project/Field 或唯一论文归属会建议对应目标，唯一适用任务自动选中；
+   有歧义时手动选择，无目标时先登记。当前论文/文档的已核验身份作为上下文定位符传入，
+   不会自动把整篇正文注入模型。
+5. 选择 **默认／具体模型**及该模型支持的思考强度，输入不超过 8 KiB 的任务说明。
+   检查任务、目标、模型、强度和打开位置的摘要后启动，在页面查看运行状态与 cmux 终端。
+
+模型选择会保存在服务端，重启或端口变化不丢失。“默认”指已确认的本机 CLI 模型，不是桌面端的
+自动路由。目录列出模型不代表账户一定可调用；实际任务成功才证明。已有线程固定实际模型和强度，
+修改配置须新建或明确 fork，不能在 resume 中静默切换。任务请求不允许自行输入模型、命令或路径。
+
+CLI 备用入口（在运行 Hub 的同一主机上执行）：
 
 ```bash
 scholar-workflow hub target list
@@ -129,10 +151,16 @@ scholar-workflow hub restart
 
 `SOURCE_ID` 会显示在 **Fields → 选择 Vault / 目录** 的预览中；`PROJECT_ID` 来自已登记项目的 manifest。
 按实际工作对象选一种 Target 登记方式即可。`configure` 只探测显式指定的可执行文件，并把 model、
-sandbox 保存在服务端策略；Hub 不扫描 `$PATH`。随后在页面的 **Codex 任务** 区选择任务、Target、
-打开位置、思考强度，输入不超过 8 KiB 的任务说明，再启动。页面会显示运行状态和所选 cmux 终端。
+sandbox 保存在服务端策略；Hub 不扫描 `$PATH`。CLI 配置后需 `hub restart`，页面配置确认则即时更新任务入口。
 配置、有效目的地或 worker 能力检查缺失时，会单独说明不可用原因。对于只需阅读的任务，管理员
 也可以选择 `--sandbox read-only`。
+
+常见失败：ZotFlow 按钮不可用时检查已登记 Vault、插件版本和本机 storage 模式；不要改用云端下载。
+cmux 目的地失效时重新选择活跃 workspace，不影响正文阅读。任务没有目标时先登记，不会任取列表
+第一项；模型目录不可用时只提供已确认的本机模型。任务配置变更遇到运行中任务时先等待完成或明确取消。
+
+以上新入口在开发树实现，当前验收状态见 `planning/hub-paper-task-test-plan.md`；
+未完成独立测试与单篇界面验收前，不视为已安装版本的已验证能力。
 
 要让其他 PDF 阅读器查看 Zotero 批注，可显式生成一份独立副本：
 
@@ -319,7 +347,7 @@ scholar-workflow`)。你的 `config.yml` 与凭证在仓库之外,更新不受�
 - **Zotero 10.0.2 实机已跑通:** Local API 已完成 probe、search、collections、持久写授权、
   条目创建、imported PDF 上传、精确 DOI 复用与附件复用。同一 ingest payload 重跑会返回原
   item/attachment，不重复上传。
-- **Hub v3 目前是 0.29.0 开发候选，尚未正式发布或安装:** 开发树已取代 v0.28.1 binding 模型；
+- **Hub v3：0.30.0 hotfix，人工产品验收待完成:** 已取代 v0.28.1 binding 模型；
   cmux 只表示打开位置，可信 folder/project Target 决定
   文件与 cwd；受管 lifecycle 使用动态端口和自证 discovery，不依赖固定 23128 或源码目录。
 - **真实数据继续逐 Field 门禁:** 首个 Source 是当前科研技术文档 Vault，首个 Field 是世界模型，

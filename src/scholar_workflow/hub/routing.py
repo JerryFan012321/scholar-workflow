@@ -8,8 +8,11 @@ choosing another window must never change cwd authorization.
 from __future__ import annotations
 
 import json
+import fcntl
+import hashlib
 import os
 import re
+import stat
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,7 +21,7 @@ from typing import Literal
 from pydantic import Field, field_validator, model_validator
 
 from scholar_workflow.hub.directory import EntityRef, ProjectRegistry, RegistryError
-from scholar_workflow.hub.fields import FieldRegistryError, KnowledgeSourceRegistry
+from scholar_workflow.hub.fields import FieldRegistryError, FieldService, KnowledgeSourceRegistry, _open_directory_chain
 from scholar_workflow.hub.models import HubModel
 
 _ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$")
@@ -35,6 +38,8 @@ class ExecutionTarget(HubModel):
     kind: Literal["project", "vault", "folder"]
     registered_root_id: str
     capabilities: list[str] = Field(default_factory=list)
+    source_id: str | None = None
+    field_id: str | None = None
 
     @field_validator("target_id", "registered_root_id")
     @classmethod
@@ -51,6 +56,19 @@ class ExecutionTarget(HubModel):
         ):
             raise ValueError("invalid or duplicate execution target capability")
         return values
+
+    @field_validator("source_id", "field_id")
+    @classmethod
+    def _optional_ids(cls, value: str | None) -> str | None:
+        if value is not None and not _ID.fullmatch(value):
+            raise ValueError("execution target context identifiers must be portable")
+        return value
+
+    @model_validator(mode="after")
+    def _field_identity(self) -> ExecutionTarget:
+        if self.field_id is not None and (self.kind != "vault" or self.source_id is None):
+            raise ValueError("Field execution targets need a Vault source identity")
+        return self
 
 
 class ExecutionTargetRegistryDocument(HubModel):
@@ -118,7 +136,18 @@ class ExecutionTargetRegistry:
         except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
             raise ExecutionTargetError(f"invalid execution target registry: {exc}") from None
 
-    def save(self, document: ExecutionTargetRegistryDocument) -> None:
+    def revision(self) -> str:
+        if self.path.is_symlink():
+            raise ExecutionTargetError("execution target registry cannot use a symlink")
+        try:
+            content = self.path.read_bytes()
+        except FileNotFoundError:
+            return "absent"
+        return "sha256:" + hashlib.sha256(content).hexdigest()
+
+    def save(
+        self, document: ExecutionTargetRegistryDocument, *, expected_revision: str | None = None,
+    ) -> None:
         """Atomically save explicit aliases without discovering host paths."""
 
         checked = ExecutionTargetRegistryDocument.model_validate(document)
@@ -126,6 +155,22 @@ class ExecutionTargetRegistry:
         parent.mkdir(parents=True, exist_ok=True)
         if parent.is_symlink() or not parent.is_dir() or self.path.is_symlink():
             raise ExecutionTargetError("execution target registry path cannot use a symlink")
+        lock_path = self.path.with_name(f".{self.path.name}.lock")
+        flags = os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0)
+        lock_fd = os.open(lock_path, flags, 0o600)
+        try:
+            if not stat.S_ISREG(os.fstat(lock_fd).st_mode):
+                raise ExecutionTargetError("execution target registry lock must be a regular file")
+            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            if expected_revision is not None and self.revision() != expected_revision:
+                raise ExecutionTargetError("execution target registry changed after preview")
+            self._save_locked(checked)
+        finally:
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            os.close(lock_fd)
+
+    def _save_locked(self, checked: ExecutionTargetRegistryDocument) -> None:
+        parent = self.path.parent
         descriptor, temporary_name = tempfile.mkstemp(
             prefix=f".{self.path.name}.", dir=parent
         )
@@ -189,12 +234,17 @@ class ExecutionTargetRegistry:
             raise ExecutionTargetError("execution target references an unknown folder")
         if not folder.enabled:
             raise ExecutionTargetError("registered execution folder is disabled")
-        if capability not in folder.capabilities:
+        authorized = capability in folder.capabilities or (
+            capability == "codex" and target.field_id is not None
+            and f"codex.field:{target.field_id}" in folder.capabilities
+        )
+        if not authorized:
             raise ExecutionTargetError(
                 f"registered execution folder does not allow {capability}"
             )
         if target.kind == "vault" and not any(
             source.enabled and source.folder_id == folder.folder_id
+            and (target.source_id is None or source.source_id == target.source_id)
             for source in document.sources
         ):
             raise ExecutionTargetError(
@@ -206,6 +256,20 @@ class ExecutionTargetRegistry:
             raise ExecutionTargetError("registered execution folder is unavailable") from exc
         if folder.root.is_symlink() or not cwd.is_dir():
             raise ExecutionTargetError("registered execution folder is not trusted")
+        if target.field_id is not None:
+            try:
+                manifest = FieldService._load_manifest(cwd)
+                if manifest.source_id != target.source_id:
+                    raise ExecutionTargetError("Field execution target Source identity changed")
+                field = next((row for row in manifest.fields if row.field_id == target.field_id), None)
+                if field is None:
+                    raise ExecutionTargetError("Field execution target is no longer registered")
+                parts = () if field.relative_root == "." else tuple(field.relative_root.split("/"))
+                descriptor = _open_directory_chain(cwd, parts)
+                os.close(descriptor)
+                cwd = cwd.joinpath(*parts)
+            except (OSError, FieldRegistryError) as exc:
+                raise ExecutionTargetError("Field execution folder is unavailable or unsafe") from exc
         return cwd
 
 
@@ -260,8 +324,33 @@ class TaskActionRequest(ActionRequest):
 
     target_id: str
     brief: str = Field(min_length=1)
-    effort: Literal["fast", "standard", "deep"]
+    effort: Literal["fast", "standard", "deep"] = "standard"
+    model_profile_id: str | None = None
+    reasoning_effort: str | None = None
+    entity_refs: list[EntityRef] = Field(default_factory=list, max_length=32)
     idempotency_key: str
+
+    @field_validator("model_profile_id")
+    @classmethod
+    def _model_profile(cls, value: str | None) -> str | None:
+        if value is not None and not _ID.fullmatch(value):
+            raise ValueError("model profile must be a registered identifier")
+        return value
+
+    @field_validator("reasoning_effort")
+    @classmethod
+    def _reasoning_effort(cls, value: str | None) -> str | None:
+        if value is not None and not re.fullmatch(r"[a-z][a-z0-9_-]{0,31}", value):
+            raise ValueError("reasoning effort must be a supported named value")
+        return value
+
+    @field_validator("entity_refs")
+    @classmethod
+    def _selected_entities(cls, values: list[EntityRef]) -> list[EntityRef]:
+        identities = [(row.provider_id, row.entity_type, row.entity_id) for row in values]
+        if len(identities) != len(set(identities)):
+            raise ValueError("selected context contains duplicate entities")
+        return values
 
     @field_validator("idempotency_key")
     @classmethod

@@ -3,6 +3,61 @@
 > 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
 > `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-09-30。
 
+## 2026-09-30 Hub 论文入口与 Codex 易用性改进（A 合成通过，真实验收待做）
+
+用户纠正安装规则：hotfix 本身也须作为可正式发布的独立版本，通过正常入口安装到
+实际使用环境后验收，再合并 main。此前临时 venv wheel 与专用启动脚本仅为开发诊断，
+不满足产品安装验收；全局与项目 AGENT 已修正。下一步准备确定提交、独立版本和
+runtime-only 发布产物及正常安装/回退方案，不再沿用临时安装作为验收入口。
+
+已准备独立版本 0.30.0（新能力批次），同步两份 plugin manifest、pyproject 与包版本。
+核实 make-release.sh 已支持当前开发分支，不需改脚本或提前合并 main。尚未提交、
+推送或安装；提交前按根规则需另行批准 unit+contract 合成回归方案。发布后使用正常
+marketplace 和 pipx 入口更新，保留 0.29.0 release 提交 e0a0b2f 作为回退来源。
+
+发布前回归用户已批准并执行：1217 passed / 11 warnings，73.84s；未做人工验收。
+接下来提交本 hotfix 并生成 release，正常安装 0.30.0，保持 main 不变。
+
+目录失败已完成最小代码修正：按路径排除的 snapshot artifact ID 也参与资源/主题引用
+清理。新增一个“声明 ID 与 snapshot ID 不同”的合成回归，保留正常项和拒绝诊断。
+测试方案已补入 `hub-paper-task-test-plan.md`；用户批准后定向测试 6 passed（0.10s）。
+未重装候选，安装态页面和人工评鉴仍待验收。
+
+流程纠偏：用户要求需要安装才能验证的功能采用 hotfix 分支候选安装，实机验收通过
+后才合并 main。全局规则已写入同层级 AGENT，并由 CLAUDE 引用；项目分支采用
+`codex/hotfix-<scope>`。当前改动已转入 `codex/hotfix-hub-paper-tasks`，仍未提交、合并
+或发布。用户批准测试后，wheel 已安装在独立临时环境，前端文件 hash 与候选一致。
+真实安装版 open-hub 已启动独立服务，但目录读取未通过：Vault provider 拒绝 fixture
+artifact 后留下悬空引用，HubCatalog 校验失败，页面空白。下一步修正 fixture 身份映射，
+并准备该失败的最小复现与预期诊断，再继续 B；不能把直跑脚本结果冒充安装态通过。
+B 已获用户批准并部分执行：ZotFlow Library Reader 和默认 workspace 原 PDF 实际
+显示成功；相关文件列表可用，但正文锚点显露、附件 Zotero 动作重复，呈现未通过。
+其他 destination、逐项文件打开仍待验收；C 真实 Codex 小任务仍需单独批准。
+详细证据见 `hub-paper-task-test-results.md`，后续无需重复既有论文内容或批注往返验收。
+
+用户已批准实施本轮计划：修复 ZotFlow Library Reader 与 cmux 原 PDF 打开体验，
+增加论文卡片内按身份关联的相关文件清单，加入 Codex 检测/确认设置和桌面式模型、
+思考强度选择，并按当前 Project/Field/论文上下文建议执行目标。cmux 本轮只读原 PDF，
+明确不含 Zotero 数据库批注。开发从已发布 0.29.0 的干净 main 开始。
+
+最初边界为只改开发仓库、不发布或安装；现由上述候选安装验收流程取代，已执行隔离候选安装。
+不调整正式 Vault、不执行迁移、不修改 Zotero 文库。
+按测试独立原则，先完成代码和合成测试材料，展示输入、步骤、预期、影响及可见结果，
+获得批准后才运行。真实验收仅使用单篇 V-JEPA 2 和独立 test Vault 的一个小 Codex 任务。
+开发完成、模拟测试、GUI 验收分别记状态；此前已通过的论文内容/Canvas/页链验收不重做。
+
+已准备：lazy 相关文件与安全正文预览、registered Source ZotFlow 来源笔记动作、完整 Zotero 子项分页、
+Codex 安装/模型检测确认、服务端选择持久化、Field 范围目标、任务上下文引用与旧线程模型固定；
+CLI 备用配置共享 registry。前后端做过源代码审阅，发现的旧任务恢复和整 Vault/Field target 误复用
+已修正，但没有执行 pytest、编译、lint、GUI、Codex probe 或真实任务。
+上述为开发准备时的历史状态。用户随后批准 A：51 项新增与 162 项定向回归经修正/复跑通过，
+compileall 和 diff 检查通过；Ruff 未安装而未执行。补齐三份 JSON schema，并修正 UI 换行和
+并发 fixture 的模型字段。独立记录为 `planning/hub-paper-task-test-results.md`。
+Field 确认只授予该 Field 的执行能力，不扩展到整 Vault 或兄弟 Field。当前选定上下文传入的是
+经核验的 EntityRef 定位符，不是全文自动注入；不得描述成已把整篇论文送入模型。
+独立测试方案：`planning/hub-paper-task-test-plan.md`。B 的当前部分结果及新安装态流程见本节开头；
+test Vault 的真实 Codex 小任务另需 C 批准。没有新增正式发布承诺或正式 Vault 变更。
+
 ## 2026-09-30 0.29.0 已按用户指定顺序先发布并安装（验收待做）
 
 用户明确要求先提交、发布并安装 `0.29.0`，之后再做产品验收。开发树提交

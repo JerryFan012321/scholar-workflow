@@ -116,6 +116,14 @@ Zotero Web API key, in Obsidian SecretStorage; Scholar Workflow reads annotation
 API and never requests that key. The legacy `/hub/item` and `/open/paper/...` routes remain only for
 one-cycle compatibility and are not emitted by the normal UI.
 
+Expand **Related files** on a paper card for explicitly related companion notes, analysis Markdown,
+Canvas, annotation/reading notes, ZotFlow Source Notes and Zotero child attachments. Rows show
+source and availability; Markdown offers a Hub body preview and Obsidian opening, while Canvas
+edits in Obsidian. Missing declared files retain diagnostics; names never establish paper ownership.
+The ZotFlow action targets the registered Vault's Library Reader. The cmux action opens the original
+PDF in the selected workspace browser, without Zotero database annotations. Each launch can override
+its destination; native Obsidian/Zotero windows do not belong to a cmux workspace.
+
 To use ZotFlow without cloud PDF downloads on desktop, go to Obsidian Settings → ZotFlow → General
 → Source Notes → Library Source Note, enable **Use Zotero Storage Directory**, and set **Zotero
 Storage Path** to the absolute path of Zotero's `storage` directory (not its parent; do not use `~`).
@@ -143,9 +151,24 @@ permissions, environment, or raw Codex configuration. Project operations still a
 registered `project_id` and a relative path under `docs/`; collisions and symlink escapes fail,
 deletion goes to recoverable project trash, and Hub never writes Git.
 
-To enable a Codex task in the Hub, register its working folder once and configure the local Codex
-executable. A destination decides where the terminal appears; the registered target decides its
-working directory. These administrator commands run on the same host as the Hub:
+To enable a task, open **Codex tasks → Configure Codex**:
+
+1. Review detected executable versions and model choices. Detection does not save or launch a task.
+2. Select permitted registered targets, or choose a working folder in the system picker and confirm
+   its preview. A Field suggestion scopes cwd to that Field, not the entire Vault.
+3. Confirm a model and either read-only or workspace-write policy.
+4. Return to tasks. Current Project/Field or a paper's unique Field relation suggests its exact target;
+   only one applicable recipe auto-selects. Ambiguity requires a choice; missing targets guide registration.
+5. Pick Default/a specific model and a supported reasoning level, enter a brief up to 8 KiB, review
+   the recipe/target/model/reasoning/destination summary and start. Selected identities are context
+   locators, not an automatic full-paper text injection.
+
+Choices persist on the server across port changes. Default means the confirmed local CLI model, not
+desktop proprietary auto-routing. Catalog availability is not account entitlement; only a real
+successful call proves access. Existing threads pin actual model/reasoning; a changed configuration
+requires a new task or explicit fork, never a silent resume switch.
+
+The CLI fallback runs on the Hub host; destination routes the terminal, target resolves cwd:
 
 ```bash
 scholar-workflow hub target list
@@ -160,11 +183,19 @@ scholar-workflow hub restart
 `SOURCE_ID` is shown in the **Fields → 选择 Vault / 目录** preview; `PROJECT_ID` comes
 from the project's manifest and host registration. Use the target command that matches your work.
 `configure` probes the explicitly supplied executable and stores the model and sandbox as private
-server policy; it does not search `$PATH`. In the Hub's **Codex tasks** panel, choose the registered
-task, target, destination, effort, and a brief of at most 8 KiB, then start the run. The page shows
-the run status and the selected cmux terminal. Until configuration, a live destination, and the
+server policy; it does not search `$PATH`. Restart the Hub after CLI configuration; browser setup
+refreshes the task entry immediately. Until configuration, a live destination, and the
 worker capability check all succeed, the panel shows the specific unavailable reason. The
 administrator can choose `--sandbox read-only` instead for a task that must not write files.
+
+If ZotFlow is unavailable, check the registered Vault, plugin versions and local-storage mode; do
+not enable cloud PDF fallback. Re-select a live cmux workspace after destination expiry; reading
+still works. Empty task targets require registration rather than an arbitrary first choice. A
+missing model catalog offers only a confirmed local model. Configuration changes wait for active
+runs to finish or be explicitly cancelled.
+
+These new entries are implemented in the development tree but await independent tests and one-paper
+visible acceptance; see `planning/hub-paper-task-test-plan.md`. This does not claim installed-product validation.
 
 To give another PDF reader a separate copy with supported Zotero annotations:
 
@@ -373,7 +404,7 @@ The plugin is in active `0.x` development. What's solid vs. still settling:
   listing, remembered write authorization, item creation, imported-PDF upload, exact DOI
   reuse, and attachment reuse. The same ingest payload returns the original item and
   attachment without re-uploading.
-- **Hub v3 is a 0.29.0 development candidate, not yet released or installed:** it replaces the
+- **Hub v3: 0.30.0 hotfix; installed-product human acceptance is pending:** it replaces the
   v0.28.1 binding model in the development tree. cmux is only an open location; trusted
   folder/project targets authorize files and cwd. Managed lifecycle uses a dynamic port and
   self-identifying discovery rather than a fixed 23128 service or source-tree root.

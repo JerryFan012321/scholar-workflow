@@ -11,6 +11,15 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 
 ## Active Items
 
+### WI-053: Direct paper readers, related files and guided Codex tasks
+- **Status**: in-progress
+- **Priority**: p1
+- **Type**: code-change
+- **Context**: Implement the approved single-batch plan: registered Vault ZotFlow Library Reader, cmux original PDF only (no database annotations), lazy identity-owned related files with direct open/preview, detection-confirmation Codex setup, approved model profiles/supported reasoning, persistent choices, and exact contextual target/recipe suggestions.
+- **Blocker**: Stage B/C visible acceptance approval pending. Stage A has 213 passing focused/synthetic regression cases after targeted corrections; compilation/diff checks pass, Ruff unavailable. Mock success does not prove visible rendering or model entitlement.
+- **Next action**: Approve the one-paper Stage B reader/file canary, then separately approve Stage C test Vault task. Results live in `planning/hub-paper-task-test-results.md`. No full-library analysis, formal migration, commit, release or installation is included.
+- **Related**: G10, G15, INV17, INV31, INV45, INV47, INV49, INV50, INV58; WI-044, WI-046, WI-047
+
 ### WI-003: Complete P1-3 eval closure
 - **Status**: in-progress
 - **Priority**: p1

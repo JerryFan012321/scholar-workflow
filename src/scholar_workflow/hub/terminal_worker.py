@@ -784,6 +784,10 @@ class _TicketValidator:
             raise TerminalWorkerError("terminal request project does not match its task")
         if request.effort != canonical_task.effort:
             raise TerminalWorkerError("terminal request effort does not match its task")
+        if request.model_profile_id != canonical_task.model_profile_id:
+            raise TerminalWorkerError("terminal request model profile does not match its task")
+        if request.reasoning_effort is not None and request.reasoning_effort != canonical_task.reasoning_effort:
+            raise TerminalWorkerError("terminal request reasoning effort does not match its task")
         if canonical_run.mode in {"create", "fork"}:
             brief_hash = "sha256:" + hashlib.sha256(request.brief.encode("utf-8")).hexdigest()
             if brief_hash != canonical_task.brief_hash:
@@ -797,10 +801,27 @@ class _TicketValidator:
             policy = policies[recipe.safety_policy_id]
         except KeyError:
             raise TerminalWorkerError("terminal recipe safety policy is unavailable") from None
+        builder = CodexCommandBuilder(
+            codex_executable=self.config.resolved_codex_executable(),
+            target_registry=self.targets,
+            safety_policies=policies,
+            model_profiles=self.recipes.model_profile_map(),
+        )
+        resolved = builder.resolve_model_configuration(
+            recipe, request,
+            pinned_model=canonical_task.resolved_model if canonical_run.mode == "resume" and canonical_task.model_profile_id is not None else None,
+            pinned_reasoning_effort=canonical_task.reasoning_effort if canonical_run.mode == "resume" and canonical_task.model_profile_id is not None else None,
+        )
+        if canonical_task.resolved_model is not None and (
+            resolved.model != canonical_task.resolved_model
+            or resolved.reasoning_effort != canonical_task.reasoning_effort
+        ):
+            raise TerminalWorkerError("terminal model configuration changed after reservation")
         configuration = task_configuration_fingerprint(
             recipe,
             request,
             safety_policy=policy,
+            resolved=resolved,
         )
         if configuration not in {
             canonical_task.configuration_fingerprint,
@@ -815,20 +836,16 @@ class _TicketValidator:
         if expected_request != canonical_run.request_fingerprint:
             raise TerminalWorkerError("terminal task request fingerprint is invalid")
 
-        builder = CodexCommandBuilder(
-            codex_executable=self.config.resolved_codex_executable(),
-            target_registry=self.targets,
-            safety_policies=policies,
-        )
         try:
             invocation = (
-                builder.build_new(recipe, request)
+                builder.build_new(recipe, request, resolved=resolved)
                 if canonical_run.mode == "create"
                 else builder.build_continuation(
                     recipe,
                     request,
                     mode=canonical_run.mode,
                     codex_thread_id=self._required_source_thread(canonical_run),
+                    resolved=resolved,
                 )
             )
         except (TaskContractError, ValueError) as exc:

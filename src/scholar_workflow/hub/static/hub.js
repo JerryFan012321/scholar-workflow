@@ -24,6 +24,11 @@ const state = {
     selectedActionId: null,
     selectedTargetId: null,
     selectedEffort: null,
+    selectedModelId: "default",
+    modelProfiles: [],
+    defaultProfileId: null,
+    context: null,
+    optionsError: null,
     capabilityError: null,
     loading: true,
     submitting: false,
@@ -34,6 +39,14 @@ const state = {
     pollTimer: null,
   },
   selectedField: null,
+  paperRelated: {},
+  codexSetup: {
+    preview: null,
+    busy: false,
+    candidateId: null,
+    selectedTargetIds: new Set(),
+    folderPreview: null,
+  },
   artifacts: [],
   fieldRegistration: {
     preview: null,
@@ -60,6 +73,52 @@ const state = {
 const byId = (id) => document.getElementById(id);
 let previewRenderFrame = null;
 let taskFallbackSequence = 0;
+let taskPreferenceQueue = Promise.resolve();
+let taskPreferenceSequence = 0;
+const TASK_PREFERENCE_KEY = "scholar-workflow.hub.task-model.v1";
+
+function rememberTaskChoice() {
+  try {
+    window.localStorage.setItem(TASK_PREFERENCE_KEY, JSON.stringify({
+      model_profile_id: state.tasks.selectedModelId,
+      reasoning_effort: state.tasks.selectedEffort,
+    }));
+  } catch (_error) { /* A storage-restricted browser still retains this page's choice. */ }
+}
+
+function restoreTaskChoice() {
+  try {
+    const choice = JSON.parse(window.localStorage.getItem(TASK_PREFERENCE_KEY) || "null");
+    if (typeof choice?.model_profile_id === "string") state.tasks.selectedModelId = choice.model_profile_id;
+    if (typeof choice?.reasoning_effort === "string") state.tasks.selectedEffort = choice.reasoning_effort;
+  } catch (_error) { /* Stale preferences are optional and never grant capabilities. */ }
+}
+
+function persistTaskChoice() {
+  rememberTaskChoice();
+  const profile = selectedModelProfile();
+  if (!profile || !state.tasks.selectedEffort || !state.csrfToken) return taskPreferenceQueue;
+  const request = {
+    model_profile_id: modelProfileId(profile),
+    reasoning_effort: state.tasks.selectedEffort,
+  };
+  const sequence = ++taskPreferenceSequence;
+  // Serialize choices so a slower earlier request cannot overwrite the latest choice.
+  taskPreferenceQueue = taskPreferenceQueue.catch(() => null).then(async () => {
+    try {
+      const response = await fetch("/api/v3/task-options/preferences", {
+        method: "POST", credentials: "same-origin", headers: stateChangingHeaders(),
+        body: JSON.stringify(request),
+      });
+      if (!response.ok) throw new Error(await responseMessage(response));
+    } catch (error) {
+      if (sequence !== taskPreferenceSequence) return;
+      setTaskStatus(`当前选择仍可用于任务，但服务端未保存：${String(error.message || error)}`);
+      renderTaskPanel();
+    }
+  });
+  return taskPreferenceQueue;
+}
 
 function node(tag, className, text) {
   const element = document.createElement(tag);
@@ -151,7 +210,23 @@ function safeWebLink(url) {
   }
 }
 
+function safeReadableLink(url) {
+  const web = safeWebLink(url);
+  if (web) return web;
+  try {
+    const parsed = new URL(url);
+    if ((parsed.protocol === "obsidian:" && ["zotflow", "open"].includes(parsed.hostname))
+        || (parsed.protocol === "zotero:" && ["open-pdf", "select"].includes(parsed.hostname))) return parsed.href;
+  } catch (_error) { /* Invalid source locators stay readable as text. */ }
+  return null;
+}
+
 function appendInlineMarkdown(parent, source) {
+  const blockId = source.match(/(?:^|\s)\^([A-Za-z0-9-]+)\s*$/);
+  if (blockId) {
+    parent.id = blockId[1];
+    source = source.slice(0, blockId.index).trimEnd();
+  }
   const pattern = /(`([^`\n]+)`|!\[\[([^\]\n]+)\]\]|\[\[([^\]\n]+)\]\]|\[([^\]\n]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)|\*\*([^*\n]+)\*\*|__([^_\n]+)__|\*([^*\n]+)\*|(?<![\w_])_([^_\n]+)_(?![\w_]))/g;
   let cursor = 0;
   for (const match of source.matchAll(pattern)) {
@@ -165,7 +240,7 @@ function appendInlineMarkdown(parent, source) {
     } else if (match[4] !== undefined) {
       parent.append(readableWikiToken(match[4], false));
     } else if (match[5] !== undefined) {
-      const href = safeWebLink(match[6]);
+      const href = safeReadableLink(match[6]);
       if (href) {
         const link = node("a", "", match[5]);
         link.href = href;
@@ -386,7 +461,9 @@ function renderReadable(target, artifact, content) {
     pre.append(node("code", "", String(content || "")));
     fragment.append(pre);
   } else {
-    renderMarkdownBlocks(fragment, withoutFrontmatter(content).split("\n"));
+    const readable = withoutFrontmatter(content)
+      .replace(/\\?<!--\s*sw-analysis-claim\b[\s\S]*?-->/g, "");
+    renderMarkdownBlocks(fragment, readable.split("\n"));
   }
   if (!fragment.hasChildNodes()) fragment.append(node("p", "markdown-empty", "暂无正文"));
   target.replaceChildren(fragment);
@@ -504,6 +581,7 @@ async function selectView(view) {
   renderResources();
   renderFieldDetail();
   syncFieldRegisterButton();
+  if (state.selectedField) selectTaskContext(fieldTaskContext(state.selectedField));
 }
 
 async function loadLibraryPage(reset = false) {
@@ -654,6 +732,14 @@ const TASK_EFFORT_LABELS = {
   fast: "快速",
   standard: "标准",
   deep: "深入",
+  none: "不思考",
+  minimal: "最少",
+  low: "低",
+  medium: "中",
+  high: "高",
+  xhigh: "更高",
+  max: "最高",
+  ultra: "极高",
 };
 const TASK_FINAL_STATES = new Set([
   "succeeded",
@@ -670,6 +756,69 @@ function selectedTaskAction() {
   ) || null;
 }
 
+function modelProfileId(profile) {
+  return profile?.profile_id || profile?.model_profile_id || null;
+}
+
+function modelProfileTitle(profile) {
+  const title = profile?.title || "已批准模型";
+  return profile?.is_default || modelProfileId(profile) === "default"
+    ? title.replace(/^Default\s*[·:]\s*/i, "") : title;
+}
+
+function selectedModelProfile() {
+  const selectedId = state.tasks.selectedModelId === "default"
+    ? state.tasks.defaultProfileId : state.tasks.selectedModelId;
+  return state.tasks.modelProfiles.find((profile) => modelProfileId(profile) === selectedId) || null;
+}
+
+function supportedReasoningEfforts(profile) {
+  const values = profile?.supported_reasoning_efforts || profile?.reasoning_efforts || [];
+  return values.map((value) => typeof value === "string" ? value : value.reasoning_effort)
+    .filter((value) => typeof value === "string" && value);
+}
+
+function taskContextMatches(target) {
+  const context = state.tasks.context;
+  if (!context) return false;
+  if (context.kind === "project") {
+    return context.projectId === target.project_id
+      || (target.kind === "project" && context.projectId === target.registered_root_id);
+  }
+  const fields = context.fields || [];
+  if (fields.length !== 1) return false;
+  const field = fields[0];
+  if (target.field_id) return target.field_id === field.field_id;
+  return field.source_id === target.source_id
+    || (target.kind === "vault" && field.source_id === target.registered_root_id);
+}
+
+function applicableTaskActions() {
+  const type = state.tasks.context?.ref?.entity_type;
+  return state.tasks.actions.filter((action) => (
+    action && action.available !== false
+      && (!type || !Array.isArray(action.allowed_entity_types)
+        || action.allowed_entity_types.includes(type))
+  ));
+}
+
+function selectTaskContext(context) {
+  state.tasks.context = context;
+  state.tasks.selectedTargetId = null;
+  state.tasks.selectedActionId = null;
+  setTaskStatus(null);
+  renderTaskPanel();
+}
+
+function fieldTaskContext(field) {
+  return {
+    kind: "field",
+    title: field.title || "Field",
+    ref: field.ref,
+    fields: [{ source_id: field.source_id, field_id: field.field_id || field.ref?.entity_id }],
+  };
+}
+
 function taskTargetsFor(action) {
   if (!action) return [];
   const allowed = Array.isArray(action.allowed_target_ids)
@@ -678,6 +827,7 @@ function taskTargetsFor(action) {
   return state.tasks.targets.filter((target) => (
     target
       && typeof target.target_id === "string"
+      && target.available !== false
       && (!allowed || allowed.has(target.target_id))
   ));
 }
@@ -750,6 +900,11 @@ function defaultTaskStatus() {
   if (taskTargetsFor(selectedTaskAction()).length === 0) {
     return ["此任务没有可用的已登记目标", "error"];
   }
+  if (!state.tasks.selectedTargetId) {
+    const ambiguous = (state.tasks.context?.fields || []).length > 1;
+    return [ambiguous ? "该论文关联多个 Field，请明确选择运行目标" : "请选择任务可以访问的目标文件夹", ""];
+  }
+  if (!selectedModelProfile()) return [state.tasks.optionsError || "请完成 Codex 首次配置并选择模型", "error"];
   if (!selectedDestinationId()) {
     return ["请先在页面上方选择 cmux 默认打开位置；阅读与文件操作不受影响", "error"];
   }
@@ -760,18 +915,19 @@ function renderTaskPanel() {
   const actionSelect = byId("task-action");
   const targetSelect = byId("task-target");
   const effortSelect = byId("task-effort");
+  const modelSelect = byId("task-model");
   const brief = byId("task-brief");
   const submit = byId("task-submit");
 
   const validActions = state.tasks.actions.filter(
     (action) => action && typeof action.action_id === "string" && action.action_id,
   );
-  const availableActions = validActions.filter((action) => action.available !== false);
+  const availableActions = applicableTaskActions();
   if (!availableActions.some((action) => action.action_id === state.tasks.selectedActionId)) {
-    state.tasks.selectedActionId = availableActions[0]?.action_id || null;
+    state.tasks.selectedActionId = availableActions.length === 1 ? availableActions[0].action_id : null;
   }
-  const actionOptions = validActions.map((action) => {
-    const unavailable = action.available === false;
+  const actionOptions = [node("option", "", "请选择任务用途"), ...validActions.map((action) => {
+    const unavailable = !availableActions.includes(action);
     const option = node(
       "option",
       "",
@@ -781,36 +937,59 @@ function renderTaskPanel() {
     option.disabled = unavailable;
     if (unavailable && action.reason) option.title = action.reason;
     return option;
-  });
-  if (actionOptions.length === 0) {
-    actionOptions.push(node("option", "", "没有可用任务"));
-  }
+  })];
+  actionOptions[0].value = "";
   actionSelect.replaceChildren(...actionOptions);
   actionSelect.value = state.tasks.selectedActionId || "";
 
   const action = selectedTaskAction();
   const targets = taskTargetsFor(action);
   if (!targets.some((target) => target.target_id === state.tasks.selectedTargetId)) {
-    state.tasks.selectedTargetId = targets[0]?.target_id || null;
+    const suggested = targets.filter(taskContextMatches);
+    state.tasks.selectedTargetId = suggested.length === 1 ? suggested[0].target_id : null;
   }
-  const targetOptions = targets.map((target, index) => {
-    const option = node("option", "", readableTaskTarget(target, index));
+  const targetOptions = [node("option", "", targets.length ? "请选择运行目标" : "没有已登记目标；请打开首次配置"), ...targets.map((target, index) => {
+    const option = node("option", "", `${readableTaskTarget(target, index)}${taskContextMatches(target) ? " · 当前上下文" : ""}`);
     option.value = target.target_id;
     return option;
-  });
-  if (targetOptions.length === 0) {
-    targetOptions.push(node("option", "", "没有可用目标"));
-  }
+  })];
+  targetOptions[0].value = "";
   targetSelect.replaceChildren(...targetOptions);
   targetSelect.value = state.tasks.selectedTargetId || "";
 
-  const efforts = (Array.isArray(action?.allowed_efforts) ? action.allowed_efforts : [])
-    .filter((effort) => Object.hasOwn(TASK_EFFORT_LABELS, effort));
+  const allowedProfiles = Array.isArray(action?.allowed_model_profile_ids)
+    ? new Set(action.allowed_model_profile_ids) : null;
+  const profiles = state.tasks.modelProfiles.filter((profile) => (
+    modelProfileId(profile) && (!allowedProfiles || allowedProfiles.has(modelProfileId(profile)))
+  ));
+  const defaultProfile = profiles.find((profile) => modelProfileId(profile) === state.tasks.defaultProfileId);
+  const modelOptions = [node("option", "", defaultProfile ? `默认 · ${modelProfileTitle(defaultProfile)}` : "默认模型尚未配置")];
+  modelOptions[0].value = "default";
+  modelOptions[0].disabled = !defaultProfile;
+  for (const profile of profiles) {
+    if (modelProfileId(profile) === "default") continue;
+    const option = node("option", "", modelProfileTitle(profile));
+    option.value = modelProfileId(profile);
+    modelOptions.push(option);
+  }
+  if (state.tasks.selectedModelId !== "default"
+      && !profiles.some((profile) => modelProfileId(profile) === state.tasks.selectedModelId)) {
+    state.tasks.selectedModelId = defaultProfile ? "default" : (profiles.length === 1 ? modelProfileId(profiles[0]) : null);
+  }
+  if (state.tasks.selectedModelId === "default" && !defaultProfile) state.tasks.selectedModelId = null;
+  modelSelect.replaceChildren(...modelOptions);
+  modelSelect.value = state.tasks.selectedModelId;
+  const profile = profiles.find((entry) => modelProfileId(entry) === (
+    state.tasks.selectedModelId === "default" ? state.tasks.defaultProfileId : state.tasks.selectedModelId
+  )) || null;
+  const efforts = supportedReasoningEfforts(profile);
   if (!efforts.includes(state.tasks.selectedEffort)) {
-    state.tasks.selectedEffort = efforts.includes("standard") ? "standard" : (efforts[0] || null);
+    const defaultEffort = profile?.default_reasoning_effort;
+    state.tasks.selectedEffort = efforts.includes(defaultEffort) ? defaultEffort
+      : (efforts.includes("medium") ? "medium" : (efforts[0] || null));
   }
   const effortOptions = efforts.map((effort) => {
-    const option = node("option", "", TASK_EFFORT_LABELS[effort]);
+    const option = node("option", "", TASK_EFFORT_LABELS[effort] || effort);
     option.value = effort;
     return option;
   });
@@ -824,6 +1003,17 @@ function renderTaskPanel() {
   byId("task-destination").textContent = destination
     ? `运行窗口：${destination.display_name}`
     : "运行窗口：尚未选择 cmux 位置";
+  byId("task-context").textContent = state.tasks.context
+    ? `任务上下文：${state.tasks.context.title}` : "尚未选择上下文；可在论文或项目卡片点击“用于任务”，或打开 Field";
+  const selectedTarget = targets.find((target) => target.target_id === state.tasks.selectedTargetId);
+  const summary = [
+    action?.title,
+    selectedTarget ? readableTaskTarget(selectedTarget, targets.indexOf(selectedTarget)) : null,
+    profile ? modelProfileTitle(profile) : null,
+    state.tasks.selectedEffort ? `思考强度：${TASK_EFFORT_LABELS[state.tasks.selectedEffort] || state.tasks.selectedEffort}` : null,
+    destination?.display_name,
+  ].filter(Boolean);
+  byId("task-summary").textContent = summary.length ? `将运行：${summary.join(" · ")}` : "";
 
   const bytes = taskBriefSize();
   const size = byId("task-brief-limit");
@@ -834,12 +1024,14 @@ function renderTaskPanel() {
     action
       && state.tasks.selectedTargetId
       && state.tasks.selectedEffort
+      && profile
       && selectedDestinationId(),
   );
   const unavailable = state.tasks.loading || Boolean(state.tasks.capabilityError);
   actionSelect.disabled = state.tasks.submitting || unavailable || availableActions.length === 0;
   targetSelect.disabled = state.tasks.submitting || unavailable || targets.length === 0;
   effortSelect.disabled = state.tasks.submitting || unavailable || efforts.length === 0;
+  modelSelect.disabled = state.tasks.submitting || state.tasks.loading || profiles.length === 0;
   brief.disabled = state.tasks.submitting || unavailable || !action;
   submit.disabled = state.tasks.submitting
     || unavailable
@@ -857,9 +1049,10 @@ function renderTaskPanel() {
 
 async function loadTaskSurface() {
   try {
-    const [actionsResponse, targetsResponse] = await Promise.all([
+    const [actionsResponse, targetsResponse, optionsResponse] = await Promise.all([
       fetch("/api/v3/task-actions", { credentials: "same-origin" }),
       fetch("/api/v3/execution-targets", { credentials: "same-origin" }),
+      fetch("/api/v3/task-options", { credentials: "same-origin" }),
     ]);
     if (!actionsResponse.ok || !targetsResponse.ok) {
       const status = !actionsResponse.ok ? actionsResponse.status : targetsResponse.status;
@@ -875,6 +1068,20 @@ async function loadTaskSurface() {
     state.tasks.actions = actionPayload.actions;
     state.tasks.targets = targetPayload.targets;
     state.tasks.capabilityError = null;
+    if (optionsResponse.ok) {
+      const options = await optionsResponse.json();
+      state.tasks.modelProfiles = Array.isArray(options.model_profiles) ? options.model_profiles : [];
+      state.tasks.defaultProfileId = options.default_profile_id || null;
+      state.tasks.optionsError = options.reason || null;
+      if (options.selected_model_profile_id) {
+        state.tasks.selectedModelId = options.selected_model_profile_id;
+      }
+      if (options.selected_reasoning_effort) {
+        state.tasks.selectedEffort = options.selected_reasoning_effort;
+      }
+    } else {
+      state.tasks.optionsError = "模型选项不可用；请打开首次配置";
+    }
   } catch (error) {
     state.tasks.actions = [];
     state.tasks.targets = [];
@@ -957,7 +1164,8 @@ async function submitTask(event) {
   const destinationId = selectedDestinationId();
   const destinationName = currentDestination()?.display_name || null;
   const brief = byId("task-brief").value.trim();
-  if (!action || !state.tasks.selectedTargetId || !state.tasks.selectedEffort) {
+  const profile = selectedModelProfile();
+  if (!action || !profile || !state.tasks.selectedTargetId || !state.tasks.selectedEffort) {
     setTaskStatus("请选择可用的任务、目标和思考强度", "error");
     renderTaskPanel();
     return;
@@ -985,7 +1193,9 @@ async function submitTask(event) {
         destination_id: destinationId,
         target_id: state.tasks.selectedTargetId,
         brief,
-        effort: state.tasks.selectedEffort,
+        model_profile_id: modelProfileId(profile),
+        reasoning_effort: state.tasks.selectedEffort,
+        entity_refs: state.tasks.context?.ref ? [state.tasks.context.ref] : [],
         idempotency_key: taskIdempotencyKey(),
       }),
     });
@@ -1009,6 +1219,222 @@ async function submitTask(event) {
   }
 }
 
+function setupCandidate() {
+  return state.codexSetup.preview?.candidates?.find(
+    (candidate) => candidate.candidate_id === state.codexSetup.candidateId,
+  ) || null;
+}
+
+function setupModels() {
+  const candidate = setupCandidate();
+  return candidate?.model_profiles || state.codexSetup.preview?.model_profiles || [];
+}
+
+function renderCodexSetup() {
+  const preview = state.codexSetup.preview;
+  const candidates = Array.isArray(preview?.candidates) ? preview.candidates : [];
+  const candidateSelect = byId("codex-setup-candidate");
+  candidateSelect.replaceChildren(...candidates.map((candidate) => {
+    const option = node("option", "", `${candidate.title || "本机 Codex"}${candidate.version ? ` · ${candidate.version}` : ""}${candidate.available === false ? " · 不可用" : ""}`);
+    option.value = candidate.candidate_id;
+    option.disabled = candidate.available === false;
+    option.title = candidate.reason || "";
+    return option;
+  }));
+  if (!candidates.length) candidateSelect.append(node("option", "", "未检测到可用 Codex"));
+  candidateSelect.value = state.codexSetup.candidateId || "";
+  candidateSelect.disabled = state.codexSetup.busy || !candidates.length;
+
+  const modelSelect = byId("codex-setup-model");
+  const previousModel = modelSelect.value;
+  const models = setupModels();
+  modelSelect.replaceChildren(...models.map((profile) => {
+    const option = node("option", "", `${profile.is_default ? "默认 · " : ""}${modelProfileTitle(profile)}`);
+    option.value = modelProfileId(profile);
+    return option;
+  }));
+  const defaultId = setupCandidate()?.default_profile_id || preview?.default_profile_id;
+  modelSelect.value = models.some((profile) => modelProfileId(profile) === previousModel)
+    ? previousModel : (defaultId || modelProfileId(models[0]) || "");
+  modelSelect.disabled = state.codexSetup.busy || !models.length;
+
+  const sandbox = byId("codex-setup-sandbox");
+  const previousSandbox = sandbox.value;
+  const options = preview?.sandbox_options || [
+    { value: "workspace-write", label: "在所选目标中读写文件" },
+    { value: "read-only", label: "只读取文件" },
+  ];
+  sandbox.replaceChildren(...options.map((entry) => {
+    const value = typeof entry === "string" ? entry : entry.value;
+    const labels = { "workspace-write": "在所选目标中读写文件", "read-only": "只读取文件" };
+    const option = node("option", "", labels[value] || (typeof entry === "string" ? entry : entry.label));
+    option.value = value;
+    return option;
+  }));
+  sandbox.value = options.some((entry) => (entry.value || entry) === previousSandbox)
+    ? previousSandbox : (preview?.sandbox || "workspace-write");
+  sandbox.disabled = state.codexSetup.busy;
+
+  const targets = preview?.targets || [];
+  const list = byId("codex-setup-target-list");
+  list.replaceChildren(...targets.map((target, index) => {
+    const label = node("label", "codex-target-choice");
+    const input = node("input");
+    input.type = "checkbox";
+    input.value = target.target_id;
+    input.checked = state.codexSetup.selectedTargetIds.has(target.target_id);
+    input.disabled = state.codexSetup.busy || target.available === false;
+    input.addEventListener("change", () => {
+      if (input.checked) state.codexSetup.selectedTargetIds.add(target.target_id);
+      else state.codexSetup.selectedTargetIds.delete(target.target_id);
+      syncCodexSetupSave();
+    });
+    const copy = node("span", "codex-target-copy");
+    copy.append(node("strong", "", readableTaskTarget(target, index)));
+    if (target.permission_note) copy.append(node("small", "", target.permission_note === "Confirming authorizes Codex in this selected Field or Vault folder"
+      ? "确认后，Codex 可以在这个 Field 或 Vault 文件夹中运行。" : target.permission_note));
+    if (target.reason) copy.append(node("small", "", target.reason));
+    label.append(input, copy);
+    return label;
+  }));
+  if (!targets.length) list.append(node("p", "action-diagnostic", "尚未登记目标；选择一个用于任务的文件夹即可继续。"));
+  byId("codex-target-picker").disabled = state.codexSetup.busy;
+  const folder = state.codexSetup.folderPreview;
+  byId("codex-target-preview").textContent = folder ? `将登记：${folder.title || "所选文件夹"} · Codex 任务可在其中运行` : "";
+  byId("codex-target-confirm").hidden = !folder;
+  byId("codex-target-confirm").disabled = state.codexSetup.busy;
+  syncCodexSetupSave();
+}
+
+function syncCodexSetupSave() {
+  byId("codex-setup-save").disabled = state.codexSetup.busy
+    || !state.codexSetup.candidateId || !byId("codex-setup-model").value
+    || !state.codexSetup.selectedTargetIds.size || !byId("codex-setup-approved").checked;
+}
+
+async function loadCodexSetup() {
+  const response = await fetch("/api/v3/codex/setup", {
+    credentials: "same-origin", headers: stateChangingHeaders(),
+  });
+  if (!response.ok) throw new Error(await responseMessage(response));
+  const preview = await response.json();
+  state.codexSetup.preview = preview;
+  const availableTargetIds = new Set((preview.targets || [])
+    .filter((target) => target.available !== false).map((target) => target.target_id));
+  state.codexSetup.selectedTargetIds = new Set([...state.codexSetup.selectedTargetIds]
+    .filter((targetId) => availableTargetIds.has(targetId)));
+  if (!preview.candidates?.some((candidate) => candidate.candidate_id === state.codexSetup.candidateId)) {
+    state.codexSetup.candidateId = preview.candidates?.find((candidate) => candidate.available !== false)?.candidate_id || null;
+  }
+  for (const target of preview.targets || []) {
+    if (target.available !== false && (target.selected || target.configured || taskContextMatches(target))) {
+      state.codexSetup.selectedTargetIds.add(target.target_id);
+    }
+  }
+  return preview;
+}
+
+async function openCodexSetup() {
+  const dialog = byId("codex-setup-dialog");
+  state.codexSetup.busy = true;
+  state.codexSetup.folderPreview = null;
+  byId("codex-setup-approved").checked = false;
+  byId("codex-setup-status").textContent = "正在检测本机 Codex 和已登记目标…";
+  if (!dialog.open) dialog.showModal();
+  renderCodexSetup();
+  try {
+    const preview = await loadCodexSetup();
+    byId("codex-setup-status").textContent = preview.reason || (preview.configured
+      ? "已有任务配置；确认后可以更新默认模型和目标。" : "确认下方设置即可启用 Codex 任务。检测过程尚未保存配置。");
+  } catch (error) {
+    byId("codex-setup-status").textContent = `无法检测：${String(error.message || error)}`;
+  } finally {
+    state.codexSetup.busy = false;
+    renderCodexSetup();
+  }
+}
+
+async function pickTaskFolder() {
+  if (state.codexSetup.busy) return;
+  state.codexSetup.busy = true;
+  state.codexSetup.folderPreview = null;
+  byId("codex-setup-status").textContent = "请在系统文件选择器中选择任务文件夹…";
+  renderCodexSetup();
+  try {
+    const response = await fetch("/api/v3/execution-targets/preview", {
+      method: "POST", credentials: "same-origin", headers: stateChangingHeaders(), body: "{}",
+    });
+    if (!response.ok) throw new Error(await responseMessage(response));
+    const payload = await response.json();
+    state.codexSetup.folderPreview = payload.preview || null;
+    byId("codex-setup-status").textContent = state.codexSetup.folderPreview
+      ? "所选文件夹尚未登记；请检查下方预览后确认。" : "已取消选择。";
+  } catch (error) {
+    byId("codex-setup-status").textContent = `选择失败：${String(error.message || error)}`;
+  } finally {
+    state.codexSetup.busy = false;
+    renderCodexSetup();
+  }
+}
+
+async function confirmTaskFolder() {
+  const preview = state.codexSetup.folderPreview;
+  if (!preview || state.codexSetup.busy) return;
+  state.codexSetup.busy = true;
+  renderCodexSetup();
+  try {
+    const response = await fetch("/api/v3/execution-targets/confirm", {
+      method: "POST", credentials: "same-origin", headers: stateChangingHeaders(),
+      body: JSON.stringify({ candidate_token: preview.candidate_token }),
+    });
+    if (!response.ok) throw new Error(await responseMessage(response));
+    const payload = await response.json();
+    if (payload.target?.target_id) state.codexSetup.selectedTargetIds.add(payload.target.target_id);
+    state.codexSetup.folderPreview = null;
+    byId("codex-setup-status").textContent = "文件夹已登记；确认模型和文件访问范围后保存配置。";
+    await loadCodexSetup();
+  } catch (error) {
+    byId("codex-setup-status").textContent = `登记失败：${String(error.message || error)}`;
+  } finally {
+    state.codexSetup.busy = false;
+    renderCodexSetup();
+  }
+}
+
+async function saveCodexSetup() {
+  if (byId("codex-setup-save").disabled) return;
+  const request = {
+    candidate_id: state.codexSetup.candidateId,
+    model_profile_id: byId("codex-setup-model").value,
+    target_ids: [...state.codexSetup.selectedTargetIds],
+    sandbox: byId("codex-setup-sandbox").value,
+  };
+  state.codexSetup.busy = true;
+  renderCodexSetup();
+  byId("codex-setup-status").textContent = "正在保存 Codex 配置…";
+  try {
+    const response = await fetch("/api/v3/codex/setup", {
+      method: "POST", credentials: "same-origin", headers: stateChangingHeaders(),
+      body: JSON.stringify(request),
+    });
+    if (!response.ok) throw new Error(await responseMessage(response));
+    const payload = await response.json();
+    state.tasks.selectedModelId = "default";
+    state.tasks.selectedEffort = null;
+    await loadTaskSurface();
+    byId("codex-setup-status").textContent = payload.restart_required
+      ? "配置已保存。请运行 scholar-workflow hub restart，然后重新打开 Hub。" : "配置已保存；现在可以从 Hub 选择目标并启动任务。";
+    setTaskStatus(payload.restart_required ? "Codex 设置已保存；需要重启 Hub 服务后生效" : "Codex 设置已保存", "success");
+    renderTaskPanel();
+  } catch (error) {
+    byId("codex-setup-status").textContent = `保存失败：${String(error.message || error)}`;
+  } finally {
+    state.codexSetup.busy = false;
+    byId("codex-setup-approved").checked = false;
+    renderCodexSetup();
+  }
+}
+
 function actionsFor(item) {
   if (Array.isArray(item.actions)) return item.actions;
   const entityId = item.ref?.entity_id;
@@ -1021,21 +1447,38 @@ function renderHubActions() {
   container.replaceChildren(...(state.actions.__hub__ || []).map(actionButton));
 }
 
+function readableActionLabel(action) {
+  const labels = {
+    "resource.cmux": "在 cmux 阅读原 PDF（不含批注）",
+    "obsidian.related-file": "在 Obsidian 打开",
+    "zotflow.source-note": "打开 ZotFlow 来源笔记",
+    "zotero.item": "在 Zotero 选择条目",
+    "zotero.pdf": "在 Zotero 打开",
+    "zotflow.attachment": "在 ZotFlow 标注",
+    "system.pdf": "系统阅读器",
+  };
+  return action.label && /[^\x20-\x7e]/.test(action.label)
+    ? action.label : (labels[action.kind] || action.label || "打开");
+}
+
 function actionButton(action) {
   const className = action.primary ? "action-button primary" : "action-button";
-  const button = node("button", className, action.label);
+  const label = readableActionLabel(action);
+  const button = node("button", className, label);
   button.type = "button";
   const requiresDestination = actionUsesDestination(action);
   const unavailable = action.available === false;
+  let overrideDestinationId = null;
+  const invocationDestination = () => overrideDestinationId || selectedDestinationId();
   const syncDisabled = () => {
-    button.disabled = unavailable || (requiresDestination && !selectedDestinationId());
+    button.disabled = unavailable || (requiresDestination && !invocationDestination());
     button.title = unavailable
       ? (action.reason || "此动作当前不可用")
-      : (requiresDestination && !selectedDestinationId() ? unavailableDestinationReason() : "");
+      : (requiresDestination && !invocationDestination() ? unavailableDestinationReason() : "");
   };
   syncDisabled();
   button.addEventListener("click", async () => {
-    const destinationId = requiresDestination ? selectedDestinationId() : null;
+    const destinationId = requiresDestination ? invocationDestination() : null;
     if (unavailable || (requiresDestination && !destinationId)) return;
     button.disabled = true;
     const original = button.textContent;
@@ -1059,7 +1502,136 @@ function actionButton(action) {
       }, 2800);
     }
   });
-  return button;
+  if (!requiresDestination) return button;
+  const wrapper = node("span", "action-with-destination");
+  wrapper.append(button);
+  const select = node("select", "action-destination");
+  select.setAttribute("aria-label", `${label}的打开位置`);
+  select.title = "仅为这次动作选择打开位置";
+  const defaultOption = node("option", "", "默认位置");
+  defaultOption.value = "";
+  select.append(defaultOption, ...state.destinations.items.map((destination) => {
+    const option = node("option", "", destination.display_name);
+    option.value = destination.destination_id;
+    return option;
+  }));
+  select.disabled = unavailable || !state.destinations.items.length;
+  select.addEventListener("change", () => {
+    overrideDestinationId = select.value || null;
+    syncDisabled();
+  });
+  wrapper.append(select);
+  return wrapper;
+}
+
+function visibleActionReasons(actions) {
+  const reasons = new Set(actions.filter((action) => action.available === false)
+    .map((action) => `${readableActionLabel(action)}：${action.reason || "当前不可用"}`));
+  if (actions.some(actionUsesDestination) && !selectedDestinationId()) {
+    reasons.add("cmux 阅读需要打开位置；请在 cmux 中运行 scholar-workflow open-hub。");
+  }
+  return [...reasons];
+}
+
+function paperItemKey(resource) {
+  return resource.zotero_item_key || resource.zotero?.item_key || null;
+}
+
+function paperTaskContext(resource, payload = null) {
+  return {
+    kind: "paper", title: resource.title || "论文", ref: resource.ref,
+    fields: payload?.field_contexts || [],
+  };
+}
+
+async function loadPaperRelated(resource) {
+  const key = paperItemKey(resource);
+  if (!key) throw new Error("Zotero 尚未提供论文身份，无法关联文件");
+  const cached = state.paperRelated[key];
+  if (cached?.payload) return cached.payload;
+  if (cached?.pending) return cached.pending;
+  const entry = cached || {};
+  state.paperRelated[key] = entry;
+  entry.pending = (async () => {
+    const response = await fetch(`/api/v3/papers/${encodeURIComponent(key)}/related`, { credentials: "same-origin" });
+    if (!response.ok) throw new Error(await responseMessage(response));
+    const payload = await response.json();
+    if (!Array.isArray(payload.documents)) throw new Error("相关文件接口返回了无效数据");
+    entry.payload = payload;
+    return payload;
+  })();
+  try {
+    return await entry.pending;
+  } finally {
+    entry.pending = null;
+  }
+}
+
+async function showPaperDocumentPreview(document) {
+  if (state.preview.saving) return;
+  if (state.preview.mode === "edit" && state.preview.dirty
+      && !window.confirm("尚有未保存的修改，仍要打开另一份文档吗？")) return;
+  if (previewRenderFrame !== null) {
+    window.cancelAnimationFrame(previewRenderFrame);
+    previewRenderFrame = null;
+  }
+  const requestId = state.preview.requestId + 1;
+  const artifact = { title: document.title, kind: document.role, format: "markdown", paper_document: true };
+  state.preview = { artifact, content: null, revision: null, mode: "read", dirty: false,
+    saving: false, assets: [], assetsLoading: false, uploading: false, requestId };
+  const dialog = byId("preview-dialog");
+  dialog.classList.add("field-document-preview");
+  byId("preview-title").textContent = document.title || "论文相关文件";
+  byId("preview-path").textContent = document.source_name || "已登记知识库";
+  byId("preview-content").replaceChildren(node("p", "markdown-empty", "正在读取正文…"));
+  syncPreviewControls();
+  setPreviewStatus("Hub 提供只读预览；使用“在 Obsidian 打开”编辑原文件。");
+  if (!dialog.open) dialog.showModal();
+  try {
+    const response = await fetch(`/api/v3/paper-documents/${encodeURIComponent(document.preview_id)}/content`, { credentials: "same-origin" });
+    if (!response.ok) throw new Error(await responseMessage(response));
+    const payload = await response.json();
+    if (state.preview.requestId !== requestId || !dialog.open) return;
+    state.preview.content = payload.content;
+    renderReadable(byId("preview-content"), artifact, payload.content);
+  } catch (error) {
+    if (state.preview.requestId !== requestId || !dialog.open) return;
+    byId("preview-content").replaceChildren(node("p", "markdown-empty", `无法预览：${String(error.message || error)}`));
+    setPreviewStatus("正文读取失败；请检查文件是否仍存在。", "error");
+  }
+}
+
+function renderPaperRelated(container, payload) {
+  const roleLabels = { "source-note": "来源笔记", "zotflow-source-note": "ZotFlow 来源笔记",
+    analysis: "论文分析", annotations: "批注笔记",
+    "zotero-note": "Zotero 笔记", "zotero-attachment": "Zotero 附件", "resource-note": "资料笔记" };
+  container.replaceChildren(...payload.documents.map((document) => {
+    const row = node("div", "paper-related-row");
+    const copy = node("div", "paper-related-copy");
+    copy.append(node("strong", "", document.title === "ZotFlow source note" ? "ZotFlow 来源笔记" : (document.title || "未命名文件")));
+    const formats = { markdown: "Markdown", md: "Markdown", canvas: "Canvas", pdf: "PDF", note: "笔记", "provider-note": "笔记", file: "文件" };
+    copy.append(node("small", "", [roleLabels[document.role] || artifactLabel(document.role || "document"), document.source_name, formats[document.format] || document.format].filter(Boolean).join(" · ")));
+    if (document.available === false || document.reason) {
+      copy.append(node("p", "action-diagnostic", document.reason || "文件当前不可用"));
+    }
+    const controls = node("div", "paper-related-actions");
+    for (const action of document.actions || []) controls.append(actionButton(action));
+    if (document.available !== false && document.preview_id && ["markdown", "md"].includes(document.format)) {
+      const preview = node("button", "preview-button", "预览正文");
+      preview.type = "button";
+      preview.addEventListener("click", () => showPaperDocumentPreview(document));
+      controls.append(preview);
+    }
+    row.append(copy, controls);
+    for (const reason of visibleActionReasons(document.actions || [])) row.append(node("p", "action-diagnostic", reason));
+    return row;
+  }));
+  if (!payload.documents.length) {
+    container.append(node("p", "action-diagnostic", "没有已关联文件。Hub 会显示知识库登记的笔记、分析与 Zotero 子附件。"));
+  }
+  for (const diagnostic of payload.diagnostics || []) {
+    container.append(node("p", "action-diagnostic", typeof diagnostic === "string" ? diagnostic : (diagnostic.message || diagnostic.detail || diagnostic.reason || "部分来源当前不可用")));
+  }
 }
 function resourceCard(resource) {
   const card = node("article", "card paper-card");
@@ -1076,12 +1648,39 @@ function resourceCard(resource) {
   const footer = node("div", "card-footer");
   footer.append(node("span", "card-source", resource.venue || "Zotero"));
   const controls = node("div", "card-actions");
-  for (const action of actionsFor(resource)) controls.append(actionButton(action));
+  const actions = actionsFor(resource);
+  for (const action of actions) controls.append(actionButton(action));
   if (!controls.hasChildNodes()) {
     controls.append(node("span", "action-diagnostic", "暂无可执行动作"));
   }
   footer.append(controls);
   card.append(footer);
+  if (actions.some(actionUsesDestination)) card.append(node("p", "paper-read-note", "cmux 阅读原 PDF，不含 Zotero 批注"));
+  const reasons = visibleActionReasons(actions);
+  for (const reason of reasons) card.append(node("p", "action-diagnostic paper-action-reason", reason));
+  const related = node("details", "paper-related");
+  related.append(node("summary", "", "相关文件"));
+  const relatedContent = node("div", "paper-related-content");
+  relatedContent.append(node("p", "action-diagnostic", "展开后读取笔记、分析和附件…"));
+  related.append(relatedContent);
+  related.addEventListener("toggle", async () => {
+    if (!related.open) return;
+    relatedContent.replaceChildren(node("p", "action-diagnostic", "正在读取相关文件…"));
+    try { renderPaperRelated(relatedContent, await loadPaperRelated(resource)); }
+    catch (error) { relatedContent.replaceChildren(node("p", "action-diagnostic", `读取失败：${String(error.message || error)}。关闭后重新展开可重试。`)); }
+  });
+  card.append(related);
+  const useForTask = node("button", "paper-task-button", "用于任务");
+  useForTask.type = "button";
+  useForTask.addEventListener("click", async () => {
+    selectTaskContext(paperTaskContext(resource));
+    byId("task-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+    try {
+      const payload = await loadPaperRelated(resource);
+      if (state.tasks.context?.ref?.entity_id === resource.ref?.entity_id) selectTaskContext(paperTaskContext(resource, payload));
+    } catch (error) { setTaskStatus(`已选择论文；Field 归属读取失败，请明确选择目标：${String(error.message || error)}`, "error"); renderTaskPanel(); }
+  });
+  card.append(useForTask);
   return card;
 }
 
@@ -1108,6 +1707,7 @@ function fieldCard(field) {
   open.addEventListener("click", () => {
     selectInitialFieldDocument(field);
     state.selectedField = field;
+    selectTaskContext(fieldTaskContext(field));
     renderResources();
     renderFieldDetail();
     byId("field-detail").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1147,6 +1747,9 @@ async function loadFieldDocument(field, relativePath) {
     if (state.selectedField !== field || field.selected_document_path !== relativePath) return;
     field.selected_document_content = payload.content;
     field.selected_document_revision = payload.revision;
+    if (payload.ref) {
+      selectTaskContext({ ...fieldTaskContext(field), title: payload.title || relativePath, ref: payload.ref });
+    }
     if (relativePath === field.home) {
       field.home_content = payload.content;
       field.home_revision = payload.revision;
@@ -1278,6 +1881,13 @@ function projectToolCard(item) {
     state.view === "projects" ? item.project_id : (item.source || item.tool_id),
   ));
   if (state.view === "projects") {
+    const task = node("button", "preview-button", "用于任务");
+    task.type = "button";
+    task.addEventListener("click", () => {
+      selectTaskContext({ kind: "project", title: item.display_name || "项目", projectId: item.project_id, ref: item.ref });
+      byId("task-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    footer.append(task);
     const operations = node("button", "preview-button", "文档操作");
     operations.type = "button";
     operations.disabled = !item.enabled || !item.docs_available
@@ -2017,14 +2627,38 @@ byId("task-target").addEventListener("change", (event) => {
 });
 byId("task-effort").addEventListener("change", (event) => {
   state.tasks.selectedEffort = event.target.value || null;
+  persistTaskChoice();
   setTaskStatus(null);
   renderTaskPanel();
+});
+byId("task-model").addEventListener("change", (event) => {
+  state.tasks.selectedModelId = event.target.value || "default";
+  state.tasks.selectedEffort = null;
+  setTaskStatus(null);
+  renderTaskPanel();
+  persistTaskChoice();
 });
 byId("task-brief").addEventListener("input", () => {
   setTaskStatus(null);
   renderTaskPanel();
 });
 byId("task-form").addEventListener("submit", submitTask);
+byId("codex-setup").addEventListener("click", openCodexSetup);
+byId("codex-setup-candidate").addEventListener("change", (event) => {
+  state.codexSetup.candidateId = event.target.value || null;
+  renderCodexSetup();
+});
+byId("codex-setup-model").addEventListener("change", syncCodexSetupSave);
+byId("codex-setup-approved").addEventListener("change", syncCodexSetupSave);
+byId("codex-setup-save").addEventListener("click", saveCodexSetup);
+byId("codex-target-picker").addEventListener("click", pickTaskFolder);
+byId("codex-target-confirm").addEventListener("click", confirmTaskFolder);
+byId("codex-setup-close").addEventListener("click", () => {
+  if (!state.codexSetup.busy) byId("codex-setup-dialog").close();
+});
+byId("codex-setup-dialog").addEventListener("cancel", (event) => {
+  if (state.codexSetup.busy) event.preventDefault();
+});
 byId("field-register").addEventListener("click", openFieldRegistration);
 byId("field-register-confirm").addEventListener("click", confirmFieldRegistration);
 for (const id of ["field-register-close", "field-register-cancel"]) {
@@ -2086,4 +2720,5 @@ document.addEventListener("keydown", (event) => {
     savePreview();
   }
 });
+restoreTaskChoice();
 boot();

@@ -128,7 +128,7 @@ it still requires optimistic concurrency protection.
   All cwd/file authorization comes from this target plus relative paths, CAS and symlink
   defenses. Destination selection must never alter the result.
 - Codex requests are defined by a server-registered `TaskRecipe`, bounded UTF-8 brief (at most
-  8 KiB), allowed `fast | standard | deep` effort, explicit project/object selection, and
+  8 KiB), an approved `model_profile_id` and its supported reasoning effort, explicit project/object selection, and
   idempotency key. The client cannot provide a shell command, cwd/path, model, sandbox,
   permission, raw config, environment, terminal target, or `--last`. Briefs go through stdin;
   argv construction uses `shell=False`; resume/fork requires an explicit saved thread ID.
@@ -137,6 +137,21 @@ it still requires optimistic concurrency protection.
   runtime capability probe, broker, and destination checks pass. A long-lived cmux terminal
   worker runs each slot; health reports task availability from the actual runtime, never from
   the mere presence of task code. The legacy blank-session action remains unavailable.
+- `fast | standard | deep` is a legacy effort mapping, not the new model picker. Setup is a
+  separate authenticated, same-origin confirmation of fixed installed executable candidates,
+  reviewed model profiles, selected registered roots and a bounded `read-only | workspace-write`
+  policy. It never accepts executable paths or arbitrary configuration from the browser.
+  Detection does not save settings or launch a task. New folder roots come only from the system
+  picker and a short-lived, one-use candidate; root identity and registry revisions are checked
+  again at confirmation. A Field target stays within its manifest-relative directory; its exact
+  `codex.field:<field_id>` grant does not enable whole-Vault or other-Field targets.
+  Model catalog entries do not prove account entitlement. Private model preferences store only
+  an approved profile ID and effort; existing threads retain their actual resolved model/effort.
+- Paper-related files require explicit resource/artifact or provider parent identity. Same-title
+  files are never inferred as related. Preview/open revalidate ownership and registered roots;
+  public responses expose typed references and opaque action/preview IDs, not executable paths.
+  Preview does not execute embedded HTML or fetch external images. Local-only PDF actions do not
+  silently generate annotated copies or invoke a second annotation synchronization engine.
 - JSON Canvas identity comes from the checked Vault artifact manifest. Missing, invalid,
   escaping, or symlinked manifest entries fail closed rather than exposing a stale path.
 - Hub Vault assets are distinct from Zotero attachments. Their bytes remain inside the

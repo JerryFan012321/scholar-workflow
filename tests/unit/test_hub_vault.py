@@ -169,3 +169,41 @@ def test_invalid_managed_declaration_masks_same_snapshot_artifact(tmp_path):
         row.code == "unknown-vault-managed-field"
         for row in catalog.diagnostics
     )
+
+
+def test_path_rejection_clears_different_snapshot_id_from_resource_and_topic(tmp_path):
+    (tmp_path / "invalid.md").write_text(
+        "---\nsw_schema: 1\nsw_kind: reading-note\n"
+        "sw_catalog_id: note:declaration\nsw_future_guess: forbidden\n---\nbody\n",
+        encoding="utf-8",
+    )
+    base = _base()
+    artifacts = [
+        HubArtifact(
+            artifact_id=artifact_id,
+            kind=ArtifactKind.READING_NOTE,
+            format=ArtifactFormat.MARKDOWN,
+            vault_path=path,
+            resource_id="paper:one",
+            topic_id="world-models",
+        )
+        for artifact_id, path in [
+            ("note:stale-snapshot", "invalid.md"),
+            ("note:unaffected", "unaffected.md"),
+        ]
+    ]
+    refs = [row.artifact_id for row in artifacts]
+    catalog = HubCatalog(
+        generated_at=base.generated_at,
+        resources=[base.resources[0].model_copy(update={"artifact_ids": refs})],
+        topics=[base.topics[0].model_copy(update={"artifact_ids": refs})],
+        artifacts=artifacts,
+    )
+
+    result = VaultCatalogProvider(StaticCatalogProvider(catalog), tmp_path).load()
+
+    assert [row.artifact_id for row in result.artifacts] == ["note:unaffected"]
+    assert result.resources[0].artifact_ids == ["note:unaffected"]
+    assert result.topics[0].artifact_ids == ["note:unaffected"]
+    assert any(row.code == "unknown-vault-managed-field" for row in result.diagnostics)
+    assert "note:stale-snapshot" not in result.model_dump_json()
