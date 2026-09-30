@@ -1,5 +1,15 @@
 # Hub 论文入口与 Codex 任务：A 阶段结果
 
+## 正常发布与安装结果（0.30.0）
+
+hotfix 源码 `7f333df`、runtime-only release `1e21c63` 已推送；main 未合并。
+Codex 正常 marketplace 更新/安装返回 0.30.0；pipx 正常 upgrade 更新 CLI 至 0.30.0，
+导入 pipx site-packages，不是 editable 或临时测试环境。安装先尝试 install --force
+失败（uv 环境已存在），旧环境未删除；upgrade 成功且 pipx 登记版本已核验。
+正常 hub start 切换受管服务成功：0.30.0、PID 86524、端口 55471，build 与已安装包一致。
+未改正式文库、登记 Vault 或执行 Codex 任务。人工阅读器、打开位置、相关文件与呈现
+评鉴仍待用户确认，不由发布/安装或自动测试通过代替。
+
 ## 0.30.0 发布前回归（2026-09-30）
 
 用户批准后运行 `.venv/bin/python -m pytest tests/unit tests/contract -q`：

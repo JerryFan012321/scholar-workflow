@@ -5,6 +5,23 @@
 
 ## 2026-09-30 Hub 论文入口与 Codex 易用性改进（A 合成通过，真实验收待做）
 
+### 0.30.0 hotfix 已发布并正常安装，人工评鉴待做
+
+- 源码 hotfix 提交 `7f333df54f5632dcfd7b91fc7d7e1b8026848828`；runtime-only release
+  提交 `1e21c635e56d8750b254f792c7878f738ac0d8b0`；均已推送，main 未变（ccb60b7）。
+- Codex marketplace upgrade + plugin add 正常安装 0.30.0；缓存 manifest 已核对。
+- pipx install --force 因 uv 已存在环境失败，未删除原环境；指定 pip 后端也因既有
+  backend 记录被忽略。最终正常 `pipx upgrade scholar-workflow` 成功，来源为已提交
+  hotfix 仓库（非 editable），导入实际 pipx site-packages，版本登记为 0.30.0。
+- 正常 `hub start` 安全切换已核验受管服务：0.30.0、PID 86524、端口 55471，build
+  `sha256:918d8118056c705ccc0adb331ba61d4d68cefe8ec3bb934dfbfdbf053a7a4c2a`。
+- 人工评鉴仍待做：正常 open-hub 中检查 V-JEPA 2 的 ZotFlow、cmux 原 PDF、相关
+  文件/可读预览及 Obsidian 打开效果。未登记 Source 不会自动添加；没有改真实 Vault
+  或 Zotero，也未运行真实 Codex 任务。旧安装/临时测试页面不能算本版本 GUI 验收。
+- 0.29.0 回退来源为 release 提交 e0a0b2f；需要回退时按相同正常安装流程处理。
+
+以下段落是开发过程记录，状态以上述最新结果为准。
+
 用户纠正安装规则：hotfix 本身也须作为可正式发布的独立版本，通过正常入口安装到
 实际使用环境后验收，再合并 main。此前临时 venv wheel 与专用启动脚本仅为开发诊断，
 不满足产品安装验收；全局与项目 AGENT 已修正。下一步准备确定提交、独立版本和
