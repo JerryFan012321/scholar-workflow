@@ -41,9 +41,23 @@ pointer.
 - Never scaffold credentials, custom agents, hooks, or `.DS_Store`.
 - The initializer never deletes, overwrites, stages, commits, or pushes.
 
+## Project material context
+
+Initialization creates layout, not research facts. When project materials are explicitly selected,
+the project may own a separate `project-context.json` inventory of code, papers, knowledge notes,
+experiments and results. Follow the shared project-context result contract; keep external content
+in Zotero/Vault and keep experiment records in their Run/Attempt bundles. The inventory does not
+authorize synchronization, copies, execution or registration with the legacy Hub.
+
+`scholar-workflow project context-template --project-root TARGET` prints an editable template;
+`project overview --project-root TARGET` reads the declared inventory as Markdown. Neither command
+writes a project file or starts an application. Do not turn a missing inventory into invented
+project facts or a mandatory homepage. Project integration is not a new initializer side effect.
+
 ## References
 
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
+- `${CLAUDE_PLUGIN_ROOT}/references/project-context.md` — when explicitly organizing project materials
 - `references/skeleton-manifest.md`
 - `references/source-layout.md`
 - `references/experiment-records.md`

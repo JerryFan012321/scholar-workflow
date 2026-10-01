@@ -54,7 +54,7 @@ from scholar_workflow.analysis.rendering import AnalysisBundle
 from scholar_workflow.canvas import validate_canvas_payload
 from scholar_workflow.hub.field_migration import _has_legacy_hub_reference, _managed_paths
 from scholar_workflow.hub.field_transaction import _has_analysis_identity, _has_analysis_sidecar
-from scholar_workflow.hub.fields import (
+from scholar_workflow.knowledge.fields import (
     FieldDefinition,
     FieldManifest,
     FieldRegistryError,
@@ -64,7 +64,7 @@ from scholar_workflow.hub.fields import (
     _open_directory_chain,
     _safe_relative,
 )
-from scholar_workflow.hub.models import ArtifactFormat, ArtifactKind, HubArtifact
+from scholar_workflow.knowledge.catalog_models import ArtifactFormat, ArtifactKind, HubArtifact
 from scholar_workflow.hub.paper_foldering import PaperFolderingPlan
 
 _MANIFEST = ".scholar-workflow/fields.yml"

@@ -42,7 +42,8 @@ geometry, table columns, filenames, and edit behavior.
 | Annotation note | `skills/export-annotations/SKILL.md` |
 | Reading Report | `skills/recommend-papers/SKILL.md` |
 | Obsidian and Notion projections | `skills/sync-projections/references/obsidian-index-format.md` and `notion-schema.md` |
-| Hub view and direct actions | `references/hub-contract.md` |
+| Project material overview | `references/project-context.md` |
+| Legacy Hub view and direct actions | `references/hub-contract.md` |
 
 For a machine-only JSON response, the owning schema controls fields; its companion
 human summary, when exposed, follows this contract. A format-specific template may

@@ -38,6 +38,11 @@ python3 skills/init-project/scripts/init_project.py apply /path/to/project \
 
 ## 结构约定
 
+已初始化的项目可另有 `project-context.json`，明确关联代码、论文、笔记、实验报告和成果。
+`scholar-workflow project context-template --project-root /path/to/project --language zh`
+只输出空模板，`project overview` 输出可读总览；两者不写文件、不要求 Hub。
+初始化本身不会猜测资料或复制外部知识，详见[项目资料契约](../../references/project-context.md)。
+
 - 本地标准命名是权威形式：使用 `docs/plan` 和 `docs/report`，不重复创建
   `docs/plans` 或 `docs/reports`。
 - 数据按 `dataset/<dataset-id>/` 聚合，数据准备源码进入 `src/utils/dataset_toolkit/`。

@@ -26,7 +26,8 @@ it still requires optimistic concurrency protection.
 | Add one Vault asset through the Hub | Allowed — additive; server-derived path and explicit manifest relation only |
 | Copy an explicit document into a registered project's `docs/` | Allowed from a registered project target; relative-path, capability, collision, CAS, symlink and Git-risk checks apply independently of cmux |
 | Move one registered project document to project-local trash | Allowed from a registered project target; recoverable receipt required and every private-directory component must be non-symlink |
-| Route a browser/terminal/Codex/CLI window to cmux | Allowed only through a live opaque `CmuxDestination`; this grants no file permission |
+| Use native cmux under an explicit user task | Use the host's authorized tools and folder scope; a workspace only selects window placement |
+| Route a window through the legacy Hub | Requires its live opaque `CmuxDestination`; this grants no file permission |
 | Store or request a Zotero Web API key outside ZotFlow SecretStorage | Never |
 | Download a PDF through ZotFlow's Zotero Web API/WebDAV file path for a Hub reading action | Never — require a positively verified local-storage mode and an existing local attachment |
 | Delete item/attachment, overwrite a conflicting item, merge identities | Approval required — per item |
@@ -93,6 +94,12 @@ it still requires optimistic concurrency protection.
   and must report unsupported annotation types rather than claiming a complete export.
 
 ## Loopback services
+
+The following rules apply to retained legacy Hub endpoints, not to the project's content
+core or every agent use of native tools. The Hub/Codex control-plane product direction is retired;
+existing paths keep their security checks until a separately approved, identity-checked shutdown.
+Project context inspection is read-only and does not authorize launching a reader, running code,
+copying source content or expanding folder permissions. See `project-context.md`.
 
 - Zotero Local API and the managed Hub service are loopback-only.
 - `HubDirectory` schema 3 is the only Hub root. Document Libraries are Papers and

@@ -11,7 +11,7 @@ from typing import Literal, Self
 
 from pydantic import Field, field_validator, model_validator
 
-from scholar_workflow.hub.models import HubModel
+from scholar_workflow.knowledge.catalog_models import HubModel
 
 _CLEAN_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$")
 _FINGERPRINT = re.compile(r"^sha256:[0-9a-f]{64}$")

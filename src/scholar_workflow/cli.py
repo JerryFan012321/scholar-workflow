@@ -283,7 +283,84 @@ def _cmux_child_env(workspace_id: str, socket_path: str) -> dict[str, str]:
 @click.group()
 @click.version_option(version=__version__)
 def main() -> None:
-    """Scholar Workflow — scholarly resource management CLI."""
+    """Project context, readable knowledge, and reproducible research records."""
+
+
+@main.group(name="project")
+def project_commands() -> None:
+    """Organize explicit project material without a Hub or tool execution."""
+
+
+@project_commands.command(name="context-template")
+@click.option(
+    "--project-root", required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option("--language", type=click.Choice(["en", "zh"]), default="en", show_default=True)
+def project_context_template(project_root: Path, language: str) -> None:
+    """Print an editable template; do not create or modify project files."""
+    from scholar_workflow.project.layout import load_project_layout
+
+    try:
+        layout = load_project_layout(project_root)
+    except ValueError as exc:
+        raise InputError(str(exc)) from None
+    click.echo(json.dumps({
+        "schema_version": 1,
+        "project_id": layout.project_id,
+        "title": project_root.name,
+        "summary": "说明研究目标与方法。" if language == "zh" else "Describe the research goal and approach.",
+        "language": language,
+        "entries": [],
+    }, ensure_ascii=False, indent=2))
+
+
+@project_commands.command(name="validate-context")
+@click.option(
+    "--project-root", required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+def project_validate_context(project_root: Path) -> None:
+    """Validate one explicit context inventory, not external source availability."""
+    from scholar_workflow.project.context import load_project_context
+
+    try:
+        context = load_project_context(project_root)
+    except ValueError as exc:
+        raise InputError(str(exc)) from None
+    if context.language == "zh":
+        click.echo(
+            f"项目资料清单有效：明确声明了 {len(context.entries)} 项。"
+            "尚未核验资料可用性或科学内容。"
+        )
+    else:
+        click.echo(
+            f"Valid project context: {len(context.entries)} explicitly declared items. "
+            "Source availability and scientific content have not been verified."
+        )
+
+
+@project_commands.command(name="overview")
+@click.option(
+    "--project-root", required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option("--json", "as_json", is_flag=True, help="Emit machine-readable references and status.")
+@click.option("--language", type=click.Choice(["en", "zh"]), help="Override presentation language without changing files.")
+def project_overview(project_root: Path, as_json: bool, language: str | None) -> None:
+    """Read declared code, papers, notes and results; print Markdown by default."""
+    from scholar_workflow.project.context import build_project_overview, render_project_overview
+
+    try:
+        overview = build_project_overview(project_root)
+    except ValueError as exc:
+        raise InputError(str(exc)) from None
+    if language is not None:
+        overview = overview.model_copy(update={"language": language})
+    if as_json:
+        click.echo(json.dumps(overview.model_dump(mode="json"), ensure_ascii=False, indent=2))
+    else:
+        click.echo(render_project_overview(overview), nl=False)
 
 
 @main.command()
@@ -1380,7 +1457,7 @@ def hub_field_migration() -> None:
 
 def _field_migration_service():
     from scholar_workflow.hub.field_migration import FieldMigrationService
-    from scholar_workflow.hub.fields import KnowledgeSourceRegistry
+    from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
 
     root = _hub_state_root() / "hub"
     return FieldMigrationService(
@@ -1397,7 +1474,7 @@ def hub_field_migration_plan(source_id: str, field_id: str) -> None:
     from dataclasses import asdict
 
     from scholar_workflow.hub.field_migration import FieldMigrationError
-    from scholar_workflow.hub.fields import FieldRegistryError
+    from scholar_workflow.knowledge.fields import FieldRegistryError
 
     try:
         plan = _field_migration_service().plan(source_id, field_id)
@@ -1431,7 +1508,7 @@ def hub_field_migration_apply(
     from dataclasses import asdict
 
     from scholar_workflow.hub.field_migration import FieldMigrationError
-    from scholar_workflow.hub.fields import FieldRegistryError
+    from scholar_workflow.knowledge.fields import FieldRegistryError
 
     service = _field_migration_service()
     try:
@@ -1467,7 +1544,7 @@ def hub_field_migration_recover(source_id: str, field_id: str) -> None:
     from dataclasses import asdict
 
     from scholar_workflow.hub.field_migration import FieldMigrationError
-    from scholar_workflow.hub.fields import FieldRegistryError
+    from scholar_workflow.knowledge.fields import FieldRegistryError
 
     try:
         result = _field_migration_service().recover(source_id, field_id)
@@ -1528,7 +1605,7 @@ def hub_target() -> None:
 def hub_target_list() -> None:
     """List public execution-target metadata; never print registered host paths."""
     from scholar_workflow.hub.directory import ProjectRegistry
-    from scholar_workflow.hub.fields import KnowledgeSourceRegistry
+    from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
     from scholar_workflow.hub.routing import ExecutionTargetRegistry
 
     root = _hub_state_root() / "hub"
@@ -1556,7 +1633,7 @@ def hub_target_list() -> None:
 def hub_target_add_source(source_id: str, target_id: str) -> None:
     """Authorize one already registered Knowledge Source as a Codex cwd target."""
     from scholar_workflow.hub.directory import ProjectRegistry
-    from scholar_workflow.hub.fields import (
+    from scholar_workflow.knowledge.fields import (
         FieldRegistryError,
         KnowledgeSourceRegistry,
         KnowledgeSourceRegistryDocument,
@@ -1643,7 +1720,7 @@ def hub_target_add_source(source_id: str, target_id: str) -> None:
 def hub_target_add_project(project_id: str, target_id: str) -> None:
     """Authorize one already registered Project as a Codex cwd target."""
     from scholar_workflow.hub.directory import ProjectRegistry, RegistryError
-    from scholar_workflow.hub.fields import KnowledgeSourceRegistry
+    from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
     from scholar_workflow.hub.routing import (
         ExecutionTarget,
         ExecutionTargetError,
@@ -1738,7 +1815,7 @@ def hub_codex_configure(executable: Path, model: str, sandbox: str) -> None:
     """CLI fallback: approve an explicit installation, model and existing targets."""
     from scholar_workflow.hub.codex_setup import CodexSetupService
     from scholar_workflow.hub.directory import ProjectRegistry
-    from scholar_workflow.hub.fields import KnowledgeSourceRegistry
+    from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
     from scholar_workflow.hub.routing import ExecutionTargetRegistry
 
     root = _hub_state_root() / "hub"
@@ -2365,7 +2442,7 @@ def analysis_commit_bundle(
         AnalysisState,
     )
     from scholar_workflow.analysis.rendering import AnalysisBundle
-    from scholar_workflow.hub.fields import KnowledgeSourceRegistry
+    from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
 
     default_db, default_stage = _analysis_state_paths()
     state_home = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME)) / "analysis"

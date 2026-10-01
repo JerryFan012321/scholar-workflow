@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholar-workflow.local/contracts/project-context.schema.json",
+  "title": "Explicit project material context",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "project_id", "title", "summary", "entries"],
+  "properties": {
+    "schema_version": {"const": 1, "type": "integer"},
+    "project_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "title": {"$ref": "#/$defs/title"},
+    "summary": {"type": "string", "minLength": 1, "maxLength": 8000},
+    "language": {"enum": ["en", "zh"], "default": "en"},
+    "entries": {
+      "type": "array", "maxItems": 512,
+      "items": {"$ref": "#/$defs/entry"},
+      "description": "entry_id values must be unique; runtime validation enforces this identity rule."
+    }
+  },
+  "$defs": {
+    "title": {"type": "string", "minLength": 1, "maxLength": 1000},
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry_id", "kind", "title", "purpose", "ref"],
+      "properties": {
+        "entry_id": {"type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._:-]{0,127}$"},
+        "kind": {"enum": ["code", "paper", "analysis", "note", "experiment", "result", "other"]},
+        "title": {"$ref": "#/$defs/title"},
+        "purpose": {"type": "string", "minLength": 1, "maxLength": 4000},
+        "ref": {"oneOf": [{"$ref": "#/$defs/project_file"}, {"$ref": "#/$defs/external_resource"}]}
+      }
+    },
+    "project_file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "relative_path"],
+      "properties": {
+        "kind": {"const": "project-file"},
+        "relative_path": {
+          "type": "string", "minLength": 1, "maxLength": 1024,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*\\\\)(?!.*[\\u0000-\\u001f])(?!.*\\s$)(?!^\\s)(?!.*\\/$).+$"
+        },
+        "commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"}
+      }
+    },
+    "external_resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "provider", "resource_id"],
+      "properties": {
+        "kind": {"const": "external-resource"},
+        "provider": {"enum": ["zotero", "obsidian"]},
+        "resource_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "uri": {
+          "type": ["string", "null"], "maxLength": 4096,
+          "description": "Reader projection only, not source identity or availability proof. Runtime validation rejects commands, duplicate/unknown query fields, and malformed navigation."
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"provider": {"const": "zotero"}}},
+          "then": {"properties": {"uri": {"anyOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^zotero://(?:open-pdf/(?:library|(?:groups|users)/[0-9]+)/items/[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}(?:\\?(?:page=[1-9][0-9]*|annotation=[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8})(?:&(?:page=[1-9][0-9]*|annotation=[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}))*)?|select/(?:library/items/[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}|(?:groups|users)/[0-9]+/items/[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}|items/@?[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}))$"},
+            {"type": "string", "pattern": "^obsidian://zotflow/?\\?(?:vault|type|libraryID|key|navigation)=[^&\\s<>]+(?:&(?:vault|type|libraryID|key|navigation)=[^&\\s<>]+)*$"}
+          ]}}},
+          "else": {"properties": {"uri": {"anyOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^obsidian://open/?\\?(?:vault|file|block)=[^&\\s<>]+(?:&(?:vault|file|block)=[^&\\s<>]+)*$"}
+          ]}}}
+        }
+      ]
+    }
+  }
+}

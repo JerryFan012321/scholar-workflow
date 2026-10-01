@@ -10,19 +10,21 @@ from pathlib import Path
 from scholar_workflow.analysis.batch import AnalysisBatchStore
 from scholar_workflow.analysis.conformance import validate_bundle
 from scholar_workflow.analysis.models import (
-    ATOMIC_RESOURCE_KINDS,
     AnalysisAuditReport,
     AnalysisAuditTarget,
     AnalysisBaseline,
     AnalysisCommitReceipt,
     AnalysisState,
     ConformanceFinding,
-    CoreDocumentKind,
     KnowledgeAuditManifest,
-    SupportingDocumentKind,
 )
 from scholar_workflow.analysis.rendering import AnalysisBundle
 from scholar_workflow.analysis.updates import create_baseline
+from scholar_workflow.knowledge.models import (
+    ATOMIC_RESOURCE_KINDS,
+    CoreDocumentKind,
+    SupportingDocumentKind,
+)
 
 _RAW_HUB_URL = re.compile(r"https?://(?:127\.0\.0\.1|localhost):23128(?:[/\s]|$)")
 _UNRESOLVED_TEMPLATE = re.compile(

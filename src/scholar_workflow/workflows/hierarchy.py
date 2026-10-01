@@ -11,7 +11,7 @@ managed markers is never touched (INV4).
 from __future__ import annotations
 from pathlib import PurePosixPath
 
-from scholar_workflow.hub.obsidian_contract import (
+from scholar_workflow.knowledge.obsidian_contract import (
     artifact_id_from_path,
     managed_frontmatter,
 )

@@ -27,7 +27,7 @@ from scholar_workflow.hub.actions import (
     WorkspacePolicy,
     ZotFlowSourceNoteLauncher,
 )
-from scholar_workflow.hub.fields import (
+from scholar_workflow.knowledge.fields import (
     FieldRegistryError,
     FieldService,
     KnowledgeSourceRegistry,

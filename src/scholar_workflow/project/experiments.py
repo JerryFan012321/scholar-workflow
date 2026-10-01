@@ -24,6 +24,7 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
+from scholar_workflow.project.layout import ProjectLayoutError, validate_project_identity
 from scholar_workflow.project.models import (
     ActualExecution,
     ArtifactManifest,
@@ -111,18 +112,11 @@ def _project_root(value: str | Path) -> Path:
         raise ExperimentError("project-layout.json is required; run init-project apply first")
     try:
         layout = json.loads(layout_path.read_text(encoding="utf-8"))
-        raw_project_id = layout["project_id"]
-        if not isinstance(raw_project_id, str):
-            raise TypeError("project_id must be a canonical string")
-        project_id = uuid.UUID(raw_project_id)
+        validate_project_identity(layout)
+    except ProjectLayoutError:
+        raise ExperimentError("project-layout.json must use schema_version 2 and UUIDv4 identity") from None
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError, ValueError, TypeError):
         raise ExperimentError("project-layout.json does not contain a valid project identity") from None
-    if (
-        layout.get("schema_version") != 2
-        or project_id.version != 4
-        or raw_project_id != str(project_id)
-    ):
-        raise ExperimentError("project-layout.json must use schema_version 2 and UUIDv4 identity")
     return root
 
 

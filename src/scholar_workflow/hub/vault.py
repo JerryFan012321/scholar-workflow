@@ -14,7 +14,7 @@ from ruamel.yaml import YAML
 
 from scholar_workflow.adapters.obsidian import VaultPathError, safe_vault_path
 from scholar_workflow.hub.catalog import CatalogProvider
-from scholar_workflow.hub.models import (
+from scholar_workflow.knowledge.catalog_models import (
     ArtifactFormat,
     ArtifactKind,
     CatalogDiagnostic,
@@ -25,7 +25,7 @@ from scholar_workflow.hub.models import (
     SourceStatus,
     TreeKind,
 )
-from scholar_workflow.hub.obsidian_contract import MANAGED_FRONTMATTER_FIELDS
+from scholar_workflow.knowledge.obsidian_contract import MANAGED_FRONTMATTER_FIELDS
 
 
 _FRONTMATTER_RE = re.compile(

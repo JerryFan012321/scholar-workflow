@@ -26,6 +26,8 @@ from scholar_workflow.analysis.models import (
     AnalysisCommitRequest,
     KnowledgeArtifactChange,
     KnowledgeChangeSet,
+)
+from scholar_workflow.knowledge.models import (
     KnowledgeManifest,
     KnowledgeProjection,
     KnowledgeRelation,
@@ -33,7 +35,7 @@ from scholar_workflow.analysis.models import (
     SupportingDocumentKind,
     _validate_vault_path,
 )
-from scholar_workflow.hub.models import (
+from scholar_workflow.knowledge.catalog_models import (
     ArtifactFormat,
     ArtifactKind,
     HubArtifact,

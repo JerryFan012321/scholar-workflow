@@ -27,14 +27,16 @@ from scholar_workflow.analysis.models import (
     AnalysisBaseline,
     AnalysisCommitRequest,
     KnowledgeArtifactChange,
+    ZoteroPdfSpan,
+)
+from scholar_workflow.knowledge.models import (
     KnowledgeAtomicResource,
     KnowledgeCoreDocument,
     KnowledgeManifest,
-    ZoteroPdfSpan,
 )
 from scholar_workflow.analysis.rendering import AnalysisBundle
-from scholar_workflow.hub.fields import FieldDefinition
-from scholar_workflow.hub.models import HubCatalog, HubResource
+from scholar_workflow.knowledge.fields import FieldDefinition
+from scholar_workflow.knowledge.catalog_models import HubCatalog, HubResource
 from scholar_workflow.hub.paper_foldering import PaperFolderingPlan
 from scholar_workflow.models import ResourceKind
 

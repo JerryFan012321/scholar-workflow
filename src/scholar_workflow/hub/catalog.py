@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
-from scholar_workflow.hub.models import HubCatalog
+from scholar_workflow.knowledge.catalog_models import HubCatalog
 
 
 class CatalogProvider(Protocol):

@@ -16,7 +16,7 @@ from ruamel.yaml import YAML
 
 from scholar_workflow.adapters.obsidian import VaultPathError, safe_vault_path
 from scholar_workflow.hub.catalog import CatalogProvider
-from scholar_workflow.hub.models import (
+from scholar_workflow.knowledge.catalog_models import (
     ArtifactFormat,
     ArtifactKind,
     CatalogDiagnostic,

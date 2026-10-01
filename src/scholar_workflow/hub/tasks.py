@@ -28,7 +28,7 @@ from typing import Any, ClassVar, Literal, Self
 from pydantic import Field, field_validator, model_validator
 
 from scholar_workflow.hub.directory import EntityRef, ProjectRegistry
-from scholar_workflow.hub.models import HubModel
+from scholar_workflow.knowledge.catalog_models import HubModel
 from scholar_workflow.hub.routing import (
     ExecutionTargetError,
     ExecutionTargetRegistry,

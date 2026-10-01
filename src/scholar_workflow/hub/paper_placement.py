@@ -36,6 +36,8 @@ from scholar_workflow.analysis.models import (
     AnalysisBaseline,
     AnalysisCommitRequest,
     KnowledgeArtifactChange,
+)
+from scholar_workflow.knowledge.models import (
     KnowledgeManifest,
     KnowledgeProjection,
     KnowledgeRelation,
@@ -54,7 +56,7 @@ from scholar_workflow.hub.field_transaction import (
     _identity,
     _read_target,
 )
-from scholar_workflow.hub.fields import (
+from scholar_workflow.knowledge.fields import (
     FieldDefinition,
     FieldManifest,
     FieldRegistryError,
@@ -65,7 +67,7 @@ from scholar_workflow.hub.fields import (
     _read_regular_at,
     _safe_relative,
 )
-from scholar_workflow.hub.models import HubCatalog
+from scholar_workflow.knowledge.catalog_models import HubCatalog
 from scholar_workflow.models import ResourceKind
 
 _HASH = re.compile(r"sha256:[0-9a-f]{64}\Z")

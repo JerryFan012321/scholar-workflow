@@ -57,7 +57,7 @@ from scholar_workflow.hub.field_migration import (
     _replacements,
     _validate_canvas,
 )
-from scholar_workflow.hub.fields import (
+from scholar_workflow.knowledge.fields import (
     _DIRECTORY_FLAGS,
     _MAX_FIELD_DOCUMENT_BYTES,
     FieldDefinition,

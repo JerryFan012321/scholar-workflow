@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from scholar_workflow.hub.catalog import StaticCatalogProvider
-from scholar_workflow.hub.models import HubCatalog
+from scholar_workflow.knowledge.catalog_models import HubCatalog
 from scholar_workflow.hub.server import HubHTTPServer, start_hub_server
 
 

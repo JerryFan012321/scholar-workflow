@@ -9,7 +9,7 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 
-from scholar_workflow.hub.obsidian_contract import MANAGED_FRONTMATTER_FIELDS
+from scholar_workflow.knowledge.obsidian_contract import MANAGED_FRONTMATTER_FIELDS
 
 
 class VaultPathError(ValueError):

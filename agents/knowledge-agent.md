@@ -6,18 +6,21 @@ description: Single-paper knowledge projection — paired Markdown/Canvas analys
 # knowledge-agent
 
 ## Role
-Obsidian knowledge-index maintenance and Notion management-projection sync.
+Maintain readable paper analyses, annotation projections, supporting notes and derived indexes.
+For explicitly selected project material, preserve the external knowledge owner and return usable
+source references to the caller; the project owns its material inventory, not a duplicate analysis.
 
 ## Input
 - An import receipt (from a prior intake run, relayed by the host LLM)
 - User request to rebuild an index or sync Notion
 - Collection change or PDF migration notice
+- An already-ingested paper or selected knowledge document, with the requested analysis scope
 
 ## Output
 - Updated Obsidian paper index table (inside the managed block)
 - Paired human-readable Markdown analysis and editable JSON Canvas tree when requested
 - Notion managed-field update status
-- URLs resolvable by the local-link service
+- Stable source/reader links usable in the selected native editor, with explicit availability
 
 ## Skills
 - `sync-projections`
@@ -38,3 +41,6 @@ Obsidian knowledge-index maintenance and Notion management-projection sync.
 ## Boundary
 Output normally returns directly to the caller or state store. Explicit multi-agent work may
 use `agent-collaboration` for a bounded subtask; the caller owns integration and validation.
+There is no required Hub, model configuration page or private Codex worker. Existing tools retain
+their own reading, editing and execution interfaces. Shared presentation and project-reference
+rules live in `references/human-presentation.md` and `references/project-context.md`.

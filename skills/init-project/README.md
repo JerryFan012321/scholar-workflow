@@ -40,6 +40,13 @@ python3 skills/init-project/scripts/init_project.py apply /path/to/project \
 
 ## Layout decisions
 
+An initialized project may separately own `project-context.json` to reference selected code,
+papers, notes, experiment reports and results. `scholar-workflow project context-template
+--project-root /path/to/project` prints an editable empty template; `project overview` prints
+readable Markdown. These commands do not write files or require a Hub. See the shared
+[project context contract](../../references/project-context.md); initialization itself does not
+invent this inventory or copy external knowledge.
+
 - The local standard names are canonical: `docs/plan` and `docs/report` are not duplicated as
   `docs/plans` or `docs/reports`.
 - Data is grouped by dataset under `dataset/<dataset-id>/`; preparation code lives in

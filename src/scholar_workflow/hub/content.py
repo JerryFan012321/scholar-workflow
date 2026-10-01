@@ -16,7 +16,7 @@ from ruamel.yaml import YAML
 from scholar_workflow.adapters.obsidian import VaultPathError, safe_vault_path
 from scholar_workflow.canvas import CanvasValidationError, validate_canvas_payload
 from scholar_workflow.hub.catalog import CatalogProvider
-from scholar_workflow.hub.models import ArtifactFormat, HubArtifact
+from scholar_workflow.knowledge.catalog_models import ArtifactFormat, HubArtifact
 
 MAX_ARTIFACT_BYTES = 2 * 1024 * 1024
 MAX_WRITE_REQUEST_BYTES = MAX_ARTIFACT_BYTES + 64 * 1024

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from scholar_workflow.hub.fields import FolderRegistration, KnowledgeSourceRegistry
+from scholar_workflow.knowledge.fields import FolderRegistration, KnowledgeSourceRegistry
 from scholar_workflow.hub.routing import (
     ExecutionTarget,
     ExecutionTargetError,
