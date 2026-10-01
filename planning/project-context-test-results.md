@@ -2,12 +2,16 @@
 
 ## 2026-10-02 最新结果
 
+发布与安装已完成：源码 `1e668e5`、runtime-only release `199792d` 均推送；
+Codex 缓存 manifest 和正常 pipx CLI 均核对为 0.31.0，CLI 从 site-packages 加载、非 editable。
+main 未合并，未启停旧服务或修改真实资料。安装版本核对不是安装态功能/人工验收。
+
 用户明确批准完整合成回归及通过后的 hotfix 提交、发布、正常安装。
 `rtk uv run --with pytest pytest tests/unit tests/contract`：**1313 passed / 11 warnings，73.17 秒**。
 原来的身份提示失败用例保持原输入/预期，已通过。警告为 PyMuPDF/SWIG 与多线程 fork 弃用提示。
 运行包个人路径/明显密钥静态扫描和 diff whitespace 检查无发现。未编译/lint、未做真实业务验收。
 源代码门禁通过，不代表人工总览评价、正常安装态功能验收或完整职责解耦通过。
-发布/安装正在按授权办理；main、真实资料、旧服务保持不变。
+发布/安装已按授权完成；main、真实资料、旧服务没有主动变更。
 
 以下为前一轮测试与修正的历史记录，不能覆盖上述最新结果。
 

@@ -3,6 +3,22 @@
 > 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
 > `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-10-01。
 
+## 2026-10-02 0.31.0 hotfix 已提交、发布并正常安装
+
+- 完整源码 unit+contract：1313 passed / 11 warnings，73.17 秒；原错误提示失败已通过。
+- 功能源码提交 `1e668e5f0b7a9818bea5cffe76556d2a48558315`，分支
+  `codex/hotfix-project-context` 已推送；main 保持 `ccb60b793d9fd5db6032499bf2ca2c8dda3f1183`。
+- 在独立临时 clone 使用仓库发布脚本生成并检查 runtime-only 产物，release 已推送为
+  `199792dee442df4d60da98c19d2e365b3d096ed4`，无 planning/tests/根私有规则。
+- Codex marketplace upgrade + plugin add 正常安装为 0.31.0；缓存 manifest 已核对。
+  pipx upgrade 正常将 CLI 从 0.30.0 升至 0.31.0；导入为实际 pipx site-packages，非 editable。
+- 没有 main 合并、正式资料迁移、服务/worker 启停或新真实业务操作。
+  人工总览评鉴、正常安装态功能验收和后续职责解耦仍 pending，发布不意味着这些已完成。
+- 回退来源：旧 0.30.0 release `1e21c635e56d8750b254f792c7878f738ac0d8b0`；
+  通过正常安装指定该提交，不手改缓存，也不自动退回当前已安装版本。
+
+以下为本批开发、准备与失败过程记录，最新状态以上述已核验事实为准。
+
 ## 2026-10-01 项目中心重构（开发中，未测试／未发布）
 
 2026-10-02 最新：用户批准完整回归、hotfix 提交/发布/正常安装。完整 unit+contract 为
