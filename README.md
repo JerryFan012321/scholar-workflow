@@ -1,10 +1,10 @@
 # scholar-workflow
 
-A Claude Code and Codex plugin for scholarly resource management. It combines a human-first
-knowledge system, reproducible research-project records, and a local typed Hub control plane.
-It discovers and imports papers, maintains Obsidian and Notion projections, builds literature
-trees, recommends papers, renders validated Markdown/Canvas analyses, initializes Git-managed
-projects, and coordinates bounded work across agent runtimes.
+A Claude Code and Codex plugin for project-centered research material. It connects a project's
+code, related papers, knowledge notes, experiments and results while keeping authoritative content
+in its existing tools. It maintains readable Markdown/Canvas analyses, literature trees, safe
+ingestion and reproducible project records. Obsidian, Zotero, Notion, cmux and external Codex keep
+their native reading, editing and execution interfaces.
 
 [中文文档](./README.zh-CN.md)
 
@@ -21,7 +21,7 @@ quicksearch with host-model ranking; no MCP server or local vector database is r
 Destructive actions still require your approval. **Obsidian** holds knowledge notes and
 derived indexes; **Notion** holds an optional cross-device projection.
 
-### Three-system boundary
+### Content and project ownership
 
 - **Knowledge System** keeps readable Markdown as the primary knowledge artifact. Papers,
   technical documents, and blog posts are atomic resources; analyses, Canvas overviews, and
@@ -31,19 +31,39 @@ derived indexes; **Notion** holds an optional cross-device projection.
 - **Project System** keeps a stable `project_id`, host-neutral source/config profiles, and
   separate Run, Attempt, Target, artifact-promotion, and backup records. A promoted artifact
   is not called a verified backup without an independently checked copy.
-- **Hub Control Plane v3** exposes one `HubDirectory` root. Document Libraries contain only
-  Zotero Papers and dynamic Obsidian Fields; Projects and Tools are peer entries. cmux routes
-  browser/terminal windows, while registered folders and projects independently authorize files
-  and cwd. Zotero, Field manifests, project manifests, explicit registries, and Codex remain the
-  authoritative stores.
+- **Project material context** is a separate, optional `project-context.json`: code, papers,
+  knowledge notes and experiment results are explicitly referenced with their relevance to the
+  project. It does not copy content, synchronize stores, execute tools or require the Hub.
 
-Knowledge and project documents cross the boundary only through an explicit copy. The copy
-receives the destination system's identity, drops managed `sw_*` identity, and then evolves
-independently; there is no hidden synchronization or managed provenance relationship.
+Project references leave source ownership unchanged. An explicitly requested document copy is
+different: it receives destination identity and evolves independently. Neither operation creates
+hidden synchronization, source overwrite or cascading deletion.
 
-### Local research Hub
+### Project overview (0.31.0 hotfix; human acceptance pending)
 
-For normal use, one command is enough:
+For an initialized project, print an editable inventory template, select the actual material,
+and explicitly save it as `project-context.json` in that project. Template generation does not
+write files or invent related papers:
+
+```bash
+scholar-workflow project context-template --project-root /path/to/project --language en
+scholar-workflow project validate-context --project-root /path/to/project
+scholar-workflow project overview --project-root /path/to/project
+scholar-workflow project overview --project-root /path/to/project --json
+```
+
+The default overview is Markdown on stdout. Save it beside the project root inventory only when
+you want a document; relative links are rooted there. It reports missing/unsafe local references,
+does not follow symlinks, and leaves external resources unverified until checked in their owning
+application. It does not need plugin configuration, a running service or workspace registration.
+See [Project context contract](references/project-context.md) for fields and native reader links.
+
+### Legacy research Hub (compatibility only)
+
+The frontend and embedded Codex control plane are no longer the product direction. The commands
+below remain documented for existing installations; they are not prerequisites for project
+integration or native cmux/Codex use. This refactor has not stopped any installed service/worker.
+The legacy opening command is:
 
 ```bash
 scholar-workflow open-hub

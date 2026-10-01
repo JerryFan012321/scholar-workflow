@@ -16,6 +16,13 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
+# The runtime-only plugin bundles its shared package; no checkout variable is required.
+PLUGIN_SOURCE = SKILL_ROOT.parents[1] / "src"
+if (PLUGIN_SOURCE / "scholar_workflow" / "project" / "layout.py").is_file():
+    sys.path.insert(0, str(PLUGIN_SOURCE))
+
+from scholar_workflow.project.layout import is_project_id, validate_project_layout  # noqa: E402
+
 CATALOG_PATH = SKILL_ROOT / "references" / "source-profiles.json"
 PROJECT_LAYOUT = "project-layout.json"
 LEGACY_PATHS = ("dataset/raw", "dataset/metadata", "dataset_toolkits", "env/server")
@@ -85,70 +92,16 @@ def _validate_relative_path(value: str) -> None:
 
 
 def _project_id_is_valid(value: object) -> bool:
-    if not isinstance(value, str):
-        return False
-    try:
-        parsed = uuid.UUID(value)
-    except ValueError:
-        return False
-    return parsed.version == 4 and str(parsed) == value
+    return is_project_id(value)
 
 
 def _validate_layout(data: object, catalog: dict[str, Any]) -> Selection:
-    required = {
-        "schema_version",
-        "project_id",
-        "language",
-        "package",
-        "source_profile",
-        "addons",
-    }
-    if not isinstance(data, dict) or set(data) != required:
-        raise ValueError("project-layout.json has unknown or missing fields")
-    if data["schema_version"] != 2:
-        raise ValueError("project-layout.json must use schema_version 2")
-    if not _project_id_is_valid(data["project_id"]):
-        raise ValueError("project-layout.json project_id must be a canonical UUIDv4")
-    if data["language"] != "python":
-        raise ValueError("project-layout.json language must be python")
-    package = data["package"]
-    if package is not None and (
-        not isinstance(package, str) or not PACKAGE_RE.fullmatch(package)
-    ):
-        raise ValueError("project-layout.json package is not a Python identifier")
-
-    profile_data = data["source_profile"]
-    profile: str | None
-    if profile_data is None:
-        profile = None
-    elif (
-        isinstance(profile_data, dict)
-        and set(profile_data) == {"id", "version"}
-        and profile_data.get("id") in catalog["profiles"]
-        and profile_data.get("version")
-        == catalog["profiles"][profile_data["id"]]["version"]
-    ):
-        profile = profile_data["id"]
-    else:
-        raise ValueError("project-layout.json has an unknown source profile or version")
-
-    addon_ids: list[str] = []
-    if not isinstance(data["addons"], list):
-        raise TypeError("project-layout.json addons must be a list")
-    for addon in data["addons"]:
-        if (
-            not isinstance(addon, dict)
-            or set(addon) != {"id", "version"}
-            or addon.get("id") not in catalog["addons"]
-            or addon.get("version") != catalog["addons"][addon["id"]]["version"]
-        ):
-            raise ValueError("project-layout.json has an unknown addon or version")
-        addon_ids.append(addon["id"])
-    if addon_ids != sorted(set(addon_ids)):
-        raise ValueError("project-layout.json addons must be unique and sorted by id")
-    if (profile is not None or addon_ids) and package is None:
-        raise ValueError("project-layout.json requires package with a profile or addon")
-    return Selection(package=package, source_profile=profile, addons=tuple(addon_ids))
+    layout = validate_project_layout(data, catalog=catalog)
+    return Selection(
+        package=layout.package,
+        source_profile=None if layout.source_profile is None else layout.source_profile.id,
+        addons=tuple(addon.id for addon in layout.addons),
+    )
 
 
 def _layout_payload(selection: Selection, project_id: str) -> dict[str, Any]:

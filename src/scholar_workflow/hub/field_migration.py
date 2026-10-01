@@ -27,7 +27,7 @@ from scholar_workflow.adapters.zotero_local import (
     ZoteroLocalAdapter,
     ZoteroLocalError,
 )
-from scholar_workflow.hub.fields import (
+from scholar_workflow.knowledge.fields import (
     _DIRECTORY_FLAGS,
     _MAX_FIELD_DOCUMENT_BYTES,
     FieldDefinition,

@@ -4,6 +4,9 @@
 > lease/binding 和 landing 架构，只用于兼容测试、迁移和历史追溯。真实使用已经否定“workspace binding
 > 决定整个 Hub 是否可写”的抽象；当前目标规格是 [`hub-control-plane-v3.md`](hub-control-plane-v3.md)。
 > 禁止依据本文继续扩展全局 binding、把 Projects/Tools 作为 Library，或在新 UI/文档中增加 landing。
+> 2026-10-01：Hub v3 也已被项目中心重构方向取代，当前目标规格是
+> [`project-centered-refactor.md`](project-centered-refactor.md)。本文不再为新功能提供授权；
+> 尚未退场的旧接口继续遵守安全约束，未完成的 Hub 专属验收应 retired 而非 pass。
 >
 > `hub-investigation-conclusion.md` 是只读调查证据，不是运行期契约。本文与
 > `project-system-v2.md`、`knowledge-system-v2.md` 并列，并以 `planning/GOALS.md` 为上位意图层。

@@ -11,7 +11,26 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
 论文下载: CLI 落入 paper_inbox 收件箱，再经 Zotero Local API 入库
 ```
 
-## 三系统运行边界
+## 产品定位与模块职责
+
+以一个科研项目的完整资料上下文为使用中心：代码、相关论文、分析笔记、实验及成果可读、可追溯、
+可按需调用。集中展现不等于集中存储或集中执行；现有编辑器、文献管理器、终端与 agent 宿主持有
+各自原生能力，插件不再建设研究桌面、模型配置页或 Codex 任务控制面。
+
+| 模块 | 唯一业务责任 |
+|---|---|
+| `project/` | 项目身份/布局、显式资料引用清单、Run/Attempt/Target/Artifact 档案 |
+| `knowledge/` | 知识对象身份、归属、导航、公共知识模型和文档契约 |
+| `analysis/` | 论文分析 IR、Markdown/Canvas 渲染、证据、conformance 与分析更新 |
+| `adapters/` | 外部工具接口，不拥有项目/知识布局或第二份事实源 |
+| `workflows/` | 组合核心能力完成明确任务，不维护另一套权威状态 |
+| CLI / agents / skills | 薄调用入口、任务边界和可观察结果契约 |
+| `hub/` | 历史服务/UI/任务的兼容边界；不再驱动新能力，不作为核心模块的必要前提 |
+
+新内容核心不得反向依赖 Hub 服务或展示对象。旧导入路径只作兼容，知识模型不得继续放在论文分析
+模块中扩展。重构按最小能力切片实施，不因目录归属纠偏删除恢复 journal、安全检查或人工内容。
+
+## 运行边界
 
 - **Project System** 持有便携 `project_id`、共同项目布局、源码/config profile 和
   Run/Attempt/Target/Artifact 档案；主机项目根只进入显式 host registry。
@@ -23,16 +42,16 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
   sidecar 或可重建投影中，不淹没正文；Canvas 等非正文产物由 owner Markdown 说明。
 - 需持续审阅并在 Obsidian 展示的知识实验和迁移候选放在独立 `test` Vault，`/tmp` 仅存可丢弃
   中间物；实验副本不自动注册正式 Field、不与正式 Vault 同步，也不代表迁移或发布验收获批。
-- **Hub Control Plane v3** 以唯一 `HubDirectory` 聚合文档 Libraries（Papers、动态 Fields）以及平级的
-  Projects、Tools 和 capability/diagnostics；v1/v2 只由 v3 派生只读兼容投影，旧 artifact PUT、asset
-  upload 和 action POST 不得成为写入或执行旁路；Hub 不成为正文或 transcript 真源。
-- Knowledge 与 Project 只经人或 agent 显式复制内容；副本获得目标系统 identity 并独立演化，
-  不建立自动同步、托管 project-reference 或强制 provenance。
-- cmux workspace 只是 `CmuxDestination`：只决定 terminal/browser/Codex/CLI 窗口出现在哪里，不授予
-  文件权限，也不控制 Hub 是否只读。Vault、Vault 子目录、项目 `docs/` 与 CLI cwd 只由登记的
-  `folder_id/project_id` 和 `ExecutionTarget` 解析；HTTP 服务独立于任何 workspace 存活，cmux
-  socket 只交给可失效的受限路由 helper；workspace 消失只能让相关 launch action 失效。
-- 项目文件操作只限显式注册项目的 `docs/`，请求只接受 `project_id + docs 相对路径`；删除进入
+- **历史 Hub** 的 `HubDirectory`、v1/v2 派生投影和浏览器安全规则继续保护实际兼容路径；
+  它不是项目资料整合的权威，也不是新内容操作的前置条件。不自动停止已有服务或 worker。
+- Project 可拥有显式的 `project-context.json` 资料引用清单，关联代码、Zotero/Vault 资料和项目实验
+  成果；原文不复制、不代管，不建立自动同步、跨域覆盖、级联删除或强制来源追踪。引用不可用仅报告。
+  人或 agent 显式复制内容时，副本仍获得目标 identity 并独立演化。具体契约见
+  `references/project-context.md`，不把清单塞入只管布局的 `project-layout.json`。
+- cmux 原生 workspace 只决定窗口打开位置。agent 在用户授权范围内直接使用原生 cmux/CLI，
+  Codex 包括 `codex exec` 由外部工具持有配置、会话与生命周期。不得把 Hub 的 destination/target/
+  recipe 登记推广为 agent 使用工具的通用前提，文件权限仍服从宿主与所选文件夹边界。
+- 历史 Hub 项目文件写操作只限显式注册项目的 `docs/`，请求只接受 `project_id + docs 相对路径`；删除进入
   `.scholar-workflow/trash/docs/`，Hub 不执行 Git 写操作。Destination 的选择不得改变该授权结果。
 - Knowledge Source/Field 必须动态登记：用户选择 Vault/目录后先生成零写入 preview，每次明确选择并
   确认一个 Field，才创建或追加 `.scholar-workflow/fields.yml`；选择整个 Vault 不等于批量登记全部
@@ -49,7 +68,7 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
   不得静默遗漏预览中的旧文档。受管分析 Markdown/Canvas/sidecar 不得经单文件 Hub 编辑器改写。
   本地操作员的事务入口虽已接入开发树，真实 JEPA 的 Provider+Field 联合事务及停写验收仍未完成，
   不能仅凭上述内容批准据此迁移。
-- `scholar-workflow open-hub` 从已安装包启动或安全重启受管服务，经 mode 0600 discovery 发现动态端口，
+- 兼容命令 `scholar-workflow open-hub` 从已安装包启动或安全重启受管服务，经 mode 0600 discovery 发现动态端口，
   并把调用者当前 cmux workspace 记为默认打开位置（若存在）。服务不得依赖 code repo root；
   `hub start/status/stop/restart/doctor` 必须显示并核验真实 executable、build、PID、generation 与日志。
   受管进程的启停身份握手不得依赖 Zotero、其他 provider 或 cmux 路由的健康；详细能力诊断与
@@ -81,11 +100,12 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
 - 新论文的资料笔记、分析 Markdown、Canvas 和 sidecar 同处 Field 内
   `resources/papers/<stable-paper-segment>/`；PDF 仍归 Zotero。目录段须与资源 ID 持久映射，旧平铺
   产物只原位兼容，正式搬迁需显式 CAS/恢复事务及链接清理，不能靠普通分析更新顺手移动。
-- TaskRecipe 只接受 allowlisted target、已验证的上下文 EntityRef、最多 8 KiB 的 bounded brief、
+- 历史 Hub TaskRecipe 只接受 allowlisted target、已验证的上下文 EntityRef、最多 8 KiB 的 bounded brief、
   已批准的 `model_profile_id` 和该模型支持的 reasoning effort；`fast/standard/deep` 仅作旧请求兼容。
   浏览器不能提交命令、cwd/path、原始 model、sandbox、permission、环境变量或任意 config。
   首次设置另经用户确认安装候选、模型目录、目标及有界的读写策略，不在任务请求中开放权限配置。
   模型目录不是账号可调用性证明；已有线程固定实际模型和思考强度，改变配置须新建或显式 fork。
+  这些仅维护旧入口安全，不代表继续建设内置 Codex；不修补本次已被用户取消的非 Git 任务入口。
 - 论文卡片相关文件只由 manifest/provider 的明确归属产生，按需加载；同名不证明同一论文。
   缺失文件保留诊断，Markdown 可正文预览及 Obsidian 打开，Canvas 在 Obsidian 编辑；
   ZotFlow 来源笔记与 Scholar 分析分属不同 writer。cmux 原 PDF 动作明确不含 Zotero 数据库批注。
@@ -222,7 +242,7 @@ methodology (stable); `planning/` is the per-phase **"what to build / goals / ha
 - **References** (top-level and per-skill) — English.
 - **README.md** — English.
 - **README.zh-CN.md** — Chinese (use `zh-CN` suffix, not `zh`).
-- **Python code, comments, and user-facing string literals** — English.
+- **Python code, comments, and technical diagnostics** — English. Human-facing renderers (including CLI summaries) may use explicit `en`/`zh` presentation labels; one output must keep its chosen language consistent.
 
 ## Behavior Boundaries
 

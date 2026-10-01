@@ -1,8 +1,9 @@
 # scholar-workflow
 
-面向 Claude Code 与 Codex 的学术资源管理插件。它把人类优先的知识系统、可复现实验项目档案和
-本机 typed Hub 控制面组合在一起：发现并导入论文、维护 Obsidian/Notion 投影、构建文献树、推荐
-论文、生成经校验的 Markdown/Canvas 分析、初始化 Git 项目，并在多个 agent 运行时之间协调有界任务。
+面向 Claude Code 与 Codex 的科研项目资料管理插件。它关联一个项目的代码、相关论文、知识笔记、
+实验与成果，让人和 agent 能理解、查找和调用资料，而不把所有内容搬到同一个系统。
+论文分析、文献树、入库与实验档案由插件维护；阅读、编辑和执行继续利用 Zotero、Obsidian、
+Notion、cmux 和外部 Codex 的原生能力，不另建工具控制面。
 
 [English](./README.md)
 
@@ -15,7 +16,7 @@ Zotero 操作。Zotero 适配器只连接 Zotero 10+ 的回环 Local API;其他�
 Local API。主题召回由 Local API 全字段/全文 quicksearch 加宿主模型排序完成,不需要 MCP server
 或本地向量库。破坏性动作仍需批准。**Obsidian** 保存知识笔记与派生索引;**Notion** 保存可选投影。
 
-### 三系统边界
+### 内容与项目归属
 
 - **Knowledge System** 以人类可读 Markdown 为正文。论文、重要技术文档和 Blog 是原子资源；
   分析、Canvas 和附件是显式归属的附属产物。新生成的全文分析采用原图的 Abstract、
@@ -23,17 +24,34 @@ Local API。主题召回由 Local API 全字段/全文 quicksearch 加宿主模�
   历史内容兼容读取。证据与对应论点或逐点陈述放在一起。
 - **Project System** 保存稳定 `project_id`、宿主中立的源码/config profile，以及彼此分离的
   Run、Attempt、Target、成果 promotion 和备份记录。没有独立校验过的第二份副本就不能称为备份完成。
-- **Hub Control Plane v3** 只提供一个 `HubDirectory` 根。文档 Libraries 只含 Zotero Papers 与
-  动态 Obsidian Fields；Projects、Tools 与 Libraries 平级。cmux 只路由浏览器/终端窗口，登记的
-  文件夹和项目独立决定文件/cwd 权限；Zotero、Field manifest、项目 manifest、显式 registry 与
-  Codex 仍分别持有权威状态。
+- **项目资料上下文** 用独立、可选的 `project-context.json` 明确关联代码、论文、笔记、实验和成果，
+  并说明每份资料为什么与项目相关。它不复制正文、不启动工具，不要求 Hub 或 workspace 登记。
 
-知识文档与项目文档之间只能显式复制。副本移除源系统的 `sw_*` 托管身份，获得目标系统身份后独立
-演化；系统不建立隐藏同步或托管 provenance 关系。
+项目引用不改变资料原有归属。显式复制是另一种操作：副本获得目标身份并独立演化；两者均不建立
+隐藏同步、跨域覆盖或级联删除。
 
-### 本地研究 Hub
+### 项目资料总览（0.31.0 hotfix；待人工评鉴）
 
-正常使用只需一个命令：
+对于已经初始化的项目，先输出空清单模板，选择实际相关资料后，显式保存为项目根的
+`project-context.json`。模板命令本身不写文件、不猜论文、不创建强制首页：
+
+```bash
+scholar-workflow project context-template --project-root /path/to/project --language zh
+scholar-workflow project validate-context --project-root /path/to/project
+scholar-workflow project overview --project-root /path/to/project
+scholar-workflow project overview --project-root /path/to/project --json
+```
+
+默认总览以人类 Markdown 输出到终端；需要时显式保存为项目根下的文档，相对链接以项目根为基准。
+本地缺失和不安全引用会报告，不跟随符号链接；外部对象未联网核验时明确标为“未核验”。
+不需要插件配置、网页服务或模型配置页。字段、来源归属和阅读器入口见
+[项目资料契约](references/project-context.md)。
+
+### 历史研究 Hub（仅兼容）
+
+Hub 前端和内置 Codex 控制面不再是产品发展方向。以下说明用于已有安装的兼容使用，不是项目
+整合或 agent 使用原生 cmux/Codex 的前置条件。本次重构没有关闭已安装服务或 worker。
+旧打开命令是：
 
 ```bash
 scholar-workflow open-hub

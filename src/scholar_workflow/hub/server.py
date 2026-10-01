@@ -88,7 +88,7 @@ from scholar_workflow.hub.field_transaction import (
     _open_private_directory,
     _read_target,
 )
-from scholar_workflow.hub.fields import (
+from scholar_workflow.knowledge.fields import (
     FieldCandidateExpired,
     FieldCandidateStore,
     FieldDefinition,
@@ -100,7 +100,7 @@ from scholar_workflow.hub.fields import (
     SystemFolderPicker,
 )
 from scholar_workflow.hub.links import LinkedCatalogProvider, ProjectionLinkStore
-from scholar_workflow.hub.models import AssetRole, HubAsset
+from scholar_workflow.knowledge.catalog_models import AssetRole, HubAsset
 from scholar_workflow.hub.project_docs import (
     DocumentCollisionError,
     ProjectConfirmationRequired,

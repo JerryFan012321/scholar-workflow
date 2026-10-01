@@ -30,8 +30,8 @@ from pydantic import Field, field_validator
 
 from scholar_workflow.hub.cmux import minimal_child_environment
 from scholar_workflow.hub.directory import ProjectRegistry, ToolDefinition, ToolRegistry
-from scholar_workflow.hub.fields import FieldService, KnowledgeSourceRegistry
-from scholar_workflow.hub.models import HubModel
+from scholar_workflow.knowledge.fields import FieldService, KnowledgeSourceRegistry
+from scholar_workflow.knowledge.catalog_models import HubModel
 from scholar_workflow.hub.routing import ExecutionTarget, ExecutionTargetRegistry, ExecutionTargetRegistryDocument
 from scholar_workflow.hub.tasks import (
     CodexCapabilityProbe,

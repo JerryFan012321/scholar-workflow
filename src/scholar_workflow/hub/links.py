@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 
 from scholar_workflow.hub.catalog import CatalogProvider
-from scholar_workflow.hub.models import HubCatalog
+from scholar_workflow.knowledge.catalog_models import HubCatalog
 
 
 def default_projection_link_path() -> Path:

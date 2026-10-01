@@ -1,5 +1,10 @@
 # Hub v3 Runtime Contract
 
+> Historical compatibility contract. The current product centers on project research context
+> (`project-context.md`) and native tools, not a Hub frontend or embedded Codex control plane.
+> This document still constrains retained endpoints; it does not require a Hub for new content
+> operations or claim the installed service has been stopped.
+
 `HubDirectory` schema 3 is the only Hub root. It is a rebuildable control-plane
 projection, not a knowledge database or an authority for provider-owned content.
 

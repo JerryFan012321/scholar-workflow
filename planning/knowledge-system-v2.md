@@ -1,12 +1,14 @@
 # 科研知识系统 v2 — 改造计划
 
-> 状态：Accepted 0.3，2026-09-23。用户已授权实施知识对象、分析结果接口、批量 conformance，以及
-> Hub v3 的动态 Source/Field、PdfRef、ZotFlow/AnnotationIR 接口；真实 Field 写入仍须先展示预览并按
+> 状态：Accepted 0.4，2026-10-01。项目中心重构以 [`project-centered-refactor.md`](project-centered-refactor.md)
+> 为当前职责规格；知识正文、Source/Field、PdfRef、ZotFlow/AnnotationIR 与已验收的论文模板保留。
+> Hub 前端和内置 Codex 控制面产品方向退役，旧 HTTP/UI 细节仅供兼容追溯，不是知识管理的前置条件。
+> 真实 Field 写入仍须先展示预览并按
 > Field 取得确认，其他 Vault、真实项目与 Obsidian 版本不得静默迁移或升级。
 >
-> 本文与 `project-system-v2.md`、`hub-control-plane-v3.md` 是并列规格：项目系统管理项目源码、数据、
-> 环境与实验档案；知识系统管理跨项目复用的知识对象和阅读产物；Hub 负责聚合与受控操作。Knowledge
-> 与 Project 只通过人或 agent 显式复制内容衔接，副本获得目标系统身份并独立演化。
+> 本文与 `project-system-v2.md` 分别持有可复用知识正文和项目档案；Project 另持有薄资料引用清单，
+> 通过明确身份关联知识而不托管正文。正文复制仍创建独立副本，无自动同步、跨域覆盖或级联删除。
+> `hub-control-plane-v2.md` / `hub-control-plane-v3.md` 保留为历史兼容规格。
 
 ## 1. 触发背景与实物证据
 
@@ -36,10 +38,10 @@
 3. **附属产物契约**：分析、批注、Canvas、阅读笔记、代码笔记和补充材料明确隶属于资源或主题。
 4. **人类/机器双投影**：人类可读 Markdown 是必备正文；机器身份、关系和更新状态使用薄 metadata、
    manifest 或 sidecar，不反向污染正文。
-5. **统一资源入口**：Hub、Obsidian、Zotero、cmux 与 Web Source 从稳定资源身份派生动作；
+5. **稳定原生资源入口**：Obsidian、Zotero、cmux 与 Web Source 从稳定资源身份派生入口；
    loopback 端口是实现细节和兼容层，不是知识文档的上位标识。
 
-本阶段不重新发明 Zotero、Obsidian 或 Hub，不把 Hub 变成数据库，也不批量重排 Vault。
+本阶段不重新发明 Zotero、Obsidian 或 Notion，不扩建 Hub 或内置 Codex 产品，也不批量重排 Vault。
 
 ## 3. 决策优先级与权威边界
 
@@ -64,7 +66,7 @@
 | 稳定投影 ID 与映射 | 版本化 manifest / registration | 现有 `resource_id` 是离线投影/命名 ID，不是 Zotero 判重身份；显式映射到 item key 与 artifact ID |
 | 跨知识对象关系声明 | 版本化 Vault manifest/provider | workflow payload 只是校验过的 transport；持久声明原子落盘后 knowledge catalog 才能汇编，不拥有关系真源 |
 | Notion | 单向简化投影 | 不成为正文或文件真源 |
-| 项目内工作文档与实验报告 | 对应项目 `docs/` / `experiments/` | 不属于知识对象；显式复制/归档后在 Vault 创建新的独立技术文档身份 |
+| 项目内工作文档与实验报告 | 对应项目 `docs/` / `experiments/` | 正文属于项目；项目清单可明确引用外部知识，显式归档后才在 Vault 创建新的独立技术文档身份 |
 
 ## 4. 三层知识对象模型
 
@@ -77,8 +79,9 @@
 - **survey / 梳理**：技术路线、挑战—洞见、时间线、比较或其他综合视图；同一主题可有多份。
 - **catalog / 目录**：该主题纳入的全部原子资源账本，可按资源类型形成不同视图。
 
-新主题的推荐最小集合是一个可作为入口的 charter，以及一个覆盖全部原子的 catalog；既有主题只在
-显式迁移时补齐。文献树是 survey 的一种，`01-Paperlist.md` 是 paper-only catalog 的历史形态；
+主题须有易懂的导航，但不强制新增 charter 或首页；已有目录、Paperlist、梳理笔记可以承担入口。
+只有明确需要时才补新文档，不为满足架构而生成空白首页。文献树是 survey 的一种，
+`01-Paperlist.md` 是 paper-only catalog 的历史形态；
 二者不再代表整个知识库的顶层模型。
 
 ### 4.2 原子资源层
@@ -153,7 +156,7 @@ identity、kind、authority、locator 与 owner 字段一致时才能合并，�
 任一来源给出冲突的 work/item mapping、kind、authority mode、locator、owner 或 artifact role 时，整次
 catalog build 停止并报告 ID、字段和所有声明来源；绝不按输入顺序、时间或 incoming-wins 静默择一。
 
-### 4.5 动态 Source 与 Field（Hub v3 接口）
+### 4.5 动态 Source 与 Field（知识归属契约；旧 Hub 接口兼容）
 
 Knowledge Space 在 Hub 中投影为动态 Field，不再依赖一个全局固定 `research_vault_root` 或硬编码领域枚举。
 
@@ -171,8 +174,9 @@ Knowledge Space 在 Hub 中投影为动态 Field，不再依赖一个全局固�
   owner 缺失必要身份、重复、非法或与 Scholar `sw_*` 身份冲突时失败关闭，而非按目录名猜测。
 - 旧 `research_vault_root` 仅用于生成迁移候选，不再是知识系统启动的必填唯一根。
 
-Field 首页直接显示 manifest navigation 与所选 Markdown 正文；不再增加文档 landing 中间页。内部对象
-模型仍保持核心文档—原子资源—附属产物三层，不因 UI 简化而丢失 owner 或 conformance。
+Source/Field 身份与 navigation 属于 Knowledge，不以 Hub 浏览器为唯一入口，也不强制新建 Field 首页。
+旧 Hub 导航只是可重建投影。内部对象模型仍保持核心文档—原子资源—附属产物三层，不因前端退役而
+丢失 owner 或 conformance；当前尚存 Hub 依赖须分批解耦，不能宣称已经全部完成。
 
 ## 5. 推荐 Vault 投影
 
@@ -392,11 +396,12 @@ snapshot；snapshot 记录 `source_pdf_hash + annotation_set_hash`，永不覆�
 对 snapshot 的编辑也不参与同步。highlight、note、underline、ink/image 必须逐类型验证，无法无损表示时
 明确报告并拒绝伪装成完整导出。
 
-### 8.3 Hub v3 接口边界
+### 8.3 Hub v3 历史兼容边界
 
-服务 lifecycle、Destination、ExecutionTarget、Action/Task、Projects/Tools registry 与 UI 属于
-`hub-control-plane-v3.md`。知识系统只提供 Papers 映射、动态 Field provider、版本化 manifest 和
-人类正文，并要求：
+2026-10-01 已取消继续建设服务/任务控制面的产品目标。以下规则仅约束尚未退场的既有接口，
+不再要求知识系统启动 Hub 或完成 Hub 专属 GUI/worker 验收；原生知识读取、保存、分析与文件事务
+应分批去除 HTTP 反向依赖。知识系统继续持有 Papers 映射、Source/Field provider、版本化 manifest
+和人类正文，不能整包删除 `hub/` 时一并丢弃这些能力。
 
 - `HubDirectory` schema 3 是唯一公共根；v1/v2 只能是派生只读兼容响应；
 - 文档 Libraries 只有 Papers 与 Fields；Projects/Tools 是平级根对象；
@@ -408,13 +413,16 @@ snapshot；snapshot 记录 `source_pdf_hash + annotation_set_hash`，永不覆�
 ## 9. 与科研项目系统 v2 的接口
 
 项目 `docs/` 是项目本地工作正文；全局 Vault 持有跨项目核心文档、知识关系与 Vault-native 产物。
-二者没有自动同步或托管引用：
+二者没有自动同步或正文托管；允许项目持有只用于导航和上下文调用的明确引用：
 
-1. Knowledge→Project 由人或 agent 显式选择 Markdown/Canvas/owned assets，复制到已注册项目的 `docs/`；
-2. 复制时移除 `sw_*`、sidecar、baseline marker 和知识关系，目标冲突时拒绝；
-3. Project→Knowledge 由人或 agent 显式归档，创建新的 Vault-native technical document 和 identity；
-4. 系统不要求保存跨副本语义 provenance；通用安全审计不得变成持续关系；
-5. Run/Attempt 报告仍归实验档案，复制其人类可读内容不改变实验身份或保存规则。
+1. Project 的独立 `project-context.json` 可通过稳定 Zotero/Obsidian provider/resource identity 引用论文、
+   分析和笔记；正文、owner、批注和 canonical analysis 身份不转移到项目。
+2. 关联删除只删除清单项；来源缺失/冲突仅报告，不自动删除、搬迁、同步或复制对象。
+3. Knowledge→Project 正文交接仍由人或 agent 显式选择 Markdown/Canvas/owned assets，复制到项目 `docs/`；
+4. 复制时移除 `sw_*`、sidecar、baseline marker 和知识关系，目标冲突时拒绝；
+5. Project→Knowledge 由人或 agent 显式归档，创建新的 Vault-native technical document 和 identity；
+6. 系统不要求保存跨副本语义 provenance；通用安全审计不得变成持续关系；
+7. Run/Attempt 报告仍归实验档案，复制其人类可读内容不改变实验身份或保存规则。
 
 ## 10. 迁移原则
 
@@ -485,6 +493,10 @@ CHANGELOG 清楚区分规划、实现和数据迁移。
 
 ## 12. 测试矩阵
 
+以下 Hub 重启、HTTP/UI、service cutover 用例保留为存量接口的历史安全回归范围；未完成的 Hub 产品
+验收应 retired，不冒充 pass，也不与独立内容能力捆绑。来源准确性、批注密钥、人工内容保护、CAS 和
+迁移恢复等真实内容安全门禁继续有效。任何本批测试均须先准备独立方案并获用户批准。
+
 至少增加以下守护：
 
 - 核心文档、原子资源和附属产物关系无悬空、无重复 ID，可反向查询。
@@ -548,11 +560,12 @@ CHANGELOG 清楚区分规划、实现和数据迁移。
 | K2 | 人类正文与机器状态的真源 | 人类正文优先已锁定 | Markdown 为必备正文；复杂身份、hash 与 edge 移入 manifest/sidecar；Canvas 不是第二份正文 |
 | K3 | 证据与反链 | 证据内联、不独立列已锁定 | 主张内短锚点/脚注；脚注回跳 + Canvas 到 claim block link；不生成 Evidence 节点 |
 | K4 | Canvas 拓扑与字号 | 用户已改选参考图完整框架，真实视觉验收待做 | 新 v4 用 Abstract/Introduction/Method/Limitation 及原图子槽位；可编辑 text 节点、直角无箭头边、紧凑布局；Advanced Canvas 只作可选呈现，前台截图仍是门禁 |
-| K5 | Hub 接口 | 已冻结为 v3 | 输出动态 Source/Field provider 与 PdfRef；唯一根、direct actions、service lifecycle 和 Destination/Target 分离由 Hub v3 决定 |
+| K5 | 原生工具与兼容 Hub 接口 | 2026-10-01 已修订 | Source/Field、PdfRef 和稳定原生入口归知识/adapter；不依赖 Hub 启动。旧 v3 仅维持未退场路径的安全，不继续扩建前端或任务控制 |
 | K6 | 首个真实迁移对象 | 预览门 | 当前 `02-科研技术文档` Source 的“世界模型”Field，V-JEPA 2 为 golden case；展示完整 preview 并确认后才写真实 Vault |
 | K7 | 批量校验与维护 | 已冻结 | 每篇独立校验、最多一次修复、失败隔离；周期审计默认只读并生成计划 |
 
-项目系统接口门 **P-D10** 已冻结为显式独立复制：不登记托管链接，不维持同步或强制 provenance。
+项目系统接口门 **P-D10** 于 2026-10-01 修订为“允许明确导航/上下文引用，正文仍独立”；
+不维持同步、跨域覆盖、级联删除或强制 provenance。新 context 清单不写入 Knowledge manifest。
 
 ## 14. 完成定义
 
@@ -567,6 +580,7 @@ CHANGELOG 清楚区分规划、实现和数据迁移。
 6. PDF/文档从稳定资源身份一跳打开 Zotero、cmux、系统阅读器或分析产物；本机模式经验证后可选
    ZotFlow，用户无需理解或维护 raw 端口 URL，也不会因此触发云端 PDF 下载；
 7. 单篇和批量输出都必须通过相同 conformance gate，失败不能被记作成功；
-8. Hub 能从稳定 identity 消费动态 Source/Field provider，而知识系统不承担 service/Destination/task 所有权；
+8. 知识身份和内容能力可由薄 CLI/agent/原生工具消费，不要求 Hub、Destination 或内置 task controller；
+   尚未完成的去依赖切片如实列出，旧兼容实现不成为第二事实源；
 9. Zotero 是批注唯一权威；ZotFlow 独占 Web API 密钥，agent 只经 Local API 读取并投影；
 10. 既有 Vault 未经逐 Field 预览与确认不移动、不覆盖、不批量改写。

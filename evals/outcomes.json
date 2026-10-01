@@ -1,5 +1,5 @@
 {
-  "description": "Outcome eval — end-to-end acceptance criteria linked to the living planning/GOALS.md IDs; historical compatibility cases are explicitly marked and do not assert v3 release readiness",
+  "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
       "id": "dedup-same-doi",
@@ -153,6 +153,7 @@
     },
     {
       "id": "hub-catalog-and-cmux-notion",
+      "lifecycle": "compatibility-only",
       "description": "INV28 的 0.27/0.28 历史兼容基线：HubCatalog 是可重建投影而非 v3 事实根；旧 PDF 兼容入口仍仅绑定 loopback 并支持 HEAD/Range；Notion page ID 只在服务端转成 allowlisted URL 和 opaque action，cmux 打开失败不静默回落 Safari。由 test_hub_catalog.py、test_hub_http.py、test_hub_actions.py、test_hub_links.py 守护；本 pass 不声明 v3 发布完成",
       "status": "pass"
     },
@@ -163,42 +164,68 @@
     },
     {
       "id": "hub-explicit-edit-and-vault-assets",
+      "lifecycle": "compatibility-only",
       "description": "INV30 Hub 显式编辑与附件：普通已登记 Markdown/Canvas 只在人工保存时按 raw-file revision 原子写入，stale 返回 409，sw_* 不可由客户端更改；受管论文分析 Markdown/Canvas/sidecar 不能由单文件 Field 编辑器、v1 artifact PUT 或旧 link-only 迁移拆开改写。Vault assets 由显式 YAML manifest 关联，不解析正文，同名新增不覆盖，路径/owner/hash/size/symlink 均校验，Zotero PDF 保持只读。界面阅读优先，编辑和附件默认收起，安全 DOM Markdown 与实时预览已由静态 HTTP 契约和 Codex 内置浏览器人工 smoke 验证。由 test_hub_http.py、test_hub_field_analysis_write.py、test_hub_field_migration_cli.py、test_hub_attachments.py、test_hub_catalog.py、test_hub_vault.py、test_hub_artifact_manifest.py 守护",
       "status": "pass"
     },
     {
       "id": "hub-cmux-workspace-actions",
+      "lifecycle": "compatibility-only",
       "description": "INV31/INV44 的 0.28.1 历史兼容基线：旧 nonce/lease 和 workspace-aware action 的 fail-closed 行为由兼容 contract tests 守护；当时未绑定即禁用受控写入的结果已被真实使用否定，不得当作 v3 授权规则或当前发布验收。v3 Destination/Target 分离另由 hub-v3-destination-target-separation 评测",
       "status": "pass"
     },
     {
       "id": "hub-v3-directory-and-dynamic-fields",
+      "lifecycle": "compatibility-only",
+      "lifecycle_reason": "Hub Library UI is retired; Source/Field identity and safe content transactions remain Knowledge responsibilities. Real migration is a separate incomplete content task, not this project-context release gate.",
       "description": "G15/INV48/NG19：唯一 schema-3 HubDirectory 只列 Papers 与动态 Fields 两个文档 Libraries，Projects/Tools 为平级集合；Zotero 负责 Papers，显式 Source registry 与便携 fields.yml 负责 Fields。整个 Vault 先零写入 preview，每次只确认一个候选 Field，第二个 Field 可在同一 Source 后续追加；现有 manifest 新主机登记保留身份。含旧分析/旧链接的首个 Field 必须走同一份本地 operator 事务，旧网页确认阻断，导航遗漏、旧分析跳过、摘要过期均失败关闭。由 test_hub_v3.py、test_hub_v3_field_registration.py、test_hub_field_transaction_public.py、test_legacy_field_transaction.py 和真实 World Models 逐 Field 验收守护；未验收真实迁移前保持 pending",
       "status": "pending"
     },
     {
       "id": "hub-v3-destination-target-separation",
+      "lifecycle": "retired",
+      "lifecycle_reason": "Self-built Hub/Codex control-plane product acceptance was retired on 2026-10-01. Retained compatibility code still requires safety regression; the historical pending result is not a pass.",
       "description": "G15/INV47/NG17：open-hub 在 cmux 中登记默认打开位置且可逐动作覆盖；workspace 关闭只禁用依赖它的 launch。相同 Vault/项目文档操作在有无 Destination 时授权结果不变；Codex/CLI terminal 的 cwd 只来自已登记 ExecutionTarget。由 test_hub_v3.py、test_hub_task_runtime.py、test_hub_execution_runtime.py 与真实 cmux/Codex canary 守护；实机执行未通过前保持 pending",
       "status": "pending"
     },
     {
       "id": "hub-v3-direct-resource-actions",
+      "lifecycle": "retired",
+      "lifecycle_reason": "Hub card/Field frontend product acceptance was retired on 2026-10-01. Native reader/source adapters and accepted paper samples remain reusable; no new Hub GUI canary is required for the project-context slice.",
       "description": "G15/INV49/NG19：论文卡片由稳定 EntityRef/PdfRef 以 Zotero 本机附件为主动作，直接打开 cmux、系统阅读器、分析/批注笔记及经本机模式验证的可选 ZotFlow；Fields 首页同屏给 manifest 导航和 Markdown 正文，正常 UI 无人类可见 landing、固定端口链接或固定公开分类树。由 test_hub_v3.py、test_hub_actions.py 和最终安装包的 UI/PDF/ZotFlow canary 守护；实际应用往返与最终构建仍待验收",
       "status": "pending"
     },
     {
       "id": "hub-v3-zotero-annotation-authority",
+      "lifecycle": "retained-content-safety",
       "description": "G15/INV50/NG18：正式批注只以 Zotero 为权威；只有 ZotFlow 在 Obsidian SecretStorage 持有 Web API 密钥，Scholar Workflow 的 agent/CLI/Hub 只经 Local API 读取 AnnotationIR；Source Note、Better Notes 和 Scholar 分析路径无 writer 重叠；带批注 PDF 是独立 hash-bound 快照。由 test_zotero_local.py、test_hub_v3_fields_zotflow.py、test_annotations.py 与真实 ZotFlow 双向同步及独立阅读器测试守护；实机往返未完成前保持 pending",
       "status": "pending"
     },
     {
       "id": "hub-v3-local-only-pdf-reader",
+      "lifecycle": "retained-content-safety",
       "description": "INV52/NG20：ZotFlow 只在已审计版本及非秘密实时探针证明桌面本机 storage 模式、Local API PDF 身份和现存字节一致时可选；Zotero 原生为主动作，两种打开在执行前重验本机文件，不通过 Web API/WebDAV 下载缺失 PDF。由 test_hub_actions.py、test_hub_v3_fields_zotflow.py 和 V-JEPA 2 本机阅读 canary 守护；Reader GUI 已显示 48 页，真实注册 Source 下的 Hub 卡片动作及批注往返仍待验收，因此保持 pending",
       "status": "pending"
     },
     {
       "id": "hub-v3-installed-service-lifecycle",
-      "description": "G15/INV51：安装包驱动 open-hub/start/status/stop/restart/doctor，动态 loopback 端口与 mode-0600 discovery 自证 executable/build/PID/generation/log，未知监听器或 PID 不得被终止；不依赖源码目录。由 test_hub_lifecycle.py、test_hub_lifecycle_cli.py、最终 wheel/sdist 边界检查与已安装版本 canary 守护；0.29.0 尚未发布或更新用户安装前保持 pending",
+      "lifecycle": "compatibility-only",
+      "description": "历史 G15/INV51：安装包驱动 open-hub/start/status/stop/restart/doctor，动态 loopback 端口与 mode-0600 discovery 自证 executable/build/PID/generation/log，未知监听器或 PID 不得被终止；不依赖源码目录。旧状态未重新评审，保持 pending；0.29.0/0.30.0 的历史安装事实见 HANDOFF，不据此推定全部 canary 已通过。服务仍存在时安全要求继续适用，但不再是无服务项目总览的产品前提。",
+      "status": "pending"
+    },
+    {
+      "id": "project-context-explicit-portable-inventory",
+      "description": "G16/INV59：单个合成项目的可选 project-context.json 匹配既有 schema-2 project_id；七类显式资料均有用途和 typed ref。只校验声明与已选本地路径，不扫描、查询外部对象、复制、同步、启动工具或改变文件。缺失、symlink、错配、非法阅读 URI 和未核验来源分别诊断；unit/contract/CLI 材料已准备，未经批准运行前保持 pending。",
+      "status": "pending"
+    },
+    {
+      "id": "project-core-and-knowledge-ownership",
+      "description": "G16/INV60：本批 Project identity/layout/context 不引 Hub 或外部执行，Knowledge 公共模型、Source/Field 和 Obsidian 契约由 knowledge 定义一次；旧 hub 模块和 analysis 模型保持同对象兼容，不复制 schema。initializer/profile、experiment 与既有分析/Hub 安全合成回归须独立批准。仅评本批边界，剩余 Field transaction/批注/文献树依赖未移除；完整 INV60 不因本批通过而激活。",
+      "status": "pending"
+    },
+    {
+      "id": "project-overview-human-readability",
+      "description": "G16/INV58/INV61：一个合成项目的人类 Markdown 概览同时列明代码、论文、分析、笔记、实验和成果的用途、入口与诚实状态，中文/英文标签一致，不堆机器身份，不强制新首页或服务。手写 EXPECTED-OVERVIEW 是测试预期而非生成结果；须先比较实际渲染，并在会话中明确请用户评鉴清晰度与便利性。正常 hotfix 安装验收独立授权，当前保持 pending。",
       "status": "pending"
     }
   ]

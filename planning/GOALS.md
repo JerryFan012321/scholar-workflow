@@ -23,12 +23,13 @@
 | G7 | 插件由 Git 管理，功能必须有评测和回归测试 |
 | G8 | 支持 Claude Code 与 Codex 两个宿主，共用同一套 skills、hooks 与宿主中立 CLI；宿主与 agent 可通过统一 handoff 协议双向协作，同一机制可扩展到其他真实可用的 agent。Zotero 的读/写/索引全文能力经官方 Local API 提供，不依赖某一宿主的 MCP 注册 |
 | G9 | Zotero（及其 PDF 存储）是唯一权威主库；元数据、存在性与索引全文经 Local API 获取。主题召回由 Local API quicksearch + 宿主模型排序完成；新增性写入直接执行，破坏性动作须批准 |
-| G10 | scholar-workflow 提供宿主中立、简洁美观的本机 Hub，作为人类浏览、预览、显式编辑和跳转研究资源的统一入口；Hub 不取代各权威存储或原生编辑器，阅读是默认界面，编辑与附件操作按需展开 |
+| G10 | **历史目标，2026-10-01 退役**：曾建设本机 Hub 统一入口；不再以自建网页作为科研资料管理的产品中心。既有实现只在显式退场前保持兼容和安全，不因目标取消宣称旧门禁通过 |
 | G11 | 为 AI 科研项目提供宿主中立、可分型的项目初始化与实验档案契约：共同的数据/环境/文档/本地保存边界保持稳定，源码和配置按项目类型选择显式 profile，实验以可复现的 Run 和可追踪的 Attempt 管理；既有项目只在逐项目确认后迁移 |
 | G12 | 建立人类阅读优先的科研知识系统：以纲领/梳理/目录类核心文档组织主题，以论文、重要技术文档和 Blog/Web article 为原子资源，以分析、批注、Canvas 和补充材料为附属产物；机器身份与关系服务于人类正文和统一资源入口，不能反向淹没正文 |
 | G13 | 让单篇和批量知识生产都服从同一可执行结果契约：每篇论文独立校验、失败隔离、至多一次受控修复，未通过模板、证据或可读性门禁的产物不得记为成功；知识库通过周期性审计而非人工记忆维持一致性 |
-| G14 | 建立 Hub Control Plane v2 的可回归历史基线：唯一根、显式 registry、受控项目文档操作与 TaskRecipe 安全边界继续守护迁移兼容；其全局 workspace binding 与固定 Library 信息架构已由 G15 取代 |
-| G15 | 建立可扩展、低分类、直接操作的 Hub v3：文档 Libraries 仅含 Papers 与动态 Fields，Projects/Tools 平级；cmux 只路由窗口，可信 folder/project target 决定文件与执行授权；稳定实体一跳打开原生工具，服务可发现、可停止、版本自证且不依赖固定端口或源码目录。验收：`evals/outcomes.json` 的 `hub-v3-*` 六项，真实 canary 未完成前均为 pending |
+| G14 | **历史目标，2026-10-01 退役**：Hub Control Plane v2 的既有发布与安全结果保留为追溯记录；仍存在的 HTTP、文件操作和 worker 路径继续守护原安全边界，不再扩展控制面 |
+| G15 | **历史目标，2026-10-01 退役**：Hub v3 的独立前端、任务控制与服务产品方向由 G16 取代。Hub 专属未完成验收应 retired，而非 pass；动态知识身份、稳定来源链接和文件安全属于保留能力，不能随 UI 一并删除 |
+| G16 | 以科研项目的完整资料上下文为中心：集中展现并显式关联项目代码、论文、分析笔记、实验档案与成果，内容留在各权威来源；人和 agent 不启动 Hub 也能读取、导航和调用。Project 持有薄关联清单，Knowledge 持有可复用正文与资料归属，Analysis 持有分析结果，Adapters 对接原生工具，Workflows 组合任务，CLI/agent/skill 是薄入口与结果契约；不再内置 Codex 任务控制产品 |
 
 ## 长期不变量（INV）
 
@@ -40,7 +41,7 @@
 | ID | 不变量 | 状态 / 守护 eval |
 |---|---|---|
 | INV1 | 一篇论文在 Zotero 中对应唯一条目（item）；条目可隶属多个分类（collection），分类是对条目的多对一投影，不构成重复身份。判重键为 Zotero 规范身份（DOI / title+authors），arXiv id 仅为下载源标识、非判重键；Local API 搜索召回后回读字段确认，且 `zotero ingest` 在写前重复精确核验；模糊命中只提候选、写路径转冲突交人工裁决（NG3） | outcomes: dedup-exact-collapse |
-| INV2 | 论文 PDF 由 Zotero 存储（`~/Zotero/storage`）统一持有；Vault-native 或需要全局归档的技术文档即使是 PDF 也进入 Vault。项目 `docs/` 是独立的项目正文域：内容只有在人或 agent 显式复制/归档时才跨域，副本获得目标系统自己的身份并独立演化；系统不建立实时同步、托管引用或必须维护的来源关系 | 已激活：routing: file-technical-doc / outcomes: tech-doc-isolation；跨域复制守护见 INV46 |
+| INV2 | 论文 PDF 由 Zotero 存储（`~/Zotero/storage`）统一持有；Vault-native 或需要全局归档的技术文档即使是 PDF 也进入 Vault。项目 `docs/` 是独立的项目正文域：正文跨域仍须显式复制/归档，副本获得目标身份并独立演化；允许 Project 持有只用于导航与上下文调用的明确资料引用，不因此复制正文、同步或获得外部写权限 | 已激活：routing: file-technical-doc / outcomes: tech-doc-isolation；独立复制见 INV46，新增显式引用目标态见 INV59 |
 | INV3 | PDF 定位只通过 Zotero Local API 的 item/attachment 关系与 `PdfRef`，不猜测 storage 路径、不在多目录复制；其他阅读器只消费显式生成且带源/批注哈希的独立 snapshot | outcomes: papers-root-remap（v3 Local API locator/snapshot 守护待补） |
 | INV4 | Obsidian 论文表是可重建的派生索引，不是主库 | outcomes: obsidian-human-block-preserved |
 | INV5 | Notion 不上传论文/技术文档/图片/数据文件 | safety: no-notion-file-upload |
@@ -75,7 +76,7 @@
 | INV34 | **实验档案只记录受控事实且不隐式执行**：Target profile 不保存 credential 或任意 shell command；Run 首次正式 Attempt 后其 recipe 冻结，报告、人工笔记和 artifact manifest 可继续增长。实验档案的创建、校验、索引、成果回收与迁移必须显式、幂等并保留旧文件；首批能力不得因建档或浏览而启动训练 | **0.28.0 已发布确定性档案管理；不含训练执行器** |
 | INV35 | **成果晋升与备份状态分离**：源码、Run/Attempt 配方、resolved config、实验报告、指标、参数和环境摘要必须本地保留；点云、代表性图像/视频、关键 checkpoint 等按人工选择晋升并记录来源与哈希；可重算的大中间物可只留 manifest。服务器文件复制回本机称为 artifact promotion，只有第二份独立副本完成校验后才能声明 backup verified | promotion、跨进程 no-overwrite 和故障回滚已随 **0.28.0 发布**；runtime/schema 直接拒绝 verified，直到 WI-041 解锁 |
 | INV36 | **运行期 skill 是结果接口，不是思维脚手架**：skill 只约束可观察结果与外部接口——路由、工具调用、权威来源、权限/安全边界、存储位置、文件/schema 字段、证据归属和人类可读呈现；不要求模型采用特定分析框架、分类方式、思考步骤或推理顺序。只有真实工具依赖、安全/权限门禁与脆弱外部操作顺序可以规定执行先后；结构化格式必须表述为自由判断完成后的结果投影 | outcomes: runtime-skill-result-contract-only |
-| INV37 | **知识空间采用核心文档—原子资源—附属产物三层模型**：纲领(charter)、目录(catalog)和梳理(survey)类文档构成主题的人类入口；paper、technical-document、blog-post 是可独立引用且可属于多主题的资源原子；analysis、annotations、Canvas、reading/code note 与 supplement/asset 显式隶属于一个资源或主题。Paperlist 与文献树只是 catalog/survey 的论文类视图，不再反向定义整个知识库。所有关系使用稳定 ID 并进入 Hub contract，Hub 不从路径、文件名或自由 Markdown 猜语义 | **0.28.0 已发布严格对象/owner schema、显式 change set 及其带 receipt/inode/双向闭包复核的 CAS provider apply**；真实全库对象迁移仍待 WI-030 |
+| INV37 | **知识空间采用核心文档—原子资源—附属产物三层模型**：纲领(charter)、目录(catalog)和梳理(survey)类文档构成主题的人类入口；paper、technical-document、blog-post 是可独立引用且可属于多主题的资源原子；analysis、annotations、Canvas、reading/code note 与 supplement/asset 显式隶属于一个资源或主题。Paperlist 与文献树只是 catalog/survey 的论文类视图，不反向定义整个知识库，不强制另造首页。关系使用稳定 ID，由 Knowledge manifest/provider 持有，不从路径、文件名或自由 Markdown 猜语义；Hub 如仍存在，只消费派生投影 | **0.28.0 已发布严格对象/owner schema、显式 change set 及 CAS provider apply**；去除 Hub 反向依赖为 INV60 目标态，真实全库对象迁移仍待 WI-030 |
 | INV38 | **承载论述、分析或梳理的持久知识产物必须有人类可读正文，机器状态只能是薄投影**：去掉 frontmatter、manifest/sidecar 与 Hub 后，Markdown 仍须独立表达完整论点和证据出处；Canvas、图片和数据等非正文字节由其 owner Markdown 说明，不要求复制正文。薄 `sw_*` frontmatter、显式 manifest、baseline sidecar 和可重建结构化导出可以存在，但不得把逐字段 hash、关系边、状态清单或机器 schema 混入正文，也不得形成第二份需要人工同步的知识正文。Canvas 是可编辑概览投影，不是唯一的人类版本 | **0.28.0 已发布人类优先渲染与 Markdown/Canvas/sidecar 的 CAS/journal/receipt 提交基座；一般知识文档迁移未开始** |
 | INV39 | **Hub 服务必须可识别、可诊断且只有一个受管 owner**：服务只绑定 loopback，动态端口经 mode 0600 discovery 发现；status/health 报告 PID、真实 executable、已安装 Python package/service build、protocol、generation、capability 与日志位置；Codex/Claude plugin manifest 版本另在发布校验中核对，不能由 HTTP health 冒称。`open-hub` 可启动或安全重启仅由 Scholar Workflow 自身证明持有的进程；未知 listener/PID 不得自动终止。raw 端口和兼容路由不是持久知识关系，服务不得依赖源码目录 | v2 health 已发布；v3 lifecycle/discovery 由 INV51/WI-043 激活 |
 | INV40 | **论文分析以版本化 profile 和可校验结果接口生成**：新 IR v4 的 whole-paper 结果必须覆盖 `Abstract / Introduction / Method / Limitation` 四个完整可观察分支；focused 只声明并完整更新所选分支。IR v1–v3 仍按其五角色契约兼容读取，普通更新不得静默转版。Evidence 与各 claim/point 同处，Canvas 是 Markdown 的可编辑紧凑概览；v4 的生成 claim/details Canvas 语义节点不超过 40 个、含框架标签的全部受管 Canvas 节点不超过 96 个，人工合法节点不计入预算 | **0.28.0 已发布旧版 fixture conformance；v4 开发树实施中，真实 JEPA 迁移未开始** |
@@ -84,7 +85,7 @@
 | INV43 | **HubDirectory v2 typed-library 契约是历史兼容基线**：0.28.x 的 Papers/Projects/Tools Library 与 `library_id + item_type + item_id` 仍需在 v1/v2 compatibility tests 中可由 v3 根派生，但不得继续作为新信息架构或第二事实根 | **0.28.0 已发布；目标态由 INV48 的 Papers/Fields + 平级 Projects/Tools 取代** |
 | INV44 | **workspace lease/binding 是历史兼容机制，不再是授权模型**：0.28.1 nonce/generation/fingerprint 的安全属性只用于旧接口回归；v3 不以 binding 决定页面或文件是否可写，cmux 实例身份仅校验 Destination 路由 | **0.28.1 已发布并实机验证；由 INV47/WI-044 取代，不得继续扩展全局只读门禁** |
 | INV45 | **Codex 任务由 TaskRecipe、LogicalTask、TaskRun 和明确 thread ID 分层**：浏览器不提交 shell、路径、环境变量、原始 model、sandbox、permission 或任意 config；批准的 model_profile_id 由服务端解析，模型目录不冒充账号权限证明。brief 与选定对象身份只经 stdin，固定 argv 使用 shell=False，worker 先探测 capability，以幂等键、线程互斥、心跳、取消、超时和进程组回收约束运行 | 内部原语随 0.28.0 发布，生产入口随 0.29.0 安装；新设置/profile/上下文逻辑 WI-053 尚未独立测试，真实 Codex 执行待批准 |
-| INV46 | **Projects 集合和知识系统只通过显式独立复制交接内容**：项目 manifest 提供稳定 `project_id`，主机 registry 提供可信根；Hub 文件 API 只接受 `project_id + docs 相对路径`。Knowledge→Project 复制剥离知识系统机器身份，Project→Knowledge 归档创建新 Vault 身份；不建立同步或语义 provenance。项目删除只移入 `.scholar-workflow/trash/docs/<timestamp>/`，首版无永久删除且 Hub 不执行 Git 写操作 | 0.28.0 的 Projects Library 实现作为兼容基线；v3 把 Projects 提升为根级集合，`docs/` 安全与独立复制语义不变 |
+| INV46 | **项目资料引用与正文交接分离**：项目 manifest 提供稳定 `project_id`；Project 的薄关联清单显式引用外部资料而不托管正文或授予跨域写权限。正文交接仍是显式独立复制/归档：Knowledge→Project 剥离知识机器身份，Project→Knowledge 创建新 Vault 身份；无同步、级联删除或强制 provenance。仍存在的 Hub 文件 API 只接受 `project_id + docs 相对路径`，删除进入项目 trash 且不执行 Git 写操作 | 旧独立复制与 `docs/` 安全基线保留；新增项目关联由 INV59/WI-054 守护，尚未独立测试 |
 | INV47 | **cmux Destination 与文件/执行 Target 完全分离**：Destination 只决定 terminal/browser/Codex/CLI 窗口在哪个 cmux workspace 出现；文件和 cwd 权限只来自登记的 folder/project ExecutionTarget、相对路径、能力、CAS 与 symlink 防护。workspace 消失只使依赖它的 launch 失效，绝不能让 Hub 全局只读或改变同一文件操作的授权结果 | **0.29.0 目标态（实施中）**：WI-042/WI-044；safety: `hub-v3-destination-not-file-authority`；outcome: `hub-v3-destination-target-separation` |
 | INV48 | **Papers 与动态 Fields 是仅有的文档 Libraries**：Papers 由 Zotero Local API 实时提供；Fields 来自显式 Obsidian Source registration 与便携 `.scholar-workflow/fields.yml`，一个 Source 可含多个 Field。Projects、Tools 与 Libraries 平级；Field 导航自由定义，内部 owner role 不成为公开复杂分类。含旧分析或旧链接的首次 Field 必须把登记、受管内容、导航、manifest 与链接放进同一份经审议事务，不得先登记再另行迁移；新导航不能静默遗漏预览文档 | **0.29.0 目标态（实施中）**：WI-045/WI-046/WI-048；safety: `hub-v3-field-single-confirm`；outcome: `hub-v3-directory-and-dynamic-fields` |
 | INV49 | **稳定身份直接解析动作，禁止把 landing/端口当知识入口**：论文/PDF/Field/项目通过 EntityRef、PdfRef、field_id、project_id 生成预登记动作；论文卡片默认一跳打开经本机附件复验的 Zotero，并可直接选择 cmux、系统阅读器、分析/批注文档及本机模式经验证的 ZotFlow。新 UI/文档不得产生可见 landing 或 raw loopback URL，旧路由只作一版本兼容解析 | **0.29.0 目标态（实施中）**：WI-046/WI-048；outcome: `hub-v3-direct-resource-actions` |
@@ -97,6 +98,9 @@
 | INV56 | **来源身份与阅读器投影分离，点击空间可用**：新 v4 可在已核实的 Vault 上显式选择 ZotFlow Library Reader 页级链接，Markdown/Canvas 成对生成并校验；默认保留 Zotero 原生入口，不能把 URI 当 PdfRef 或批注同步证明。Canvas 文本框按中英文换行估算，并多留约一行高度供点击，整体仍不得单轴过度延伸 | 开发树与 test Vault 候选结构门禁已通过；2026-09-29 用户确认最新版候选链接可用且页码正确。此项不证明逐条论据来源或批注双向同步；WI-051/WI-050 |
 | INV57 | **新论文一篇一目录，旧稿搬迁须独立审议**：新 companion note、分析 Markdown、Canvas 与 sidecar 同处 Field 内 `resources/papers/<stable-paper-segment>/`，目录段与 resource ID 须持久映射；PDF 继续在 Zotero。旧 `paper_assets` 与平铺分析对原位兼容，不由普通更新移动；正式搬迁需要带 CAS、journal、条件恢复与链接改写的显式事务 | 开发树 v4 commit 已核对 Vault 身份、锁定的 provider manifest owner、完整 snapshot CAS、目标路径和 Zotero key；旧 provider 需可信绑定且 CLI 尚未解析到指定 Source。普通 Field 文件可在本地受审搬迁；provider+分析三件套的统一事务仍缺，正式 Vault 未改，WI-052 |
 | INV58 | **所有面向人的呈现遵守一致的共同结果规范**：笔记、Canvas、树、报告、Hub 和 CLI 文本都明确对象与范围，优先展示可读结论/状态；同一产物的语言和标签一致；论据与可用原文入口贴近所支持的论点、定位精度不夸大；不可点击的入口不伪装成链接；完成、部分完成、失败、冲突与不可用状态不混称，机器身份不淹没正文。共同规范不取代各格式已验收的具体模板 | **目标态（未激活）**：`references/human-presentation.md` 已形成共同文本；outcomes: `human-facing-presentation-consistency` pending。Hub 预览与 CLI 文本仍有待实现和独立验收的缺口 |
+| INV59 | **项目资料关联是独立、便携的薄清单**：`project-context.json` 使用自己的 schema/version，并绑定稳定 `project_id`；`project-layout.json` 仍只持有布局与 profile。关联由人或 agent 明确给出，项目内文件用安全相对路径，外部资料用稳定 provider/entity identity；显示名称不证明身份，不自动扫描关联、复制正文、同步或级联删除 | **目标态（未激活）**：WI-054；schema/model/只读CLI已写入开发树，未运行测试或发布，详见 `project-centered-refactor.md` |
+| INV60 | **内容核心不依赖网页控制面**：Project/Knowledge/Analysis 不依赖 Hub HTTP、UI、task store 或 workspace registry；Adapters 对接原生外部接口，Workflows 组合核心能力，CLI/agent/skill 只解析与呈现结果。兼容 facade 可暂保留，但不得制造第二份模型或状态真源 | **目标态（未激活）**：WI-054 分批解耦；本批不宣称全部旧依赖已移除 |
+| INV61 | **项目整合视图为可重建导航，不是事实或执行控制面**：从显式清单与项目档案生成可读 Markdown；区分已登记引用、已解析对象和未核验来源，显示可用链接、缺失与冲突。不得把登记成功冒充来源验证、实验成功或人工可读性验收；源码、Run/Attempt/Target、promotion 和 backup 状态仍归原权威记录 | **目标态（未激活）**：WI-054；仅单项目合成样本准备，真实项目与人工评鉴未执行 |
 
 ## 非目标（NG）
 
@@ -117,13 +121,15 @@
 | NG11 | 把 Canvas、字段表、机器 schema、frontmatter 或 sidecar 当成唯一的人类知识产物，或要求读者理解内部 canonical path/hash 才能读懂正文 | （待补） |
 | NG12 | 让无法识别 owner、版本、capability、catalog 或日志位置的后台进程/端口成为知识系统唯一入口；或在端口冲突时静默连接旧服务、换端口或打开演示实例 | （待补） |
 | NG13 | 扫描磁盘、workspace 或 `$PATH` 自动发现并注册项目、工具或可执行能力；Projects 与 Tools 只能来自显式 manifest/registry | （待补） |
-| NG14 | 在 Knowledge 与 Project 之间建立自动同步、托管 project-reference、强制 provenance 回执或隐式双真源；跨域副本必须按 INV46 独立演化 | （待补） |
+| NG14 | 在 Knowledge 与 Project 之间建立自动同步、跨域覆盖、级联删除、强制 provenance 回执或隐式双真源；显式导航引用不等于同步，跨域副本仍按 INV46 独立演化 | （待补） |
 | NG15 | 由浏览器输入原始任务 cwd/model/sandbox/permission/config（批准 profile ID 不属原始配置），使用 `--last` 猜线程，或合并 Codex thread | （待补） |
 | NG16 | Hub 首版永久删除项目文档、自动清空项目 trash、自动 archive/delete Codex 历史，或执行 `git add/commit/push` | （待补） |
 | NG17 | 用 workspace/binding 作为全局写入门禁、文件权限或知识/项目根身份；cmux 只能路由窗口 | safety: `hub-v3-destination-not-file-authority`；outcome: `hub-v3-destination-target-separation` |
 | NG18 | 在 Zotero、PDF 与 Obsidian 之间建立三向隐式同步，让 Hub/agent 持有 Zotero Web API 密钥，或让 ZotFlow、Better Notes 与 Scholar Workflow 多 writer 写同一文件/路径前缀 | safety: `hub-v3-zotero-annotation-authority` / `hub-v3-no-multiwriter-path`；outcome: `hub-v3-zotero-annotation-authority` |
 | NG19 | 固定 Field 枚举、把内部 artifact/owner role 暴露为繁琐公共分类，或让论文/附件/文档 landing 成为正常 UI 的必经中间页 | safety: `hub-v3-field-single-confirm`；outcomes: `hub-v3-directory-and-dynamic-fields` / `hub-v3-direct-resource-actions` |
 | NG20 | 为 Hub 或 ZotFlow 阅读动作从 Zotero Web API/WebDAV 获取缺失 PDF，或把元数据/批注 Web API 同步误当作用户同意云端 PDF 下载 | INV52；WI-047/WI-049 |
+| NG21 | 继续扩建 Scholar 内置 Codex 模型配置、任务页面、线程控制或长期 worker 产品；外部 Codex 保持原生配置与历史，仍存在的兼容执行路径不得绕过旧安全策略 | WI-054；Hub 专属未完成门禁 retired，不冒充 pass |
+| NG22 | 要求用户先启动 Hub、绑定 workspace 或新建强制首页才能管理项目资料；为了整合而批量复制、迁移正文或重新组织全部真实项目/Vault | INV59–INV61；真实写入与迁移仍分别授权 |
 
 ## 阶段状态（随开发更新）
 
@@ -137,8 +143,9 @@
 | Phase 5 | 两级 AI 阅读（略读推荐 + 详细分析） | 🚧 进行中（recommend-papers 基座已落地；analyze-paper v2 的人类正文、紧凑 Canvas、profile/IR、conformance、一次修复与 canonical transaction 已随 0.28.0 发布。test Vault 的新 V-JEPA 2 v4 候选内容、Canvas 和 ZotFlow 页链已获用户验收；旧稿逐项守恒、正式迁移与其他论文的科学来源核验仍待完成。notebooklm-py 略读闭环、watchlist 半自动登记、doctor 探针 + 回落也未完成） |
 | Phase 6 | 科研项目系统 v2（共同基座 + 源码/config profiles + Run/Attempt/Target + 本地成果保存） | 🚧 基座已随 0.28.0 发布并通过 fixture 测试；真实项目 pilot 与 backup backend 未执行 |
 | Phase 7 | 科研知识系统 v2（核心文档 + 原子资源 + 附属产物 + 人类投影 + 批量 conformance） | 🚧 分析/批处理/只读审计基座已随 0.28.0 发布；JEPA test Vault 候选已验收，但正式 Vault 的 JEPA/世界模型迁移、全库对象迁移与周调度均未执行 |
-| Phase 8 | Hub Control Plane v2（HubDirectory + typed Libraries + workspace binding + TaskRecipe） | 🚧 API/安全/UI、内部 task 契约、fixture canary 与真实 one-command binding 已随 0.28.1 发布并验证；旧 LaunchAgent 已停止/disabled，23128 曾由 cmux 前台 Hub 持有、当前无监听；v2 binding 已由 Phase 9 的 v3 语义取代 |
-| Phase 9 | Hub v3 架构纠偏（Destination/Target/Action + 动态 Fields + ZotFlow + 受管服务） | 🚧 实施中：v2 binding 模型已被真实使用否定；目标 0.29.0。世界模型只读 preview、新 JEPA 候选人类验收、V-JEPA 2 手工双向批注和独立 Preview 样本已有证据；完整单 Field 事务/搬迁、真实 Source/Hub action、最终 release canary 与用户批准仍未完成，未写正式 Vault 或更新安装版 |
+| Phase 8 | Hub Control Plane v2 历史基线 | 历史发布/测试事实保留；产品目标退役，不继续扩建。存量接口未退场前仍需安全守护；本次未核验或改变任何监听进程 |
+| Phase 9 | Hub v3 历史纠偏与兼容实现 | 2026-10-01 产品方向由 G16 取代；Hub UI/worker 专属残余验收 retired，不记 pass。知识模板、来源和真实迁移门禁独立保留；既往结果不视为本批测试 |
+| Phase 10 | 项目中心资料整合与职责解耦 | Stage A 源码已实现：独立context/schema/只读CLI与首批Knowledge公共模型/文档/Field提取；原生reader、文献树catalog与Field事务仍留兼容Hub依赖。未运行独立测试，未发布/安装、停服务或迁移真实数据。详见 `project-centered-refactor.md` |
 
 ## 未来项（记录待办，暂不实现）
 
@@ -156,6 +163,10 @@
 - 每条目标应由 `evals/` 的用例守护。`（待补）` 标记尚未有守护 eval 的缺口。
 - 目标或范围变化必须同步记入 `CHANGELOG.md`。
 - 这是活文档，不归档。原始设计文档已移出仓库（`archived/scholar-workflow/project_references/`），仅作历史快照留存。
+- **项目中心重构（2026-10-01）**：新增 G16、INV59–INV61、NG21–NG22 与 Phase 10；G10/G14/G15
+  保留 ID 并标记产品目标退役。明确允许项目持有导航/上下文引用，继续禁止隐式同步和双真源；正文、
+  模板、原文证据、安全事务及实验档案不随 Hub 退役而取消。旧 Hub 专属门禁应 retired 而非 pass；
+  仍有代码的兼容路径继续遵守安全约束。当前正式重构规格为 `project-centered-refactor.md`。
 - **Hub v3 架构纠偏（2026-09-23）**：新增 G15、INV47–INV51、NG17–NG19 和 Phase 9；
   cmux workspace 从全局授权降为窗口 Destination，文件/cwd 由可信 Target 授权；文档 Libraries 收敛为
   Papers + 动态 Fields，Projects/Tools 平级；论文入口改为 direct actions，Zotero 批注唯一权威且

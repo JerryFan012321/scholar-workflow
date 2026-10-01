@@ -1,6 +1,8 @@
 # 科研项目系统 v2 — 改造计划
 
-> 状态：Accepted 0.4，2026-09-23。用户已授权按本文实施 `init-project`、项目身份和实验档案；
+> 状态：Accepted 0.5，2026-10-01。用户已授权项目中心重构；本规格继续持有 `init-project`、项目身份和实验档案，
+> 新增资料关联与职责边界由 [`project-centered-refactor.md`](project-centered-refactor.md) 细化。
+> `project-context.json` 独立于布局 manifest；旧 Hub 是兼容实现，不再是项目整合的前置条件。
 > 真实项目迁移、正式备份后端和既有项目的 destructive/untrack 操作仍不在授权范围内。
 >
 > 本文使用三种标记：**已锁定**表示用户已经确认的上位规则；**推荐**表示本计划给出的实现选择；
@@ -38,7 +40,8 @@ TRELLIS、Gaussian Splatting、Detectron2、SAM 2、DreamerV3 和 TorchTitan 是
 
 ## 3. 共同契约与跨系统接口
 
-3.1–3.5 均为已锁定的共同契约。P-D10 已由三系统联合计划裁定为显式独立复制，不建立托管链接。
+3.1–3.5 均为已锁定的共同契约。P-D10 于 2026-10-01 修订为允许显式导航/上下文引用；
+正文复制仍独立，引用不形成同步或跨域写权限。
 
 ### 3.1 Git 与源码
 
@@ -90,22 +93,26 @@ dataset/
 ### 3.5 与全局科研知识系统的接口（已锁定）
 
 - 项目 `docs/` 是项目内独立工作正文；跨项目知识 Vault 的契约见 `knowledge-system-v2.md`。
-- Knowledge→Project 只能由人或 agent 显式选择内容并复制到已注册项目的 `docs/`。复制时移除知识系统
+- 项目用独立 `project-context.json` 关联代码、论文、分析、笔记、实验和结果；清单归 Project，
+  外部正文、附件及其 owner 仍归原系统。引用由明确选择产生，不根据同名、目录或扫描自动建立。
+- 项目内记录使用安全相对路径，外部记录使用明确 provider/resource 身份与可选稳定 Zotero/Obsidian
+  URI；关联不是来源已经可达或内容已核验的证明。删除清单项只删除关联，不删除被引用对象。
+- Knowledge→Project 正文交接仍由人或 agent 显式选择内容并复制到项目 `docs/`。复制时移除知识系统
   `sw_*` 身份、sidecar、baseline marker 与托管关系；目标冲突时拒绝，不覆盖、不自动改名。
 - Project→Knowledge 由人或 agent 判断内容成熟后显式归档，创建新的 Vault-native 文档和身份。
-- 两个副本独立演化；系统不建立实时同步、托管 project-reference 或必须维护的语义 provenance。
+- 两个副本独立演化；引用和复制均不建立实时同步、级联删除或必须维护的语义 provenance。
 - Run/Attempt 报告继续属于实验档案。复制或归档其人类可读内容不会改变 recipe、retention、promotion
   或 backup 状态。
 
-Hub v3 只为该接口增加主机定位与动作路由，不改变 Project System v2：
+项目中心接口不扩展 `project-layout.json`，不引入运行服务：
 
-- `project-layout.json` 中稳定 `project_id` 仍是项目便携身份；主机 registry 只把它映射到可信根与能力。
-- `ExecutionTarget(kind=project, registered_root_id=project_id)` 可以为预登记 CLI/Codex recipe 提供 cwd，
-  但浏览器不能提交路径，Target 也不能改变 Run/Attempt/Target 的实验语义。
-- cmux `CmuxDestination` 只决定终端或浏览器窗口在哪个 workspace 出现，不授予项目文件权限。
-- Hub 项目文件操作继续只接受 `project_id + docs 相对路径`，并执行 no-overwrite、CAS、symlink 防护、
-  Git 风险提示与可恢复 trash；workspace 是否存在不得改变授权结果。
-- Projects 在 HubDirectory v3 中是与 Libraries 平级的根集合，不是文档 Library，也不进入 Field 关系。
+- `project-layout.json` schema 2 仍只持有 `project_id`、源码 profile/addon 及版本；
+  `project-context.json` schema 1 必须绑定相同 `project_id`，不保存主机绝对路径、秘密或执行配置。
+- Project 的只读 overview 从显式清单生成 Markdown；stdout 输出不强制创建首页、登记项目或写回来源。
+  外部引用在本批显示 unverified，不以零联网读取宣称已解析 Zotero/Obsidian。
+- cmux 和外部 Codex 保持原生使用方式；窗口位置不授予文件权限，不成为清单读取的先决条件。
+- 尚未移除的 Hub 项目文件 API 仍只接受 `project_id + docs 相对路径`，守护 no-overwrite、CAS、
+  symlink、Git 风险提示与可恢复 trash；本次没有停止服务或放松兼容路径。
 
 ## 4. 目标结构
 
@@ -117,6 +124,7 @@ project/
 ├── CLAUDE.md
 ├── AGENT.md
 ├── project-layout.json                 # schema v2：稳定 project_id + profile/addon 及版本
+├── project-context.json                # 可选独立 schema v1：明确资料关联；本批不由初始化器静默生成
 ├── .agents/
 │   └── skills/
 ├── src/
@@ -218,7 +226,8 @@ Profile 只生成目录和必要包边界，不生成空的 `model.py`、`train.
 
 ```json
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "project_id": "11111111-1111-4111-8111-111111111111",
   "language": "python",
   "package": "my_project",
   "source_profile": {"id": "multi-stage-3d", "version": 1},
@@ -226,7 +235,8 @@ Profile 只生成目录和必要包边界，不生成空的 `model.py`、`train.
 }
 ```
 
-- 它只记录源码布局选择，不记录 dataset、Run、Target、服务器或凭据。
+- 它只记录稳定项目身份与源码布局选择，不记录资料引用、dataset、Run、Target、服务器或凭据；
+  示例UUID仅为说明，初始化器必须为新项目生成一次独立身份。
 - Profile/addon 版本固定，插件升级不得静默向既有项目添加目录。
 - 无 manifest、无 profile 参数时只创建共同基座，不猜项目类型。
 - 现有源码可产生候选 profile 诊断，但只有用户确认后才能写 manifest。
@@ -519,7 +529,7 @@ CHANGELOG.md
 | D7 | 备份介质与频率 | 外部决策门 | 未确定前只实现 promotion 和 `backup_pending`，不得声明 verified |
 | D8 | 大产物默认阈值 | 已冻结 | 类型默认 + 人工覆盖，首版不设通用大小阈值 |
 | D9 | 首个真实迁移项目 | 外部决策门 | 只完成临时 fixture；真实项目由用户以后逐项选择 |
-| P-D10 | 项目 `docs/` 与全局知识 Vault 的衔接 | 已冻结 | 显式独立复制；目标获得新身份并独立演化，无实时同步、托管链接或强制 provenance |
+| P-D10 | 项目 `docs/` 与全局知识 Vault 的衔接 | 2026-10-01 已修订 | 允许项目用薄清单显式引用稳定资料身份，正文仍归原系统；复制/归档仍产生独立身份，无同步、跨域覆盖、级联删除或强制 provenance |
 
 ## 14. 完成定义
 
@@ -532,5 +542,8 @@ CHANGELOG.md
 5. 旧项目无静默移动、删除、覆盖、untrack 或 profile 猜测；
 6. 每个真实项目的配置和迁移都经过用户单独确认；
 7. Claude Code 与 Codex 安装得到同一套能力与契约。
-8. 项目 `docs/` 与全局知识 Vault 不形成静默双真源；跨域内容只经显式复制，副本拥有独立身份，
-   不依赖持续来源关系才能读写或演化。
+8. 项目 `docs/` 与全局知识 Vault 不形成静默双真源；项目导航引用不托管正文或授予外部写权限，
+   跨域正文副本仍通过显式复制/归档获得独立身份，不依赖持续来源关系才能读写或演化。
+
+本批 context/overview 的完成标准独立记录在 `project-centered-refactor.md`；不因新定位就宣称旧项目迁移、
+真实实验或 verified backup 完成，也不以已经取消的 Hub 前端/worker 门禁阻挡独立内容能力的验收。

@@ -1,7 +1,58 @@
 # HANDOFF — 从这里接着干
 
 > 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
-> `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-09-30。
+> `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-10-01。
+
+## 2026-10-01 项目中心重构（开发中，未测试／未发布）
+
+2026-10-02 最新：用户批准完整回归、hotfix 提交/发布/正常安装。完整 unit+contract 为
+1313 passed / 11 warnings，73.17 秒；原身份错误提示用例已通过。运行文件个人路径/明显密钥
+静态检查与 diff whitespace 检查无发现。准备从当前 hotfix 提交构建 runtime-only release，
+不合并 main、不变更正式资料、不启停既有服务。人工与安装态功能验收仍 pending。
+以下段落保留此前准备与失败过程；最新状态由此段及独立结果单覆盖。
+
+最新测试进展：用户批准方案 A 后，新切片 96 passed（0.56 秒）；相邻回归 188 passed / 1 failed
+（14.46 秒）。唯一失败是实验非法身份错误提示失去既定 `UUIDv4 identity`；已做最小错误转换修正，
+没有修改测试，需用户确认后仅复测该原用例。实际源码总览已输出，人工评鉴仍待确认。
+详见 `project-context-test-results.md`。uv 只更新仓库开发环境与 lock 的本包版本，未安装到正常
+pipx/插件环境。未发布、未合并 main、未操作真实资料。以下“未测试”为测试前开发记录。
+
+用户已批准按项目中心的能力边界重构。当前目标不是继续修补 Hub 或内置 Codex，
+而是把一个项目的代码、相关论文、知识笔记、实验与成果组织成可读、可追溯、可调用的整体。
+集中展现不等于集中存储；项目可显式引用 Zotero/Vault 的资料，正文仍留在各自权威来源，
+没有自动同步、跨域覆盖、级联删除或隐式复制。显式复制仍形成独立副本。
+
+本批开发从已发布 0.30.0 hotfix 的干净源码建立独立分支；不提前合并 main。
+先实施知识核心与 Hub 的职责分离、项目共享契约及无 HTTP 依赖的项目资料索引。
+旧 Hub/任务入口只保留历史兼容，不作为新能力的前提；直接删除 `hub/` 会破坏既有内容依赖，
+因此不做整包删除。现存服务和 worker 不在本批自动停止，原生 Codex 历史不改。
+
+当前分支 `codex/hotfix-project-context`，源码候选版本 `0.31.0`（Unreleased）。本批已完成：
+
+- 将通用 Knowledge 对象、catalog 模型、Source/Field 与 Obsidian 文档契约移到 `knowledge/`；
+  原 Hub 模块保持同对象兼容 alias，内容调用方改用新 owner，不复制模型。
+- 新增 stdlib-only `project/layout.py`，initializer、实验身份与旧 Project registry 复用；
+  `project/` 改为 lazy 旧导出，避免独立 initializer 加载实验依赖。
+- 新增可选 `project-context.json` schema/模型与 `project context-template`、`validate-context`、
+  `overview` 三个只读命令。默认输出 Markdown，支持显式中文/英文及 JSON；不调用 Hub/外部执行。
+- 更新根规则、Project/Knowledge 规格、运行说明、skill 结果契约和 eval lifecycle。
+  旧 Hub 专属目标 retired，不冒充 pass；保留的内容安全与兼容回归仍适用。
+- 准备一个 `tests/fixtures/project-context/` 合成项目及手写 `EXPECTED-OVERVIEW.md`；
+  unit/contract/CLI 测试已写好但未运行。独立方案为 `project-context-test-plan.md`。
+
+边界仍未全部解耦：Analysis commit/批注 workflow 的 ZotFlow import、文献树 catalog 更新、
+Field transaction HTTP 链路尚留旧 Hub；后续按规格 Stage B 分小切片提取，不能宣称 INV60 已达成。
+本次没有提交、发布、安装、编译/lint、测试或任何真实业务迁移；本机安装态没有被更新。
+下一步先请用户批准方案 A，再执行新切片和相邻合成回归，展示实际输出；人工可读性评鉴 B
+必须明确在会话请求。需要安装的 C 另获正常 hotfix 发布安装授权，不使用临时环境冒充安装验收。
+
+保留已经认可的完整分析框架、Markdown/Canvas 样式、证据页链接、单篇目录和
+Run/Attempt/Target/Artifact 档案及安全写入规则。没有真实 Vault/项目迁移、Zotero 写入、
+外部应用升级、安装或发布授权。按照测试独立原则，只准备合成输入和单项目验收方案，
+获用户明确批准后再执行测试；本节的开发记录不能冒充验收通过。
+
+后续旧节均为历史过程，不覆盖本节的产品目标和本批状态。旧 Hub 专属产品验收不再驱动
+新开发；兼容能力仍需回归，取消的门禁不得标为通过。新的项目可读性需在会话中明确请求人工评鉴。
 
 ## 2026-09-30 Hub 论文入口与 Codex 易用性改进（A 合成通过，真实验收待做）
 

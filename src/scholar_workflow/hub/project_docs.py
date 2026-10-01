@@ -22,7 +22,7 @@ from scholar_workflow.adapters.obsidian import VaultPathError, safe_vault_path
 from scholar_workflow.canvas import CanvasValidationError, validate_canvas_payload
 from scholar_workflow.hub.catalog import CatalogProvider
 from scholar_workflow.hub.directory import ProjectRegistry, RegistryError
-from scholar_workflow.hub.models import ArtifactFormat
+from scholar_workflow.knowledge.catalog_models import ArtifactFormat
 
 _FRONTMATTER_RE = re.compile(
     r"\A---[ \t]*\r?\n(.*?)^(?:---|\.\.\.)[ \t]*\r?\n",

@@ -23,7 +23,7 @@ from scholar_workflow.hub.field_migration import (
     _has_analysis_identity,
 )
 from scholar_workflow.hub.field_transaction import _has_analysis_sidecar
-from scholar_workflow.hub.fields import FieldDefinition, _open_directory_chain, _safe_relative
+from scholar_workflow.knowledge.fields import FieldDefinition, _open_directory_chain, _safe_relative
 
 _SEGMENT = re.compile(r"[a-z0-9][a-z0-9-]{0,79}\Z")
 _RESOURCE_ID = re.compile(r"[a-z0-9][a-z0-9._:-]{1,127}\Z")

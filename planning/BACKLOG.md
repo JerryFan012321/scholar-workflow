@@ -2,6 +2,12 @@
 
 Work items for scholar-workflow. Single source of truth for pending work, decisions, and blockers.
 
+> Direction update, 2026-10-01: project-centered material integration replaces Hub frontend
+> and embedded Codex control as the product goal. A **Direction update** below overrides an
+> item's older next-action instructions; prior implementation/test evidence remains historical,
+> not evidence for this batch. Cancelled Hub-only acceptance is **retired**, never promoted to
+> pass. Content safety, source verification, real migration and verified backup remain separate.
+
 ## Schema
 
 - **ID**: `WI-NNN` (auto-increment from 001)
@@ -11,8 +17,18 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 
 ## Active Items
 
-### WI-053: Direct paper readers, related files and guided Codex tasks
+### WI-054: Project-centered context and responsibility refactor
 - **Status**: in-progress
+- **Priority**: p0
+- **Type**: refactor
+- **Context**: The user approved replacing the tool-control product with an integrated research-project context: code, papers, analysis/notes, experiments and results remain in their authoritative stores and are joined by explicit project-owned references. Project owns context/layout/archives; Knowledge owns reusable objects and ownership; Analysis owns paper results; Adapters own external interfaces; Workflows compose tasks; CLI/agents/skills stay thin. The formal batch specification is `planning/project-centered-refactor.md`.
+- **Blocker**: independent test approval before executing any tests; publication, installation, service retirement and real-data migration are not included in implementation authorization
+- **Next action**: The schema-1 context contract, three read-only project CLI entries and first Knowledge model/catalog/document/Field extraction are implemented in the development tree without changing project-layout schema 2 or analysis formats. Present the one-project synthetic inputs, expected Markdown/JSON and targeted regression scope for independent approval before running tests. Remaining native-reader imports, literature-tree catalog update and Field transaction HTTP dependencies are explicit later slices, not proof of full decoupling. This batch is untested and unpublished; cancelled Hub UI/worker gates and incomplete real migration/backup do not block its independent acceptance.
+- **Related**: G16, INV59-INV61, NG21-NG22, WI-019, WI-025, WI-030, WI-041; `planning/project-centered-refactor.md`
+
+### WI-053: Direct paper readers, related files and guided Codex tasks
+- **Status**: deferred
+- **Direction update**: Hub card/UI and guided embedded-Codex acceptance are retired under WI-054. Do not fix or run the rejected Codex worker flow. Retain stable paper/file associations, ZotFlow/native reader adapters and prior sample evidence; any native-tool content check belongs to an independently approved bounded plan, not this former three-stage Hub gate.
 - **Priority**: p1
 - **Type**: code-change
 - **Context**: Implement the approved single-batch plan: registered Vault ZotFlow Library Reader, cmux original PDF only (no database annotations), lazy identity-owned related files with direct open/preview, detection-confirmation Codex setup, approved model profiles/supported reasoning, persistent choices, and exact contextual target/recipe suggestions.
@@ -283,7 +299,8 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Related**: G13, INV42, WI-026, WI-031
 
 ### WI-033: Hub Control Plane v2 — umbrella and formal contract
-- **Status**: in-progress
+- **Status**: deferred
+- **Direction update**: Control-plane product target retired; preserve the old specification and published compatibility facts. WI-054 replaces the architecture direction; compatibility safety remains while code exists, but no further Hub feature or real-task canary is requested here.
 - **Priority**: p1
 - **Type**: planning
 - **Context**: `hub-investigation-conclusion.md` established evidence but is not an activated specification. `planning/hub-control-plane-v2.md` freezes HubDirectory, typed Libraries, registries, bindings, project-doc boundaries and task control as a third system alongside Project and Knowledge.
@@ -337,7 +354,8 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Related**: INV44, INV47, WI-034, WI-039, WI-044
 
 ### WI-039: TaskRecipe, LogicalTask, TaskRun and Codex worker
-- **Status**: in-progress
+- **Status**: deferred
+- **Direction update**: Embedded Codex task product and outstanding real-task acceptance retired. Keep existing thread/store history and safeguards intact until a separately scoped retirement; external Codex retains native configuration and history. Do not continue the older next-action's create/resume/fork canary.
 - **Priority**: p1
 - **Type**: code-change
 - **Context**: Replace blank-session-only action with server-registered recipes, bounded brief/effort and explicit Codex thread IDs while preserving the prohibition on browser commands, paths and security configuration.
@@ -364,7 +382,8 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Related**: INV35, WI-023
 
 ### WI-042: Hub v3 umbrella contract and planning consistency
-- **Status**: in-progress
+- **Status**: deferred
+- **Direction update**: Hub v3 is a historical compatibility specification, superseded by WI-054. Its product acceptance is retired rather than completed or passed; reusable content/tool safety is retained in the project-centered boundaries.
 - **Priority**: p0
 - **Type**: planning
 - **Context**: Real use of 0.28.1 disproved the global workspace-binding authorization model. The accepted v3 contract separates cmux window destinations from trusted file/execution targets, reduces document Libraries to Papers/Fields, promotes Projects/Tools to root collections, and replaces visible landing pages with direct actions.
@@ -373,7 +392,8 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Related**: G15, INV47-INV51, NG17-NG19, `planning/hub-control-plane-v3.md`
 
 ### WI-043: Installed-package Hub lifecycle, dynamic port and discovery
-- **Status**: in-progress
+- **Status**: deferred
+- **Direction update**: Do not extend the Hub lifecycle product or repeat its rollout canary. Existing identity/discovery/stop protections remain for safe compatibility and eventual explicitly authorized service retirement. This refactor does not stop or replace any process; older counts and process observations below are historical.
 - **Priority**: p0
 - **Type**: code-change
 - **Context**: Replace the manual cmux foreground/fixed-23128 source-tree lifecycle with `hub start/status/stop/restart/doctor` and one-command `open-hub`. The managed service runs from the installed package, chooses a loopback dynamic port, and publishes mode-0600 discovery with executable/build/protocol/PID/generation/log evidence.
@@ -382,7 +402,8 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Related**: INV39, INV51, NG12, WI-034, WI-049
 
 ### WI-044: CmuxDestination, ExecutionTarget and Action/Task routing
-- **Status**: in-progress
+- **Status**: deferred
+- **Direction update**: Browser routing/task-control product target retired. The valid separation of window location and file authorization remains, but native cmux use must not require this registry or Hub API. Preserve old execution safety while compatibility code exists; no real Codex run is required to close the new content slice.
 - **Priority**: p0
 - **Type**: refactor
 - **Context**: Workspace is only a browser/terminal launch location. File and cwd authorization comes from registered folder/project targets. The browser may submit opaque action/destination/target IDs plus bounded brief/effort, but never URL, command, cwd, model, sandbox, permission or environment.
@@ -392,6 +413,7 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 
 ### WI-045: Obsidian Source registry, Field manifest and preview initialization
 - **Status**: in-progress
+- **Direction update**: Source/Field identity, owner, preview/CAS and safe transactions are Knowledge responsibilities, not a reason to keep Hub. Their remaining HTTP dependencies are split into later WI-054 slices. Existing preview results do not authorize real registration or migration; no whole-Vault scan is part of this batch.
 - **Priority**: p1
 - **Type**: code-change
 - **Context**: Knowledge libraries must be extensible without hard-coded fields or one mandatory `research_vault_root`. A registered Vault or selected subdirectory supplies one or more Fields through `.scholar-workflow/fields.yml`; browsers receive only one-use candidate tokens.
@@ -400,7 +422,8 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Related**: INV37, INV42, INV48, NG19, WI-025, WI-048
 
 ### WI-046: Simplified information architecture and direct-action UI
-- **Status**: in-progress
+- **Status**: deferred
+- **Direction update**: Standalone frontend/navigation acceptance retired, not passed. Stable native links and readable content still matter, but no new Hub UI or compulsory page hierarchy is requested; use existing Obsidian/Notion/cmux interfaces.
 - **Priority**: p1
 - **Type**: code-change
 - **Context**: Libraries contain only Papers/Fields; Projects/Tools are peers. Paper and Field workflows should expose useful actions immediately, with no normal paper/attachment/document landing page and no global read-only overlay.
@@ -410,6 +433,7 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 
 ### WI-047: ZotFlow adapter, AnnotationIR, Source Note isolation and annotated snapshot
 - **Status**: in-progress
+- **Direction update**: Keep the native reader/annotation adapter and no-cloud/secret/writer boundaries. The continuous Hub-card click requirement in the historical fields below is retired; accepted user-visible links and manual round-trip evidence are not reopened simply because Hub is retiring. Unsupported annotation types and source/version verification remain honest limits.
 - **Priority**: p1
 - **Type**: code-change
 - **Context**: Zotero remains the sole formal-annotation authority. Zotero native local PDF is the safe primary; ZotFlow is an optional editor only when desktop local-storage mode and the actual local attachment are positively verified. The user forbids cloud PDF downloads but allows ZotFlow's Web API metadata/annotation sync. Only ZotFlow may hold that Web API key in Obsidian SecretStorage. Scholar Workflow reads annotations through the Local API and keeps ZotFlow Source Notes, Better Notes and Scholar analysis paths under separate writers.
@@ -419,6 +443,7 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 
 ### WI-048: Current research Vault Field migration and legacy-link cleanup
 - **Status**: in-progress
+- **Direction update**: Real migration remains an independent incomplete content task, not a prerequisite for the new one-project context implementation or a cancelled Hub rollout. No real Vault write, provider registration, external-writer pause or recovery exercise is authorized by WI-054; the historical technical safeguards remain applicable to any later explicit migration.
 - **Priority**: p1
 - **Type**: planning
 - **Context**: The first Source is the current `02-科研技术文档` Vault; the first Field is 世界模型, with JEPA/V-JEPA as the acceptance sample. Existing content includes 168 fixed `127.0.0.1:23128/open/paper/...` links. Each Field must be previewed and transacted independently with preserved unmapped prose.
@@ -427,7 +452,8 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Related**: INV38-INV42, INV48-INV50, WI-030, WI-045-WI-047
 
 ### WI-049: Real canary, 0.29.0 release, installed update and old-service retirement
-- **Status**: blocked
+- **Status**: deferred
+- **Direction update**: Historical Hub release/canary plan superseded; residual Hub UI/worker product gates are retired, not passed. Old package/test evidence remains below for traceability and does not validate this refactor. Publication/normal installation and safe service retirement require separately stated scope and authorization; source migration and verified backup remain separate incomplete tasks.
 - **Priority**: p0
 - **Type**: code-change
 - **Context**: Hub v3 becomes the supported runtime only after the release artifact proves lifecycle/discovery, direct actions, destination routing, Field preview, ZotFlow diagnostics and compatibility behavior. Fixed 23128 and the old listener do not remain in the long-term architecture.

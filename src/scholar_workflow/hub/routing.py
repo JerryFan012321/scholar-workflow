@@ -21,8 +21,8 @@ from typing import Literal
 from pydantic import Field, field_validator, model_validator
 
 from scholar_workflow.hub.directory import EntityRef, ProjectRegistry, RegistryError
-from scholar_workflow.hub.fields import FieldRegistryError, FieldService, KnowledgeSourceRegistry, _open_directory_chain
-from scholar_workflow.hub.models import HubModel
+from scholar_workflow.knowledge.fields import FieldRegistryError, FieldService, KnowledgeSourceRegistry, _open_directory_chain
+from scholar_workflow.knowledge.catalog_models import HubModel
 
 _ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$")
 _CAPABILITY = re.compile(r"^[a-z][a-z0-9._:-]{0,63}$")

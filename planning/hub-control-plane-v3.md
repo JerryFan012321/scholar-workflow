@@ -1,6 +1,12 @@
-# Scholar Workflow Hub v3 — 正式规格
+# Scholar Workflow Hub v3 — 历史兼容规格
 
-> 状态：Accepted 1.0，2026-09-23。本文取代 `hub-control-plane-v2.md` 成为 Hub 的目标规格。
+> 状态：Superseded / product direction retired，2026-10-01。当前目标规格是
+> [`project-centered-refactor.md`](project-centered-refactor.md)：整合项目资料、复用原生工具，不再建设
+> Hub 前端或内置 Codex 任务控制产品。以下正文保留已接受/实现方案的历史边界，不能当成新增功能授权。
+> 尚未移除的 HTTP、文件操作、worker 路径继续受其原安全约束保护；未完成的 Hub 专属验收是 retired，
+> 不是 pass。本次没有停止服务、删除代码、迁移 Vault 或证明完整解耦。
+>
+> 原状态：Accepted 1.0，2026-09-23；曾取代 `hub-control-plane-v2.md` 成为 Hub 的目标规格。
 > `0.28.1` 的 lease/binding 行为只保留为迁移与回归基线；本次授权实现 v3 runtime、测试、
 > 拟发布包 canary 和首个 Field 的只读预览。真实 Field 写入、其他 Vault/项目迁移、Obsidian 升级、
 > 永久删除以及 verified backup 仍各自受独立门禁。

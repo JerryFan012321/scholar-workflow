@@ -23,7 +23,7 @@ import re
 import unicodedata
 from pathlib import PurePosixPath
 
-from scholar_workflow.hub.obsidian_contract import managed_frontmatter
+from scholar_workflow.knowledge.obsidian_contract import managed_frontmatter
 from scholar_workflow.workflows.projection import render_table
 
 

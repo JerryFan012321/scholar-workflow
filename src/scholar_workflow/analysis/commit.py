@@ -34,7 +34,7 @@ from scholar_workflow.analysis.models import (
 )
 from scholar_workflow.analysis.rendering import AnalysisBundle
 from scholar_workflow.analysis.updates import create_baseline
-from scholar_workflow.hub.fields import (
+from scholar_workflow.knowledge.fields import (
     FieldRegistryError,
     FieldService,
     KnowledgeSourceRegistry,

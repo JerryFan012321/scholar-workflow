@@ -20,12 +20,12 @@ from scholar_workflow.adapters.zotero_local import (
     ZoteroLocalError,
 )
 from scholar_workflow.hub.cmux import minimal_child_environment
-from scholar_workflow.hub.fields import (
+from scholar_workflow.knowledge.fields import (
     FieldRegistryError,
     KnowledgeSourceRegistry,
     read_obsidian_version,
 )
-from scholar_workflow.hub.models import HubModel
+from scholar_workflow.knowledge.catalog_models import HubModel
 
 _SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$")
 _TRANSLATION = re.compile(r"🔤.*?🔤", re.DOTALL)

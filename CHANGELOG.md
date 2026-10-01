@@ -3,6 +3,39 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.31.0] - 2026-10-02
+
+Project-centered hotfix on `codex/hotfix-project-context`, authorized for publication and
+normal installation independently of main. No service shutdown or real-data migration.
+
+Approved full unit/contract regression: 1,313 passed with 11 dependency/multiprocessing
+deprecation warnings in 73.17 seconds, including the corrected identity diagnostic.
+Human and normally installed-product functional acceptance remain pending.
+
+### Added
+- **Project context.** An explicit project-owned reference inventory and read-only CLI overview
+  connect code, papers, knowledge notes, experiments and results without moving source content,
+  starting a Hub, executing tools, or introducing synchronization.
+- **Project contracts.** Shared layout validation owns portable identity and structure while
+  retaining the accepted schema and profile selection semantics.
+- **Independent acceptance inputs.** One synthetic project, manually prepared expected Markdown,
+  focused test cases and an approval-gated test plan; source tests are passed, human evaluation pending.
+
+### Changed
+- **Knowledge ownership.** Source/Field, Obsidian document identity, catalog compatibility models
+  and general knowledge types move into `knowledge/`; historical imports remain compatible.
+  Paper analysis retains its IR/rendering/conformance responsibilities and accepted formats.
+  Existing analysis/annotation reader, literature-catalog and Field transaction dependencies are
+  explicitly deferred slices, not a claim that the whole Knowledge runtime is already Hub-free.
+- **Product boundary.** Existing tools own reading/editing and window/task execution. Hub and
+  embedded Codex are legacy compatibility surfaces, not the product direction. Project references
+  are allowed without implicit synchronization; independent-copy semantics remain unchanged.
+
+### Fixed
+- **Experiment identity diagnostic.** Restore the established schema-2/UUIDv4 identity message
+  when the shared layout validator rejects the manifest. Original negative test/input is unchanged;
+  the unchanged original negative test now passes in the full regression.
+
 ## [0.30.0] - 2026-09-30
 
 Hotfix version sourced from `codex/hotfix-hub-paper-tasks`. Both host manifests and the CLI

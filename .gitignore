@@ -13,3 +13,5 @@ state.db*
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
 
+# Local generated acceptance output; keep the independent expected fixture tracked.
+/tests/fixtures/project-context/ACTUAL-*

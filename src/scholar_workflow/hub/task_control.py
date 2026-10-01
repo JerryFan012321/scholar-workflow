@@ -24,8 +24,8 @@ from pydantic import Field
 from scholar_workflow.hub.cmux import CmuxControl, CmuxControlError
 from scholar_workflow.hub.destinations import DestinationRegistry
 from scholar_workflow.hub.directory import EntityRef, ProjectRegistry
-from scholar_workflow.hub.fields import FieldService, KnowledgeSourceRegistry
-from scholar_workflow.hub.models import HubModel
+from scholar_workflow.knowledge.fields import FieldService, KnowledgeSourceRegistry
+from scholar_workflow.knowledge.catalog_models import HubModel
 from scholar_workflow.hub.routing import (
     ExecutionTargetError,
     ExecutionTargetRegistry,

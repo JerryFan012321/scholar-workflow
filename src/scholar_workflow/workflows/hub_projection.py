@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 from datetime import datetime, timezone
 
-from scholar_workflow.hub.models import (
+from scholar_workflow.knowledge.catalog_models import (
     ArtifactFormat,
     ArtifactKind,
     CatalogDiagnostic,

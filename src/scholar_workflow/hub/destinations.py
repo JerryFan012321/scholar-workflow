@@ -16,7 +16,7 @@ from scholar_workflow.hub.cmux import (
     CmuxControlError,
     WorkspaceRegistry,
 )
-from scholar_workflow.hub.models import HubModel
+from scholar_workflow.knowledge.catalog_models import HubModel
 
 
 class CmuxDestination(HubModel):

@@ -1,3 +1,3 @@
-"""scholar-workflow: deterministic engine for scholarly resource management."""
+"""Project-centered research content and reproducible record primitives."""
 
-__version__ = "0.30.0"
+__version__ = "0.31.0"

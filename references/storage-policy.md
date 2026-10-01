@@ -14,7 +14,11 @@ Canonical rule for where every object lives. Applies to all skills and agents.
 | Images, data, and supplements attached to Vault notes | Registered Obsidian Source | Source-relative `attachments/` + `.scholar-workflow/assets.yml` relation manifest |
 | ZotFlow Source Notes | ZotFlow-owned path inside its registered Obsidian Source | disjoint from Better Notes and Scholar-managed paths |
 | Annotated PDF snapshots for external readers | Derived snapshot store | hash-bound copy; never the Zotero attachment path |
-| Knowledge outline, projects, tasks | Notion | Notion cloud |
+| Reusable knowledge navigation, outline, prose and Canvas | Obsidian Source/Field | owned Markdown and explicit Knowledge manifests |
+| Project identity, layout, project-local notes and experiment archives | Project | `project-layout.json`, `docs/`, `experiments/` |
+| Explicit project material associations | Project | independent `project-context.json`; references only, not external content |
+| Human-maintained project/task management views | Notion | Notion cloud; not authority for project code, archives or knowledge prose |
+| Machine Notion projections | Original Zotero/Vault/project records | one-way summaries and stable native links; no second content store |
 | Plugin runtime state (mappings, cursors, jobs, audit) | State store | `SCHOLAR_WORKFLOW_HOME` |
 
 ## Invariants
@@ -32,9 +36,9 @@ Canonical rule for where every object lives. Applies to all skills and agents.
    deprecated the old resource cache).
 6. Vault assets are not Zotero attachments. Their bytes stay in the Vault and their
    owner relation is declared in `.scholar-workflow/assets.yml`; a Markdown wikilink is
-   presentation only and is never parsed as relationship authority. Hub uploads use a
-   server-derived relative path and never write into Zotero storage.
-7. JSON Canvas remains a standard `nodes`/`edges` document. Hub identity for an analysis
+   presentation only and is never parsed as relationship authority. Any remaining legacy
+   Hub upload uses a server-derived relative path and never writes into Zotero storage.
+7. JSON Canvas remains a standard `nodes`/`edges` document. Knowledge identity for an analysis
    Canvas is declared in `.scholar-workflow/artifacts.yml`, never injected as private
    top-level Canvas fields or inferred from its filename.
 8. One Obsidian Source may expose multiple Fields. The legacy `research_vault_root`
@@ -49,6 +53,18 @@ Canonical rule for where every object lives. Applies to all skills and agents.
     Zotero native and ZotFlow launches revalidate the Local API attachment locator and
     the presence of local bytes before opening. This does not change the user's independent
     Zotero File Syncing configuration.
+11. A project may explicitly reference existing Zotero/Obsidian materials for navigation
+    and context use without copying their bodies or taking over their ownership. The
+    independent `project-context.json` binds the same `project_id` as the layout manifest;
+    project-local files use safe relative paths and external entries use stable provider
+    identities. Registration alone is not source availability or content verification.
+12. Removing a project reference never deletes, moves or edits the referenced object.
+    References grant no cross-system write permission and create no automatic sync or
+    cascading deletion. Explicit copies/archive operations still create independently
+    evolving target content, with no implicit overwrite or required provenance tracking.
+13. Project overview Markdown is a rebuildable navigation view, not a new authoritative
+    store. Reading project context does not require Hub, a cmux workspace, a new homepage
+    or Scholar-managed Codex tasks; native tools retain their own content and configuration.
 
 ## PDF handling
 

@@ -10,7 +10,6 @@ import json
 import os
 import re
 import tempfile
-import uuid
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Literal, Protocol, Self
@@ -24,9 +23,10 @@ from scholar_workflow.adapters.zotero_local import (
     ZoteroLocalError,
 )
 from scholar_workflow.hub.catalog import CatalogProvider
-from scholar_workflow.hub.fields import FieldRegistryError, FieldService
-from scholar_workflow.hub.models import HubCatalog, HubModel
+from scholar_workflow.knowledge.fields import FieldRegistryError, FieldService
+from scholar_workflow.knowledge.catalog_models import HubCatalog, HubModel
 from scholar_workflow.hub.zotflow import PdfRef
+from scholar_workflow.project.layout import is_project_id, validate_project_identity
 
 _PORTABLE_ID = re.compile(r"^[a-z0-9][a-z0-9._:-]{1,127}$")
 _CAPABILITY = re.compile(r"^[a-z][a-z0-9._:-]{0,63}$")
@@ -260,11 +260,7 @@ class ProjectRegistration(HubModel):
     @field_validator("project_id")
     @classmethod
     def _project_id(cls, value: str) -> str:
-        try:
-            parsed = uuid.UUID(value)
-        except ValueError as exc:
-            raise ValueError("project_id must be a canonical UUIDv4") from exc
-        if parsed.version != 4 or str(parsed) != value:
+        if not is_project_id(value):
             raise ValueError("project_id must be a canonical UUIDv4")
         return value
 
@@ -426,18 +422,10 @@ class ProjectRegistry(_ExplicitJSONRegistry):
                 raise RegistryError("Registered project has no trusted project-layout.json")
             try:
                 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-                raw_manifest_id = manifest.get("project_id")
-                if not isinstance(raw_manifest_id, str):
-                    raise TypeError("project_id must be a canonical string")
-                manifest_id = uuid.UUID(raw_manifest_id)
+                manifest_id = validate_project_identity(manifest)
             except (OSError, TypeError, ValueError, AttributeError, json.JSONDecodeError) as exc:
                 raise RegistryError("Registered project layout identity is invalid") from exc
-            if (
-                manifest.get("schema_version") != 2
-                or manifest_id.version != 4
-                or raw_manifest_id != str(manifest_id)
-                or str(manifest_id) != project.project_id
-            ):
+            if manifest_id != project.project_id:
                 raise RegistryError("Project registry identity does not match project-layout.json")
             return project.model_copy(update={"root": root})
         raise RegistryError("Unknown project_id")
