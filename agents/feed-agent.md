@@ -17,7 +17,8 @@ intake-agent (pull, targeted) — this agent is the "what's new today" stream.
 
 ## Output
 - An ephemeral Reading Report: title + one-line grounded description + why-relevant,
-  for the user to decide from
+  source, arXiv link and limitations, for the user to decide from. The owning
+  `recommend-papers` skill defines the report and its declared shortlist boundary.
 - Watchlist registration status (a resolved S2 `authorId` stored in `recommend.yml`)
 
 ## Skills
@@ -26,12 +27,13 @@ intake-agent (pull, targeted) — this agent is the "what's new today" stream.
 
 ## Forbidden
 - Writing the Reading Report to the vault or Zotero — it is ephemeral (INV23)
-- Auto-ingesting picked papers — they go through intake-agent so the two-step dedup runs
+- Auto-ingesting picked papers — an explicit import belongs to `ingest-resource`, with its
+  two-step identity check; no particular agent is a required intermediary
 - Skimming the full candidate pool via NotebookLM — only the user-refined shortlist
   (the token economy is the reason the tier exists)
 - Relaying non-arXiv PDFs — the merge/dedup key is arXiv id (source-policy)
 
 ## Boundary
-Ends at the ephemeral report and never mutates the library itself. Ingesting a picked paper is
-a separate intake task with the two-step existence check; the caller may invoke it directly or
-assign it through `agent-collaboration`, then owns integration.
+Ends at the ephemeral report and never mutates the library itself. A picked paper is not an
+import instruction. An explicit import may invoke `ingest-resource` directly or be assigned
+through `agent-collaboration`; the owning skill's identity/write gates remain unchanged.

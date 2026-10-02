@@ -15,12 +15,15 @@ runtime.
   case in `evals/routing.json` still routes correctly, and that no other skill now
   mis-fires. Changing triggering strategy is an "Ask First" action (see AGENT.md).
 - **Result contract / constraints** — keep observable outputs and runtime safety invariants
-  intact. Preserve steps only for real tool dependencies, permission gates, or fragile external
-  ordering. If a constraint duplicates a top-level policy, link instead of restating.
+  intact. Preserve actual business/tool workflows where they exist, including their inputs,
+  branches, handoffs and completion conditions; do not invent a fixed exploratory process or
+  prescribe internal reasoning. If a constraint duplicates a top-level policy, link instead of restating.
 - **References** — if a rule becomes shared by another skill, promote it to
   top-level `references/` and replace both copies with a pointer.
 - **Output formats** — keep exact fields and layouts when they are user-visible contracts,
-  but remove prose that turns those fields into a mandatory internal reasoning process.
+  as hard completion requirements. Remove prose that turns those fields into a mandatory
+  internal reasoning process, not the required fields/topology themselves. A renderer limitation
+  or a passing old test does not authorize a simplified output.
 
 ## After the change
 

@@ -1,7 +1,82 @@
 # HANDOFF — 从这里接着干
 
 > 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
-> `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-10-01。
+> `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-10-02。
+
+## 2026-10-02 0.31.1 hotfix 发布/安装与插件态测试准备
+
+用户已明确授权 hotfix 提交、发布、正常安装，并要求测试严格基于已安装插件、限定 test Vault。
+本轮只读确认：分支 codex/hotfix-project-context，候选 0.31.1；pipx 与缓存 manifest 登记仍为
+0.31.0。当前代码仍只有四分支，新五分支输出尚未实现，不能用旧 pair 通过冒称新格式通过。
+发布前完整 unit/contract 与安装后单对象方案见 `hotfix-0.31.1-install-test-plan.md`，
+用户已批准这份方案并要求 V-JEPA 2 使用独立新文件夹。发布前完整回归已完成：
+1355 passed / 11 warnings，73.00 秒；diff 空白和指定 runtime 私人路径/明显密钥检查无发现。
+实际结果见 `hotfix-0.31.1-results.md`。接下来提交/发布/安装与安装态验收分别记录，
+不覆盖旧样张、不合并 main。新五分支未实现的限制随发布保留。
+pipx list 在受限环境因日志目录权限失败，已改为只读检查 metadata，未改安装环境。
+
+## 2026-10-02 Skill 运行入口纠偏（文案已改，未测试／未发布）
+
+用户要求继续按「思考自由、流程据实、呈现严格」改造项目，并保留此前论文分析格式。
+本切片只调整运行 skill/agent 文案与对应结果规范：已有输入不重复搜索/入库、不强制固定
+agent 链、agent 复用所属 skill 的格式、审计默认人类可读；共同呈现入口须指向当前论文模板。
+只读审查后已按这些具体矛盾完成最小修改；多数现有 skill 已符合边界，未为做减法而重写。
+survey/check-consistency 两个运行 skill、中英文说明及四个 agent 已更新；身份核验、来源读取、
+预览、权限、提交/CAS 与原有批次保护保留。INV36、CHANGELOG 和对应 eval 已同步，
+新行为 case 均为 pending，没有把文字审查冒充运行通过。
+
+不改论文五分支/子节点模板、文献树拓扑、运行代码/schema 或已有样张；不执行测试、真实业务、
+Vault 迁移、提交、发布或安装。当前论文 v4 生成器与新五分支输出的差距仍待单独适配。
+本切片完成后提供可审阅的运行规则变化与独立合成验收输入；须另获批准才执行测试。
+独立方案为 `skill-boundary-acceptance.md`：8 项无真实数据的行为评鉴输入与手写预期、
+eval schema 定向回归、实际审计报告的显式人工评鉴。均未执行；提交前完整回归另行批准。
+
+## 2026-10-02 Skill 边界原则固化（规则层）
+
+用户确立 skill 管真实流程（如果有）和末端呈现、不管内部思考；探索性任务不编造流程，
+末端格式是硬规则。全局原则正文放在同层 `AGENT.md`，全局 `CLAUDE.md` 仅引用。
+项目 AGENT、开发编写/迭代准则、INV36 及对应 outcome 已同步；模板仍由各自产物 reference
+唯一持有。本轮没有批量改 skill、改运行代码、跑测试、生成样张、写 Vault、发布或安装。
+上一节要求的五分支/独立子节点输出仍需运行实现适配，不能因原则写入就标为完成。
+
+## 2026-10-02 论文分析输出格式修订（规范层／运行适配未完成）
+
+用户明确：最新通用参考图用于修改阅读、分析论文后的输出格式，不是要求重新分析
+论文或重复整库验收。新格式的唯一详细规范为
+`skills/analyze-paper/references/analysis-output-template.md`；五个一级分支为
+Abstract / Introduction / Method / Experiments / Limitation，原图 challenge、contribution、
+module 的子项须逐项展开；Introduction 保留 demos/applications，Method Overview 保留
+任务/输入/输出和合写的分步方法，Experiments 独立保留 comparison 与 ablation。
+正文附逐字原文引用，Canvas 不附长摘录；已确认的可编辑性、直角无箭头连线、紧凑布局、
+点击留白、行内证据、ZotFlow 原文入口和正文反链继续保留。
+
+本轮仅修改 skill 输出契约及相应规则/状态说明，不修改 schema、renderer 或 conformance，
+不重新读论文、生成样张、运行测试、写 Vault、提交、发布或安装。当前 v4 仍只有四分支，
+且将 points 合并为 `/details` 节点；不能冒称支持这张新图，也不能把旧格式成功当成新格式成功。
+后续最小适配涉及 analysis/models.py、analysis-ir.schema.json、reference_rendering.py、
+reference_conformance.py 与旧 baseline/update 兼容；先准备独立测试输入和预期，获批准再执行。
+保留 42 项摘录合成测试、147 项相邻回归及既有 0.31.0 人工验收的历史事实；它们只适用于
+当时的格式。本轮新输出格式未通过完整符合性验收，生成器适配和新样张人工评鉴均待做。
+
+## 2026-10-02 正文原文摘录格式（定向 42 项通过／未发布）
+
+用户确认现有 0.31.0 test Vault V-JEPA 2 样张的人工评鉴通过：布局、可编辑性、
+原文跳页和正文反链。记录见 `test-vault-0.31.0-results.md`；不扩大到项目总览、
+科学来源逐项核验或正式迁移。
+
+本次仅更新 analyze-paper 的正文格式：对应 claim/point 后附原语言、逐字短摘录和
+同一来源位置链接；Canvas 不增加摘录，也不改布局。新 v4 分析显式声明
+`profile.markdown_quotes: true`；旧 IR 缺省仍保留旧输出和 baseline，不能静默刷新。
+格式校验只证明摘录与 IR 一致，实际原文逐字核验仍是来源审阅责任。
+首轮 A 为新增 21 passed / 19 failed（0.63 秒），相关回归 147 passed（2.34 秒）；
+19 项被既有 Canvas 长宽比门禁拒绝。只调整合成 fixture 为完整四分支（仍是两句
+原文，其他三块明确为来源缺口），并保留原 focused 输入为开启/关闭摘录的两项拒绝用例。
+用户重新批准后仅运行修正版 42 项：全部通过（0.47 秒）。未修改运行代码或 Canvas 门禁。
+实际成对预览 conformance 为 0 findings，Canvas 23 节点/22 连线、2224×1341，长宽比约 1.66:1；
+启用/关闭摘录的完整 Canvas JSON 完全一致。结果见 `analysis-quotation-test-results.md`，
+实际正文预览见 `analysis-quotation-preview.md`（仅省略薄 frontmatter，合成定位符不能打开真实来源）。
+原稀疏 focused 输入仍拒绝，不宣称排版限制已解决；真实引文和正常安装态人工评鉴待另行批准。
+没有真实分析生成、Vault 改写、提交、发布、安装或服务切换；原 147 项未重复跑，未运行 full suite。
 
 ## 2026-10-02 0.31.0 hotfix 已提交、发布并正常安装
 

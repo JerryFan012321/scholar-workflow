@@ -12,6 +12,11 @@ one place those principles are defined: **predictability** (same process every r
 modes — **no-op**, **negation**, **duplication**, **sediment**, **sprawl**. Read it
 before authoring; this doc does not restate it.
 
+Its general process advice is subordinate to `AGENT.md`: a skill owns actual operations
+(when a workflow exists) and a strict final-output contract, not the model's thinking.
+Exploratory tasks need no invented fixed process. Reproducible output does not require
+identical reasoning or an identical exploratory path.
+
 This doc covers only what is **specific to this repo**: the directory layout, the
 bilingual trigger convention, the two-tier reference system, and the eval loop. When a
 craft question arises (how long a description should be, when to split a skill, whether
@@ -42,11 +47,16 @@ only when it is specific to that one skill. (See AGENT.md 插件结构 / Skill A
    and disambiguation ("Not X"), not a restatement of the steps.
 2. **Result contract** — make the deliverables, owner/identity, required fields or links,
    completion/failure states, and observable acceptance criteria precise enough to reproduce.
+   Treat the selected format as mandatory, not an optional example: preserve its headings,
+   hierarchy, node/edge topology and evidence entries. An unsupported or nonconforming
+   result is incomplete/failed, even if a tool produced it or old tests passed.
    A reviewed sample can establish appearance or structure, but its paper-specific facts,
    counts, and source verdicts are not generic requirements.
-3. **External dependencies and gates** — name exact tools, required permissions, and fragile
-   ordering only where deviation would cause an actual error or unsafe write. Do not turn the
-   model's research, analysis, ranking, or writing judgment into a mandatory step sequence.
+3. **Operational flow, when present** — describe an established business/tool workflow's
+   inputs, prerequisites, actions, branches, handoffs and completion conditions. Keep exact
+   ordering where operations actually depend on it, along with tool/permission gates.
+   An exploratory task has no invented fixed sequence; the model's research, analysis,
+   ranking and writing judgments remain unconstrained internal work.
    Additive ingest writes follow the user's ingest instruction; destructive or irreversible
    actions need their own confirmation. See AGENT.md Ask First and GOALS G4/G9/INV9/NG5.
 4. **Constraints** — the runtime safety rules this skill must obey.

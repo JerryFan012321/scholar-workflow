@@ -18,6 +18,7 @@ from scholar_workflow.analysis.reference_rendering import (
     reference_canvas_inline_evidence,
     reference_inline_evidence,
     reference_point_canvas_text,
+    reference_source_quote_lines,
 )
 from scholar_workflow.analysis.rendering import (
     AnalysisBundle,
@@ -209,6 +210,13 @@ def validate_reference_tree_bundle(
                     "Claim title, explanation, evidence, source links, or anchor differs from the IR.",
                 )
             )
+        if document.profile.markdown_quotes:
+            quote_lines = reference_source_quote_lines(claim.evidence, language, reader=document.reader)
+            if quote_lines and claim_suffix + "\n" + "\n".join(quote_lines) + "\n" not in block:
+                findings.append(_finding(
+                    "markdown-source-quote-mismatch", claim_path,
+                    "Verbatim excerpts and their source links must immediately follow their own claim.",
+                ))
         for point in claim.points:
             point_line = (
                 f"{point.text} {reference_inline_evidence(point.evidence, language, reader=document.reader)} "
@@ -224,6 +232,15 @@ def validate_reference_tree_bundle(
                         "A point must retain its own evidence, source links, and unique anchor.",
                     )
                 )
+            if document.profile.markdown_quotes:
+                quote_lines = reference_source_quote_lines(
+                    point.evidence, language, reader=document.reader, indent="  "
+                )
+                if quote_lines and point_line + "\n" + "\n".join(quote_lines) + "\n" not in block:
+                    findings.append(_finding(
+                        "markdown-source-quote-mismatch", f"{claim_path}/points/{point.point_id}",
+                        "Verbatim excerpts and their source links must immediately follow their own point.",
+                    ))
 
     if (
         not isinstance(canvas, dict)

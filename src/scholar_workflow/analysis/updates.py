@@ -155,7 +155,10 @@ def create_baseline(
 
             language = document.language or "zh"
             markdown = "\n".join(
-                reference_claim_markdown_lines(claim, language, reader=document.reader)
+                reference_claim_markdown_lines(
+                    claim, language, reader=document.reader,
+                    markdown_quotes=document.profile.markdown_quotes,
+                )
             )
             canvas_text = reference_claim_canvas_text(
                 claim, note_stem, language, reader=document.reader
@@ -212,6 +215,8 @@ def _merged_document(
         raise AnalysisUpdateError(
             "reference-tree reader changes require an explicit migration"
         )
+    if baseline.profile.markdown_quotes and not update.profile.markdown_quotes:
+        raise AnalysisUpdateError("analysis updates cannot remove the enabled Markdown quotation format")
     if update.profile.kind is ProfileKind.WHOLE:
         if baseline.schema_version == 4 and update.reader is None:
             return update.model_copy(update={"reader": baseline.reader})
@@ -219,6 +224,10 @@ def _merged_document(
 
     replaced_roles = set(update.profile.roles)
     if baseline.schema_version == 4:
+        if baseline.profile.markdown_quotes != update.profile.markdown_quotes:
+            raise AnalysisUpdateError(
+                "Markdown quotation format changes require an explicit whole analysis update"
+            )
         for role in replaced_roles:
             existing_paths = {
                 claim.outline_path for claim in baseline.claims if claim.role is role
@@ -241,12 +250,16 @@ def _merged_document(
             if claim.role is role
         ]
         profile = (
-            AnalysisProfile(kind=ProfileKind.WHOLE, framework=baseline.profile.framework)
+            AnalysisProfile(
+                kind=ProfileKind.WHOLE, framework=baseline.profile.framework,
+                markdown_quotes=baseline.profile.markdown_quotes,
+            )
             if baseline.profile.kind is ProfileKind.WHOLE
             else AnalysisProfile(
                 kind=ProfileKind.FOCUSED,
                 roles=[role for role in TREE_ROLES if any(c.role is role for c in claims)],
                 framework=baseline.profile.framework,
+                markdown_quotes=baseline.profile.markdown_quotes,
             )
         )
         return AnalysisDocument(

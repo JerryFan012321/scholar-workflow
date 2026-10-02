@@ -9,12 +9,18 @@
 
 ## 输出模型
 
-新 IR v4 分析在两份产物中采用用户选定的原图框架：
+当前要求的输出格式在 Markdown 和 Canvas 中采用用户新提供的五分支框架：
 
 1. **Abstract**——Task、既有方法的技术挑战、关键洞见/动机、技术贡献、Experiment。
-2. **Introduction**——任务与应用、既有方法挑战，以及 Our pipeline 下的关键创新/洞见和技术贡献。
-3. **Method**——Overview 与论文实际采用的 pipeline modules。
-4. **Limitation**——局限及原因。
+2. **Introduction**——任务与应用、既有方法挑战、Our pipeline 下的关键创新/洞见和技术贡献，以及 demos/applications。
+3. **Method**——Overview 中的任务/输入/输出、写在一起的分步方法，以及实际 pipeline modules 及其子项。
+4. **Experiments**——Comparison experiments 与 Ablation studies；消融分别说明核心贡献/重要组件和各模块设计选择的影响。
+5. **Limitation**——局限及原因。
+
+Canvas 按原图把每项 challenge/contribution/module 的具名子项展开为独立可编辑节点，
+不以一张合并 details 卡替代。完整新输出规范见 `references/analysis-output-template.md`。
+当前 v4 生成器仍为四分支和合并详情卡片，运行适配尚未完成。以下 v4 说明属于历史兼容行为，
+不能证明已实现新格式；工具不支持时须明确报告，不能把旧输出冒称为新格式通过。
 
 这些是输出的可见层级，不规定阅读或推理顺序。挑战、贡献和模块可按论文实际数量重复；原图中
 尚未填入内容的框架位置只保留结构，不据此编造论文事实。分析声明 `en` 或 `zh`，图中的框架
@@ -35,11 +41,16 @@
 PDF 可跳到物理页或已有批注，已登记的
 Vault Markdown 可跳到具体块。原文链接与 Canvas→正文反链同处；页级跳转不冒充逐句选中，来源的
 身份、版本和归属核验也不能由结构 conformance 代替。
+新分析正文在对应论点或逐点论据下方附**原文摘录**，并链接到同一原文页或段落。
+摘录保留原语言和原措辞；中文分析可以引用英文原句，意译或译文不冒充逐字引用。
+无法核实原措辞时明确报告来源缺口。Canvas 不重复摘录，保留已认可的外观与内容层级。
+旧分析不会自动改变；转换须显式请求整篇格式更新，不能只手改受管 Markdown。
+完整规范见 `references/analysis-format.md`。
 v4 可通过 `reader` 显式选择已核验 Vault 的 ZotFlow Library Reader；Markdown 和 Canvas 均可在
 Obsidian 内打开本机 Zotero 附件并定位物理页。不指定时仍生成 Zotero 原生入口。来源身份始终是
 结构化 span，页级链接不宣称逐句选中或批注同步；使用该选项前仍须核验插件、本机模式与附件。
 
-Canvas 是简洁、可编辑的树形视图，不是第二份知识正文：单根、四大分支、浅灰框架标签和细线
+历史 v4 Canvas 是简洁、可编辑的树形视图，不是第二份知识正文：单根、四大分支、浅灰框架标签和细线
 连接，不使用四张卡片。v4 最多有 40 个生成的 claim/details Canvas 语义节点，包含框架标签和合并详情节点在内的受管 Canvas 节点最多
 96 个；用户自建的文本、文件、链接和分组节点不占该预算。生成器提供方角连线提示，已安装的
 Advanced Canvas 可呈现相应效果；不安装仍可编辑 `.canvas`，只是连线外观可能不同。手动修改

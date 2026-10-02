@@ -7,6 +7,7 @@ import math
 import re
 import unicodedata
 from dataclasses import dataclass, field
+from html import escape
 from typing import Any
 from urllib.parse import quote
 
@@ -227,17 +228,48 @@ def reference_points(claim: AnalysisClaim) -> list[AnalysisPoint]:
     )
 
 
+def reference_source_quote_lines(
+    evidence: Evidence,
+    language: str,
+    *,
+    reader: AnalysisReader | None = None,
+    indent: str = "",
+) -> list[str]:
+    """Render supplied verbatim excerpts as literal Markdown, never as Canvas text.
+
+    Source authenticity is checked separately; rendering does not verify a quote.
+    Escape source syntax so quotations cannot create links, HTML, or block identities.
+    """
+    label = "原文摘录" if language == "zh" else "Original excerpt"
+    lines: list[str] = []
+    for span in evidence.source_spans:
+        if span.quote is None:
+            continue
+        lines.extend([
+            "",
+            f"{indent}> **{label}** · {reference_source_link(span, language, reader=reader)}",
+            f"{indent}>",
+        ])
+        for line in span.quote.splitlines():
+            literal = re.sub(r"([\\`*_{}\[\]()#+.!|~^$-])", r"\\\1", escape(line, quote=False))
+            lines.append(f"{indent}> {literal}")
+    return lines
+
+
 def reference_claim_markdown_lines(
     claim: AnalysisClaim,
     language: str,
     *,
     heading_level: int = 4,
     reader: AnalysisReader | None = None,
+    markdown_quotes: bool = False,
 ) -> list[str]:
     lines = [
         f"{'#' * heading_level} {claim.title}",
         f"{claim.body} {reference_inline_evidence(claim.evidence, language, reader=reader)} ^claim-{claim.claim_id}",
     ]
+    if markdown_quotes:
+        lines.extend(reference_source_quote_lines(claim.evidence, language, reader=reader))
     for point in reference_points(claim):
         label = reference_point_label(point.point_id, language)
         lines.extend(
@@ -250,6 +282,10 @@ def reference_claim_markdown_lines(
                 ),
             ]
         )
+        if markdown_quotes:
+            lines.extend(reference_source_quote_lines(
+                point.evidence, language, reader=reader, indent="  "
+            ))
     return lines
 
 
@@ -353,7 +389,8 @@ def _render_markdown(document: AnalysisDocument) -> str:
                                 [
                                     "",
                                     *reference_claim_markdown_lines(
-                                        claim, language, heading_level=5, reader=document.reader
+                                        claim, language, heading_level=5, reader=document.reader,
+                                        markdown_quotes=document.profile.markdown_quotes,
                                     ),
                                 ]
                             )
@@ -364,7 +401,8 @@ def _render_markdown(document: AnalysisDocument) -> str:
                     ).startswith(group_path + "/"):
                         lines.extend([
                             "", *reference_claim_markdown_lines(
-                                claim, language, reader=document.reader
+                                claim, language, reader=document.reader,
+                                markdown_quotes=document.profile.markdown_quotes,
                             )
                         ])
     return "\n".join(lines).rstrip() + "\n"

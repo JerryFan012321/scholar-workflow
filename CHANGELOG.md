@@ -3,6 +3,56 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.31.1] - 2026-10-02
+
+Hotfix on `codex/hotfix-project-context`, independently authorized for publication and
+normal installation; main is not merged. Full approved unit/contract regression:
+1,355 passed, 11 existing dependency/multiprocessing warnings, 73.00 seconds.
+The latest five-branch output template is a required specification, not implemented
+renderer support. Installation and the isolated test-Vault report are recorded separately;
+human assessment and new-template implementation remain pending.
+
+### Changed
+- **Runtime skill/agent entrypoints: reuse inputs and one output owner.** Replace survey's
+  unconditional search/import chains with actual missing-input dependencies. Lineage and feed
+  agents reuse owning skills instead of imposing a fixed agent chain or a second stale paper-note
+  layout; lineage anchors stay bounded to the declared corpus. Knowledge updates retain paired
+  baseline/CAS protections instead of an append-only shortcut. Interactive audits now default to
+  readable scope/findings/coverage reports; explicit JSON-only requests remain supported.
+  Shared presentation routing points to the current five-branch analysis template. No paper
+  format, runtime code, renderer, real sample or data changed in this slice; independent synthetic
+  review inputs are prepared, testing/publication/installation remain pending.
+- **Skill authoring: real workflows and hard final formats.** Clarify the root principle
+  and authoring/iteration guidance: skills govern actual operational flows when present,
+  never internal reasoning or invented exploratory steps. End-product formats are strict
+  completion contracts; renderer limitations and old passing tests do not authorize
+  dropping or merging required structure. This is a policy/documentation change, not
+  runtime implementation, test execution, publication or installation.
+- **analyze-paper: required result-format revision (specification only).** The new generic
+  reference image defines five branches, independent Experiments, explicit challenge/contribution/
+  module subnodes, demos/applications, Overview task/input/output and grouped process steps.
+  `analysis-output-template.md` owns the current required output; the four-branch/grouped-details
+  v4 contract is explicitly historical compatibility. This changes the delivered format, not
+  reading/reasoning order or an instruction to reanalyze old papers. Schema/renderer/conformance
+  adaptation is pending; prior quotation tests and human acceptance do not prove the new format.
+  No runtime code, test execution, Vault edits, publication or installation in this revision.
+- **analyze-paper: Markdown-only verbatim excerpts.** New reference-tree analyses explicitly
+  select adjacent, source-linked original-language excerpts for supported claims and points.
+  PDF/Markdown source spans carry the text; conformance checks placement and IR agreement,
+  not source authenticity. Canvas content, links and layout remain unchanged. Old IR/baselines
+  retain their existing projection; a format switch requires an explicit whole-analysis update.
+  Initial approved synthetic run: 21 passed / 19 failed; all failures hit the existing Canvas
+  aspect-ratio gate before quotation checks completed. The 147 adjacent regressions passed.
+  After renewed approval, the revised 42-case synthetic run passed in 0.47 seconds.
+  Paired rendering has zero conformance findings, and complete Canvas JSON is identical
+  with and without quotations. The original sparse input remains rejected in both modes;
+  no geometry gate is relaxed and sparse focused-layout rejection is not fixed.
+  Real-source and normally installed-product human acceptance remain pending;
+  this release includes the v4 quotation implementation, not five-branch renderer support.
+- **analyze-paper: existing-sample human acceptance.** The user confirmed the installed 0.31.0
+  test Vault V-JEPA 2 sample's layout, editability and sampled reader/backlink interactions.
+  This does not validate the new quotation format, scientific attribution, project overview or migration.
+
 ## [0.31.0] - 2026-10-02
 
 Project-centered hotfix on `codex/hotfix-project-context`, authorized for publication and

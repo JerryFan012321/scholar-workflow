@@ -9,6 +9,9 @@ Read-only throughout: it reports drift with a severity tag and a suggested remed
 but never fixes or deletes anything. Remedies run in the corresponding Agent after
 user confirmation.
 
-Output is a structured JSON report, optionally with a Markdown summary.
+Interactive output is a readable Markdown report: scope and conclusion, findings with
+evidence and suggested remedies, then coverage gaps. An unavailable provider is not a
+clean result. Structured JSON remains available on request, including JSON-only machine
+calls; no report file is created unless requested.
 
 See [SKILL.md](./SKILL.md) for the full procedure and constraints.

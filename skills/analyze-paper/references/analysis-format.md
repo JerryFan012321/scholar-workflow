@@ -1,21 +1,27 @@
-# Paper Analysis v4 Output Contract
+# Paper Analysis v4 Compatibility Contract
 
-This contract governs the observable `analyze-paper` result: identity, hierarchy, evidence,
-cross-artifact links, and readable layout. It does not prescribe a reading order or the model's
-internal reasoning method. New analyses use IR v4 and the reference-image tree. IR v1–v3's
+The current required result framework is in `analysis-output-template.md`: five first-level
+branches and individually expanded reference-image subslots. This document records the existing
+IR v4 interface, its older four-branch/grouped-details projection, and evidence/link/update
+boundaries retained across the format change. Its old topology does not override the current
+required template or constitute new-format support. Runtime adaptation is not yet complete.
+
+Within that compatibility scope, this contract governs identity, hierarchy, evidence,
+cross-artifact links and layout, not a reading order or internal reasoning method. IR v1–v3's
 Task / Input / Workflow / Output / Boundary format remains readable as a legacy projection;
 an ordinary update must not silently convert a legacy pair to v4.
 
-## Accepted presentation template and its boundary
+## Historical v4 presentation template and its boundary
 
-The approved v4 reference-tree presentation fixes the reusable appearance and interaction
-contract, not any example paper's claims, source verdicts, or migration status. Keep these
+The previously reviewed v4 reference-tree presentation records its historical appearance and
+interaction contract, not any example paper's claims, source verdicts or migration status. It
+does not establish acceptance of the later five-branch template. Keep these compatibility
 properties together:
 
 | Output | Accepted template behavior |
 |---|---|
 | Paper folder | One Field-local folder owns the companion note, analysis Markdown, editable Canvas, and sidecar; Zotero retains the PDF. |
-| Markdown | Independently readable prose under the four reference-image branches, with no `sw-analysis-claim` comments or detached Evidence section. Each claim and point carries its own evidence and source link. |
+| Markdown | Independently readable prose under the four reference-image branches, with no `sw-analysis-claim` comments or detached Evidence section. Each supported claim/point carries its evidence, source link, and an adjacent verbatim short excerpt. |
 | Canvas | The same branch/content hierarchy as Markdown, editable text nodes, straight square-routed arrowless connections, compact two-dimensional layout, and roughly one extra line of clickable space per text box. No long single-axis pipeline. |
 | Navigation | Each claim/point can open its verified original-source location and link back from Canvas to the exact Markdown block. The chosen reader route is a projection of stable source identity, not the identity itself. |
 
@@ -39,7 +45,8 @@ literature trees, and the source PDF have separate owners.
 Every new IR v4 document declares `framework: reference_tree` and `language: en` or `zh`.
 The selected language applies to framework labels, claim/point prose, evidence descriptions,
 source-link labels, and Canvas backlink aliases. An English tree is English throughout; a
-Chinese tree is Chinese throughout. Structural conformance checks the generated language labels,
+Chinese tree is Chinese throughout. Verbatim source excerpts retain the source's original language;
+their captions follow the analysis language. Structural conformance checks the generated language labels,
 while factual and prose-language quality still need semantic review.
 
 - `whole` renders all four sections: **Abstract, Introduction, Method, Limitation**. A section
@@ -166,6 +173,34 @@ to the current source. Before canonical use, resolve the Zotero attachment throu
 compare its current bytes with the recorded hash, verify annotation membership, and resolve a
 Vault block against its registered document. Stale locators require re-verification.
 
+### Markdown-only verbatim excerpts
+
+New analyses explicitly set `profile.markdown_quotes: true`. Each `author_stated` or
+`analysis_inference` claim and point supplies at least one short, contiguous, verbatim excerpt in
+its supporting `source_span.quote` (1–400 characters). PDF and registered Markdown spans both
+support this field. The excerpt follows that statement in the human Markdown, with the same
+span's page/annotation or block link; it is not a separate Evidence section or a bibliography.
+For an inference, quote the source observation it rests on, not an invented author conclusion.
+
+Keep the original spelling, punctuation, qualifications, and language. A translation or
+paraphrase remains analysis prose, not the exact quote. Use the shortest sufficient passage within
+applicable quotation limits; do not silently splice passages or insert an ellipsis into `quote`.
+Multiple excerpts use separate spans and source links. If the accessible source channel cannot
+verify the wording or its precise location, report an explicit source gap rather than guessing a
+quotation or recording a supported success. Availability-only statements need no invented quote.
+
+The renderer escapes Markdown/HTML syntax to show source text literally. Conformance checks
+presence, attribution, link, and agreement with the supplied IR; it cannot prove verbatim fidelity
+to the source, which still requires source review. Canvas receives **no quote text or quote nodes**;
+its concise claims, inline evidence, source links, backlinks, geometry, and node budgets are unchanged.
+
+Previously saved IRs omit this profile field (or set it to `false`) and keep their existing output,
+baseline and update behavior, even if they contain an unused `quote`. This is compatibility, not the
+new-analysis default. A focused update retains its baseline's setting; adopting the new format on
+an existing pair needs an explicitly requested whole-analysis format update with current source
+verification and the usual paired CAS/conflict protections. Never bulk refresh older papers or
+hand-edit just the Markdown to add quotations.
+
 ### Obsidian-internal ZotFlow reader link
 
 The source span stays `library_id + attachment_key + content_hash + page_index` regardless of the
@@ -217,6 +252,10 @@ sw_analysis_language: en
 #### <claim title>
 <complete explanation> 〔Author-stated · §1〕 [Source · PDF page 4](zotero://open-pdf/library/items/<attachment-key>?page=4) ^claim-<claim-id>
 
+> **Original excerpt** · [Source · PDF page 4](zotero://open-pdf/library/items/<attachment-key>?page=4)
+>
+> <short verbatim excerpt, in the original source language>
+
 ### Technical challenge for previous methods
 
 ...
@@ -240,7 +279,9 @@ hyphens. No `sw-analysis-claim` HTML comments or opaque Scholar-specific marker 
 human Markdown or Canvas node text. Native Obsidian `^claim-…` / `^point-…` block IDs still appear
 in Markdown source to support exact backlinks; the IR and sidecar own claim identity and Canvas
 node mapping. V1–v3 legacy files retain their historical
-marker contract and are not silently rewritten.
+marker contract and are not silently rewritten. A point's original excerpt is a blockquote
+indented under that list item, not another point or a Canvas node. In Chinese output the caption
+is `原文摘录`; an English original excerpt remains English.
 
 The renderer emits standard JSON Canvas 1.0 with `{"nodes": [], "edges": []}` at the top level.
 Opening it in Advanced Canvas may add its narrow `metadata` envelope (`version` and
@@ -285,7 +326,8 @@ The file must already exist inside the Vault without traversing a symlink. A mov
 ## Conformance and update boundary
 
 Hard conformance checks version/framework/profile coverage, valid outline paths and point slots,
-stable identities, inline evidence and source links, Markdown claim/point anchors, Canvas
+stable identities, inline evidence and source links, Markdown claim/point anchors and opted-in
+verbatim-excerpt placement/content, Canvas
 framework labels/claim/grouped-point content/backlinks, graph endpoints, non-overlapping generated
 geometry, square routing, and both node budgets. It does not grade scientific correctness or
 prose language automatically. Each batch item is staged and checked independently; failure may

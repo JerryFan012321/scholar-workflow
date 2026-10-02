@@ -88,7 +88,12 @@
     },
     {
       "id": "structured-paper-analysis-note",
-      "description": "INV24/INV40/INV54 新论文分析必须显式使用 IR v4/reference_tree：每篇维护同源、人类可独立阅读的 Markdown 与可编辑 JSON Canvas；whole 在两端覆盖参考图 Abstract/Introduction/Method/Limitation 全部结构槽位，空槽不造事实。Canvas 不引入 Markdown 没有的主张，不沿单轴摊平；最多 40 个受管 claim/detail 节点、96 个受管总节点。旧五角色仅供 v1–v3 兼容读取，不静默转版；真实论文语义验收前保持 pending",
+      "description": "INV24/INV40/INV54 当前新输出遵守 analysis-output-template.md：Markdown/可编辑 Canvas 共享 Abstract/Introduction/Method/Experiments/Limitation 五分支及完整具名子槽位，challenge/contribution/module 逐项展开而非合并详情卡，Overview 保留任务/输入/输出及合写步骤，Experiments 保留对比和两类消融影响。空槽不造事实，证据/原文入口/正文反链在同点；直角无箭头且紧凑可读。现有 v4 四分支与 v1–v3 仅兼容读取，工具尚不支持新结构时报告未实现，不能以旧测试通过冒称新格式成功；适配与人工评鉴前保持 pending",
+      "status": "pending"
+    },
+    {
+      "id": "structured-paper-analysis-markdown-quotes",
+      "description": "INV54：每条作者陈述/分析推断及逐点论据在正文旁有源语言逐字短摘录和同一来源位置链接。译文不冒充原话，缺口不编造，结构校验只证明与 IR 一致。增加摘录本身不得改变所选格式的 Canvas 或加入摘录节点；用户另行修订框架不因此受禁止。v4 的 profile.markdown_quotes 合成定向 42 项通过，不证明新五分支格式或真实引文已验收；真实单篇核对与人工阅读仍 pending，旧 IR/基线不静默改写。",
       "status": "pending"
     },
     {
@@ -103,7 +108,7 @@
     },
     {
       "id": "structured-paper-analysis-source-gap",
-      "description": "INV24/INV40/INV54 行内证据：每个 claim/point 在 Markdown 与 Canvas 同一论点旁保留证据或 availability；v4 的 point 有稳定 point_id、独立原文入口和准确 Markdown 反链，同一 claim 的多个 point 逐行并入一个可编辑 detail 节点。不存在独立 Evidence 分区/表/节点。结果区分作者陈述、分析推断、论文未报告、当前正文通道无法核实和不适用；Zotero 索引遗漏不可写成论文未报告",
+      "description": "INV24/INV40/INV54 行内证据：每个 claim/point 在 Markdown 与 Canvas 同一论点旁保留证据或 availability、独立原文入口与准确 Markdown 反链。当前模板把具名子项展开为独立可编辑节点；旧 v4 grouped details 仅为历史兼容。不存在独立 Evidence 分区/表/节点。结果区分作者陈述、分析推断、论文未报告、当前正文通道无法核实和不适用；Zotero 索引遗漏不可写成论文未报告",
       "status": "pending"
     },
     {
@@ -132,8 +137,23 @@
       "status": "pending"
     },
     {
+      "id": "skill-input-reuse-and-conditional-dependencies",
+      "description": "INV36：只用一个合成语料请求核验 survey/lineage。已给语料直接交给 build-literature-tree，已入库选定论文直接交给 analyze-paper；只有缺少实际输入时才用 find/ingest，且 route 不扩大用户范围或授予新入库/Field 初始化权限。不得以探索性任务为由要求统一搜索、入库、精读顺序；真实身份核验、来源读取、预览与 CAS 依赖仍保留。独立测试待批准，保持 pending",
+      "status": "pending"
+    },
+    {
+      "id": "agent-reuses-owning-skill-output-contract",
+      "description": "INV36/INV54/INV58：lineage/feed/knowledge/audit agent 复用所属 skill 的格式与写入边界，不维护第二套旧目录、无界首创主张、固定 agent 链或 append 覆盖语义。文献树严格拓扑/账本/反链仍保留；论文当前五分支/独立子节点、正文摘录、Canvas 源链接与正文反链仍是硬要求，旧生成器不冒称满足新格式。只读文案审查不等于运行验收，保持 pending",
+      "status": "pending"
+    },
+    {
+      "id": "audit-human-report-and-coverage",
+      "description": "INV58：合成单对象审计的交互输出默认按所选语言呈现范围与结论、逐项问题（对象/严重程度/证据/建议）及覆盖缺口；不可用 provider 不算零问题。显式 JSON-only 请求保持机器输出，JSON 与人类报告含同一 scope/issues/gaps；不新建文件、不查询或修复真实数据。实际报告与人工清晰度评鉴未执行，保持 pending",
+      "status": "pending"
+    },
+    {
       "id": "runtime-skill-result-contract-only",
-      "description": "运行期 skill 只规定可观察输出与外部接口(路由、工具调用、权威来源、权限/安全、存储位置、字段/schema 和人类可读呈现),不要求模型采用特定内部分析框架、分类方式、思考步骤或推理顺序;只有真实工具依赖、安全/权限边界和脆弱外部操作顺序可以规定执行先后。结构化格式被表述为自由判断之后的结果投影",
+      "description": "运行期 skill 不规定内部思考、分析框架、分类方法或推理顺序。任务有真实操作流程时，明确输入、依赖、动作、分支、交接、权限和完成条件；探索性问题没有固定流程时不编造步骤。末端呈现的结构、层级、字段/schema、节点/连线、语言、证据、链接及存储位置是具体可复现的硬规则，不可因模型偏好、生成器限制或旧测试通过而简化；不合格式或能力未实现须明确未完成/不通过，不以近似产物冒充成功，也不授权编造事实或扩大范围",
       "status": "pending"
     },
     {

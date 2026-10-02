@@ -11,14 +11,24 @@ not moved by an ordinary analysis update.
 
 ## Output model
 
-New IR v4 analyses use the reference image's four-section tree in both artifacts:
+The current required format is the reference image's five-section tree in both artifacts:
 
 1. **Abstract** — Task; technical challenge for previous methods; key insight/motivation;
    technical contributions; Experiment.
 2. **Introduction** — Task and application; previous-method challenges; Our pipeline with
-   key innovation/insight and technical contributions.
-3. **Method** — Overview and the paper's actual pipeline modules.
-4. **Limitation** — limitations with their reasons.
+   key innovation/insight and technical contributions; Demos/applications.
+3. **Method** — Overview with task/input/output and steps kept together, followed by the
+   paper's actual pipeline modules and their named subslots.
+4. **Experiments** — Comparison experiments and Ablation studies; the latter distinguishes
+   effects of core contributions/components from each module's design choices.
+5. **Limitation** — limitations with their reasons.
+
+Canvas expands the reference image's challenge/contribution/module subslots as separate
+editable nodes. The full current result contract is `references/analysis-output-template.md`.
+The existing v4 renderer still implements four sections and grouped detail cards; its runtime
+adaptation is pending. The paragraphs below describe that older version's compatibility
+behavior, not proof that it implements the new format. An unsupported new-format request
+must be reported as such rather than silently rendered as v4 success.
 
 These are visible output branches, not a prescribed reading or reasoning order. Repeated
 challenges, contributions, and modules use stable outline paths; an unfilled template branch
@@ -45,12 +55,18 @@ Zotero PDF spans link to a physical page or an existing annotation; registered V
 spans link to a block. Both links appear inline in Markdown and Canvas alongside the Canvas-to-note
 backlink. Page links are not exact text selections, and source identity/revision must be verified
 separately from structural conformance.
+New analyses also include short verbatim source excerpts immediately below the supported
+statement in Markdown, each with its own page/block link. Original wording and language are
+retained; paraphrases and translations are not presented as exact quotes. Unverifiable wording
+is a source gap. Canvas does not repeat the quotations and keeps its accepted appearance.
+Older analyses remain unchanged; converting their format requires an explicit whole-analysis
+update, not a silent refresh. The detailed contract is `references/analysis-format.md`.
 The v4 `reader` projection can select an explicitly verified ZotFlow Library Reader in a named
 Vault, opening a local Zotero attachment at its physical page inside Obsidian in both artifacts.
 The default remains Zotero-native. The structured source span remains authoritative; a page
 link never claims exact text selection or annotation synchronization.
 
-The Canvas is a concise view, not a second knowledge database. It uses one root, four branches,
+The historical v4 Canvas is a concise view, not a second knowledge database. It uses one root, four branches,
 gray framework labels, and fine parent-child lines instead of card panels. The v4 budget is at
 most 40 generated claim/detail Canvas nodes and 96 total generated Canvas nodes including framework labels. User
 text/file/link/group nodes do not consume that budget or enter the generated baseline. The

@@ -1,6 +1,6 @@
 # 科研知识系统 v2 — 改造计划
 
-> 状态：Accepted 0.4，2026-10-01。项目中心重构以 [`project-centered-refactor.md`](project-centered-refactor.md)
+> 状态：Accepted 0.5，2026-10-02。项目中心重构以 [`project-centered-refactor.md`](project-centered-refactor.md)
 > 为当前职责规格；知识正文、Source/Field、PdfRef、ZotFlow/AnnotationIR 与已验收的论文模板保留。
 > Hub 前端和内置 Codex 控制面产品方向退役，旧 HTTP/UI 细节仅供兼容追溯，不是知识管理的前置条件。
 > 真实 Field 写入仍须先展示预览并按
@@ -9,6 +9,13 @@
 > 本文与 `project-system-v2.md` 分别持有可复用知识正文和项目档案；Project 另持有薄资料引用清单，
 > 通过明确身份关联知识而不托管正文。正文复制仍创建独立副本，无自动同步、跨域覆盖或级联删除。
 > `hub-control-plane-v2.md` / `hub-control-plane-v3.md` 保留为历史兼容规格。
+
+> 2026-10-02 输出格式修订：阅读、分析论文后的新 Markdown/Canvas 采用最新通用参考图，
+> 详细规范唯一持于 `../skills/analyze-paper/references/analysis-output-template.md`。
+> 必须有独立 Experiments 分支及原图展开子项，不以 grouped details 卡替代；全文引用只进正文。
+> 本文 §7 和旧 v4 验收/工作项中的四分支、合并卡及节点计数记录仍用于历史接口兼容，
+> 不覆盖新模板。运行 schema/renderer/conformance 的新格式适配未完成，既有测试/人工验收
+> 只证明其当时格式；本轮不要求重读论文、批量更新或重新验收整库。
 
 ## 1. 触发背景与实物证据
 
@@ -255,7 +262,7 @@ sidecar 缺失、损坏、版本不兼容或与 Markdown/Canvas revision 不一�
 一次 focused/whole update 实际触及的 Markdown、Canvas 与 sidecar 构成一个逻辑事务；中断后只能依据
 可信 journal 完成或回滚整组变更，否则保持零写入并输出 patch，不能留下任一文件领先的半提交状态。
 
-## 7. 论文分析：人类正文与参考图解析树
+## 7. 论文分析：v4 历史接口（当前输出模板以页首引用为准）
 
 ### 7.1 Markdown 是详细真源
 
