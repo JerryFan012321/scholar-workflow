@@ -3,17 +3,22 @@
 > 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
 > `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-10-02。
 
-## 2026-10-02 0.31.1 hotfix 发布/安装与插件态测试准备
+## 2026-10-02 0.31.1 hotfix 已发布安装，单对象兼容通过，人工评鉴待确认
 
 用户已明确授权 hotfix 提交、发布、正常安装，并要求测试严格基于已安装插件、限定 test Vault。
-本轮只读确认：分支 codex/hotfix-project-context，候选 0.31.1；pipx 与缓存 manifest 登记仍为
-0.31.0。当前代码仍只有四分支，新五分支输出尚未实现，不能用旧 pair 通过冒称新格式通过。
+分支 codex/hotfix-project-context，源码 daea99e 已推送；runtime-only release adfb0f2 已推送。
+Codex 正常 marketplace 更新安装和 pipx 固定 release SHA 重装均完成，实际安装为 0.31.1。
+当前代码仍只有四分支，新五分支输出尚未实现，不能用旧 pair 通过冒称新格式通过。
 发布前完整 unit/contract 与安装后单对象方案见 `hotfix-0.31.1-install-test-plan.md`，
 用户已批准这份方案并要求 V-JEPA 2 使用独立新文件夹。发布前完整回归已完成：
 1355 passed / 11 warnings，73.00 秒；diff 空白和指定 runtime 私人路径/明显密钥检查无发现。
-实际结果见 `hotfix-0.31.1-results.md`。接下来提交/发布/安装与安装态验收分别记录，
-不覆盖旧样张、不合并 main。新五分支未实现的限制随发布保留。
-pipx list 在受限环境因日志目录权限失败，已改为只读检查 metadata，未改安装环境。
+实际结果见 `hotfix-0.31.1-results.md`。安装包在仓库外执行单对象只读校验：旧 v4 无 findings，
+sidecar 与正文/受管图/IR 一致，四输入文件 hash 不变。不覆盖旧样张、不合并 main。
+test Vault 新建 `Scholar Workflow 实验/V-JEPA 2/0.31.1-hotfix-验收/`，仅保存验收报告和检查 JSON；
+Obsidian 显式 test Vault 打开报告成功。接下来仅待用户评鉴报告可读性；新五分支另行实现，
+不重做整库或伪造新格式样张。此前行为评鉴 case 没有因这次单对象校验自动放行。
+旧 pipx uv 环境拒绝覆盖，正常卸载/重装并用 SSH 解决 HTTPS 断连；安装固定为 release SHA。
+当前会话宿主 skill catalog 仍是旧值，但本轮直接读取新缓存 SKILL 并使用新安装包运行。
 
 ## 2026-10-02 Skill 运行入口纠偏（文案已改，未测试／未发布）
 

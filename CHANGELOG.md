@@ -9,8 +9,10 @@ Hotfix on `codex/hotfix-project-context`, independently authorized for publicati
 normal installation; main is not merged. Full approved unit/contract regression:
 1,355 passed, 11 existing dependency/multiprocessing warnings, 73.00 seconds.
 The latest five-branch output template is a required specification, not implemented
-renderer support. Installation and the isolated test-Vault report are recorded separately;
-human assessment and new-template implementation remain pending.
+renderer support. Normal Codex/pipx installation and the isolated installed-package v4
+compatibility check completed; the report is saved separately in the test Vault.
+Human assessment and new-template implementation remain pending. This post-install record
+does not change the already published runtime commit.
 
 ### Changed
 - **Runtime skill/agent entrypoints: reuse inputs and one output owner.** Replace survey's
