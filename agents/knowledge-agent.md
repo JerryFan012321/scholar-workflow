@@ -19,6 +19,8 @@ source references to the caller; the project owns its material inventory, not a 
 ## Output
 - Updated Obsidian paper index table (inside the managed block)
 - Paired human-readable Markdown analysis and editable JSON Canvas tree when requested
+  — load `skills/analyze-paper/SKILL.md` and its `references/analysis-output-template.md`
+  for the current hard format; an old renderer cannot silently substitute its old topology
 - Notion managed-field update status
 - Stable source/reader links usable in the selected native editor, with explicit availability
 
@@ -30,7 +32,8 @@ source references to the caller; the project owns its material inventory, not a 
 
 ## Forbidden
 - Overwriting human-authored content: machine index/projection edits stay inside the managed
-  block (INV4); analysis/annotation notes append to the human area without clobbering it
+  block (INV4); analysis updates use the owning skill's paired baseline/CAS conflict boundary,
+  while annotation export never overwrites an analysis or human-authored note
 - Uploading any file to Notion
 - Overwriting Notion non-machine-managed fields
 - Treating the Obsidian paper table as source of truth (it is a rebuildable derived index)

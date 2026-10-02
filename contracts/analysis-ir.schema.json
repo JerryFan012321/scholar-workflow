@@ -56,6 +56,7 @@
       "properties": {
         "kind": {"enum": ["whole", "focused"]},
         "framework": {"enum": ["legacy", "reference_tree"]},
+        "markdown_quotes": {"type": "boolean", "default": false},
         "roles": {
           "type": "array",
           "uniqueItems": true,
@@ -236,6 +237,23 @@
         "properties": {"source_spans": {"type": "array", "minItems": 1}}
       }
     },
+    "markdown_quoted_evidence": {
+      "allOf": [
+        {"properties": {"source_spans": {"items": {"properties": {
+          "quote": {"type": ["string", "null"], "minLength": 1, "pattern": "\\S"}
+        }}}}},
+        {
+          "if": {"properties": {"kind": {"enum": ["author_stated", "analysis_inference"]}}},
+          "then": {
+            "required": ["source_spans"],
+            "properties": {"source_spans": {"contains": {
+              "required": ["quote"],
+              "properties": {"quote": {"type": "string", "minLength": 1, "pattern": "\\S"}}
+            }}}
+          }
+        }
+      ]
+    },
     "zotero_pdf_span": {
       "type": "object",
       "additionalProperties": false,
@@ -262,7 +280,8 @@
         "source_id": {"type": "string", "format": "uuid"},
         "artifact_id": {"type": "string", "minLength": 1, "maxLength": 240, "pattern": "^[^\\s]+$"},
         "vault_path": {"type": "string", "minLength": 4, "maxLength": 512, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.?/)(?!.*//)[^\\\\#|\\[\\]\\r\\n]+\\.md$"},
-        "block_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,127}$"}
+        "block_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,127}$"},
+        "quote": {"type": ["string", "null"], "minLength": 1, "maxLength": 400}
       }
     }
   },
@@ -281,6 +300,7 @@
         "reader": {"type": "null"},
         "profile": {"properties": {
           "framework": {"const": "legacy"},
+          "markdown_quotes": {"const": false},
           "roles": {"items": {"enum": ["task", "input", "workflow", "output", "boundary"]}}
         }},
         "claims": {"items": {"properties": {
@@ -329,6 +349,18 @@
         "evidence": {"$ref": "#/$defs/v3_traceable_evidence"},
         "points": {"items": {"properties": {
           "evidence": {"$ref": "#/$defs/v3_traceable_evidence"}
+        }}}
+      }}}}}
+    },
+    {
+      "if": {"properties": {"profile": {
+        "required": ["markdown_quotes"],
+        "properties": {"markdown_quotes": {"const": true}}
+      }}},
+      "then": {"properties": {"claims": {"items": {"properties": {
+        "evidence": {"$ref": "#/$defs/markdown_quoted_evidence"},
+        "points": {"items": {"properties": {
+          "evidence": {"$ref": "#/$defs/markdown_quoted_evidence"}
         }}}
       }}}}}
     }

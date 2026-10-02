@@ -5,9 +5,12 @@ description: Analyze one or a user-selected batch of already-ingested papers, wh
 
 # analyze-paper
 
-The result is a paired, independently readable Markdown analysis and editable Canvas
-under the accepted v4 presentation template in `references/analysis-format.md`. Reuse its
-structure and interaction contract, not the example paper's facts or page numbers.
+The result is a paired, independently readable Markdown analysis and editable Canvas.
+The current required output framework is `references/analysis-output-template.md`;
+`references/analysis-format.md` owns the existing v4 compatibility interface and shared
+evidence/update boundaries. Reuse the output structure, not an example paper's facts.
+The current four-branch v4 renderer does not yet satisfy the new five-branch template;
+report that limitation rather than presenting an older render as new-format success.
 
 ## Workflow contract
 
@@ -25,19 +28,22 @@ structure and interaction contract, not the example paper's facts or page number
    than treating `research_vault_root` as a required singleton. If the destination
    is ambiguous or the Field is not initialized, ask for a choice or run the
    Field preview; do not silently create a topic directory or migrate a Vault.
-   Then load `references/analysis-format.md`. New analyses must explicitly set
-   `schema_version: 4` and `framework: reference_tree`; omission is an error, not a
-   fallback to the historical tree. Declare `whole` or the exact `focused` section subset,
+   Then load `references/analysis-output-template.md` and the versioned interface in
+   `references/analysis-format.md`. Declare the supported version/framework explicitly;
+   the existing v4 interface is for compatibility, not proof of new-template support.
+   Declare `whole` or the exact `focused` section subset,
    select `en` or `zh` consistently, and place each new paper's companion note,
    `<paper>分析.md` / `<paper>解析树.canvas` pair, and sidecar together under
    `resources/papers/<persistently-mapped-paper-segment>/` in that Field. Existing
    flat pairs stay in place until a separately reviewed relocation.
 5. Project claims and separately attributable points through the versioned IR into both
-   artifacts. The Markdown remains independently readable; editable Canvas claim nodes and their
-   grouped detail nodes keep each point's inline evidence, original-source link, and backlink to
-   its exact Markdown block.
+   artifacts. The Markdown remains independently readable; the required Canvas expands the
+   reference image's named subslots into separate editable nodes, each keeping its inline
+   evidence, original-source link and exact Markdown-block backlink.
+   The Markdown-only verbatim-excerpt contract is in `references/analysis-format.md`;
+   Canvas keeps a concise projection without quotations.
    Keep machine claim markers out of v4 human Markdown and Canvas; use block anchors and the
-   sidecar for identity. Keep the accepted reference image's Abstract / Introduction / Method / Limitation hierarchy and its
+   sidecar for identity. Keep the current reference image's five-branch hierarchy and its
    defined subheadings; unfilled template slots remain unfilled rather than becoming invented
    paper claims. Preserve human prose, safe existing layout, custom nodes/edges, stable identities,
    and unrelated manifest rows. A focused v4 update supplies the complete selected section(s),
@@ -71,8 +77,9 @@ structure and interaction contract, not the example paper's facts or page number
 - Never silently discard human-authored content: Markdown revision drift returns a paired conflict.
   A focused v4 update preserves unselected sections and replaces only its explicitly selected
   complete sections; retained claims in those sections must be included in the submitted IR.
-- Evidence stays inline with each claim or point. Apply the v4 Canvas node budgets,
-  point-level attribution, and Method branch rules from `references/analysis-format.md`.
+- Evidence stays inline with each claim or point. Apply the required topology from
+  `references/analysis-output-template.md` and the selected version's validation boundaries;
+  retain v4 node accounting only for the v4 compatibility projection.
 - IR v1–v3's Task / Input / Workflow / Output / Boundary projection remains readable as legacy;
   ordinary updates do not silently convert it to the v4 reference tree.
 - Focused updates preserve valid human layout and custom nodes/edges; a generated-content
@@ -84,6 +91,7 @@ structure and interaction contract, not the example paper's facts or page number
 ## References
 
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
+- `references/analysis-output-template.md` — current required Markdown/Canvas framework.
 - `references/analysis-format.md`
 - `references/analysis-batch.md` — load only for multi-paper analysis.
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`

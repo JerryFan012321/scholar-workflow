@@ -14,7 +14,8 @@ Cross-system consistency checking and drift reporting.
 
 ## Output
 - Drift report: orphaned PDFs, dead Zotero keys, stale indexes, broken local links, duplicate Notion Resource IDs
-- Structured JSON report (optional Markdown summary)
+- Human-readable Markdown report by default, using `check-consistency`'s scope/conclusion,
+  findings and coverage-gap sections; JSON is optional or explicit machine-only output
 
 ## Skills
 - `check-consistency`

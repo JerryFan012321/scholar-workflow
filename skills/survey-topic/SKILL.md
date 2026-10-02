@@ -13,8 +13,8 @@ Thin router for broad research requests. It creates no persistent artifact.
 |---|---|
 | current papers | `recommend-papers` |
 | candidate list or known-paper lookup | `find-resource` |
-| landscape or technical/challenge map | `find-resource` → `build-literature-tree` |
-| close reading of selected papers | `ingest-resource` → `analyze-paper` |
+| landscape or technical/challenge map | `build-literature-tree`; use `find-resource` only when the requested corpus is missing |
+| close reading of selected papers | `analyze-paper` for already-ingested papers; use `ingest-resource` only when selected papers need an authorized import |
 | author/lab tracking | `recommend-papers` watchlist |
 
 ## Observable result and routing boundary
@@ -27,6 +27,8 @@ Thin router for broad research requests. It creates no persistent artifact.
 - If the route truly depends on unfamiliar topic context, a throwaway web reconnaissance
   may inform the choice; it remains read-only and produces no library or Vault content.
 - Sequence delegated skills only when one product is a required input to another.
+  Reuse supplied or already resolved inputs. A route to a deliverable is not permission
+  to discover a broader corpus, import papers, initialize a Field, or rerun an existing analysis.
 
 ## Constraints
 

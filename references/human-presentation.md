@@ -12,7 +12,7 @@ geometry, table columns, filenames, and edit behavior.
   implementation diagnostics. An empty result states why it is empty and what remains
   available.
 - Keep one artifact's human labels, structural headings, evidence labels, and status
-  wording in its selected language. Identifiers and exact source titles may retain
+  wording in its selected language. Identifiers, exact source titles, and verbatim source excerpts may retain
   their original spelling. Do not mix labels merely because machine fields are English.
 - Persistent knowledge prose must remain intelligible without opening a sidecar,
   manifest, Hub page, or Canvas. Machine identities, hashes, revision markers, and
@@ -37,16 +37,17 @@ geometry, table columns, filenames, and edit behavior.
 
 | Surface | Detailed contract |
 |---|---|
-| Paper analysis Markdown and Canvas | `skills/analyze-paper/references/analysis-format.md` |
+| Paper analysis Markdown and Canvas | `skills/analyze-paper/references/analysis-output-template.md` (current required format); `analysis-format.md` in the same directory (v4 compatibility and shared source/update protections) |
 | Literature tree and paper ledger | `skills/build-literature-tree/SKILL.md` and `contracts/literature-tree.schema.json` |
 | Annotation note | `skills/export-annotations/SKILL.md` |
 | Reading Report | `skills/recommend-papers/SKILL.md` |
+| Consistency audit report | `skills/check-consistency/SKILL.md` |
 | Obsidian and Notion projections | `skills/sync-projections/references/obsidian-index-format.md` and `notion-schema.md` |
 | Project material overview | `references/project-context.md` |
 | Legacy Hub view and direct actions | `references/hub-contract.md` |
 
 For a machine-only JSON response, the owning schema controls fields; its companion
 human summary, when exposed, follows this contract. A format-specific template may
-deliberately use no H1, a fixed table, or a four-branch Canvas without violating
+deliberately use no H1, a fixed table, or its own required Canvas hierarchy without violating
 cross-surface consistency. Conformance must check the applicable format and the
 shared visible-result rules separately; prose alone does not prove a renderer passes.

@@ -145,6 +145,9 @@ class VaultMarkdownSpan(BaseModel):
     artifact_id: str = Field(min_length=1, max_length=240, pattern=r"^[^\s]+$")
     vault_path: str = Field(min_length=4, max_length=512)
     block_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9-]{0,127}$")
+    quote: str | None = Field(
+        default=None, min_length=1, max_length=400, exclude_if=lambda value: value is None
+    )
 
     @field_validator("vault_path")
     @classmethod
@@ -192,9 +195,12 @@ class AnalysisProfile(BaseModel):
     kind: ProfileKind
     roles: list[AnalysisRole] = Field(default_factory=list)
     framework: Literal["legacy", "reference_tree"] = "legacy"
+    markdown_quotes: bool = Field(default=False, strict=True, exclude_if=lambda value: not value)
 
     @model_validator(mode="after")
     def validate_roles(self) -> AnalysisProfile:
+        if self.markdown_quotes and self.framework != "reference_tree":
+            raise ValueError("Markdown quotations require the reference_tree framework")
         if len(self.roles) != len(set(self.roles)):
             raise ValueError("profile roles must be unique")
         allowed_roles = TREE_ROLES if self.framework == "reference_tree" else ALL_ROLES
@@ -379,6 +385,17 @@ class AnalysisDocument(BaseModel):
                     raise ValueError("IR v4 evidence labels must be single-line")
                 if len(evidence.source_spans) > 3:
                     raise ValueError("IR v4 evidence has too many inline source spans")
+                if self.profile.markdown_quotes:
+                    quotes = [span.quote for span in evidence.source_spans if span.quote is not None]
+                    if any(not excerpt.strip() for excerpt in quotes):
+                        raise ValueError("Markdown source quotations cannot be blank")
+                    if evidence.kind in {
+                        EvidenceKind.AUTHOR_STATED,
+                        EvidenceKind.ANALYSIS_INFERENCE,
+                    } and not quotes:
+                        raise ValueError(
+                            "Markdown source quotations require an excerpt for each supported claim/point"
+                        )
             slots = reference_tree_point_slots(path)
             if slots is None:
                 raise ValueError(f"IR v4 outline_path is outside the reference tree: {path}")

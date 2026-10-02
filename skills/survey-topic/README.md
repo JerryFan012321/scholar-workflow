@@ -22,6 +22,10 @@ The chosen product belongs to `recommend-papers`, `find-resource`, `ingest-resou
 `build-literature-tree`, or `analyze-paper`. The router reports that product and its
 location rather than imposing a fixed research method.
 
+Existing inputs skip unnecessary prerequisites: a supplied corpus goes straight to the
+tree skill, and already-ingested selected papers go straight to analysis. Search or import
+is a conditional dependency, not a compulsory research sequence or a new authorization.
+
 ## What it does NOT do
 
 - It produces no persistent research artifact and writes no file — every product is made
