@@ -535,7 +535,7 @@ def _render_markdown(document: AnalysisDocument, tree: TemplateNode) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
-def _layout_tree(root: TemplateNode) -> None:
+def _layout_tree(root: TemplateNode, *, expanded: bool = False) -> None:
     """Keep all five sections on one trunk; do not mirror or make dashboards."""
     heights: dict[str, int] = {}
     layer_widths: dict[int, int] = {}
@@ -574,6 +574,25 @@ def _layout_tree(root: TemplateNode) -> None:
         layer_x[depth] = layer_x[depth - 1] + layer_widths[depth - 1] + 64
     place(root, 0, 0)
 
+    if expanded and len(layer_widths) > 1:
+        # Fit dense trees by distributing a bounded gutter across aligned layers.
+        # Keep text boxes, vertical bands and fixed endpoints unchanged; do not
+        # create oversized empty boxes or unbounded whitespace to pass geometry.
+        visible = []
+        pending = [root]
+        while pending:
+            node = pending.pop()
+            visible.append(node)
+            pending.extend(node.children)
+        width = max(node.x + node.width for node in visible) - min(node.x for node in visible)
+        height = max(node.y + node.height for node in visible) - min(node.y for node in visible)
+        if height > 2 * width:
+            intervals = len(layer_widths) - 1
+            gutter = min(336, 64 + math.ceil((math.ceil(height / 2) - width) / intervals))
+            for depth in range(1, len(layer_widths)):
+                layer_x[depth] = layer_x[depth - 1] + layer_widths[depth - 1] + gutter
+            place(root, 0, 0)
+
     # A sparse focused result can be one chain rather than a branching tree.
     # Stagger its boxes, not their contents or sizes, to avoid a long thin strip.
     chain = [root]
@@ -594,7 +613,7 @@ def _layout_tree(root: TemplateNode) -> None:
 def _render_canvas(
     document: AnalysisDocument, tree: TemplateNode, *, enforce_limits: bool
 ) -> dict[str, Any]:
-    _layout_tree(tree)
+    _layout_tree(tree, expanded=document.capacity == "expanded")
     nodes: list[dict[str, Any]] = []
     edges: list[dict[str, Any]] = []
 
@@ -637,14 +656,16 @@ def _render_canvas(
     if not enforce_limits:
         # Review candidates still require the independent conformance gate before saving.
         return {"nodes": nodes, "edges": edges}
-    if len(nodes) > 96:
-        raise ValueError(f"Complete-reference Canvas exceeds 96 actual managed nodes: {len(nodes)}")
+    if len(nodes) > document.managed_node_limit:
+        raise ValueError(
+            f"Complete-reference Canvas exceeds {document.managed_node_limit} actual managed nodes: {len(nodes)}"
+        )
     facts = sum(not claim.container for claim in document.claims) + sum(
         len(claim.points) for claim in document.claims
     )
-    if facts > 40:
+    if facts > document.fact_node_limit:
         raise ValueError(
-            f"Complete-reference Canvas exceeds 40 independently rendered fact nodes: {facts}"
+            f"Complete-reference Canvas exceeds {document.fact_node_limit} independently rendered fact nodes: {facts}"
         )
     if any(node["height"] > 420 for node in nodes):
         raise ValueError(

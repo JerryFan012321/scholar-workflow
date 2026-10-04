@@ -5,6 +5,28 @@
 
 ## 2026-10-04 目标续行：五分支运行实现（用户已批准定向测试）
 
+### 当前目标与下一能力切片（覆盖以下历史状态说明）
+
+2026-10-04 最新续行：用户要求自动迭代直至下一版可见成果。0.32.1 两个 manifest 与包版本已同步，运行期 analyze-paper 新增按需复现契约，不改触发描述、不约束思考。同步后完整回归 1420 passed/11 warnings（75.93s）、六文件 Ruff、skill frontmatter 和 diff 空白通过；routing/safety 对应条目只读审阅，来源摘录存在性不代表论证充分性。现在从独立 hotfix 正常生成 runtime-only release 并安装，未合并 main；旧安装 0.32.0 / be0085be05ba5e16bf19ac3cf8ea1b1992aa67d4 为回退点。随后仅对 test Vault 的 V-JEPA 2 冻结输入（36 claims、68 内容记录，完整五分支）调用安装版 public batch CLI，预期成对 conformance 通过，复制未改动的渲染字节到独立单篇候选文件夹并打开 Obsidian。只产生新候选/状态记录，不改旧稿、正式 Vault、Zotero 或服务；人工评鉴与完整科学审阅仍未通过，G17 未完成。后续结果以独立报告覆盖本段待执行状态。
+
+最新：用户要求修正，已改 v4 反例和 expanded 布局并按新根规则完成普通自动复测。定向 65 passed（1.32s），完整 1420 passed/11 warnings（75.14s）；六文件 Ruff、diff 空白通过。原 70 条输入保持 98 节点和 8250 高，宽落在 4125–4131，正式 baseline/conformance 通过；均匀 gutter 上限由首轮不足的 320 明确修正为 336，2:1 门禁不变。详情 `analysis-v5-expanded-capacity-retest-results.md`。未提交发布安装，真实 V-JEPA 2 样张仍未生成/评鉴；以下“未复测/上限320”等为此前历史，不能覆盖本结果。
+
+用户要求修正后已改开发树：v4 反例使用合法四分支 roles；70 条原输入诊断为 98 节点、3056×8250，仅 aspect 失败。expanded 过高树在原对齐列之间均匀增加必要 gutter，上限 320，节点尺寸/文本/垂直 band 不变，默认档不变。手写预期保留高 8250、宽 4125–4131，未执行修正后测试。复测方案见容量 plan 新小节；执行依最新根规则（普通测试无需批准，高推理测试须批准），未发布安装/操作 Vault。
+
+用户已明确批准容量方案测试，2026-10-04 执行完成：定向 63 passed/2 failed（1.33s）；完整 unit/contract 1418 passed/2 failed/11 warnings（75.27s）；指定六文件 Ruff、diff 空白通过。失败是 v4 反例带 v5 roles 导致断言未触达，以及 70 条候选 `canvas-aspect-limit` 导致 baseline 拒绝。详见 `analysis-v5-expanded-capacity-test-results.md`。尚未修正、未复测、未发布安装；不要沿用下方“全部未执行”的历史说明，也不要放宽布局门禁。下一步仅修正反例及长树布局，改变实现/输入后重新批准复测。
+
+容量方案的静态覆盖补充：新增 70 条独立内容的合成成对生成/baseline/conformance 用例（38 条既有 fixture + 8×4 条独立模块内容），不再只以 IR 可解析证明可生成；baseline 192/193 也检查 JSON schema。全部未执行，几何失败不得放宽或隐去。当前仍等待该测试方案的明确批准。
+
+容量续审发现并补齐两处传递漏洞：局部更新重建 IR 保留 baseline.capacity，批次定向修复禁止切换 capacity。新增两条独立预期/单测；当前容量方案全部仍未执行，不沿用此前 0.32.0 测试结果。本次无 Vault、应用、服务、安装或发布操作。
+
+开发树现已准备 v5 文档级 `capacity: expanded`（96 条内容/192 个受管节点）及 model/schema/render/conformance/baseline 一致适配；默认与旧版限制保留，普通更新拒绝切换容量。独立测试输入及预期见 `analysis-v5-expanded-capacity-test-plan.md`，尚未执行、未提交、未发布安装。0.32.0 实际安装仍不接受新选项。测试批准前不生成真实候选或放行现有完整样本。
+
+用户将第一阶段明确为可复现的模范 Vault、模范项目、实验文件夹和外部工具交互，并要求复现进入 skill 能力。交付契约见 `reproducible-exemplars-stage1.md`，目标 G17；尚未实现或验收，不是新发布能力。
+
+V-JEPA 2 在 test Vault 新的 `0.32.0-v5-人工评审/resources/papers/2025-v-jepa-2/` 目录已有内容更新候选：保留原稿五分支与分析点，修订八点及对应摘录。旧文件未修改；Canvas 未同步，原生 Zotero 页级链接未替换，未成对校验或正式登记。不能把局部正文更新当作模范 Vault 完成。
+
+当前首要实现冲突是完整候选的 68 条内容记录/97 个节点超过安装版 40/96 的固定预算。下一切片先设计显式、版本化且跨 model/schema/render/conformance/baseline 一致的容量契约，保留完整框架、对齐和无交叉要求；不删内容、不静默提高阈值、不绕过校验。准备独立输入与预期后获批测试，再正常发布安装 hotfix，最后仅以该单篇做实机人工评鉴。项目与实验模范由已有 Project System 能力组合，不增建 Hub 或新任务控制面。
+
 ### 对齐/无交叉补充审计（自动前置通过，待安装态评鉴）
 
 0.32.0已提交发布并正常安装：source425a8c7、runtime be0085be05ba5e16bf19ac3cf8ea1b1992aa67d4；Codex插件与pipx CLI均0.32.0。完整回归1408通过（72.97秒），加载路径和direct_url已核对，未合并main或修改真实资料。详细结果见 `hotfix-0.32.0-results.md`。下一步是单篇输入冻结与获批展示，不是继续开发/重测同一合成范围。
