@@ -1,0 +1,41 @@
+{
+  "schema_version": 5,
+  "artifact_id": "analysis:paper:synthetic-scalar-reader",
+  "paper_title": "Synthetic Scalar Reader",
+  "language": "en",
+  "profile": {
+    "kind": "focused",
+    "framework": "reference_tree_v5",
+    "roles": [
+      "limitation"
+    ],
+    "markdown_quotes": true
+  },
+  "reader": {
+    "kind": "zotero_native"
+  },
+  "claims": [
+    {
+      "claim_id": "l-r",
+      "role": "limitation",
+      "outline_path": "limitation/explanation",
+      "title": "Limitation",
+      "body": "Only three synthetic measurements are considered, so the described evidence is limited to this toy setting.",
+      "evidence": {
+        "kind": "author_stated",
+        "anchor": "Synthetic physical page 4",
+        "source_spans": [
+          {
+            "kind": "zotero_pdf",
+            "library_type": "personal",
+            "library_id": "99999999",
+            "attachment_key": "SYNTH001",
+            "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "page_index": 3,
+            "quote": "Q_LIMIT: \"Evidence is limited to the three-input toy setting.\""
+          }
+        ]
+      }
+    }
+  ]
+}

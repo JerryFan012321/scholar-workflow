@@ -1,0 +1,111 @@
+{
+  "schema_version": 4,
+  "artifact_id": "analysis:paper:synthetic-scalar-reader",
+  "paper_title": "Synthetic Scalar Reader",
+  "language": "en",
+  "profile": {
+    "kind": "whole",
+    "framework": "reference_tree",
+    "roles": [
+      "abstract",
+      "introduction",
+      "method",
+      "limitation"
+    ],
+    "markdown_quotes": false
+  },
+  "reader": {
+    "kind": "zotero_native"
+  },
+  "claims": [
+    {
+      "claim_id": "v4-a",
+      "role": "abstract",
+      "outline_path": "abstract/task",
+      "title": "Historical synthetic task",
+      "body": "This legacy fixture contains no supported task statement.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "Legacy compatibility input only; no source facts are supplied."
+      }
+    },
+    {
+      "claim_id": "v4-i",
+      "role": "introduction",
+      "outline_path": "introduction/task_application",
+      "title": "Historical synthetic application",
+      "body": "This legacy fixture contains no supported application statement.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "Legacy compatibility input only; no source facts are supplied."
+      }
+    },
+    {
+      "claim_id": "v4-o",
+      "role": "method",
+      "outline_path": "method/overview",
+      "title": "Historical synthetic overview",
+      "body": "No ordered method is supplied in this legacy fixture.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "Legacy compatibility input only; no source facts are supplied."
+      }
+    },
+    {
+      "claim_id": "v4-m",
+      "role": "method",
+      "outline_path": "method/modules/legacy",
+      "title": "Historical synthetic module",
+      "body": "This legacy module exercises grouped point presentation only.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "Legacy compatibility input only; no source facts are supplied."
+      },
+      "points": [
+        {
+          "point_id": "motivation",
+          "text": "No motivation is supplied for the legacy module.",
+          "evidence": {
+            "kind": "not_applicable",
+            "detail": "No motivation is supplied for the legacy module."
+          }
+        },
+        {
+          "point_id": "method",
+          "text": "No implementation is supplied for the legacy module.",
+          "evidence": {
+            "kind": "not_applicable",
+            "detail": "No implementation is supplied for the legacy module."
+          }
+        },
+        {
+          "point_id": "why-it-works",
+          "text": "No explanation is supplied for the legacy module.",
+          "evidence": {
+            "kind": "not_applicable",
+            "detail": "No explanation is supplied for the legacy module."
+          }
+        },
+        {
+          "point_id": "technical-advantage",
+          "text": "No benefit is supplied for the legacy module.",
+          "evidence": {
+            "kind": "not_applicable",
+            "detail": "No benefit is supplied for the legacy module."
+          }
+        }
+      ]
+    },
+    {
+      "claim_id": "v4-l",
+      "role": "limitation",
+      "outline_path": "limitation/explanation",
+      "title": "Historical synthetic limitation",
+      "body": "No supported limitation is supplied in this legacy fixture.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "Legacy compatibility input only; no source facts are supplied."
+      }
+    }
+  ]
+}

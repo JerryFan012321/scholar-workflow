@@ -4,7 +4,8 @@ The current required result framework is in `analysis-output-template.md`: five 
 branches and individually expanded reference-image subslots. This document records the existing
 IR v4 interface, its older four-branch/grouped-details projection, and evidence/link/update
 boundaries retained across the format change. Its old topology does not override the current
-required template or constitute new-format support. Runtime adaptation is not yet complete.
+required template or constitute new-format support. New analyses use the explicit v5
+interface in `analysis-v5-format.md`; retain v4 only for existing-format compatibility.
 
 Within that compatibility scope, this contract governs identity, hierarchy, evidence,
 cross-artifact links and layout, not a reading order or internal reasoning method. IR v1–v3's
@@ -42,7 +43,7 @@ Markdown is the complete, independently readable analysis. The editable Canvas i
 projection of the same claims, not a second source of knowledge. Analysis, annotations,
 literature trees, and the source PDF have separate owners.
 
-Every new IR v4 document declares `framework: reference_tree` and `language: en` or `zh`.
+An existing IR v4 document declares `framework: reference_tree` and `language: en` or `zh`.
 The selected language applies to framework labels, claim/point prose, evidence descriptions,
 source-link labels, and Canvas backlink aliases. An English tree is English throughout; a
 Chinese tree is Chinese throughout. Verbatim source excerpts retain the source's original language;
@@ -121,8 +122,9 @@ requires a faithful `canvas_summary` of at most 180 characters; its title must s
 characters. Evidence anchors/details and source-link counts are similarly bounded for Canvas
 readability. Neither summary may add a fact or discard a material qualification. The body
 plus points are the complete Markdown explanation.
-The `schema_version` is mandatory: new writes set it to `4` with `framework: reference_tree`;
-legacy v1–v3 must be explicit. Claim bodies may contain explanatory paragraphs but cannot inject
+The `schema_version` is mandatory: existing v4 pairs retain `4` with `framework: reference_tree`;
+new analyses use `5` with `framework: reference_tree_v5`, and legacy v1–v3 remain explicit.
+Claim bodies may contain explanatory paragraphs but cannot inject
 new framework headings or renderer markers.
 
 ## Evidence and verifiable source locations
@@ -144,7 +146,7 @@ The other states are `unverifiable` (当前正文通道无法核实; current ind
 material) and `not_applicable` (不适用; reason supplied). `not_reported` means supported absence, not merely a missing
 figure or table in Zotero's text index. There is no detached Evidence section, table, or node.
 
-For every new v4 `author_stated` or `analysis_inference` claim/point, evidence includes at least
+For every v4 `author_stated` or `analysis_inference` claim/point, evidence includes at least
 one `source_span`. A Zotero PDF span records library identity/type, current attachment key,
 content hash, **zero-based physical** `page_index`, optional display-only `page_label`, and an
 optional real annotation key. A registered Vault Markdown span records Source/artifact identity,
@@ -344,6 +346,10 @@ artifact. Moving from v1–v3 to v4 requires an explicit reviewed migration, not
 Canonical commit requires exact base hashes and commits the Markdown, Canvas, and sidecar as one
 recoverable bundle. Structural conformance is necessary but does not replace source-location
 verification or human review of scientific claims.
+
+The legacy joint-placement, provider-bootstrap and Field legacy-cutover interfaces remain
+v4-only; new v5 analysis rendering and paired commits do not make those migration interfaces
+v5-capable. Their version gate does not authorize downgrading a new analysis to v4.
 
 The checked-in runtime schemas are:
 

@@ -1,0 +1,152 @@
+{
+  "schema_version": 5,
+  "artifact_id": "analysis:paper:synthetic-scalar-reader",
+  "paper_title": "Synthetic Scalar Reader",
+  "language": "en",
+  "profile": {
+    "kind": "focused",
+    "framework": "reference_tree_v5",
+    "roles": [
+      "method"
+    ],
+    "markdown_quotes": true
+  },
+  "reader": {
+    "kind": "zotero_native"
+  },
+  "claims": [
+    {
+      "claim_id": "m-o",
+      "role": "method",
+      "outline_path": "method/overview",
+      "title": "Overview",
+      "container": true,
+      "body": "",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "Structural container only"
+      },
+      "points": [
+        {
+          "point_id": "task-io",
+          "text": "This fixture tests the task/input/output slot without adding a method summary.",
+          "evidence": {
+            "kind": "not_applicable",
+            "detail": "This fixture tests the task/input/output slot without adding a method summary."
+          }
+        },
+        {
+          "point_id": "steps",
+          "text": "No complete ordered procedure is supplied; no steps may be invented.",
+          "evidence": {
+            "kind": "not_applicable",
+            "detail": "No complete ordered procedure is supplied; no steps may be invented."
+          }
+        }
+      ]
+    },
+    {
+      "claim_id": "m-1",
+      "role": "method",
+      "outline_path": "method/modules/one",
+      "title": "Pipeline module 1",
+      "container": true,
+      "body": "",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "Structural container only"
+      },
+      "points": [
+        {
+          "point_id": "motivation",
+          "text": "No motivation statement is supplied for module 1.",
+          "evidence": {
+            "kind": "not_applicable",
+            "detail": "No motivation statement is supplied for module 1."
+          }
+        },
+        {
+          "point_id": "method",
+          "text": "The first module subtracts the arithmetic mean.",
+          "evidence": {
+            "kind": "author_stated",
+            "anchor": "Synthetic physical page 2",
+            "source_spans": [
+              {
+                "kind": "zotero_pdf",
+                "library_type": "personal",
+                "library_id": "99999999",
+                "attachment_key": "SYNTH001",
+                "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                "page_index": 1,
+                "quote": "Q_METHOD: \"Subtract the mean <before> aggregation & preserve signs.\""
+              }
+            ]
+          }
+        },
+        {
+          "point_id": "why-it-works",
+          "text": "No causal explanation is supplied for module 1.",
+          "evidence": {
+            "kind": "not_applicable",
+            "detail": "No causal explanation is supplied for module 1."
+          }
+        },
+        {
+          "point_id": "technical-advantage",
+          "text": "No technical advantage is supplied for module 1.",
+          "evidence": {
+            "kind": "not_applicable",
+            "detail": "No technical advantage is supplied for module 1."
+          }
+        }
+      ]
+    },
+    {
+      "claim_id": "m-2",
+      "role": "method",
+      "outline_path": "method/modules/two",
+      "title": "Pipeline module 2",
+      "container": true,
+      "body": "",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "Structural container only"
+      },
+      "points": [
+        {
+          "point_id": "motivation",
+          "text": "Module 2 has no supplied motivation.",
+          "evidence": {
+            "kind": "not_applicable",
+            "detail": "Module 2 has no supplied motivation."
+          }
+        },
+        {
+          "point_id": "method",
+          "text": "No implementation statement is supplied for module 2.",
+          "evidence": {
+            "kind": "not_applicable",
+            "detail": "No implementation statement is supplied for module 2."
+          }
+        },
+        {
+          "point_id": "why-it-works",
+          "text": "No causal explanation is supplied for module 2.",
+          "evidence": {
+            "kind": "not_applicable",
+            "detail": "No causal explanation is supplied for module 2."
+          }
+        },
+        {
+          "point_id": "technical-advantage",
+          "text": "No technical advantage is supplied for module 2.",
+          "evidence": {
+            "kind": "not_applicable",
+            "detail": "No technical advantage is supplied for module 2."
+          }
+        }
+      ]
+    }
+  ]
+}

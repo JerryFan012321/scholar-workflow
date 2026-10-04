@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "status": "prepared_not_approved",
+  "source_boundary": "synthetic_only",
+  "cases": [
+    {
+      "case_id": "P-01", "base_fixture": "../analysis_v5_toy.json",
+      "claim_id": "m-1", "point_id": "motivation", "field": "text", "value": "# Extra section",
+      "expected": {"model_and_schema": "reject", "reason": "framework headings or markers"}
+    },
+    {
+      "case_id": "P-02", "base_fixture": "../analysis_v5_toy.json",
+      "claim_id": "m-1", "point_id": "motivation", "field": "text", "value": "<!-- sw-analysis-claim id=\"synthetic-point\" -->",
+      "expected": {"model_and_schema": "reject", "reason": "framework headings or markers"}
+    },
+    {
+      "case_id": "P-03", "base_fixture": "../analysis_v5_toy.json",
+      "claim_id": "m-1", "point_id": "motivation", "field": "text", "value": "   ## Extra section",
+      "expected": {"model_and_schema": "reject", "reason": "framework headings or markers"}
+    },
+    {
+      "case_id": "P-04", "base_fixture": "../analysis_v5_toy.json",
+      "claim_id": "m-1", "point_id": "motivation", "field": "text", "value": "#tag describes an unavailable synthetic choice.",
+      "expected": {"model_and_schema": "accept", "render_literal_text": true, "new_markdown_headings": false}
+    },
+    {
+      "case_id": "P-05", "base_fixture": "v4-base.json",
+      "claim_id": "v4-m", "point_id": "motivation", "field": "text", "value": "# Extra section",
+      "expected": {"model_and_schema": "accept", "render_literal_text": true, "new_markdown_headings": false, "reason": "v4 list prefix keeps point text inline"}
+    },
+    {
+      "case_id": "P-06", "base_fixture": "inline_legacy_v3",
+      "claim_id": "legacy-step", "point_id": "legacy-point", "field": "text", "value": "# Legacy point text",
+      "expected": {"model_and_schema": "accept", "reason": "v1-v3 input compatibility is unchanged; not new-format acceptance"}
+    },
+    {
+      "case_id": "P-07", "base_fixture": "../analysis_v5_toy.json",
+      "claim_id": "m-1", "point_id": "motivation", "field": "text", "value": "###",
+      "expected": {"model_and_schema": "reject", "reason": "framework headings or markers"}
+    },
+    {
+      "case_id": "P-08", "base_fixture": "../analysis_v5_toy.json",
+      "claim_id": "m-1", "point_id": "motivation", "field": "canvas_summary", "value": "# Extra summary heading",
+      "expected": {"model_and_schema": "reject", "reason": "framework headings or markers"}
+    },
+    {
+      "case_id": "P-09", "base_fixture": "v4-base.json",
+      "claim_id": "v4-m", "point_id": "motivation", "field": "text", "value": "<!-- sw-analysis-claim id=\"synthetic-point\" -->",
+      "expected": {"model_and_schema": "reject", "reason": "framework headings or markers"}
+    },
+    {
+      "case_id": "P-10", "base_fixture": "../analysis_v5_toy.json",
+      "claim_id": "m-1", "point_id": "motivation", "field": "canvas_summary", "value": "<!-- sw-analysis-claim id=\"synthetic-summary\" -->",
+      "expected": {"model_and_schema": "reject", "reason": "framework headings or markers"}
+    }
+  ],
+  "inline_legacy_v3": {
+    "schema_version": 3,
+    "artifact_id": "analysis:paper:synthetic-legacy-point",
+    "paper_title": "Synthetic Legacy Point",
+    "language": "en",
+    "profile": {"kind": "focused", "framework": "legacy", "roles": ["workflow"]},
+    "claims": [
+      {
+        "claim_id": "legacy-step", "role": "workflow", "title": "Legacy step", "order": 1,
+        "body": "A synthetic compatibility input, not a scientific statement.",
+        "evidence": {"kind": "not_applicable", "detail": "No scientific evidence is supplied."},
+        "points": [
+          {
+            "point_id": "legacy-point", "text": "Original synthetic legacy point.",
+            "evidence": {"kind": "not_applicable", "detail": "No scientific evidence is supplied."}
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -25,10 +25,12 @@ The current required format is the reference image's five-section tree in both a
 
 Canvas expands the reference image's challenge/contribution/module subslots as separate
 editable nodes. The full current result contract is `references/analysis-output-template.md`.
-The existing v4 renderer still implements four sections and grouped detail cards; its runtime
-adaptation is pending. The paragraphs below describe that older version's compatibility
-behavior, not proof that it implements the new format. An unsupported new-format request
-must be reported as such rather than silently rendered as v4 success.
+New analyses use the explicit v5 interface in `references/analysis-v5-format.md`, with
+`schema_version: 5` and `framework: reference_tree_v5`. Check the installed runtime's
+support before producing a pair. The older v4 four-section/grouped-details interface remains
+for existing-format compatibility only; it cannot substitute for a new five-section result.
+Structural conformance does not establish scientific source fidelity or visual acceptance
+in Obsidian. Unsupported output is reported as a limitation, not a v4 success.
 
 These are visible output branches, not a prescribed reading or reasoning order. Repeated
 challenges, contributions, and modules use stable outline paths; an unfilled template branch
@@ -58,10 +60,10 @@ separately from structural conformance.
 New analyses also include short verbatim source excerpts immediately below the supported
 statement in Markdown, each with its own page/block link. Original wording and language are
 retained; paraphrases and translations are not presented as exact quotes. Unverifiable wording
-is a source gap. Canvas does not repeat the quotations and keeps its accepted appearance.
+is a source gap. Canvas does not repeat the quotations and retains the required editable tree.
 Older analyses remain unchanged; converting their format requires an explicit whole-analysis
 update, not a silent refresh. The detailed contract is `references/analysis-format.md`.
-The v4 `reader` projection can select an explicitly verified ZotFlow Library Reader in a named
+The v4/v5 `reader` projection can select an explicitly verified ZotFlow Library Reader in a registered
 Vault, opening a local Zotero attachment at its physical page inside Obsidian in both artifacts.
 The default remains Zotero-native. The structured source span remains authoritative; a page
 link never claims exact text selection or annotation synchronization.
@@ -77,6 +79,15 @@ edits and custom graph items remain preserved.
 Generated text boxes estimate CJK wrapping and reserve one extra visible line so their source
 and Markdown-backlink labels remain clickable. V4 human-facing text has no machine claim comments;
 claim identity is carried by block anchors, deterministic Canvas IDs, and the sidecar.
+
+For v5, each independently attributable point has its own editable node rather than a
+grouped detail line. Same-depth alignment and non-crossing/non-occlusion are hard requirements;
+see `references/analysis-output-template.md` for the complete geometry contract. Existing v4
+pairs retain their own versioned projection and are not silently converted.
+
+The legacy joint-placement, provider-bootstrap and Field legacy-cutover interfaces still
+accept v4 only. New v5 analysis support does not enable those migration routes or authorize
+Field initialization, relocation or a silent v5-to-v4 downgrade.
 
 ## Batch conformance
 

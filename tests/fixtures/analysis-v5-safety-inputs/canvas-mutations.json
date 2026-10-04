@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "status": "prepared_not_approved",
+  "base_fixture": "../analysis_v5_toy.json",
+  "base_sha256": "89640ecef880ec49bdf4210f440b7938952b0529267f09aae55a02faafa2a5d4",
+  "cases": [
+    {
+      "case_id": "U-05",
+      "title": "Manual managed point text must conflict",
+      "operation": {
+        "selector": {
+          "record": {
+              "claim_id": "m-1",
+              "point_id": "method",
+              "markdown_block": "point-3-m-1-method"
+          },
+          "uniqueness": 1
+        },
+        "replace_field": "text",
+        "value": "Human-edited synthetic method note; do not overwrite."
+      },
+      "incoming_ir": "focused-method.json",
+      "expected": {
+        "update_outcome": "conflict",
+        "current_artifact_bytes": "unchanged",
+        "automatic_markdown_synchronization": false,
+        "proposal_may_exist": true
+      }
+    },
+    {
+      "case_id": "U-06",
+      "title": "Safe visual and user graph changes remain preserved",
+      "operations": [
+        {
+          "selector": {
+            "all_managed_nodes": true
+          },
+          "translate": {
+            "x": 120,
+            "y": 80
+          }
+        },
+        {
+          "selector": {
+            "record": {
+              "claim_id": "m-1",
+              "point_id": "motivation",
+              "markdown_block": "point-3-m-1-motivation"
+            },
+            "uniqueness": 1
+          },
+          "replace_field": "color",
+          "value": "3"
+        },
+        {
+          "add_custom_node": {
+            "id": "user-review-note-a",
+            "type": "text",
+            "text": "Synthetic reviewer note A.",
+            "position": {
+              "x": "translated_managed_bbox.max_x + 200",
+              "y": "translated_managed_bbox.min_y"
+            },
+            "width": 280,
+            "height": 100
+          }
+        },
+        {
+          "add_custom_node": {
+            "id": "user-review-note-b",
+            "type": "text",
+            "text": "Synthetic reviewer note B.",
+            "position": {
+              "x": "translated_managed_bbox.max_x + 200",
+              "y": "translated_managed_bbox.min_y + 200"
+            },
+            "width": 280,
+            "height": 100
+          }
+        },
+        {
+          "add_custom_edge": {
+            "id": "user-review-edge",
+            "fromNode": "user-review-note-a",
+            "fromSide": "bottom",
+            "fromEnd": "none",
+            "toNode": "user-review-note-b",
+            "toSide": "top",
+            "toEnd": "none",
+            "color": "3"
+          }
+        }
+      ],
+      "incoming_ir": "focused-method.json",
+      "expected": {
+        "update_outcome": "ready",
+        "canonical_committed": false,
+        "preservation_observed_in": "proposed in-memory pair; current files remain unwritten",
+        "managed_geometry": "retain exact translated x/y of every surviving managed ID",
+        "managed_color": "retain color 3 on m-1/motivation",
+        "custom_graph": "retain both custom nodes and custom edge byte-equivalent as JSON values",
+        "managed_node_budget": "custom nodes excluded",
+        "alignment_and_crossings": "safe translation preserves original alignment and non-crossing; no style exception to geometry"
+      }
+    }
+  ]
+}

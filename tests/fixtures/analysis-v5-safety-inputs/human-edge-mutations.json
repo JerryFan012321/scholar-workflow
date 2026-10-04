@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "status": "prepared_not_approved",
+  "base_geometry_spec": "geometry-mutations.json",
+  "base_canvas_sha256": "6dab532f4b5bbf261716ede769eb1e135eac92ea5c8fe50531ba9fe98ff12b9d",
+  "cases": [
+    {
+      "case_id": "G-05",
+      "title": "Independent human endpoints do not exempt a line through Method",
+      "add_nodes": [
+        {"id": "human-left-probe", "type": "text", "x": -480, "y": 3205, "width": 280, "height": 100, "text": "Synthetic left endpoint."},
+        {"id": "human-right-probe", "type": "text", "x": 3256, "y": 3205, "width": 280, "height": 100, "text": "Synthetic right endpoint."}
+      ],
+      "add_edge": {
+        "id": "human-through-method",
+        "fromNode": "human-left-probe", "fromSide": "right", "fromEnd": "none",
+        "toNode": "human-right-probe", "toSide": "left", "toEnd": "none",
+        "styleAttributes": {"pathfindingMethod": "square"}
+      },
+      "expected": {
+        "finding": "canvas-edge-through-node",
+        "finding_path": "canvas/edges/human-through-method",
+        "message_contains": "491aa5820d139a26",
+        "manual_endpoints_do_not_overlap_managed_nodes": true,
+        "managed_nodes_and_edges_unchanged": true,
+        "current_files_unchanged": true
+      }
+    },
+    {
+      "case_id": "G-06",
+      "title": "Independent human vertical line intersects the main trunk without covering a box",
+      "add_nodes": [
+        {"id": "human-top-probe", "type": "text", "x": 222, "y": -300, "width": 100, "height": 100, "text": "Synthetic top."},
+        {"id": "human-bottom-probe", "type": "text", "x": 222, "y": 4700, "width": 100, "height": 100, "text": "Synthetic bottom."}
+      ],
+      "add_edge": {
+        "id": "human-crosses-trunk",
+        "fromNode": "human-top-probe", "fromSide": "bottom", "fromEnd": "none",
+        "toNode": "human-bottom-probe", "toSide": "top", "toEnd": "none",
+        "styleAttributes": {"pathfindingMethod": "square"}
+      },
+      "expected": {
+        "finding": "canvas-crossing-edges",
+        "finding_path_contains": "human-crosses-trunk",
+        "forbidden_findings": ["overlapping-canvas-nodes", "canvas-edge-through-node"],
+        "manual_endpoints_do_not_overlap_managed_nodes": true,
+        "managed_nodes_and_edges_unchanged": true,
+        "current_files_unchanged": true
+      }
+    },
+    {
+      "case_id": "G-07",
+      "title": "Automatic floating endpoints cannot prove the stored square route",
+      "add_nodes": [],
+      "patch_existing_edge": {
+        "edge_id": "403ef13b9c6dd3c2",
+        "field": "fromFloating",
+        "value": true
+      },
+      "expected": {
+        "finding": "canvas-edge-routing-unverifiable",
+        "finding_path": "canvas/edges/403ef13b9c6dd3c2",
+        "managed_nodes_unchanged": true,
+        "other_managed_edges_unchanged": true,
+        "current_files_unchanged": true
+      }
+    }
+  ]
+}

@@ -9,8 +9,9 @@ The result is a paired, independently readable Markdown analysis and editable Ca
 The current required output framework is `references/analysis-output-template.md`;
 `references/analysis-format.md` owns the existing v4 compatibility interface and shared
 evidence/update boundaries. Reuse the output structure, not an example paper's facts.
-The current four-branch v4 renderer does not yet satisfy the new five-branch template;
-report that limitation rather than presenting an older render as new-format success.
+The explicit v5 interface is `references/analysis-v5-format.md`. Use it only when the
+installed runtime supports v5; the older four-branch v4 renderer does not satisfy the
+new template. Report an unsupported-version limitation rather than substituting v4.
 
 ## Workflow contract
 
@@ -29,7 +30,8 @@ report that limitation rather than presenting an older render as new-format succ
    is ambiguous or the Field is not initialized, ask for a choice or run the
    Field preview; do not silently create a topic directory or migrate a Vault.
    Then load `references/analysis-output-template.md` and the versioned interface in
-   `references/analysis-format.md`. Declare the supported version/framework explicitly;
+   `references/analysis-v5-format.md` for a new five-branch analysis, or
+   `references/analysis-format.md` for an existing v4 pair. Declare the supported version/framework explicitly;
    the existing v4 interface is for compatibility, not proof of new-template support.
    Declare `whole` or the exact `focused` section subset,
    select `en` or `zh` consistently, and place each new paper's companion note,
@@ -92,6 +94,7 @@ report that limitation rather than presenting an older render as new-format succ
 
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `references/analysis-output-template.md` — current required Markdown/Canvas framework.
+- `references/analysis-v5-format.md` — explicit five-branch machine/result interface.
 - `references/analysis-format.md`
 - `references/analysis-batch.md` — load only for multi-paper analysis.
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`

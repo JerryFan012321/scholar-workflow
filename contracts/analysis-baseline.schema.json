@@ -33,7 +33,7 @@
         "additionalProperties": false,
         "required": ["role", "markdown_sha256", "canvas_node_id", "canvas_text_sha256"],
         "properties": {
-          "role": {"enum": ["task", "input", "workflow", "output", "boundary", "abstract", "introduction", "method", "limitation"]},
+          "role": {"enum": ["task", "input", "workflow", "output", "boundary", "abstract", "introduction", "method", "experiments", "limitation"]},
           "markdown_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
           "canvas_node_id": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
           "canvas_text_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
@@ -55,9 +55,18 @@
   },
   "allOf": [
     {
-      "if": {"properties": {"document": {"properties": {"schema_version": {"const": 4}}}}},
+      "if": {"properties": {"document": {"properties": {"schema_version": {"enum": [4, 5]}}}}},
       "then": {"properties": {"generated_node_ids": {"maxItems": 96}}},
       "else": {"properties": {"generated_node_ids": {"maxItems": 40}}}
+    },
+    {
+      "if": {"properties": {"document": {"properties": {"schema_version": {"const": 5}}}}},
+      "then": {"properties": {"claims": {"additionalProperties": {"properties": {
+        "role": {"enum": ["abstract", "introduction", "method", "experiments", "limitation"]}
+      }}}}},
+      "else": {"properties": {"claims": {"additionalProperties": {"properties": {
+        "role": {"enum": ["task", "input", "workflow", "output", "boundary", "abstract", "introduction", "method", "limitation"]}
+      }}}}}
     }
   ]
 }

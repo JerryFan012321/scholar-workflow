@@ -261,9 +261,11 @@ def _validate_targeted_repair(
 ) -> None:
     if (
         repaired.artifact_id != original.artifact_id
+        or repaired.schema_version != original.schema_version
         or repaired.profile != original.profile
         or repaired.paper_title != original.paper_title
         or repaired.language != original.language
+        or repaired.reader != original.reader
     ):
         raise ValueError(
             "targeted repair cannot change artifact identity, profile, or paper title"
@@ -276,7 +278,7 @@ def _validate_targeted_repair(
         parts[2]
         for finding in report.findings
         if finding.repairable
-        and len(parts := finding.path.split("/")) == 3
+        and len(parts := finding.path.split("/")) >= 3
         and parts[0] in {"markdown", "canvas"}
         and parts[1] == "claims"
         and parts[2]
@@ -291,6 +293,12 @@ def _validate_targeted_repair(
             raise ValueError(
                 "targeted repair cannot change claim roles, outline paths, or workflow order"
             )
+        if original.schema_version == 5 and (
+            repaired_claim.container != original_claim.container
+            or [point.point_id for point in repaired_claim.points]
+            != [point.point_id for point in original_claim.points]
+        ):
+            raise ValueError("targeted repair cannot change container state or five-branch point identities or order")
         if repaired_claim != original_claim and claim_id not in repairable_claim_ids:
             raise ValueError(
                 f"targeted repair changed claim {claim_id!r} outside reported findings"

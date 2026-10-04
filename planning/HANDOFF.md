@@ -1,7 +1,95 @@
 # HANDOFF — 从这里接着干
 
 > 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
-> `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-10-02。
+> `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-10-04。
+
+## 2026-10-04 目标续行：五分支运行实现（用户已批准定向测试）
+
+### 对齐/无交叉补充审计（自动前置通过，待安装态评鉴）
+
+用户已批准0.32.0 hotfix提交、runtime-only发布和正常安装，不合并main。版本同步后完整回归1408通过、11警告、72.97秒。旧pipx来源经direct_url确认为0.31.1 runtime `adfb0f273437a20714b740c56a4ba5d18540fda9`，作为回退基线。真实Vault写入、来源冻结与新样张人工评鉴仍分开，不由本次发布冒充完成。
+
+最新：用户“开始执行”后修正4项lint并完成批准复验。定向53通过；完整1408通过、11警告、73.16秒；指定五文件Ruff、skill frontmatter和diff空白全部通过。输入和布局门禁未变。人工评审方案在 `analysis-v5-human-review-plan.md`；提交/发布/安装和真实单对象样张仍未执行。以下剩4项lint描述保留历史，不覆盖本段。
+
+最新实测：用户批准修正复测后，v5定向53 passed（0.88秒），完整unit/contract 1408 passed、11 warnings（74.05秒）；skill frontmatter和diff空白通过。Ruff剩4项：models及两测试文件的I001、safety._node_id的UP012。执行期间未修改源码/输入，未操作Vault、外部应用、服务或安装。以下“待复测”是此前历史状态，不覆盖本段。下一步仅修正这4项语法格式，再按独立测试原则确认复验；不要重新分析论文或扩大业务范围。真实新版Canvas仍需正常hotfix安装后人工评鉴。
+
+最新开发状态：G-03预期改为标签底部决定的9169 px（坐标不变）；G-04改为精确字面转义摘录断言；整理原五文件lint写法，保留兼容导出。输入说明和摘要同步。修正后的代码尚未运行测试或lint，不宣称问题已验证解决。复测范围见 `analysis-v5-supplemental-test-plan.md` 的“修正后复测提案”；需新的明确批准，不操作真实Vault或发布安装。
+
+2026-10-04 最新覆盖状态：用户随后批准26项补充+完整回归及指定静态检查，已执行。
+定向51 passed/2 failed（0.90秒）；完整1406 passed/2 failed/11 warnings（74.07秒）。
+失败为G-03固定bbox预期9168/实际9169，以及G-04未计入Markdown下划线转义；未改输入或门禁。
+Ruff20项未通过，skill frontmatter与diff空白检查通过。详见analysis-v5-test-results.md。
+当前不放行、不提交/发布/安装；后续先展示最小修正及重新确认复测，不能复用本次批准到改动后的输入。
+以下“未测试/待批准”段落保留测试前历史，不覆盖本段实际结果。
+
+本次自动续行未获得新的测试批准；上一轮实际几何修正属于 progress，但未验证。
+仅补已确认的 point 呈现漏洞：v5 正文/Canvas summary 的 ATX 标题会逃出规定子槽位，
+新增版本化输入门禁和 matching schema；v4 的列表前缀本来就安全，因此不收紧其 ATX 文本。
+v4/v5 机器 claim 标记提前拒绝，legacy v1–v3 不变。固定 P-01～10 已准备，安全驱动共26例，
+全部最新补充仍未运行。没有新增业务范围、真实库操作、测试、提交、发布或安装。
+后续应先获得当前 supplemental plan 的明确批准，再验证，不继续叠加未测试功能。
+
+同轮只读复审发现人工两端的边仍可能穿过正文/主干而被跳过，以及 Advanced Canvas
+`fromFloating/toFloating` 会在加载/移动时改写记录的端点侧。已最小修正：人工边参与与受管
+节点/边的相交检查，人工图内部关系不由我们接管；仅证明固定端点的 forward square 或共线
+原生路径（原生控制点凸包保守界），其余走向明确不可证明。没有删除或改写人工图项。
+新增精确 `human-edge-mutations.json` / G-05～07；独立安全驱动共16例，全部尚未运行。
+本轮只做源码/规则/输入准备；待用户批准更新后的 supplementary plan，不能沿用旧绿灯。
+
+其余只读结论保留为独立后续切片，不扩大当前格式修复：v5 公共 batch→commit→ChangeSet
+在源码可达，但新目录必须先有 provider 原子论文 owner，
+不能只 mkdir 或复用 v4-only joint placement。项目总览/实验核心无需 Hub，但 Source/Field
+用户入口仍依赖旧 Hub、实验输入示例与人类摘要不足。以上均未执行端到端验证，未宣称总目标完成。
+
+在已完成的窄范围结果之后，只读复审确认：额外受管跨分支边可能漏检，人工 text/file/link
+节点可能遮挡受管内容，N-11 浮点坐标拒绝不能证明 aspect 门禁；单条 focused Limitation
+默认布局会成为过宽横条。已做最小修正：额外受管语义边拒绝、涉及受管内容的路由参与几何校验、
+可见非 group 节点遮挡检查、整数 N-11 明确 finding 断言、仅单链过宽时调整 Y（不改框尺寸/内容）。
+这批代码尚未执行测试，不沿用上轮 164 项绿灯。运行 references 清理了开发状态说明；
+旧 joint placement/bootstrap/legacy cutover 仍只接 v4，未为本批放开迁移。
+独立精确输入已准备：analysis-v5-update-safety-inputs.md（U-01～08、G-01～07、N-18）；
+完整回归与影响边界见 analysis-v5-supplemental-test-plan.md。测试驱动准备完并获得新批准后才运行。
+本轮未写 Vault、未操作应用、未提交/发布/安装。生成合成展示产物保留本地并已定点 gitignore，
+不进入开发提交或 runtime 包；无关 quotation preview 原样保留。
+
+### 上一轮实施和测试记录
+
+上一轮产生了实际发布、安装及旧包校验证据，属于 progress；并非项目总目标完成。
+当前工作树仍为 codex/hotfix-project-context，保留两份未跟踪 quotation preview。
+本轮针对最先阻断格式目标的缺口实现显式 IR v5：完整五分支、独立可编辑子槽位、正文原文摘录、
+逐点证据/源链接/正文反链及紧凑几何。v1–v4 不自动转换，原有 sidecar/CAS 与人工内容保护保留。
+采用新 framework reference_tree_v5 区分旧接口，不能以更新 v4 常量偷偷刷新旧稿。
+测试输入/手写预期独立准备；未获新方案批准前不运行 pytest、生成样张、执行业务验证、改 Vault、
+提交、发布或安装。旧 report 人工评鉴未确认，新 Canvas 人工评鉴与来源核验均未完成。
+并行工作限代码契约审查、JSON schema 和独立验收输入，无真实库/服务操作。
+
+用户随后指出实际五分支候选形状不美观。已通过 Obsidian CLI 定位 test 内当前 Canvas 并只读
+观察截图/JSON：97 节点、7390×13520、全框470宽、主分支不同列，根到实验连接跨11732px。
+明确记版式不通过，不把 1.83:1 长宽比和无重叠当作可读验收。68 节点原文入口为 Zotero，
+0 为 ZotFlow。诊断与最小版式修正方案见 canvas-layout-actual-diagnosis.md，尚未写 Vault。
+v5 models/schema、updates/batch/commit/CLI 安全兼容草稿已落地；完整 renderer/conformance 尚未实现，
+入口显式拒绝 v5 而不是退回旧格式。当前代码未测试、不可发布；未提交任何这些草稿。
+独立合成输入与手写预期见 analysis-v5-independent-acceptance.md；未运行任何测试。
+
+用户随后明确「测试批准」，并补充 Canvas 核心硬要求为对齐、没有交叉；规范已写入
+analysis-output-template.md。同层节点共享左边缘，直角树边不穿其他节点、不跨不相关分支；
+同父节点共享主干不视为交叉。批准范围为已展示的合成 38 条记录、N-01–N-17 与合成 v4
+兼容/成对更新检查；精确输入未准备的项目保持 not-run。当前只执行此定向范围，
+不扩展真实论文分析或正式库业务。后续真实 test Vault 展示必须先正常安装新 hotfix；
+0.31.1 安装包不能冒充正在开发的 v5 实现。自动结构检查不代替人工审美或科学来源核验。
+
+本轮批准范围实际执行完成：新增 v5 renderer/conformance、schema/model 和 update/batch
+适配已落地；独立 38 条输入完整转录。首轮 25 passed / 1 failed / 2 skipped，失败为测试
+误用 `styleAttributes.path`；核对 Advanced Canvas 实际字段为 `pathfindingMethod` 后修正，
+不修改事实/手写预期或放宽要求。最终定向 unit/contract 为 164 passed / 2 skipped，2.83 秒；
+新文件 Ruff 与 diff 空白检查通过。跳过 N-18 未准备长输入及未准备精确 base/hash 的新版
+更新安全矩阵；旧 v4 更新单测通过，不能替代该矩阵。只读复审发现并修复非文本字段类型、
+逐字摘录邻接、未知管理锚点、多行正文和重复实例 baseline 标签/标题层级问题。
+合成产物持久保存于 `planning/acceptance/analysis-v5-synthetic/`，报告为
+`analysis-v5-test-results.md`：38 记录、58 节点、57 连线、3056×4538、1.485:1、最大框129px，
+结构符合性0 findings。test Vault 原图未覆盖、真实库未改、没有发布/安装本轮草稿。
+下一步是先准备精确版本与安装态单对象方案，正常 hotfix 安装后再让用户评鉴真实新图；
+不得把开发树合成 Canvas 当已安装插件的 V-JEPA 2 验收。
 
 ## 2026-10-02 0.31.1 hotfix 已发布安装，单对象兼容通过，人工评鉴待确认
 

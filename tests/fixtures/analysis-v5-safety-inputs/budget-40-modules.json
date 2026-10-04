@@ -1,0 +1,463 @@
+{
+  "schema_version": 5,
+  "artifact_id": "analysis:paper:synthetic-budget-40-modules",
+  "paper_title": "Synthetic Budget Boundary",
+  "language": "en",
+  "profile": {
+    "kind": "whole",
+    "framework": "reference_tree_v5",
+    "roles": [
+      "abstract",
+      "introduction",
+      "method",
+      "experiments",
+      "limitation"
+    ],
+    "markdown_quotes": true
+  },
+  "reader": {
+    "kind": "zotero_native"
+  },
+  "claims": [
+    {
+      "claim_id": "budget-01",
+      "role": "method",
+      "outline_path": "method/modules/budget-01",
+      "title": "Synthetic module 01",
+      "body": "This synthetic case contains availability record 01; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 01; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-02",
+      "role": "method",
+      "outline_path": "method/modules/budget-02",
+      "title": "Synthetic module 02",
+      "body": "This synthetic case contains availability record 02; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 02; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-03",
+      "role": "method",
+      "outline_path": "method/modules/budget-03",
+      "title": "Synthetic module 03",
+      "body": "This synthetic case contains availability record 03; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 03; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-04",
+      "role": "method",
+      "outline_path": "method/modules/budget-04",
+      "title": "Synthetic module 04",
+      "body": "This synthetic case contains availability record 04; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 04; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-05",
+      "role": "method",
+      "outline_path": "method/modules/budget-05",
+      "title": "Synthetic module 05",
+      "body": "This synthetic case contains availability record 05; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 05; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-06",
+      "role": "method",
+      "outline_path": "method/modules/budget-06",
+      "title": "Synthetic module 06",
+      "body": "This synthetic case contains availability record 06; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 06; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-07",
+      "role": "method",
+      "outline_path": "method/modules/budget-07",
+      "title": "Synthetic module 07",
+      "body": "This synthetic case contains availability record 07; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 07; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-08",
+      "role": "method",
+      "outline_path": "method/modules/budget-08",
+      "title": "Synthetic module 08",
+      "body": "This synthetic case contains availability record 08; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 08; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-09",
+      "role": "method",
+      "outline_path": "method/modules/budget-09",
+      "title": "Synthetic module 09",
+      "body": "This synthetic case contains availability record 09; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 09; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-10",
+      "role": "method",
+      "outline_path": "method/modules/budget-10",
+      "title": "Synthetic module 10",
+      "body": "This synthetic case contains availability record 10; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 10; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-11",
+      "role": "method",
+      "outline_path": "method/modules/budget-11",
+      "title": "Synthetic module 11",
+      "body": "This synthetic case contains availability record 11; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 11; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-12",
+      "role": "method",
+      "outline_path": "method/modules/budget-12",
+      "title": "Synthetic module 12",
+      "body": "This synthetic case contains availability record 12; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 12; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-13",
+      "role": "method",
+      "outline_path": "method/modules/budget-13",
+      "title": "Synthetic module 13",
+      "body": "This synthetic case contains availability record 13; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 13; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-14",
+      "role": "method",
+      "outline_path": "method/modules/budget-14",
+      "title": "Synthetic module 14",
+      "body": "This synthetic case contains availability record 14; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 14; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-15",
+      "role": "method",
+      "outline_path": "method/modules/budget-15",
+      "title": "Synthetic module 15",
+      "body": "This synthetic case contains availability record 15; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 15; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-16",
+      "role": "method",
+      "outline_path": "method/modules/budget-16",
+      "title": "Synthetic module 16",
+      "body": "This synthetic case contains availability record 16; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 16; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-17",
+      "role": "method",
+      "outline_path": "method/modules/budget-17",
+      "title": "Synthetic module 17",
+      "body": "This synthetic case contains availability record 17; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 17; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-18",
+      "role": "method",
+      "outline_path": "method/modules/budget-18",
+      "title": "Synthetic module 18",
+      "body": "This synthetic case contains availability record 18; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 18; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-19",
+      "role": "method",
+      "outline_path": "method/modules/budget-19",
+      "title": "Synthetic module 19",
+      "body": "This synthetic case contains availability record 19; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 19; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-20",
+      "role": "method",
+      "outline_path": "method/modules/budget-20",
+      "title": "Synthetic module 20",
+      "body": "This synthetic case contains availability record 20; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 20; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-21",
+      "role": "method",
+      "outline_path": "method/modules/budget-21",
+      "title": "Synthetic module 21",
+      "body": "This synthetic case contains availability record 21; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 21; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-22",
+      "role": "method",
+      "outline_path": "method/modules/budget-22",
+      "title": "Synthetic module 22",
+      "body": "This synthetic case contains availability record 22; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 22; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-23",
+      "role": "method",
+      "outline_path": "method/modules/budget-23",
+      "title": "Synthetic module 23",
+      "body": "This synthetic case contains availability record 23; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 23; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-24",
+      "role": "method",
+      "outline_path": "method/modules/budget-24",
+      "title": "Synthetic module 24",
+      "body": "This synthetic case contains availability record 24; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 24; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-25",
+      "role": "method",
+      "outline_path": "method/modules/budget-25",
+      "title": "Synthetic module 25",
+      "body": "This synthetic case contains availability record 25; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 25; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-26",
+      "role": "method",
+      "outline_path": "method/modules/budget-26",
+      "title": "Synthetic module 26",
+      "body": "This synthetic case contains availability record 26; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 26; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-27",
+      "role": "method",
+      "outline_path": "method/modules/budget-27",
+      "title": "Synthetic module 27",
+      "body": "This synthetic case contains availability record 27; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 27; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-28",
+      "role": "method",
+      "outline_path": "method/modules/budget-28",
+      "title": "Synthetic module 28",
+      "body": "This synthetic case contains availability record 28; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 28; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-29",
+      "role": "method",
+      "outline_path": "method/modules/budget-29",
+      "title": "Synthetic module 29",
+      "body": "This synthetic case contains availability record 29; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 29; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-30",
+      "role": "method",
+      "outline_path": "method/modules/budget-30",
+      "title": "Synthetic module 30",
+      "body": "This synthetic case contains availability record 30; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 30; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-31",
+      "role": "method",
+      "outline_path": "method/modules/budget-31",
+      "title": "Synthetic module 31",
+      "body": "This synthetic case contains availability record 31; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 31; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-32",
+      "role": "method",
+      "outline_path": "method/modules/budget-32",
+      "title": "Synthetic module 32",
+      "body": "This synthetic case contains availability record 32; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 32; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-33",
+      "role": "method",
+      "outline_path": "method/modules/budget-33",
+      "title": "Synthetic module 33",
+      "body": "This synthetic case contains availability record 33; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 33; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-34",
+      "role": "method",
+      "outline_path": "method/modules/budget-34",
+      "title": "Synthetic module 34",
+      "body": "This synthetic case contains availability record 34; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 34; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-35",
+      "role": "method",
+      "outline_path": "method/modules/budget-35",
+      "title": "Synthetic module 35",
+      "body": "This synthetic case contains availability record 35; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 35; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-36",
+      "role": "method",
+      "outline_path": "method/modules/budget-36",
+      "title": "Synthetic module 36",
+      "body": "This synthetic case contains availability record 36; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 36; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-37",
+      "role": "method",
+      "outline_path": "method/modules/budget-37",
+      "title": "Synthetic module 37",
+      "body": "This synthetic case contains availability record 37; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 37; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-38",
+      "role": "method",
+      "outline_path": "method/modules/budget-38",
+      "title": "Synthetic module 38",
+      "body": "This synthetic case contains availability record 38; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 38; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-39",
+      "role": "method",
+      "outline_path": "method/modules/budget-39",
+      "title": "Synthetic module 39",
+      "body": "This synthetic case contains availability record 39; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 39; this record exists only to test the managed-node budget."
+      }
+    },
+    {
+      "claim_id": "budget-40",
+      "role": "method",
+      "outline_path": "method/modules/budget-40",
+      "title": "Synthetic module 40",
+      "body": "This synthetic case contains availability record 40; it does not describe a real method.",
+      "evidence": {
+        "kind": "not_applicable",
+        "detail": "No method facts are supplied for synthetic module 40; this record exists only to test the managed-node budget."
+      }
+    }
+  ]
+}

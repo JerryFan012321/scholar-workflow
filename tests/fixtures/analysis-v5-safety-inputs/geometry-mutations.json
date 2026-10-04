@@ -1,0 +1,416 @@
+{
+  "schema_version": 1,
+  "status": "prepared_not_approved",
+  "base_canvas": {
+    "read_only_review_reference": "../../../planning/acceptance/analysis-v5-synthetic/Synthetic Scalar Reader Analysis.canvas",
+    "execution_base_procedure": {
+      "source_ir_path": "../analysis_v5_toy.json",
+      "note_stem": "Synthetic Scalar Reader Analysis",
+      "method": "After explicit approval, reconstruct through the normal renderer in an isolated synthetic directory; do not depend on the ignored review artifact existing in a clean checkout.",
+      "serialization": "json.dumps(canvas, ensure_ascii=False, indent=2) + newline; UTF-8 bytes; preserve object and list order",
+      "required_prechecks": [
+        "The input IR SHA-256 exactly matches ir_sha256.",
+        "The reconstructed Canvas full-byte SHA-256 exactly matches sha256 before any mutation.",
+        "There are exactly 58 nodes and 57 edges and the recorded bbox matches.",
+        "Every G-03 node_id and old_y exactly matches, and G-02 reference_node rectangle matches."
+      ],
+      "on_any_mismatch": "Stop the case before mutation and report input/base mismatch. Do not substitute current coordinates, regenerate expected values or relax the hash; prepare a newly reviewable input if a legitimate change requires it."
+    },
+    "sha256": "6dab532f4b5bbf261716ede769eb1e135eac92ea5c8fe50531ba9fe98ff12b9d",
+    "managed_nodes": 58,
+    "managed_edges": 57,
+    "bbox": {
+      "min_x": 0,
+      "min_y": 0,
+      "max_x": 3056,
+      "max_y": 4538
+    },
+    "ir_sha256": "89640ecef880ec49bdf4210f440b7938952b0529267f09aae55a02faafa2a5d4"
+  },
+  "cases": [
+    {
+      "case_id": "G-01",
+      "title": "Extra cross-branch managed-to-managed edge",
+      "mutation": {
+        "add_edge": {
+          "id": "synthetic-cross-branch-edge",
+          "fromNode": "1db98ef0f1d8b14b",
+          "fromSide": "right",
+          "fromEnd": "none",
+          "toNode": "491aa5820d139a26",
+          "toSide": "left",
+          "toEnd": "none",
+          "styleAttributes": {
+            "pathfindingMethod": "square"
+          }
+        }
+      },
+      "expected": {
+        "canonical_success": false,
+        "finding": "canvas-unexpected-edge",
+        "required_original_edges_unchanged": true,
+        "source_and_claim_text_unchanged": true
+      }
+    },
+    {
+      "case_id": "G-02",
+      "title": "Custom text rectangle covers the module Method node",
+      "mutation": {
+        "add_node": {
+          "id": "synthetic-covering-text",
+          "type": "text",
+          "x": 1568,
+          "y": 3201,
+          "width": 456,
+          "height": 108,
+          "text": "Synthetic covering box."
+        },
+        "reference_node": {
+          "id": "491aa5820d139a26",
+          "x": 1568,
+          "y": 3201,
+          "width": 456,
+          "height": 108
+        }
+      },
+      "expected": {
+        "canonical_success": false,
+        "finding": "overlapping-canvas-nodes",
+        "covered_record": {
+          "claim_id": "m-1",
+          "point_id": "method"
+        },
+        "owner_content_unchanged": true
+      }
+    },
+    {
+      "case_id": "G-03",
+      "title": "N-11 integer-safe vertical extension exceeding 3:1",
+      "mutation": {
+        "field": "y",
+        "rule": "new_y = floor(old_y * 9039 / 4409 + 0.5), for nonnegative old_y; x/width/height/text/edges stay unchanged",
+        "by_node": [
+          {
+            "node_id": "e8d04a629322a1d8",
+            "old_y": 2452,
+            "new_y": 5027
+          },
+          {
+            "node_id": "0f6e70cebb29e281",
+            "old_y": 485,
+            "new_y": 994
+          },
+          {
+            "node_id": "1db98ef0f1d8b14b",
+            "old_y": 0,
+            "new_y": 0
+          },
+          {
+            "node_id": "dd3b73492f462585",
+            "old_y": 116,
+            "new_y": 238
+          },
+          {
+            "node_id": "059e20dc5fd26786",
+            "old_y": 301,
+            "new_y": 617
+          },
+          {
+            "node_id": "b592164a9eada83e",
+            "old_y": 232,
+            "new_y": 476
+          },
+          {
+            "node_id": "d86b447cddf652d1",
+            "old_y": 348,
+            "new_y": 713
+          },
+          {
+            "node_id": "ab2b7558fb3a07aa",
+            "old_y": 649,
+            "new_y": 1331
+          },
+          {
+            "node_id": "8d2d03cf4654ed39",
+            "old_y": 533,
+            "new_y": 1093
+          },
+          {
+            "node_id": "f300e7f7a5fa1630",
+            "old_y": 464,
+            "new_y": 951
+          },
+          {
+            "node_id": "6a68bd8917a11217",
+            "old_y": 580,
+            "new_y": 1189
+          },
+          {
+            "node_id": "3c2259a7ea917279",
+            "old_y": 765,
+            "new_y": 1568
+          },
+          {
+            "node_id": "6b98c3859abb2ccb",
+            "old_y": 696,
+            "new_y": 1427
+          },
+          {
+            "node_id": "31271e7974bf3120",
+            "old_y": 812,
+            "new_y": 1665
+          },
+          {
+            "node_id": "dd24788c46127285",
+            "old_y": 928,
+            "new_y": 1903
+          },
+          {
+            "node_id": "f4c52d27c2341fb3",
+            "old_y": 1911,
+            "new_y": 3918
+          },
+          {
+            "node_id": "7af081d4745112a8",
+            "old_y": 1068,
+            "new_y": 2190
+          },
+          {
+            "node_id": "37106b1eb06ff64b",
+            "old_y": 1485,
+            "new_y": 3044
+          },
+          {
+            "node_id": "08eed4a4bf0ca962",
+            "old_y": 1311,
+            "new_y": 2688
+          },
+          {
+            "node_id": "d44faefc2fcea3c7",
+            "old_y": 1184,
+            "new_y": 2427
+          },
+          {
+            "node_id": "f027120e8581d5aa",
+            "old_y": 1300,
+            "new_y": 2665
+          },
+          {
+            "node_id": "56d21bf6c517b492",
+            "old_y": 1416,
+            "new_y": 2903
+          },
+          {
+            "node_id": "9c3317709160dbfd",
+            "old_y": 1659,
+            "new_y": 3401
+          },
+          {
+            "node_id": "4392ee0b513b04a1",
+            "old_y": 1532,
+            "new_y": 3141
+          },
+          {
+            "node_id": "6b829baa75f06fb5",
+            "old_y": 1648,
+            "new_y": 3379
+          },
+          {
+            "node_id": "53d2a3c8dc09b68c",
+            "old_y": 1764,
+            "new_y": 3616
+          },
+          {
+            "node_id": "ed02beabcbbae940",
+            "old_y": 2206,
+            "new_y": 4523
+          },
+          {
+            "node_id": "4dcad2e403a96340",
+            "old_y": 1880,
+            "new_y": 3854
+          },
+          {
+            "node_id": "1364d8509ae104ef",
+            "old_y": 2154,
+            "new_y": 4416
+          },
+          {
+            "node_id": "370567fbd8dbb0f4",
+            "old_y": 2017,
+            "new_y": 4135
+          },
+          {
+            "node_id": "a066cd33ec6b3897",
+            "old_y": 2133,
+            "new_y": 4373
+          },
+          {
+            "node_id": "a763df3e64ca9e0d",
+            "old_y": 2249,
+            "new_y": 4611
+          },
+          {
+            "node_id": "cb9cd13de016f086",
+            "old_y": 2502,
+            "new_y": 5129
+          },
+          {
+            "node_id": "5aeac37dd1189c11",
+            "old_y": 2365,
+            "new_y": 4849
+          },
+          {
+            "node_id": "a2a32289bb80fe83",
+            "old_y": 2481,
+            "new_y": 5086
+          },
+          {
+            "node_id": "19f141c2aad8b6ea",
+            "old_y": 2597,
+            "new_y": 5324
+          },
+          {
+            "node_id": "a98f9883707b8f2d",
+            "old_y": 2713,
+            "new_y": 5562
+          },
+          {
+            "node_id": "7184490528f71e21",
+            "old_y": 3338,
+            "new_y": 6843
+          },
+          {
+            "node_id": "5cebdb61aa28a7f4",
+            "old_y": 2932,
+            "new_y": 6011
+          },
+          {
+            "node_id": "75b32223159a7a8a",
+            "old_y": 2853,
+            "new_y": 5849
+          },
+          {
+            "node_id": "a73dfa866857bcb5",
+            "old_y": 2969,
+            "new_y": 6087
+          },
+          {
+            "node_id": "d693476117a8aed6",
+            "old_y": 3270,
+            "new_y": 6704
+          },
+          {
+            "node_id": "1762b5a56aca5d20",
+            "old_y": 3085,
+            "new_y": 6325
+          },
+          {
+            "node_id": "491aa5820d139a26",
+            "old_y": 3201,
+            "new_y": 6562
+          },
+          {
+            "node_id": "95337a71d14d08b4",
+            "old_y": 3317,
+            "new_y": 6800
+          },
+          {
+            "node_id": "a18697ba560063dd",
+            "old_y": 3433,
+            "new_y": 7038
+          },
+          {
+            "node_id": "a586c57dc7dd3eab",
+            "old_y": 3734,
+            "new_y": 7655
+          },
+          {
+            "node_id": "d0f8e7881886e256",
+            "old_y": 3549,
+            "new_y": 7276
+          },
+          {
+            "node_id": "344efcead53892d6",
+            "old_y": 3665,
+            "new_y": 7514
+          },
+          {
+            "node_id": "e2fd4489120e0ff1",
+            "old_y": 3781,
+            "new_y": 7752
+          },
+          {
+            "node_id": "d92c2a4674ec5b07",
+            "old_y": 3897,
+            "new_y": 7989
+          },
+          {
+            "node_id": "e5f71c8357f066c7",
+            "old_y": 4145,
+            "new_y": 8498
+          },
+          {
+            "node_id": "405bb78edd6038bb",
+            "old_y": 4037,
+            "new_y": 8276
+          },
+          {
+            "node_id": "674ac5aeaaa17bdc",
+            "old_y": 4232,
+            "new_y": 8676
+          },
+          {
+            "node_id": "c379526264d21186",
+            "old_y": 4153,
+            "new_y": 8514
+          },
+          {
+            "node_id": "0ea6f722e70572ff",
+            "old_y": 4269,
+            "new_y": 8752
+          },
+          {
+            "node_id": "58d1eab905c903f4",
+            "old_y": 4440,
+            "new_y": 9103
+          },
+          {
+            "node_id": "7dd42499b757fc74",
+            "old_y": 4409,
+            "new_y": 9039
+          }
+        ]
+      },
+      "expected": {
+        "canonical_success": false,
+        "finding": "canvas-aspect-limit",
+        "bbox": {
+          "min_x": 0,
+          "min_y": 0,
+          "max_x": 3056,
+          "max_y": 9169
+        },
+        "aspect_ratio": "9169/3056",
+        "all_coordinates_integer": true,
+        "source_and_claim_text_unchanged": true
+      }
+    },
+    {
+      "case_id": "G-04",
+      "title": "One-record focused Limitation remains usable",
+      "input": "focused-limitation.json",
+      "expected": {
+        "canonical_success": true,
+        "selected_roles": [
+          "limitation"
+        ],
+        "semantic_records": 1,
+        "source_and_quote": "exact same l-r source spans and quote as fixed v5 base",
+        "max_aspect_ratio": 2,
+        "scope_statement": "focused Limitation, not a whole-paper result",
+        "other_role_facts_must_not_be_invented": true
+      }
+    }
+  ]
+}

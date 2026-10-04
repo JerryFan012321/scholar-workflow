@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "status": "prepared_not_approved",
+  "source_boundary": "synthetic_only",
+  "execution_status": "not_run",
+  "runtime_imports_used_to_prepare": false,
+  "source_renderer_used_to_prepare": false,
+  "base_fixture": {
+    "path": "../analysis_v5_toy.json",
+    "sha256": "89640ecef880ec49bdf4210f440b7938952b0529267f09aae55a02faafa2a5d4",
+    "paper_title": "Synthetic Scalar Reader",
+    "semantic_records": 38
+  },
+  "cases": [
+    {
+      "case_id": "U-01",
+      "input": "focused-method.json",
+      "baseline": "../analysis_v5_toy.json",
+      "expected": "complete Method replacement; four unselected roles and their statements, evidence, source spans, block identities and links remain unchanged"
+    },
+    {
+      "case_id": "U-02",
+      "input": "repair-mutations.json",
+      "mutation_id": "U-02",
+      "expected": "targeted_repair_rejected_container_identity"
+    },
+    {
+      "case_id": "U-03",
+      "input": "repair-mutations.json",
+      "mutation_id": "U-03",
+      "expected": "targeted_repair_rejected_point_identity_sequence"
+    },
+    {
+      "case_id": "U-04",
+      "input": "repair-mutations.json",
+      "mutation_id": "U-04",
+      "expected": "targeted_repair_rejected_point_identity_remapping"
+    },
+    {
+      "case_id": "U-05",
+      "input": "canvas-mutations.json",
+      "mutation_id": "U-05",
+      "expected": "conflict"
+    },
+    {
+      "case_id": "U-06",
+      "input": "canvas-mutations.json",
+      "mutation_id": "U-06",
+      "expected": "ready"
+    },
+    {
+      "case_id": "U-07",
+      "baseline": "v4-base.json",
+      "incoming": "../analysis_v5_toy.json",
+      "expected": "v4-to-v5 ordinary update refused; baseline/current pair hashes unchanged; no commit"
+    },
+    {
+      "case_id": "U-08",
+      "baseline": "../analysis_v5_toy.json",
+      "incoming": "v4-base.json",
+      "expected": "v5-to-v4 ordinary update refused; baseline/current pair hashes unchanged; no commit"
+    },
+    {
+      "case_id": "N-18",
+      "input": "budget-40-modules.json",
+      "expected": {
+        "independent_records": 40,
+        "missing_fixed_child_labels_per_module": [
+          "motivation",
+          "method",
+          "why-it-works",
+          "technical-advantage"
+        ],
+        "managed_node_lower_bound": 206,
+        "managed_node_limit": 96,
+        "canonical_success": false,
+        "records_must_not_be_dropped": true,
+        "implicit_merge_or_budget_increase": false
+      }
+    }
+  ],
+  "geometry_cases": [
+    {"case_id": "G-01", "input": "geometry-mutations.json", "expected_finding": "canvas-unexpected-edge"},
+    {"case_id": "G-02", "input": "geometry-mutations.json", "expected_finding": "overlapping-canvas-nodes"},
+    {"case_id": "G-03", "input": "geometry-mutations.json", "expected_finding": "canvas-aspect-limit"},
+    {"case_id": "G-04", "input": "focused-limitation.json", "expected": "valid focused Limitation with one unchanged source-backed record and aspect <= 2"},
+    {"case_id": "G-05", "input": "human-edge-mutations.json", "expected_finding": "canvas-edge-through-node"},
+    {"case_id": "G-06", "input": "human-edge-mutations.json", "expected_finding": "canvas-crossing-edges"},
+    {"case_id": "G-07", "input": "human-edge-mutations.json", "expected_finding": "canvas-edge-routing-unverifiable"}
+  ],
+  "point_prose_cases": [
+    {"case_id": "P-01", "input": "point-prose-mutations.json", "expected": "reject v5 point ATX heading"},
+    {"case_id": "P-02", "input": "point-prose-mutations.json", "expected": "reject v5 point machine marker"},
+    {"case_id": "P-03", "input": "point-prose-mutations.json", "expected": "reject v5 point indented ATX heading"},
+    {"case_id": "P-04", "input": "point-prose-mutations.json", "expected": "retain literal #tag; no new heading"},
+    {"case_id": "P-05", "input": "point-prose-mutations.json", "expected": "retain v4 ATX-like prose behind its list prefix"},
+    {"case_id": "P-06", "input": "point-prose-mutations.json", "expected": "retain legacy v3 model/schema compatibility; not new-format acceptance"},
+    {"case_id": "P-07", "input": "point-prose-mutations.json", "expected": "reject v5 bare ATX hashes"},
+    {"case_id": "P-08", "input": "point-prose-mutations.json", "expected": "reject v5 Canvas summary ATX heading"},
+    {"case_id": "P-09", "input": "point-prose-mutations.json", "expected": "reject v4 point machine marker"},
+    {"case_id": "P-10", "input": "point-prose-mutations.json", "expected": "reject v5 Canvas summary machine marker"}
+  ],
+  "not_in_scope": [
+    "Real Vault or PDF access",
+    "GUI/app launches",
+    "Source quote verification against real papers",
+    "Formal knowledge migrations",
+    "Publication or installation",
+    "Advanced Canvas metadata variants without separately prepared exact payloads"
+  ]
+}

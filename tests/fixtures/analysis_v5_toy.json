@@ -1,0 +1,151 @@
+{
+  "schema_version": 5,
+  "artifact_id": "analysis:paper:synthetic-scalar-reader",
+  "paper_title": "Synthetic Scalar Reader",
+  "language": "en",
+  "profile": {
+    "kind": "whole",
+    "framework": "reference_tree_v5",
+    "roles": ["abstract", "introduction", "method", "experiments", "limitation"],
+    "markdown_quotes": true
+  },
+  "reader": {"kind": "zotero_native"},
+  "claims": [
+    {
+      "claim_id": "a-t", "role": "abstract", "outline_path": "abstract/task", "title": "Task",
+      "body": "Estimate a scalar from three measurements.",
+      "evidence": {"kind": "author_stated", "anchor": "Synthetic physical page 1", "source_spans": [{"kind": "zotero_pdf", "library_type": "personal", "library_id": "99999999", "attachment_key": "SYNTH001", "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000", "page_index": 0, "quote": "Q_TASK: \"Three inputs, one scalar.\""}]}
+    },
+    {
+      "claim_id": "a-c", "role": "abstract", "outline_path": "abstract/previous_methods/synthetic", "title": "Technical challenge for previous methods",
+      "body": "No prior-method comparison is defined in this synthetic source.",
+      "evidence": {"kind": "not_applicable", "detail": "No prior-method comparison is defined in this synthetic source."}
+    },
+    {
+      "claim_id": "a-i", "role": "abstract", "outline_path": "abstract/insight", "title": "Key insight / motivation", "container": true, "body": "",
+      "evidence": {"kind": "not_applicable", "detail": "Structural container only"},
+      "points": [
+        {"point_id": "motivation", "text": "This synthetic source supplies no abstract-level insight.", "evidence": {"kind": "not_applicable", "detail": "This synthetic source supplies no abstract-level insight."}},
+        {"point_id": "advantage", "text": "No abstract-level benefit is specified in this synthetic source.", "evidence": {"kind": "not_applicable", "detail": "No abstract-level benefit is specified in this synthetic source."}}
+      ]
+    },
+    {
+      "claim_id": "a-k1", "role": "abstract", "outline_path": "abstract/contributions/one", "title": "Technical contribution 1", "container": true, "body": "",
+      "evidence": {"kind": "not_applicable", "detail": "Structural container only"},
+      "points": [
+        {"point_id": "summary", "text": "No abstract-level summary for contribution 1 is supplied.", "evidence": {"kind": "not_applicable", "detail": "No abstract-level summary for contribution 1 is supplied."}},
+        {"point_id": "advantage", "text": "No abstract-level benefit for contribution 1 is supplied.", "evidence": {"kind": "not_applicable", "detail": "No abstract-level benefit for contribution 1 is supplied."}}
+      ]
+    },
+    {
+      "claim_id": "a-k2", "role": "abstract", "outline_path": "abstract/contributions/two", "title": "Technical contribution 2", "container": true, "body": "",
+      "evidence": {"kind": "not_applicable", "detail": "Structural container only"},
+      "points": [
+        {"point_id": "summary", "text": "No abstract-level summary for contribution 2 is supplied.", "evidence": {"kind": "not_applicable", "detail": "No abstract-level summary for contribution 2 is supplied."}},
+        {"point_id": "advantage", "text": "No abstract-level benefit for contribution 2 is supplied.", "evidence": {"kind": "not_applicable", "detail": "No abstract-level benefit for contribution 2 is supplied."}}
+      ]
+    },
+    {
+      "claim_id": "a-e", "role": "abstract", "outline_path": "abstract/experiment", "title": "Experiment",
+      "body": "This synthetic source supplies no abstract-level experimental account.",
+      "evidence": {"kind": "not_applicable", "detail": "This synthetic source supplies no abstract-level experimental account."}
+    },
+    {
+      "claim_id": "i-t", "role": "introduction", "outline_path": "introduction/task_application", "title": "Task and application",
+      "body": "No application scenario is supplied in this synthetic source.",
+      "evidence": {"kind": "not_applicable", "detail": "No application scenario is supplied in this synthetic source."}
+    },
+    {
+      "claim_id": "i-c1", "role": "introduction", "outline_path": "introduction/previous_methods/one", "title": "Technical challenge 1", "container": true, "body": "",
+      "evidence": {"kind": "not_applicable", "detail": "Structural container only"},
+      "points": [
+        {"point_id": "previous-method", "text": "No earlier method is supplied for challenge 1.", "evidence": {"kind": "not_applicable", "detail": "No earlier method is supplied for challenge 1."}},
+        {"point_id": "limitation", "text": "No failure case is supplied for challenge 1.", "evidence": {"kind": "not_applicable", "detail": "No failure case is supplied for challenge 1."}},
+        {"point_id": "technical-reason", "text": "No technical cause is supplied for challenge 1.", "evidence": {"kind": "not_applicable", "detail": "No technical cause is supplied for challenge 1."}}
+      ]
+    },
+    {
+      "claim_id": "i-c2", "role": "introduction", "outline_path": "introduction/previous_methods/two", "title": "Technical challenge 2", "container": true, "body": "",
+      "evidence": {"kind": "not_applicable", "detail": "Structural container only"},
+      "points": [
+        {"point_id": "previous-method", "text": "No earlier method is supplied for challenge 2.", "evidence": {"kind": "not_applicable", "detail": "No earlier method is supplied for challenge 2."}},
+        {"point_id": "limitation", "text": "No failure case is supplied for challenge 2.", "evidence": {"kind": "not_applicable", "detail": "No failure case is supplied for challenge 2."}},
+        {"point_id": "technical-reason", "text": "No technical cause is supplied for challenge 2.", "evidence": {"kind": "not_applicable", "detail": "No technical cause is supplied for challenge 2."}}
+      ]
+    },
+    {
+      "claim_id": "i-p", "role": "introduction", "outline_path": "introduction/our_pipeline/insight", "title": "One-sentence key innovation / insight / contribution",
+      "body": "No introduction-level innovation statement is supplied.",
+      "evidence": {"kind": "not_applicable", "detail": "No introduction-level innovation statement is supplied."}
+    },
+    {
+      "claim_id": "i-k1", "role": "introduction", "outline_path": "introduction/our_pipeline/contributions/one", "title": "Contribution 1", "container": true, "body": "",
+      "evidence": {"kind": "not_applicable", "detail": "Structural container only"},
+      "points": [
+        {"point_id": "purpose", "text": "No introduction-level problem statement is supplied for contribution 1.", "evidence": {"kind": "not_applicable", "detail": "No introduction-level problem statement is supplied for contribution 1."}},
+        {"point_id": "how", "text": "No introduction-level implementation is supplied for contribution 1.", "evidence": {"kind": "not_applicable", "detail": "No introduction-level implementation is supplied for contribution 1."}},
+        {"point_id": "advantage", "text": "No introduction-level advantage is supplied for contribution 1.", "evidence": {"kind": "not_applicable", "detail": "No introduction-level advantage is supplied for contribution 1."}}
+      ]
+    },
+    {
+      "claim_id": "i-k2", "role": "introduction", "outline_path": "introduction/our_pipeline/contributions/two", "title": "Contribution 2", "container": true, "body": "",
+      "evidence": {"kind": "not_applicable", "detail": "Structural container only"},
+      "points": [
+        {"point_id": "purpose", "text": "No introduction-level problem statement is supplied for contribution 2.", "evidence": {"kind": "not_applicable", "detail": "No introduction-level problem statement is supplied for contribution 2."}},
+        {"point_id": "how", "text": "No introduction-level implementation is supplied for contribution 2.", "evidence": {"kind": "not_applicable", "detail": "No introduction-level implementation is supplied for contribution 2."}},
+        {"point_id": "advantage", "text": "No introduction-level advantage is supplied for contribution 2.", "evidence": {"kind": "not_applicable", "detail": "No introduction-level advantage is supplied for contribution 2."}}
+      ]
+    },
+    {
+      "claim_id": "i-d", "role": "introduction", "outline_path": "introduction/demos_application", "title": "Demos / applications",
+      "body": "No demo is defined in this synthetic source.",
+      "evidence": {"kind": "not_applicable", "detail": "No demo is defined in this synthetic source."}
+    },
+    {
+      "claim_id": "m-o", "role": "method", "outline_path": "method/overview", "title": "Overview", "container": true, "body": "",
+      "evidence": {"kind": "not_applicable", "detail": "Structural container only"},
+      "points": [
+        {"point_id": "task-io", "text": "This fixture tests the task/input/output slot without adding a method summary.", "evidence": {"kind": "not_applicable", "detail": "This fixture tests the task/input/output slot without adding a method summary."}},
+        {"point_id": "steps", "text": "No complete ordered procedure is supplied; no steps may be invented.", "evidence": {"kind": "not_applicable", "detail": "No complete ordered procedure is supplied; no steps may be invented."}}
+      ]
+    },
+    {
+      "claim_id": "m-1", "role": "method", "outline_path": "method/modules/one", "title": "Pipeline module 1", "container": true, "body": "",
+      "evidence": {"kind": "not_applicable", "detail": "Structural container only"},
+      "points": [
+        {"point_id": "motivation", "text": "No motivation statement is supplied for module 1.", "evidence": {"kind": "not_applicable", "detail": "No motivation statement is supplied for module 1."}},
+        {"point_id": "method", "text": "The first module subtracts the arithmetic mean.", "evidence": {"kind": "author_stated", "anchor": "Synthetic physical page 2", "source_spans": [{"kind": "zotero_pdf", "library_type": "personal", "library_id": "99999999", "attachment_key": "SYNTH001", "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000", "page_index": 1, "quote": "Q_METHOD: \"Subtract the mean <before> aggregation & preserve signs.\""}]}},
+        {"point_id": "why-it-works", "text": "No causal explanation is supplied for module 1.", "evidence": {"kind": "not_applicable", "detail": "No causal explanation is supplied for module 1."}},
+        {"point_id": "technical-advantage", "text": "No technical advantage is supplied for module 1.", "evidence": {"kind": "not_applicable", "detail": "No technical advantage is supplied for module 1."}}
+      ]
+    },
+    {
+      "claim_id": "m-2", "role": "method", "outline_path": "method/modules/two", "title": "Pipeline module 2", "container": true, "body": "",
+      "evidence": {"kind": "not_applicable", "detail": "Structural container only"},
+      "points": [
+        {"point_id": "motivation", "text": "No motivation statement is supplied for module 2.", "evidence": {"kind": "not_applicable", "detail": "No motivation statement is supplied for module 2."}},
+        {"point_id": "method", "text": "No implementation statement is supplied for module 2.", "evidence": {"kind": "not_applicable", "detail": "No implementation statement is supplied for module 2."}},
+        {"point_id": "why-it-works", "text": "No causal explanation is supplied for module 2.", "evidence": {"kind": "not_applicable", "detail": "No causal explanation is supplied for module 2."}},
+        {"point_id": "technical-advantage", "text": "No technical advantage is supplied for module 2.", "evidence": {"kind": "not_applicable", "detail": "No technical advantage is supplied for module 2."}}
+      ]
+    },
+    {
+      "claim_id": "e-c", "role": "experiments", "outline_path": "experiments/comparison/synthetic", "title": "Comparison experiments",
+      "body": "No independent baseline comparison is defined in this synthetic source.",
+      "evidence": {"kind": "not_applicable", "detail": "No independent baseline comparison is defined in this synthetic source."}
+    },
+    {
+      "claim_id": "e-a", "role": "experiments", "outline_path": "experiments/ablation/centering", "title": "Ablation studies", "container": true, "body": "",
+      "evidence": {"kind": "not_applicable", "detail": "Structural container only"},
+      "points": [
+        {"point_id": "components", "text": "The toy error is 9 without centering and 4 with centering.", "evidence": {"kind": "author_stated", "anchor": "Synthetic physical page 3", "source_spans": [{"kind": "zotero_pdf", "library_type": "personal", "library_id": "99999999", "attachment_key": "SYNTH001", "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000", "page_index": 2, "quote": "Q_ABLATION: \"Error changes from 9 to 4 in this toy comparison.\""}]}},
+        {"point_id": "design-choices", "text": "The toy comparison supports a centering effect only within this synthetic setup.", "evidence": {"kind": "analysis_inference", "detail": "This inference is limited to the synthetic comparison on physical page 3.", "source_spans": [{"kind": "zotero_pdf", "library_type": "personal", "library_id": "99999999", "attachment_key": "SYNTH001", "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000", "page_index": 2, "quote": "Q_ABLATION: \"Error changes from 9 to 4 in this toy comparison.\""}]}}
+      ]
+    },
+    {
+      "claim_id": "l-r", "role": "limitation", "outline_path": "limitation/explanation", "title": "Limitation",
+      "body": "Only three synthetic measurements are considered, so the described evidence is limited to this toy setting.",
+      "evidence": {"kind": "author_stated", "anchor": "Synthetic physical page 4", "source_spans": [{"kind": "zotero_pdf", "library_type": "personal", "library_id": "99999999", "attachment_key": "SYNTH001", "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000", "page_index": 3, "quote": "Q_LIMIT: \"Evidence is limited to the three-input toy setting.\""}]}
+    }
+  ]
+}

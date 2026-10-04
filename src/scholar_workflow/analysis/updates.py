@@ -11,6 +11,7 @@ from typing import Any
 from scholar_workflow.analysis.conformance import validate_bundle
 from scholar_workflow.analysis.models import (
     ALL_ROLES,
+    FIVE_TREE_ROLES,
     TREE_ROLES,
     AnalysisBaseline,
     AnalysisBaselineClaim,
@@ -122,7 +123,7 @@ def create_baseline(
         for node in bundle.canvas["nodes"]
         if isinstance(node, dict) and isinstance(node.get("id"), str)
     }
-    if document.schema_version == 4:
+    if document.schema_version in {4, 5}:
         claim_node_ids = {
             claim.claim_id: canvas_node_id(
                 document.artifact_id,
@@ -141,13 +142,45 @@ def create_baseline(
                 if f'id="{claim.claim_id}" role="{claim.role.value}"' in text:
                     claim_node_ids[claim.claim_id] = str(node["id"])
 
+    v5_projection_labels: dict[str, tuple[str, int]] = {}
+    if document.schema_version == 5:
+        from scholar_workflow.analysis.complete_reference import template_tree
+
+        pending = [(template_tree(document, note_stem), 1)]
+        while pending:
+            template_node, heading_level = pending.pop()
+            if (
+                template_node.claim is not None and template_node.point is None
+                and template_node.kind != "empty-slot"
+            ):
+                v5_projection_labels[template_node.claim.claim_id] = (
+                    template_node.label, heading_level
+                )
+            pending.extend((child, heading_level + 1) for child in template_node.children)
+
     claims: dict[str, AnalysisBaselineClaim] = {}
     for claim in document.claims:
         node_id = claim_node_ids.get(claim.claim_id)
         node = actual_nodes.get(node_id or "")
         if node_id is None or node is None:
             raise AnalysisUpdateError(f"missing generated Canvas node for {claim.claim_id}")
-        if document.schema_version == 4:
+        if document.schema_version == 5:
+            from scholar_workflow.analysis.complete_reference import complete_claim_markdown_lines
+
+            language = document.language or "zh"
+            label, heading_level = v5_projection_labels[claim.claim_id]
+            markdown = "\n".join(
+                complete_claim_markdown_lines(
+                    claim, language, reader=document.reader,
+                    markdown_quotes=document.profile.markdown_quotes,
+                    label=label, heading_level=heading_level,
+                )
+            )
+            expected_node = next(
+                row for row in rendered.canvas["nodes"] if row["id"] == node_id
+            )
+            canvas_text = expected_node["text"]
+        elif document.schema_version == 4:
             from scholar_workflow.analysis.reference_rendering import (
                 reference_claim_canvas_text,
                 reference_claim_markdown_lines,
@@ -205,25 +238,31 @@ def _merged_document(
     baseline: AnalysisDocument,
     update: AnalysisDocument,
 ) -> AnalysisDocument:
+    if (baseline.schema_version == 5 or update.schema_version == 5) and (
+        baseline.schema_version != update.schema_version
+    ):
+        raise AnalysisUpdateError(
+            "five-branch cutover requires an explicit migration, not an ordinary update"
+        )
     if (baseline.schema_version == 4) != (update.schema_version == 4):
         raise AnalysisUpdateError(
             "reference-tree cutover requires an explicit migration, not an ordinary update"
         )
     if baseline.profile.framework != update.profile.framework:
         raise AnalysisUpdateError("analysis update cannot change its framework")
-    if baseline.schema_version == 4 and update.reader is not None and update.reader != baseline.reader:
+    if baseline.schema_version in {4, 5} and update.reader is not None and update.reader != baseline.reader:
         raise AnalysisUpdateError(
             "reference-tree reader changes require an explicit migration"
         )
     if baseline.profile.markdown_quotes and not update.profile.markdown_quotes:
         raise AnalysisUpdateError("analysis updates cannot remove the enabled Markdown quotation format")
     if update.profile.kind is ProfileKind.WHOLE:
-        if baseline.schema_version == 4 and update.reader is None:
+        if baseline.schema_version in {4, 5} and update.reader is None:
             return update.model_copy(update={"reader": baseline.reader})
         return update
 
     replaced_roles = set(update.profile.roles)
-    if baseline.schema_version == 4:
+    if baseline.schema_version in {4, 5}:
         if baseline.profile.markdown_quotes != update.profile.markdown_quotes:
             raise AnalysisUpdateError(
                 "Markdown quotation format changes require an explicit whole analysis update"
@@ -240,12 +279,13 @@ def _merged_document(
                     "focused reference-tree updates must include every existing "
                     "outline path in each selected branch"
                 )
-        # A whole reference tree keeps all four structural branches even when
+        # A whole reference tree keeps its version's structural branches even when
         # one of them has no factual claim. Preserve the supplied order inside
         # each branch; claim IDs are identities, not presentation order.
+        tree_roles = FIVE_TREE_ROLES if baseline.schema_version == 5 else TREE_ROLES
         claims = [
             claim
-            for role in TREE_ROLES
+            for role in tree_roles
             for claim in (update.claims if role in replaced_roles else baseline.claims)
             if claim.role is role
         ]
@@ -257,13 +297,13 @@ def _merged_document(
             if baseline.profile.kind is ProfileKind.WHOLE
             else AnalysisProfile(
                 kind=ProfileKind.FOCUSED,
-                roles=[role for role in TREE_ROLES if any(c.role is role for c in claims)],
+                roles=[role for role in tree_roles if any(c.role is role for c in claims)],
                 framework=baseline.profile.framework,
                 markdown_quotes=baseline.profile.markdown_quotes,
             )
         )
         return AnalysisDocument(
-            schema_version=4,
+            schema_version=baseline.schema_version,
             artifact_id=baseline.artifact_id,
             paper_title=baseline.paper_title,
             language=baseline.language,
@@ -341,7 +381,7 @@ def _merge_canvas(
         for key, value in current_node.items():
             if key not in {"id", "type", "text"}:
                 replacement[key] = deepcopy(value)
-        if baseline.document.schema_version == 4:
+        if baseline.document.schema_version in {4, 5}:
             from scholar_workflow.analysis.reference_rendering import _visible_height
 
             width = replacement.get("width")

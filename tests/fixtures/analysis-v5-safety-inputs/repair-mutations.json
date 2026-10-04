@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "status": "prepared_not_approved",
+  "cases": [
+    {
+      "case_id": "U-02",
+      "base": "analysis_v5_toy.json",
+      "operations": [
+        {
+          "op": "test",
+          "path": "/claims/14/claim_id",
+          "value": "m-1"
+        },
+        {
+          "op": "test",
+          "path": "/claims/14/container",
+          "value": true
+        },
+        {
+          "op": "replace",
+          "path": "/claims/14/container",
+          "value": false
+        },
+        {
+          "op": "replace",
+          "path": "/claims/14/body",
+          "value": "This synthetic grouping has no independent method-level statement."
+        },
+        {
+          "op": "replace",
+          "path": "/claims/14/evidence/detail",
+          "value": "Repair safety fixture only; no additional method-level fact is supplied."
+        }
+      ],
+      "expected": "targeted_repair_rejected_container_identity"
+    },
+    {
+      "case_id": "U-03",
+      "base": "analysis_v5_toy.json",
+      "operations": [
+        {
+          "op": "test",
+          "path": "/claims/14/claim_id",
+          "value": "m-1"
+        },
+        {
+          "op": "test",
+          "path": "/claims/14/points/0/point_id",
+          "value": "motivation"
+        },
+        {
+          "op": "test",
+          "path": "/claims/14/points/2/point_id",
+          "value": "why-it-works"
+        },
+        {
+          "op": "replace",
+          "path": "/claims/14/points/0",
+          "value": {
+            "point_id": "why-it-works",
+            "text": "No causal explanation is supplied for module 1.",
+            "evidence": {
+              "kind": "not_applicable",
+              "detail": "No causal explanation is supplied for module 1."
+            }
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/claims/14/points/2",
+          "value": {
+            "point_id": "motivation",
+            "text": "No motivation statement is supplied for module 1.",
+            "evidence": {
+              "kind": "not_applicable",
+              "detail": "No motivation statement is supplied for module 1."
+            }
+          }
+        }
+      ],
+      "expected": "targeted_repair_rejected_point_identity_sequence"
+    },
+    {
+      "case_id": "U-04",
+      "base": "analysis_v5_toy.json",
+      "operations": [
+        {
+          "op": "test",
+          "path": "/claims/14/claim_id",
+          "value": "m-1"
+        },
+        {
+          "op": "test",
+          "path": "/claims/14/points/0/point_id",
+          "value": "motivation"
+        },
+        {
+          "op": "replace",
+          "path": "/claims/14/points/0/point_id",
+          "value": "method"
+        },
+        {
+          "op": "replace",
+          "path": "/claims/14/points/1/point_id",
+          "value": "motivation"
+        }
+      ],
+      "expected": "targeted_repair_rejected_point_identity_remapping"
+    }
+  ]
+}
