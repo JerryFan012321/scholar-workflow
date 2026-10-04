@@ -50,9 +50,12 @@ knowledge核心而非Hub。安装版仅登记test新清洁对象，一个Source/
 打开。完整论文provider归属和人工评鉴仍独立待完成，不以打开请求代替canonical提交。
 0.37.1已正常安装，完整1535通过；修编码后原生打开的backend文件状态确为指定Source笔记，
 test可读入口四条链接解析。锁屏导致实际截图陈旧，已排除；GUI/人工及完整论文归属继续pending。
-当前开发续行补单篇paper-plan/register-paper与可恢复owner/导航/provider登记；已通过合成
-身份/权限/冲突/恢复测试，新增v5成对提交联测发现根Field路径误拒绝并已定向修正。
-尚未正常发布安装或对真实test对象进行canonical登记；G17仍未完成，不以开发树命令冒称能力已交付。
+0.38.0已正常发布安装单篇paper-plan/register-paper与可恢复owner/导航/provider登记；
+最终1561回归通过。安装版在既有清洁test Source/Field新建一个V-JEPA2目录，真实owner登记、
+完整v5 paired commit及provider apply成功；68摘录匹配当前附件对应页，68正文block反链和
+4资料入口原生解析。旧正文与registry不变，旧Canvas仅编辑器允许metadata变化，节点/边一致。
+这是真正的单篇test归属切片，不是正式Vault迁移或G17全阶段完成；锁屏下新GUI/人工审美、
+实际点击、逐项科学支持及剩余完整交付仍pending。具体见hotfix-0.38.0-results.md。
 
 ## 长期不变量（INV）
 

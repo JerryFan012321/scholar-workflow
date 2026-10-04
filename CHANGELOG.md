@@ -5,6 +5,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+- **analyze-paper / knowledge (development ledger only):** record pinned 0.38.0
+  package/plugin installation and the installed public single-paper registration,
+  v5 paired commit, provider apply and actual-package check in one new test folder.
+  All 68 excerpts match their declared local PDF pages; 68 block backlinks and four
+  companion links resolve natively. Old prose/registry remain unchanged. Advanced
+  Canvas added its allowed metadata to the old graph; nodes/edges remain identical,
+  but its byte hash changed and is recorded rather than claimed unchanged.
+  Locked-Mac visual/human and scientific assessment remain pending. No main merge,
+  service switch, formal Vault migration, PDF download or Zotero mutation.
+
 ## [0.38.0] - 2026-10-05
 
 ### Added

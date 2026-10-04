@@ -7,6 +7,18 @@
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
 
+**0.38.0已正常发布安装并交付下一版实际资料包：source4d604c19/runtime29c8ad00，
+CLI/module/dist/Codex cache一致。安装版公开paper-plan/register-paper在原清洁test Source/Field
+新建resources/papers/2025-v-jepa-2-0380，owner/导航/provider真实一致；随后public batch、
+commit-bundle、apply-change-set、check-bundle通过，三产物正式归属只限该test Source。
+完整五分支、68内容、105节点/104边，68原文摘录在对应PDF物理页匹配，4wiki入口及68正文
+block反链原生解析，backend确为新Canvas。Paper.md给出直接入口和复现/验收记录，机器回执分列。
+不重做科学分析、不接管旧包。registry与旧正文hash不变；旧Canvas因关闭时Advanced Canvas
+自动补允许metadata导致字节hash变化，但所有nodes/edges一致，旧包仍conformant，未静默回写。
+Mac仍锁屏，GUI美观/编辑/点击与逐项科学支持待人工；main/正式Vault/Zotero/服务均未改。
+本切片不等于完整模范Vault或G17完成，别再重复已有效全量/同对象检查来冒充下一能力。
+详见hotfix-0.38.0-results.md。安装回退0.37.1 runtime45ccf096；业务新资料不随包回退删除。**
+
 0.38.0单篇owner登记实现已完成，最终完整unit/contract1561通过（77.66秒，11既有警告）；
 之前一轮旧Hub worker计时失败已原样单项及完整复测通过，未改旧worker/断言。
 新增恢复journal损坏拒绝、根Field `.` 正例、真实登记→v5 paired commit/provider apply
