@@ -8,6 +8,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 ## [0.32.0] - 2026-10-04
 
 Independent hotfix on `codex/hotfix-project-context`; main is not merged.
+Normal Codex marketplace and fixed-runtime pipx installation completed. The
+post-install identity ledger is development-only; no real Vault sample was generated.
 Approved pre-release regression: 1,408 passed, 11 dependency/multiprocessing warnings
 in 72.97 seconds after version synchronization; v5 targeted tests: 53 passed. Five-file Ruff, skill frontmatter
 and diff whitespace checks passed. Installed-product human assessment, real-paper

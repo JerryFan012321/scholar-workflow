@@ -1,6 +1,6 @@
 # 五分支论文分析：安装态人工评审包
 
-2026-10-04。状态：准备完成，未安装、生成或执行评审。唯一格式真源为 `skills/analyze-paper/references/analysis-output-template.md`。
+2026-10-04。状态：0.32.0正常发布安装完成，尚未生成或执行真实样张评审。安装证据见 `hotfix-0.32.0-results.md`；下文旧前置状态保留为准备历史。唯一格式真源为 `skills/analyze-paper/references/analysis-output-template.md`。
 
 ## 前置条件
 
