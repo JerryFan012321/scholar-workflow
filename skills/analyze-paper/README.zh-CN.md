@@ -64,6 +64,10 @@ v4/v5 可通过 `reader` 显式选择已登记、核验 Vault 的 ZotFlow Librar
 Obsidian 内打开本机 Zotero 附件并定位物理页。不指定时仍生成 Zotero 原生入口。来源身份始终是
 结构化 span，页级链接不宣称逐句选中或批注同步；使用该选项前仍须核验插件、本机模式与附件。
 
+Source 可以只是 Vault 子目录。`knowledge reader SOURCE_ID` 会查找包含它的 Obsidian Vault，
+但不扩大父目录权限；`knowledge open SOURCE_ID '相对目录/笔记.md'`（或 `.canvas`）
+可不经 Hub 直接打开已有文件。详见[登记与打开契约](../../references/knowledge-registration.md)。
+
 历史 v4 Canvas 是简洁、可编辑的树形视图，不是第二份知识正文：单根、四大分支、浅灰框架标签和细线
 连接，不使用四张卡片。v4 最多有 40 个生成的 claim/details Canvas 语义节点，包含框架标签和合并详情节点在内的受管 Canvas 节点最多
 96 个；用户自建的文本、文件、链接和分组节点不占该预算。生成器提供方角连线提示，已安装的

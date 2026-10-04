@@ -54,6 +54,20 @@ scholar-workflow project overview --project-root /path/to/project --json
 预览零写入，不登记、不创建首页、不启动服务，也不代表内容或 Canvas 通过验收。
 Source/Field 的正式登记与分析成对提交仍是另行审议的操作。
 
+### 直接在 Obsidian 打开登记目录内的笔记与 Canvas（0.37.0）
+
+用 `scholar-workflow knowledge list --format json` 查看 `source_id`，然后运行：
+
+```bash
+scholar-workflow knowledge reader SOURCE_ID --language zh
+scholar-workflow knowledge open SOURCE_ID '相对目录/笔记.md' --language zh
+scholar-workflow knowledge open SOURCE_ID '相对目录/解析树.canvas' --language zh
+```
+
+所选目录可以只是 Vault 的子目录；父 Vault 只决定 Obsidian 打开位置，不扩大文件权限。
+不需要 Hub、workspace 或 Obsidian CLI。系统接受打开请求不代表画面/人工评鉴通过，
+也不是论文正式归档。ZotFlow 本机 PDF 能力另行检查。
+
 ### 不依赖 Hub，登记单个知识领域（0.36.0）
 
 预览后选择一个候选相对目录（单个子目录为 `.`），运行：

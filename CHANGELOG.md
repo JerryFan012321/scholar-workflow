@@ -5,6 +5,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+- **analyze-paper / knowledge:** separate Source file scope from its containing
+  Obsidian reader Vault; retain the exact-root resolver compatibility interface,
+  fail closed on ambiguous host mappings, and remove the analysis commit's reader
+  identity dependency on Hub. Registered ZotFlow sources use the containing Vault
+  without granting parent-folder permissions. Add independent `knowledge reader`
+  and `knowledge open` for existing Source-relative Markdown/Canvas, preserving
+  original paper content, evidence and Canvas format. Native open success remains
+  distinct from visible/human or canonical enrollment acceptance.
+
+- **config-setup / knowledge (development ledger only):** record normal 0.36.0
+  pinned package/plugin installation and the installed public CLI's actual clean
+  single-Field registration, preserving the original parent folder entry and all
+  displayed documents. Nine native note links resolve. Mac lock still prevents
+  fresh GUI/human assessment; canonical paper enrollment remains incomplete.
+  A stale release ref was fetched and rebuilt without force-pushing or running
+  the new business operation on the old installed version.
+
 - **config-setup / knowledge:** developing independent digest-bound single-Field
   registration and explicit existing-Source attachment, with readable navigation.
   Core first-registration inspection is shared with the compatibility server;

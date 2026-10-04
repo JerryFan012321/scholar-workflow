@@ -17,6 +17,12 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from scholar_workflow.adapters.obsidian_registry import (
+    ZotFlowError,
+)
+from scholar_workflow.adapters.obsidian_registry import (
+    resolve_obsidian_reader_vault_id as resolve_obsidian_vault_id,
+)
 from scholar_workflow.analysis.apply_changes import (
     KnowledgeApplySafetyError,
     KnowledgeProviderSnapshot,
@@ -39,7 +45,6 @@ from scholar_workflow.knowledge.fields import (
     FieldService,
     KnowledgeSourceRegistry,
 )
-from scholar_workflow.hub.zotflow import ZotFlowError, resolve_obsidian_vault_id
 from scholar_workflow.models import ResourceKind
 
 
