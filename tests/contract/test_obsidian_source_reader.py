@@ -95,6 +95,8 @@ def test_native_open_is_encoded_read_only_and_scoped(tmp_path: Path, name: str):
     assert result["source_relative_path"] == name
     assert result["human_assessment"] == "pending"
     query = parse_qs(urlsplit(calls[0][1]).query)
+    assert "Chosen%20Field%2F" in calls[0][1]
+    assert "+" not in calls[0][1]
     assert calls[0][0] == "/usr/bin/open"
     assert query == {"vault": [VAULT_ID], "file": [f"Chosen Field/{name}"]}
     assert registry.path.read_bytes() == before[0]

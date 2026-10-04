@@ -6,7 +6,7 @@ import os
 import stat
 import subprocess
 from pathlib import Path, PurePosixPath
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 from scholar_workflow.adapters.obsidian_registry import resolve_obsidian_reader
 from scholar_workflow.knowledge.fields import (
@@ -64,7 +64,9 @@ def open_document(
         binding = (resolve_obsidian_reader(root) if config_path is None else
                    resolve_obsidian_reader(root, config_path=config_path))
         vault_relative = (root / relative).relative_to(binding.vault_root).as_posix()
-        uri = "obsidian://open?" + urlencode({"vault": binding.vault_id, "file": vault_relative})
+        uri = "obsidian://open?" + urlencode(
+            {"vault": binding.vault_id, "file": vault_relative}, quote_via=quote,
+        )
         if (registry.revision() != revision
                 or registry.resolve(source_id, capability="read") != root
                 or _document_identity(root, relative) != identity):

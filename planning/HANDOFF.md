@@ -15,6 +15,8 @@ reader ID 只路由 Obsidian，不扩大父 Vault 权限。先准备独立合成
 不重跑整库、不改正式 Vault/Zotero/旧服务，不合并 main。
 0.37.0独立契约与必要完整回归1535通过（78.37秒，11既有警告），变动模块/tests Ruff、
 skill validator、eval schema与diff通过；下一步正常runtime-only发布安装后单对象native打开。
+0.37.0已正常安装runtime16254cbe，reader识别正确，但含空格的native URI没有打开目标。
+不将exit0当实机通过；按官方ObsidianURI规则补%20编码，准备安装0.37.1后复验同一对象。
 
 **最新0.36.0已正常发布安装：source106a4f3/runtime e73bf26，CLI/module/dist/cache一致。
 完整1508通过；public plan/register/list已在test仅登记新“模范知识目录-0.36.0”，一个Source/Field，

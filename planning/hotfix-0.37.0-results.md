@@ -28,3 +28,20 @@ OS 接受请求与真实界面/人工认可分开记录，不冒充论文正式 
 回退0.36.0 runtime e73bf2618b7f94673c84eb92f810cad56ed48764。
 只在已登记test样例执行reader/native open；原V-JEPA2三文件、registry和manifest保持原字节。
 可见使用说明放test，而非tmp。完整论文归属、科学支持与实际GUI/人工评鉴未完成，G17继续。
+
+## 首次正常安装与真实路由发现
+
+source65d58b67、runtime16254cbe已正常发布并安装，CLI/module/dist/Codex cache均0.37.0，
+direct_url固定上述runtime SHA。安装版reader正确识别窄Source与父test Vault；registry、manifest
+和V-JEPA2三文件hash前后相同。OS-open返回open-requested，但Obsidian frontend仍停在旧文件，
+因此不记为真实目标打开通过。原生URI中的空格为form-style `+`；官方Obsidian URI明确要求%20，
+补丁改为percent encoding并增加独立含空格输入的断言，准备正常安装0.37.1后复验同一对象。
+官方来源：https://help.obsidian.md/Extending+Obsidian/Obsidian+URI 。
+
+test新“原生阅读验收-0.37.0/开始使用.md”是可读使用入口，四条native links已由实际metadataCache
+解析为真实完整正文/Canvas和已登记两文档；经Obsidian CLI已打开，但这不替代public open实机验收。
+没有改原论文或伪造provider。主分支与服务均不变。
+
+0.37.1补丁定向26通过，完整1535通过/11既有警告/79.06秒；Ruff与diff通过。
+首次版本替换误命中同号referencing依赖，uv立即拒绝解析，0项测试；按package name修复lock，
+依赖版本不变，后续全部回归成功。不是跳过wheel检查或修改依赖来绕过失败。

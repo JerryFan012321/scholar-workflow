@@ -14,6 +14,10 @@ Vault 相对文件路径，不产生 shell、任意 URL 或写入权限。失败
 
 ## 执行
 
+安装态首次 OS-open 返回0但 frontend 未切换。补丁输入沿用含空格的 Source/文件名，
+预期 URI 用 `%20` 而非 `+`，同时保留 `%23` 等保留字符编码。再安装确定SHA的0.37.1，
+仅复验同一个Source文件打开；通过要求目标文件进入实际Obsidian workspace，不仅是OS退出0。
+
 先运行新增 contract 与 ZotFlow/analysis commit 定向回归，再运行 unit/contract 全集。
 测试使用临时合成目录和假 native opener，无真实业务变动。准备结果记录后，按正常 hotfix
 流程提交、生成 runtime-only release、安装确定 SHA，再对已登记 test Source 执行一次
