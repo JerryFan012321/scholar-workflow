@@ -24,8 +24,8 @@ FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "analysis_v5_toy.js
 SCHEMA = Path(__file__).resolve().parents[2] / "contracts" / "analysis-ir.schema.json"
 
 
-@pytest.mark.parametrize("leaf_height,expected_height", [(135, 9144), (136, 9208)])
-def test_dense_aligned_gutter_remains_bounded(leaf_height, expected_height):
+@pytest.mark.parametrize("leaf_height,expected_height,expected_gutter", [(135, 9144, 340), (136, 9208, 344)])
+def test_dense_aligned_gutter_remains_bounded(leaf_height, expected_height, expected_gutter):
     # Independent geometry: 64 equal leaves, 63 eight-pixel gaps, five layers.
     widths = [200, 400, 400, 440, 432]
     root = TemplateNode("root", "Synthetic", "root", None, "Synthetic", widths[0], 50)
@@ -40,14 +40,39 @@ def test_dense_aligned_gutter_remains_bounded(leaf_height, expected_height):
     ]
     _layout_tree(root, expanded=True)
     leaves = chain[-1].children
-    assert {node.x for node in leaves} == {3572}
-    assert max(node.x + node.width for node in leaves) == 4572
+    expected_width = 2872 + 5 * expected_gutter
+    assert {node.x for node in leaves} == {expected_width - 1000}
+    assert max(node.x + node.width for node in leaves) == expected_width
     assert min(node.y for node in leaves) == 0
     assert max(node.y + node.height for node in leaves) == expected_height
     assert all(node.height == leaf_height for node in leaves)
     assert all(right.y - (left.y + left.height) == 8 for left, right in pairwise(leaves))
-    assert all(right.x - (left.x + left.width) == 340 for left, right in pairwise(chain))
-    assert (expected_height / 4572 <= 2) == (leaf_height == 135)
+    assert all(right.x - (left.x + left.width) == expected_gutter for left, right in pairwise(chain))
+    assert (expected_height / expected_width <= 2) == (leaf_height == 135)
+
+
+@pytest.mark.parametrize("leaf_height,expected_height,expected_gutter", [(135, 9144, 341), (136, 9208, 344)])
+def test_four_interval_dense_geometry(leaf_height, expected_height, expected_gutter):
+    widths = [200, 568, 440, 1000]
+    root = TemplateNode("root", "Synthetic", "root", None, "Synthetic", widths[0], 50)
+    chain = [root]
+    for depth, width in enumerate(widths[1:], 1):
+        node = TemplateNode(f"layer-{depth}", "Label", "group", None, "Label", width, 50)
+        chain[-1].children = [node]
+        chain.append(node)
+    leaves = [
+        TemplateNode(f"leaf-{i}", "Synthetic", "point", None, "Synthetic", 1000, leaf_height)
+        for i in range(64)
+    ]
+    chain[-1].children = leaves
+    _layout_tree(root, expanded=True)
+    expected_width = 3208 + 4 * expected_gutter
+    assert {node.x for node in leaves} == {expected_width - 1000}
+    assert max(node.y + node.height for node in leaves) == expected_height
+    assert min(node.y for node in leaves) == 0
+    assert all(node.height == leaf_height for node in leaves)
+    assert all(right.y - left.y - left.height == 8 for left, right in pairwise(leaves))
+    assert (expected_height / expected_width <= 2) == (leaf_height == 135)
 
 
 def capacity_input(count, capacity=None):
