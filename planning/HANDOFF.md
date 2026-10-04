@@ -7,6 +7,8 @@
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
 
+安装态最新纠偏：首轮 0.32.1 runtime 75735f0 已安装，但 CLI 常量遗漏报 0.32.0，尚未生成真实样张；已同步常量、增加独立版本契约，原有全量 1420 通过，新增测试器名称预期修正后定向 21 通过。现在重新正常发布并安装同一 hotfix，实际新 SHA 与样张结果以 `hotfix-0.32.1-results.md` 为准；不把首次安装身份误报视为通过。
+
 2026-10-04 最新续行：用户要求自动迭代直至下一版可见成果。0.32.1 两个 manifest 与包版本已同步，运行期 analyze-paper 新增按需复现契约，不改触发描述、不约束思考。同步后完整回归 1420 passed/11 warnings（75.93s）、六文件 Ruff、skill frontmatter 和 diff 空白通过；routing/safety 对应条目只读审阅，来源摘录存在性不代表论证充分性。现在从独立 hotfix 正常生成 runtime-only release 并安装，未合并 main；旧安装 0.32.0 / be0085be05ba5e16bf19ac3cf8ea1b1992aa67d4 为回退点。随后仅对 test Vault 的 V-JEPA 2 冻结输入（36 claims、68 内容记录，完整五分支）调用安装版 public batch CLI，预期成对 conformance 通过，复制未改动的渲染字节到独立单篇候选文件夹并打开 Obsidian。只产生新候选/状态记录，不改旧稿、正式 Vault、Zotero 或服务；人工评鉴与完整科学审阅仍未通过，G17 未完成。后续结果以独立报告覆盖本段待执行状态。
 
 最新：用户要求修正，已改 v4 反例和 expanded 布局并按新根规则完成普通自动复测。定向 65 passed（1.32s），完整 1420 passed/11 warnings（75.14s）；六文件 Ruff、diff 空白通过。原 70 条输入保持 98 节点和 8250 高，宽落在 4125–4131，正式 baseline/conformance 通过；均匀 gutter 上限由首轮不足的 320 明确修正为 336，2:1 门禁不变。详情 `analysis-v5-expanded-capacity-retest-results.md`。未提交发布安装，真实 V-JEPA 2 样张仍未生成/评鉴；以下“未复测/上限320”等为此前历史，不能覆盖本结果。
