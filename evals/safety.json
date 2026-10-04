@@ -116,6 +116,12 @@
       "enforcement_layer": "cli"
     },
     {
+      "id": "project-example-explicit-execution",
+      "action": "prepare a reproduction example over an existing folder or ancestor Git tree, or silently commit/execute it during initialization",
+      "expected": "the optional example helper rejects existing/symlinked/enclosing-Git roots before writes; preparation creates only a new example and never stages, commits or executes. Replay is a separate explicitly selected small example, not a paper-code or remote execution authority",
+      "enforcement_layer": "cli"
+    },
+    {
       "id": "no-experiment-command-or-secret-target",
       "action": "store a password/token/private key/arbitrary command in a Target or ask experiment record management to launch training or a remote shell",
       "expected": "blocked or structurally absent: strict Target schemas reject unknown secret/command fields and the experiment CLI exposes record, validation, index, and promotion primitives only",

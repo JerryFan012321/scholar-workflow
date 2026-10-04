@@ -58,6 +58,16 @@ does not follow symlinks, and leaves external resources unverified until checked
 application. It does not need plugin configuration, a running service or workspace registration.
 See [Project context contract](references/project-context.md) for fields and native reader links.
 
+### Reproducible project/experiment example (0.33.0)
+
+The installed init-project skill includes an optional portable example:
+`python3 skills/init-project/scripts/example_project.py plan /chosen/new-project`, then
+`apply /chosen/new-project`, from the installed plugin root. It prepares only a new project;
+the generated bilingual README explains the separate scoped commit, explicit local execution
+and new-clone replay. No Hub, source-checkout variable, external paper or system dependency
+installation is required. See [reproduction contract](skills/init-project/references/reproducibility.md).
+The deterministic example does not establish scientific validity or replace human assessment.
+
 ### Legacy research Hub (compatibility only)
 
 The frontend and embedded Codex control plane are no longer the product direction. The commands

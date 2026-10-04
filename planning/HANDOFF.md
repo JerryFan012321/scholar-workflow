@@ -7,6 +7,37 @@
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
 
+0.33.0 开发切片已通过：init-project 新公开 example_project.py plan/apply、便携四数模板和
+按需复现 reference；系统 Python 无 pydantic 的实测问题由已安装 console entry 产品环境解决。
+定向37通过（4.58s），完整1441通过、11既有警告（77.10s）；七文件Ruff/skill validator/diff通过。
+新增 outcome 仍pending，不冒称人类评鉴。现在正常发布安装新hotfix，再从安装缓存只做一个
+独立示例及其新克隆重建；未合并main/改变业务数据/服务，回退0.32.3 runtime c0fa2000。
+
+本轮补产品化缺口：在 init-project 内新增按需项目/实验复现 reference、便携四数示例 assets
+及公开 example_project.py plan/apply 入口。默认只创建全新示例、不提交、不执行实验；
+已有项目、祖先 Git、symlink 或输入冲突拒绝。真实科研资料仍只通过显式清单关联，模板不含
+V-JEPA2事实或个人路径。先准备独立合成预期和边界测试，之后正常发布安装 hotfix 0.33.0，
+再在一个新示例目录用安装入口验收，不重跑已有效的论文或整库。main与业务数据不动。
+上一轮模范项目/实验重建证据有效；新入口及安装态能力尚未验证，整阶段仍未完成。
+
+**本轮下一版可见成果已实际形成：安装版 0.32.3 初始化独立模范项目，公开 experiment 命令
+记录一个失败和两个成功 Attempt；从相同源码新克隆后重新生成数据/实验，结果字节与 hash 一致。
+新目录 project_id 与冻结配方保持不变，promotion backup=not-verified。6项项目资料清单有效，
+包含代码、ZotFlow原文、完整分析候选、实验和成果。test Vault 的
+`Scholar Workflow 实验/项目与实验-0.32.3/本轮成果.md` 为可见展示；项目本体在其同级
+`scholar-exemplars/model-project-0323/`。完整结果见 `model-project-experiment-results.md`。
+未提交 test Vault Git，未触碰真实项目/旧分析/正式Vault/Zotero/服务/main；人类便利性pending，
+项目规则占位符待批准，项目/实验复现 reference 尚未发布安装。下一切片沉淀这个有效样例的复现接口，
+不再重复它的业务验证；G17整个阶段仍active。**
+
+本轮推进下一版可见成果：使用已安装 0.32.3 的 init-project 与 experiment/project 公开入口，
+建立一个独立模范项目和确定性实验。test Vault 自身受 Git 管理，因此项目放在其外的新目录
+`3-knowledge base/scholar-exemplars/model-project-0323/`，只在 test Vault 新增展示说明，不提交其 Git。
+输入为四个整数、固定配置与环境定义；预期 count=4、sum=10、mean=2.5。一个错误 cwd 的失败
+Attempt 与两次正确执行分别记录，成功结果应逐字一致，promotion 的 backup 仍为 not-verified。
+先准备独立预期与重放说明，再执行示例；不重复论文分析，不改正式 Vault/Zotero/旧稿/服务/main。
+本轮成果不冒称整个模范 Vault/项目/实验/工具四类阶段均完成，示例的人类便利性仍待评鉴。
+
 **当前可见交付（覆盖所有待生成历史）：0.32.3已正常提交/发布/安装，source fdb3522、runtime c0fa2000；安装版public batch对完整V-JEPA2 validated、零诊断/零修复，read-only batch audit干净。test Vault的 `Scholar Workflow 实验/V-JEPA 2/0.32.3-完整框架候选/` 已有完整正文、105-node可编辑Canvas、baseline、输入、复现和阅读说明；68内容全部保留，68 ZotFlow原文入口与正文反链通过。三份副本字节与staging一致，Obsidian已打开 pair。Mac锁屏阻止可靠截图/点击，已在会话告知：人工美观/编辑/点击pending，未冒称通过；科学支持充分性亦未全项重审。完整记录 `hotfix-0.32.3-results.md`。旧稿/正式Vault/Zotero/main/服务未改；G17整个模范Vault/项目/实验阶段仍未完成。下一步先向用户交付实际路径和评鉴操作，不再对同一冻结输入反复开发；解锁后可补实际截图。**
 
 最新0.32.3单篇续行：0.32.2已正常发布安装（source751cb84/runtime ef0dee74），public batch仍拒绝4568×9144，源于实际四间隙而非此前五间隙假设。补独立四间隙合成预期后，仅把gutter cap340→344（实际所需341）；其余硬门禁不变，具体 `hotfix-0.32.3-test-plan.md`。失败稿未进入可见候选，下一步回归后正常发布安装，再只重放V-JEPA2，不改正式库/旧稿/main。

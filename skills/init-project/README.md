@@ -40,6 +40,15 @@ python3 skills/init-project/scripts/init_project.py apply /path/to/project \
 
 ## Layout decisions
 
+For an explicitly requested portable project/experiment example, run the installed skill's
+`scripts/example_project.py plan /chosen/new-project` and `apply /chosen/new-project`.
+It creates a new, isolated arithmetic example with frozen inputs, independent expectations,
+readable instructions and a public-CLI replay entry. It does not commit or execute anything.
+Existing roots, symlinks and enclosing Git trees are rejected. Follow the generated README for
+the separate local commit/execution and same-source clone replay. See
+[reproduction contract](references/reproducibility.md); no Hub, private paths or external papers
+are bundled. Automatic checks and human readability assessment remain separate.
+
 An initialized project may separately own `project-context.json` to reference selected code,
 papers, notes, experiment reports and results. `scholar-workflow project context-template
 --project-root /path/to/project` prints an editable empty template; `project overview` prints

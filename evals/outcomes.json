@@ -172,6 +172,11 @@
       "status": "pass"
     },
     {
+      "id": "project-installed-reproduction-package",
+      "description": "G17：从安装 skill 的零写入 plan 和显式 apply 得到便携项目/实验包；另行提交明确源码及执行小型示例，保留真实失败和成功 Attempt，新克隆重新生成数据及结果，身份/配方/指标可核对；人类说明、公开CLI输入与实际返回分别保留。模板不包含特定论文事实、个人路径或权限扩大；自动检查、正常安装态验收和人类可读性分开，全部证据完整前保持 pending",
+      "status": "pending"
+    },
+    {
       "id": "hub-catalog-and-cmux-notion",
       "lifecycle": "compatibility-only",
       "description": "INV28 的 0.27/0.28 历史兼容基线：HubCatalog 是可重建投影而非 v3 事实根；旧 PDF 兼容入口仍仅绑定 loopback 并支持 HEAD/Range；Notion page ID 只在服务端转成 allowlisted URL 和 opaque action，cmux 打开失败不静默回落 Safari。由 test_hub_catalog.py、test_hub_http.py、test_hub_actions.py、test_hub_links.py 守护；本 pass 不声明 v3 发布完成",

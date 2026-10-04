@@ -1,0 +1,4 @@
+{
+  "dataset": "dataset/four-numbers/source/numbers.csv",
+  "operations": ["count", "sum", "mean"]
+}
