@@ -5,6 +5,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+- **Development ledger only:** record normal 0.32.3 installation and the installed
+  public CLI's validated single-paper review pair. No runtime behavior change;
+  native GUI human assessment remains pending due to the locked Mac. No main merge
+  or canonical Vault migration is implied.
+
 ## [0.32.3] - 2026-10-04
 
 ### Fixed

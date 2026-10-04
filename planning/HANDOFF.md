@@ -7,6 +7,8 @@
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
 
+**当前可见交付（覆盖所有待生成历史）：0.32.3已正常提交/发布/安装，source fdb3522、runtime c0fa2000；安装版public batch对完整V-JEPA2 validated、零诊断/零修复，read-only batch audit干净。test Vault的 `Scholar Workflow 实验/V-JEPA 2/0.32.3-完整框架候选/` 已有完整正文、105-node可编辑Canvas、baseline、输入、复现和阅读说明；68内容全部保留，68 ZotFlow原文入口与正文反链通过。三份副本字节与staging一致，Obsidian已打开 pair。Mac锁屏阻止可靠截图/点击，已在会话告知：人工美观/编辑/点击pending，未冒称通过；科学支持充分性亦未全项重审。完整记录 `hotfix-0.32.3-results.md`。旧稿/正式Vault/Zotero/main/服务未改；G17整个模范Vault/项目/实验阶段仍未完成。下一步先向用户交付实际路径和评鉴操作，不再对同一冻结输入反复开发；解锁后可补实际截图。**
+
 最新0.32.3单篇续行：0.32.2已正常发布安装（source751cb84/runtime ef0dee74），public batch仍拒绝4568×9144，源于实际四间隙而非此前五间隙假设。补独立四间隙合成预期后，仅把gutter cap340→344（实际所需341）；其余硬门禁不变，具体 `hotfix-0.32.3-test-plan.md`。失败稿未进入可见候选，下一步回归后正常发布安装，再只重放V-JEPA2，不改正式库/旧稿/main。
 
 0.32.2 最新最小纠偏：0.32.1 修正版实际正常安装为 runtime 14e20b44，CLI/包/cache 版本均已核对。完整 V-JEPA 2 的 public batch 返回 4552×9144 的 aspect 失败，失败稿已由 batch 清理，无可见合格 pair。现在只将 expanded gutter 上限显式从 336 改为 340，保留全部框架、内容及原 2:1 门禁。独立合成几何 9144/9208 两输入在修正前均失败（符合复现预期），修正后测试与安装态样张待执行；范围见 `hotfix-0.32.2-test-plan.md`，不合并 main 或改正式库。
