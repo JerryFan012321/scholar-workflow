@@ -5,6 +5,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+- **analyze-paper (development ledger only):** record normal 0.35.0 installation,
+  installed public inspection of the unchanged V-JEPA 2 package, readable report
+  and resolved native file entries. Mac lock prevented fresh GUI assessment;
+  stale screenshots were rejected and removed, not treated as visible acceptance.
+  Source/Field enrollment, science and human assessment remain incomplete.
+
 - **analyze-paper / knowledge (development ledger only):** record normal 0.34.0
   package/plugin installation and the public CLI's single-folder zero-write preview.
   Readable output, machine output, resolved native links and an actual Obsidian

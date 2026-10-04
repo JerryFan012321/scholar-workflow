@@ -7,6 +7,16 @@
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
 
+**最新0.35.0正常发布安装：source4c630ef/runtime d83cd40，CLI/module/metadata/cache一致。
+完整1482通过；安装版public check-bundle检查现有V-JEPA2五分支包通过（68内容/105节点/104边），
+三份原件与registry前后hash相同。test新“论文包检查-0.35.0”含中文实际报告/机器记录/四个真实
+正文和图入口。Mac当前锁屏；截图捕获旧页面已移除，不能宣称实际GUI呈现或人工通过。
+Codex打开报告queued；解锁后人工评鉴，不再重跑有效格式/业务检查。main/服务/正式库/Zotero未动。
+下一切片必须解决独立首次Source/Field/provider登记：旧joint只支持平铺搬迁和v4，不应拆散已有
+foldered样本套旧迁移；子目录Source根与reader整个Vault身份也须正确分离。保持CAS/journal与
+审议边界，不裸调confirm或伪造owner。不继续堆只读报告替代登记；G17仍未完成。
+具体结果 `hotfix-0.35.0-results.md`，回退0.34 runtime7afea994。**
+
 2026-10-05 本轮切片：首次登记仍缺独立 v5 事务入口；现有单篇已是成对资料包，
 不人为拆散再套用旧平铺搬迁。先补登记前可复用的 public `analysis check-bundle`：
 显式读取一个目录中的 Markdown、Canvas、sidecar，复用正式 conformance 与 baseline，
