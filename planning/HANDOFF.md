@@ -1,11 +1,20 @@
 # HANDOFF — 从这里接着干
 
 > 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
-> `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-10-04。
+> `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-10-05。
 
 ## 2026-10-04 目标续行：五分支运行实现（用户已批准定向测试）
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
+
+**最新0.34.0已正常发布安装：source108658d/runtime7afea994，CLI/metadata/module/cache均一致。
+完整1453通过；安装版 public knowledge preview 已只读检查V-JEPA2单篇文件夹，输出有导航且
+论文/Canvas/registry hash前后不变。test `Scholar Workflow 实验/知识文件夹-0.34.0/本轮成果.md`
+已在Obsidian阅读视图打开，五个资料链接解析正确，截图实际取得；人类便利性仍pending。
+Source/Field仍未登记，当前旧joint/bootstrap/legacycutover只接受v4。下一切片优先核对v5文档
+正式登记/联合事务接口并补受控复现能力，不把preview或临时ID当批准，不降级或重跑旧pair。
+0.33项目/实验复现证据继续有效，G17未完成；main/正式库/Zotero/旧服务均未改变。
+完整依据 `hotfix-0.34.0-results.md`；回退0.33.0 runtime3f009997。**
 
 2026-10-05 下一切片：test 尚无 fields.yml，本机 sources 为空；现有公开 Field 入口仍依赖
 历史 Hub。现在补 `knowledge preview` 的独立零写入 CLI，复用 knowledge.FieldService 和原 registry

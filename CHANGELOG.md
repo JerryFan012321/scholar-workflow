@@ -5,6 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+- **analyze-paper / knowledge (development ledger only):** record normal 0.34.0
+  package/plugin installation and the public CLI's single-folder zero-write preview.
+  Readable output, machine output, resolved native links and an actual Obsidian
+  reading-view screenshot are available in the test Vault. Existing paper/Canvas
+  and registry hashes stayed unchanged. Human assessment and complete Source/Field
+  registration/v5 joint transactions remain pending; no main merge is implied.
+
 - **init-project (development ledger only):** record normal 0.33.0 installation,
   public installed preparation/replay and a fresh-clone rebuild with matching
   project identity, frozen recipe and output hash. Readable review artifacts are
