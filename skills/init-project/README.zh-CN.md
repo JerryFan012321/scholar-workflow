@@ -38,6 +38,13 @@ python3 skills/init-project/scripts/init_project.py apply /path/to/project \
 
 ## 结构约定
 
+明确需要便携的项目/实验样例时，在已安装 skill 目录运行
+`scripts/example_project.py plan /chosen/new-project` 和 `apply /chosen/new-project`。
+它创建一个全新独立的四数计算示例，包含冻结输入、独立预期、可读说明和公开 CLI 重放入口，
+不提交、不执行。已有目录、符号链接或祖先 Git 树会拒绝；按生成的 README 分开进行本地提交和
+执行，再从相同源码新克隆重建。详见[复现契约](references/reproducibility.md)。不需要 Hub，
+不打包个人路径或外部论文；自动校验不代替人类可读性评鉴。
+
 已初始化的项目可另有 `project-context.json`，明确关联代码、论文、笔记、实验报告和成果。
 `scholar-workflow project context-template --project-root /path/to/project --language zh`
 只输出空模板，`project overview` 输出可读总览；两者不写文件、不要求 Hub。

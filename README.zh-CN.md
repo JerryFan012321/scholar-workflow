@@ -47,6 +47,14 @@ scholar-workflow project overview --project-root /path/to/project --json
 不需要插件配置、网页服务或模型配置页。字段、来源归属和阅读器入口见
 [项目资料契约](references/project-context.md)。
 
+### 可复现项目／实验样例（0.33.0）
+
+在已安装插件根目录运行 `python3 skills/init-project/scripts/example_project.py plan /chosen/new-project`，
+再运行同一入口的 `apply /chosen/new-project`，只会准备一个新独立项目。生成的双语 README
+说明如何另行提交明确源码、显式本地执行，并从新克隆目录重建。无需 Hub、源码仓库变量或
+额外安装系统 Python 依赖，也不打包外部论文。详见[复现契约](skills/init-project/references/reproducibility.md)。
+确定性示例不证明科学论文结论，也不替代人类评鉴。
+
 ### 历史研究 Hub（仅兼容）
 
 Hub 前端和内置 Codex 控制面不再是产品发展方向。以下说明用于已有安装的兼容使用，不是项目

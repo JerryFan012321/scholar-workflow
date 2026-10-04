@@ -5,6 +5,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+- **Development ledger only:** record normal 0.32.3 installation and the installed
+  public CLI's validated single-paper review pair. No runtime behavior change;
+  native GUI human assessment remains pending due to the locked Mac. No main merge
+  or canonical Vault migration is implied.
+
+## [0.33.0] - 2026-10-05
+
+### Added
+- **init-project:** an opt-in portable project/experiment reproduction package:
+  installed `example_project.py plan/apply`, bundled deterministic inputs and
+  independent expectations, public-CLI replay, readable instructions/report,
+  source/recipe/runtime receipts and honest failed/succeeded Attempt records.
+  Preparation never stages, commits, runs, or copies a paper. Existing roots,
+  ancestor Git and symlinks are rejected; research facts remain independently
+  selected external material. Reproduction guidance is loaded only on request,
+  does not prescribe reasoning, and preserves all paper Markdown/Canvas contracts.
+  Development tests, installed canary and human assessment are separate; this
+  entry records implementation, not a completed first-stage goal.
+  Targeted checks: 37 passed in 4.58 seconds; full unit/contract: 1,441 passed,
+  11 existing warnings in 77.10 seconds. Seven-file Ruff, skill validation and
+  whitespace checks passed. A system Python without pydantic is supported through
+  the installed console entry's product interpreter; no extra system dependencies.
+
 ## [0.32.3] - 2026-10-04
 
 ### Fixed

@@ -56,6 +56,11 @@ project facts or a mandatory homepage. Project integration is not a new initiali
 
 ## References
 
+For an explicitly requested reproducible project/experiment package, load
+`references/reproducibility.md`. The installed portable example is optional and separate
+from ordinary initialization; preparation never commits or runs it. A real experiment
+keeps its own recipe and scientific facts rather than adopting the example's data or failure.
+
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/project-context.md` — when explicitly organizing project materials
 - `references/skeleton-manifest.md`
@@ -63,3 +68,4 @@ project facts or a mandatory homepage. Project integration is not a new initiali
 - `references/experiment-records.md`
 - `references/project-instructions.md`
 - `references/research-layout.md`
+- `references/reproducibility.md` — only for a requested reproduction package or example
