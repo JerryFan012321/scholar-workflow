@@ -3144,3 +3144,44 @@ def knowledge_list(fmt: str, language: str) -> None:
         raise SafetyRefusalError(str(exc)) from None
     click.echo(json.dumps({"schema_version": 1, "fields": fields}, ensure_ascii=False, indent=2)
                if fmt == "json" else fields_markdown(fields, language=language))
+
+
+@knowledge.command(name="reader")
+@click.argument("source_id")
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["en", "zh"]), default="en")
+def knowledge_reader(source_id: str, fmt: str, language: str) -> None:
+    """Resolve the native reader Vault without expanding Source file permissions."""
+    from scholar_workflow.workflows.knowledge_open import reader_info
+
+    try:
+        info = reader_info(_local_field_service().registry, source_id)
+    except (RuntimeError, OSError, ValueError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    if fmt == "json":
+        click.echo(json.dumps(info, ensure_ascii=False, indent=2))
+    else:
+        zh = language == "zh"
+        click.echo("# Obsidian 打开位置\n" if zh else "# Obsidian reader destination\n")
+        click.echo(f"{'所选目录' if zh else 'Selected folder'}: {info['source_root']}")
+        click.echo(f"{'阅读器 Vault' if zh else 'Reader Vault'}: {info['reader_vault_root']}")
+        click.echo("父 Vault 只提供打开位置；文件授权仍限于所选目录。" if zh else
+                   "The parent Vault only routes opens; file authorization remains Source-scoped.")
+
+
+@knowledge.command(name="open")
+@click.argument("source_id")
+@click.argument("relative_path")
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["en", "zh"]), default="en")
+def knowledge_open(source_id: str, relative_path: str, fmt: str, language: str) -> None:
+    """Open an existing Source-relative Markdown or Canvas in Obsidian."""
+    from scholar_workflow.workflows.knowledge_open import open_document
+
+    try:
+        result = open_document(_local_field_service().registry, source_id, relative_path)
+    except (RuntimeError, OSError, ValueError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    click.echo(json.dumps(result, ensure_ascii=False, indent=2) if fmt == "json" else
+               (f"已请求 Obsidian 打开：{relative_path}；实际显示仍待人工评鉴。" if language == "zh" else
+                f"Requested Obsidian open: {relative_path}; visible result awaits human assessment."))

@@ -46,6 +46,8 @@ G17 当前证据：0.32.3 已生成完整论文候选，现有安装入口已验
 knowledge核心而非Hub。安装版仅登记test新清洁对象，一个Source/Field和完整两文档导航真实存在，
 原文/图不变，9条native links解析；GUI因锁屏pending。已有论文provider与v5联合归档仍未完成，
 不把该切片代替完整模范Vault，详见 `hotfix-0.36.0-results.md`。
+下一切片0.37.0分离Source文件范围与包含它的Obsidian reader Vault，并提供无Hub的原生笔记/Canvas
+打开。完整论文provider归属和人工评鉴仍独立待完成，不以打开请求代替canonical提交。
 
 ## 长期不变量（INV）
 

@@ -68,6 +68,12 @@ Vault, opening a local Zotero attachment at its physical page inside Obsidian in
 The default remains Zotero-native. The structured source span remains authoritative; a page
 link never claims exact text selection or annotation synchronization.
 
+A registered Source may be a Vault subfolder. `knowledge reader SOURCE_ID`
+resolves the containing Obsidian Vault for the reader without granting parent
+folder access. `knowledge open SOURCE_ID 'relative/note.md'` (or `.canvas`)
+opens an existing document in its native editor without Hub; see the shared
+[registration/open contract](../../references/knowledge-registration.md).
+
 The historical v4 Canvas is a concise view, not a second knowledge database. It uses one root, four branches,
 gray framework labels, and fine parent-child lines instead of card panels. The v4 budget is at
 most 40 generated claim/detail Canvas nodes and 96 total generated Canvas nodes including framework labels. User

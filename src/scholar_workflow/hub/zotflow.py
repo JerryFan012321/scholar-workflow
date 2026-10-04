@@ -3,9 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import re
-import stat
 import subprocess
 from pathlib import Path, PurePosixPath
 from typing import Any, Literal
@@ -13,6 +11,11 @@ from urllib.parse import quote, urlencode
 
 from pydantic import Field, field_validator
 
+from scholar_workflow.adapters.obsidian_registry import (
+    ZotFlowError,
+    resolve_obsidian_reader,
+    resolve_obsidian_vault_id,
+)
 from scholar_workflow.adapters.zotero_local import (
     ZOTERO_KEY_RE,
     ZoteroAttachmentLocator,
@@ -20,19 +23,17 @@ from scholar_workflow.adapters.zotero_local import (
     ZoteroLocalError,
 )
 from scholar_workflow.hub.cmux import minimal_child_environment
+from scholar_workflow.knowledge.catalog_models import HubModel
 from scholar_workflow.knowledge.fields import (
     FieldRegistryError,
     KnowledgeSourceRegistry,
     read_obsidian_version,
 )
-from scholar_workflow.knowledge.catalog_models import HubModel
 
 _SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$")
 _TRANSLATION = re.compile(r"🔤.*?🔤", re.DOTALL)
 _AUDITED_LOCAL_FIRST_VERSIONS = frozenset({"1.6.6"})
 _LOCAL_SETTINGS_PROTOCOL = "zotflow-local-v1"
-_VAULT_ID = re.compile(r"[0-9a-f]{16}\Z")
-_MAX_OBSIDIAN_CONFIG_BYTES = 1024 * 1024
 # This expression names only the two non-secret ZotFlow settings needed to
 # establish a local PDF route. It never enumerates settings or reads data.json.
 _LOCAL_SETTINGS_EXPRESSION = (
@@ -43,71 +44,6 @@ _LOCAL_SETTINGS_EXPRESSION = (
     "storagePath:typeof p?.settings?.zoteroStoragePath==='string'"
     "?p.settings.zoteroStoragePath:''}); })()"
 )
-
-
-class ZotFlowError(RuntimeError):
-    """ZotFlow cannot safely perform the requested action."""
-
-
-def _reject_duplicate_json_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for key, value in pairs:
-        if key in result:
-            raise ValueError("duplicate Obsidian config key")
-        result[key] = value
-    return result
-
-
-def resolve_obsidian_vault_id(
-    vault_root: Path, *, config_path: Path | None = None
-) -> str:
-    """Resolve one registered directory to its host-local Obsidian Vault ID.
-
-    This reads only Obsidian's bounded local vault registry. It never returns
-    registry contents or a path to the browser.
-    """
-    config = config_path or Path.home() / "Library/Application Support/obsidian/obsidian.json"
-    try:
-        fd = os.open(config, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
-        with os.fdopen(fd, "rb") as handle:
-            info = os.fstat(handle.fileno())
-            if (
-                not stat.S_ISREG(info.st_mode)
-                or info.st_uid != os.getuid()
-                or bool(info.st_mode & 0o022)
-                or not 0 < info.st_size <= _MAX_OBSIDIAN_CONFIG_BYTES
-            ):
-                raise ZotFlowError("Obsidian Vault registry is unsafe or unavailable")
-            raw = handle.read(_MAX_OBSIDIAN_CONFIG_BYTES + 1)
-            if len(raw) != info.st_size:
-                raise ZotFlowError("Obsidian Vault registry changed during reading")
-        document = json.loads(raw.decode("utf-8"), object_pairs_hook=_reject_duplicate_json_keys)
-        vaults = document.get("vaults") if isinstance(document, dict) else None
-        if not isinstance(vaults, dict):
-            raise ZotFlowError("Obsidian Vault registry is invalid")
-        expected = Path(vault_root).resolve(strict=True)
-        if not expected.is_dir():
-            raise ZotFlowError("Registered Obsidian Vault is unavailable")
-        matches: list[str] = []
-        for vault_id, entry in vaults.items():
-            if not isinstance(vault_id, str) or _VAULT_ID.fullmatch(vault_id) is None:
-                raise ZotFlowError("Obsidian Vault registry is invalid")
-            path = entry.get("path") if isinstance(entry, dict) else None
-            if not isinstance(path, str) or not path or not Path(path).is_absolute():
-                raise ZotFlowError("Obsidian Vault registry is invalid")
-            try:
-                candidate = Path(path).resolve(strict=True)
-                if candidate.is_dir() and candidate.samefile(expected):
-                    matches.append(vault_id)
-            except (OSError, ValueError, RuntimeError):
-                continue  # Stale unrelated Vaults do not authorize this Source.
-        if len(matches) != 1:
-            raise ZotFlowError("Registered Obsidian Vault ID is missing or ambiguous")
-        return matches[0]
-    except ZotFlowError:
-        raise
-    except (OSError, UnicodeError, json.JSONDecodeError, ValueError, RuntimeError) as exc:
-        raise ZotFlowError("Obsidian Vault registry is unsafe or unavailable") from exc
 
 
 class PdfRef(HubModel):
@@ -567,8 +503,11 @@ class RegisteredSourceZotFlowAdapter:
             if not source.enabled:
                 continue
             try:
-                root = self.registry.resolve(source.source_id, capability="read")
-            except FieldRegistryError:
+                source_root = self.registry.resolve(source.source_id, capability="read")
+                root = resolve_obsidian_reader(
+                    source_root, config_path=self._obsidian_config_path,
+                ).vault_root
+            except (FieldRegistryError, ZotFlowError):
                 continue
             if root in roots:
                 continue

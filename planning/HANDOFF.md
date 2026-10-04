@@ -7,6 +7,15 @@
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
 
+2026-10-05 本轮推进到下一版可见成果：先修 Source 子目录与包含它的 Obsidian reader Vault
+混同的问题，并补 `knowledge reader/open` 原生打开入口。写入授权仍以登记的 Source 根为准；
+reader ID 只路由 Obsidian，不扩大父 Vault 权限。先准备独立合成契约，再正常发布安装 hotfix，
+只在已登记 test 样本打开既有笔记；保留 V-JEPA2 完整五分支、原文摘录和 Canvas 字节。
+已有 v5 论文的 provider/联合登记仍是下一缺口，不以打开成功冒称 canonical 归档。
+不重跑整库、不改正式 Vault/Zotero/旧服务，不合并 main。
+0.37.0独立契约与必要完整回归1535通过（78.37秒，11既有警告），变动模块/tests Ruff、
+skill validator、eval schema与diff通过；下一步正常runtime-only发布安装后单对象native打开。
+
 **最新0.36.0已正常发布安装：source106a4f3/runtime e73bf26，CLI/module/dist/cache一致。
 完整1508通过；public plan/register/list已在test仅登记新“模范知识目录-0.36.0”，一个Source/Field，
 导航完整、正文原字节；旧父folder登记保留，V-JEPA2原三文件不变。test同级“知识登记验收-0.36.0”

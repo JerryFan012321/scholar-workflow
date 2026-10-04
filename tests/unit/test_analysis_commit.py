@@ -466,6 +466,36 @@ def test_v4_commit_rejects_unresolved_zotflow_vault_id_before_state_write(
     assert not any((vault / path).exists() for path in request.paths.as_list())
 
 
+def test_v4_commit_subdirectory_source_resolves_containing_reader_without_wider_writes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scholar_workflow.adapters.obsidian_registry import resolve_obsidian_reader_vault_id
+
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    provider, revision, snapshot_revision = _provider_state(
+        tmp_path, vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Note.md")],
+    )
+    config = tmp_path / "obsidian.json"
+    vault_id = "0123456789abcdef"
+    config.write_text(json.dumps({"vaults": {vault_id: {"path": str(tmp_path)}}}))
+    monkeypatch.setattr(
+        "scholar_workflow.analysis.commit.resolve_obsidian_vault_id",
+        lambda root: resolve_obsidian_reader_vault_id(root, config_path=config),
+    )
+    document = _v4_zotflow_document(vault_id=vault_id)
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+    commit_analysis_bundle(
+        vault_root=vault, state_root=state, request=request, bundle=bundle, baseline=baseline,
+        source_registry=_registry_for_provider(provider),
+    )
+    assert all((vault / path).is_file() for path in request.paths.as_list())
+    assert not (tmp_path / "field").exists()
+    assert _registry_for_provider(provider).resolve(_V4_SOURCE_ID, capability="write") == vault
+
+
 def test_v4_commit_accepts_zotflow_reader_for_registered_vault_id(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

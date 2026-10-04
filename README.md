@@ -67,6 +67,21 @@ a zero-write preview, not registration or acceptance; it creates no homepage and
 does not start a service. Existing Source/Field registration and canonical analysis
 commits remain separate reviewed operations.
 
+### Open a registered note or Canvas in Obsidian (0.37.0)
+
+Get its `source_id` from `scholar-workflow knowledge list --format json`, then run:
+
+```bash
+scholar-workflow knowledge reader SOURCE_ID
+scholar-workflow knowledge open SOURCE_ID 'relative/note.md'
+scholar-workflow knowledge open SOURCE_ID 'relative/tree.canvas'
+```
+
+A selected Source subfolder uses its containing Obsidian Vault only as the native
+open destination; file permissions remain inside the Source. No Hub/workspace or
+Obsidian CLI is needed. An accepted request is not visual acceptance or canonical
+paper enrollment. PDF/ZotFlow capability checks remain independent.
+
 ### Register one knowledge Field without Hub (0.36.0)
 
 After `knowledge preview`, choose exactly one candidate relative root. Run

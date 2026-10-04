@@ -2,6 +2,11 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "knowledge-installed-native-document-open",
+      "description": "G17：安装版 knowledge reader/open 识别子目录 Source 的唯一 Obsidian Vault，原生打开其既有 Markdown/Canvas；无需Hub、workspace或CLI设置，registry与正文不变。实际显示、编辑和点击需会话明确人工确认；不能代替论文provider归属、canonical提交或ZotFlow本机能力验收。",
+      "status": "pending"
+    },
+    {
       "id": "knowledge-installed-single-field-registration",
       "description": "G17：安装版独立 knowledge plan/register/list 将一个明确清洁样例登记到原 host registry，便携清单只含所选 Field，导航与人类文档原样；跨进程摘要稳定，过期/旧稿不能简单登记。只在test独立对象验收，不登记整个Vault、不冒称已有论文provider归档；人工导航便利性未确认前pending。",
       "status": "pending"

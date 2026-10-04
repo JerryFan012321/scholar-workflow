@@ -219,8 +219,15 @@ obsidian://zotflow?vault=<verified-16-hex-vault-id>&type=open-attachment&library
 
 Resolve the registered Vault's host-local Obsidian ID, encode the JSON navigation, and re-check the observed
 `navigation` parameter after a plugin upgrade. A real annotation deep link needs a verified
-annotation key; page navigation is not text selection or proof of bidirectional sync. For IR v4,
-`reader: {kind: zotflow_library, vault_id: <verified-16-hex-vault-id>}` selects the versioned ZotFlow
+annotation key; page navigation is not text selection or proof of bidirectional sync.
+
+When the authorized Source is a Vault subdirectory, resolve the unique containing
+host-registered Vault for the reader ID, while keeping all file operations inside
+the selected Source. `knowledge reader/open` exposes that distinction; see the
+shared `knowledge-registration.md` contract. Parent reader identity grants no
+additional content permissions. The same resolution is enforced at v4/v5 commit.
+
+For IR v4, `reader: {kind: zotflow_library, vault_id: <verified-16-hex-vault-id>}` selects the versioned ZotFlow
 Library Reader projection in both Markdown and Canvas; omitting `reader` (or setting
 `zotero_native`) retains the native Zotero route. The ZotFlow option is used only after that
 Vault's plugin version and desktop local-storage mode have been positively verified, and the

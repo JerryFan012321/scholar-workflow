@@ -276,6 +276,29 @@ def test_vault_id_resolver_rejects_symlink_and_malformed_registry(tmp_path: Path
         resolve_obsidian_vault_id(vault, config_path=config)
 
 
+def test_registered_source_subdirectory_uses_parent_reader_not_parent_authority(tmp_path: Path):
+    vault, app, pdf = _ready_vault(tmp_path)
+    reader, calls = _adapter(vault, app, pdf)
+    source = vault / "Chosen Field"
+    source.mkdir()
+    registry = KnowledgeSourceRegistry(tmp_path / "sources.json")
+    source_id = "11111111-1111-4111-8111-111111111111"
+    registry.save(KnowledgeSourceRegistryDocument(
+        folders=[FolderRegistration(folder_id="child", root=source, capabilities=["read"])],
+        sources=[KnowledgeSourceRegistration(source_id=source_id, folder_id="child")],
+    ))
+    adapter = RegisteredSourceZotFlowAdapter(
+        registry, app_path=app, runner=reader._runner, cli_runner=reader._cli_runner,
+        zotero_factory=reader._zotero_factory, obsidian_config_path=reader._obsidian_config_path,
+    )
+    before = registry.path.read_bytes()
+    assert adapter.open_attachment(_ref()) == {"opened": True}
+    assert registry.resolve(source_id, capability="read") == source
+    assert registry.path.read_bytes() == before
+    assert any(call[0] == "/usr/bin/open" for call in calls)
+    assert all(call[1] == f"vault={_VAULT_A_ID}" for call in calls if call[0] == "obsidian")
+
+
 def test_vault_id_resolver_rejects_untrusted_owner_or_oversized_file(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ):
