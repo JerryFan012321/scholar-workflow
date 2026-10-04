@@ -8,7 +8,9 @@ on a fresh install — so you can set things up by asking, without hand-writing 
   and refuses to clobber a differing existing file.
 - **Legacy migration candidate** — add `--research-vault-root PATH` only when an old
   singleton Vault must remain available to pre-v3 projection commands. Dynamic Sources
-  and Fields are registered in the Hub instead.
+  and Fields use the independent `knowledge` CLI instead. Preview, review the exact
+  single-Field plan, then register with its current digest; see
+  [knowledge registration](../../references/knowledge-registration.md). No Hub is needed.
 - **Change a value** — `scholar-workflow config set KEY VALUE` sets one dotted key
   (e.g. `notion.enabled`, `link_service.port`), preserving comments in the file.
 - **Inspect** — `config show` (effective values), `config show --raw` (file as written),

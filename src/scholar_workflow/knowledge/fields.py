@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import fcntl
 import hashlib
+import json
 import os
 import plistlib
 import re
@@ -39,7 +40,8 @@ _DIRECTORY_FLAGS = (
     | getattr(os, "O_NOFOLLOW", 0)
     | getattr(os, "O_CLOEXEC", 0)
 )
-_READ_FLAGS = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
+_READ_FLAGS = (os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+               | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NONBLOCK", 0))
 _HOME_NAMES = (
     "00-领域入口.md",
     "00-入口.md",
@@ -869,6 +871,76 @@ class FieldService:
             )
             return manifest
 
+    def registration_reasons(self, token: str, field_id: str) -> list[str]:
+        """Keep first-time legacy content review independent of the HTTP surface."""
+        try:
+            candidate = self.candidates.peek(token)
+            selected = next(row for row in candidate.preview.fields if row.field_id == field_id)
+            root = self._validate_candidate(candidate)
+            parts = () if selected.relative_root == "." else PurePosixPath(selected.relative_root).parts
+            field_root = root.joinpath(*parts)
+            reasons: set[str] = set()
+
+            def failed(exc: OSError) -> None:
+                raise FieldRegistryError("Field inventory is unavailable") from exc
+
+            for current, directories, files in os.walk(field_root, followlinks=False, onerror=failed):
+                current_path = Path(current)
+                kept = []
+                for name in sorted(directories):
+                    if name in _IGNORED_NAMES:
+                        continue
+                    if (current_path / name).is_symlink():
+                        reasons.add("inspection_conflict")
+                    else:
+                        kept.append(name)
+                directories[:] = kept
+                for name in sorted(files):
+                    path = current_path / name
+                    if path.is_symlink():
+                        reasons.add("inspection_conflict")
+                        continue
+                    if path.suffix.casefold() not in {".md", ".canvas", ".json", ".html", ".txt"}:
+                        continue
+                    relative = path.relative_to(root)
+                    parent_fd = _open_directory_chain(root, relative.parts[:-1])
+                    try:
+                        # Nonblocking open prevents a raced FIFO from hanging a local plan.
+                        fd = os.open(name, _READ_FLAGS | getattr(os, "O_NONBLOCK", 0), dir_fd=parent_fd)
+                        try:
+                            if not stat.S_ISREG(os.fstat(fd).st_mode):
+                                raise FieldRegistryError("Field inventory contains a non-regular file")
+                            with os.fdopen(fd, "rb", closefd=False) as handle:
+                                content = handle.read(_MAX_FIELD_DOCUMENT_BYTES + 1)
+                        finally:
+                            os.close(fd)
+                    finally:
+                        os.close(parent_fd)
+                    if len(content) > _MAX_FIELD_DOCUMENT_BYTES:
+                        raise FieldRegistryError("Field inventory text exceeds the size limit")
+                    text = content.decode("utf-8")
+                    if name.endswith(("分析.md", "解析树.canvas")) or _LEGACY_ANALYSIS_MARKER in content:
+                        reasons.add("legacy_analysis")
+                    if (_ANALYSIS_KIND.search(content) or name.casefold().endswith(".analysis.json")
+                            or name.casefold() == "analysis.baseline.json"):
+                        reasons.add("managed_analysis")
+                    if path.suffix.casefold() in {".json", ".canvas"}:
+                        try:
+                            payload = json.loads(text)
+                        except ValueError:
+                            payload = None
+                        if isinstance(payload, dict) and (
+                            str(payload.get("artifact_id", "")).startswith("analysis:")
+                            or {"generated_node_ids", "markdown_sha256"}.issubset(payload)
+                        ):
+                            reasons.add("managed_analysis")
+                    if "127.0.0.1:23128" in text:
+                        reasons.add("legacy_hub_link")
+            self._validate_candidate(candidate)
+            return sorted(reasons)
+        except (FieldRegistryError, OSError, UnicodeDecodeError, StopIteration):
+            return ["inspection_failed"]
+
     def _validate_candidate(self, candidate: _Candidate) -> Path:
         preview = candidate.preview
         root = self._trusted_root(candidate.root)
@@ -945,12 +1017,20 @@ class FieldService:
                     continue
                 if not stat.S_ISREG(metadata.st_mode):
                     continue
-                managed_suffix = path.suffix.casefold() in {".md", ".canvas"}
+                managed_suffix = path.suffix.casefold() in {".md", ".canvas", ".json", ".html", ".txt"}
                 managed_sidecar = path.name.casefold().endswith(".analysis.json")
                 if not managed_suffix and not managed_sidecar:
                     continue
                 try:
-                    encoded = path.read_bytes()
+                    parent_fd = _open_directory_chain(root, relative.parts[:-1])
+                    try:
+                        encoded, opened = _read_regular_at(
+                            parent_fd, name, limit=_MAX_FIELD_DOCUMENT_BYTES
+                        )
+                    finally:
+                        os.close(parent_fd)
+                    if (metadata.st_dev, metadata.st_ino) != (opened.st_dev, opened.st_ino):
+                        raise FieldRegistryError("selected Field artifact changed during preview")
                 except OSError as exc:
                     raise FieldRegistryError("selected Field artifact is not readable") from exc
                 digest.update(hashlib.sha256(encoded).digest())

@@ -76,31 +76,13 @@ from scholar_workflow.hub.directory import (
     UnknownLibraryError,
     ZoteroPaperLibraryProvider,
 )
-from scholar_workflow.hub.field_migration import (
-    FieldMigrationError,
-    FieldMigrationService,
-    _has_legacy_hub_reference,
-)
 from scholar_workflow.hub.field_transaction import (
     FieldTransactionError,
     FieldTransactionService,
-    _has_analysis_identity,
     _open_private_directory,
     _read_target,
 )
-from scholar_workflow.knowledge.fields import (
-    FieldCandidateExpired,
-    FieldCandidateStore,
-    FieldDefinition,
-    FieldManifest,
-    FieldRegistryCommitUncertain,
-    FieldRegistryError,
-    FieldService,
-    KnowledgeSourceRegistry,
-    SystemFolderPicker,
-)
 from scholar_workflow.hub.links import LinkedCatalogProvider, ProjectionLinkStore
-from scholar_workflow.knowledge.catalog_models import AssetRole, HubAsset
 from scholar_workflow.hub.project_docs import (
     DocumentCollisionError,
     ProjectConfirmationRequired,
@@ -116,6 +98,17 @@ from scholar_workflow.hub.workspaces import (
     WorkspaceBindingRegistry,
 )
 from scholar_workflow.hub.zotflow import RegisteredSourceZotFlowAdapter
+from scholar_workflow.knowledge.catalog_models import AssetRole, HubAsset
+from scholar_workflow.knowledge.fields import (
+    FieldCandidateExpired,
+    FieldCandidateStore,
+    FieldDefinition,
+    FieldRegistryCommitUncertain,
+    FieldRegistryError,
+    FieldService,
+    KnowledgeSourceRegistry,
+    SystemFolderPicker,
+)
 
 _KEY_RE = re.compile(r"^[A-Z0-9]+$")
 _RANGE_RE = re.compile(r"^bytes=(\d*)-(\d*)$")
@@ -1170,42 +1163,8 @@ class HubRequestHandler(BaseHTTPRequestHandler):
     def _field_transaction_reasons(
         service: FieldService, candidate_token: str, field_id: str
     ) -> list[str]:
-        """Inspect only the selected Field before allowing legacy two-step confirm."""
-        try:
-            candidate = service.candidates.peek(candidate_token)
-            selected = next(
-                (row for row in candidate.preview.fields if row.field_id == field_id),
-                None,
-            )
-            if selected is None:
-                raise FieldRegistryError("Selected Field is absent from this preview")
-            root = service._validate_candidate(candidate)
-            manifest = FieldManifest(
-                source_id=candidate.preview.source_id,
-                fields=[*candidate.preview.registered_fields, selected],
-            )
-            inventory, _digest, conflicts = FieldMigrationService._inventory(
-                root, manifest, selected
-            )
-            reasons: set[str] = set()
-            if conflicts:
-                reasons.add("inspection_conflict")
-            for relative in inventory:
-                name = PurePosixPath(relative).name
-                if name.endswith(("分析.md", "解析树.canvas")):
-                    reasons.add("legacy_analysis")
-                if name.casefold().endswith(".analysis.json"):
-                    reasons.add("managed_analysis")
-                old = _read_target(root, relative)
-                if old is not None and b"sw-analysis-field" in old[0]:
-                    reasons.add("legacy_analysis")
-                elif old is not None and _has_analysis_identity(old[0]):
-                    reasons.add("managed_analysis")
-                if old is not None and _has_legacy_hub_reference(old[0], relative):
-                    reasons.add("legacy_hub_link")
-            return sorted(reasons)
-        except (FieldRegistryError, FieldMigrationError, FieldTransactionError, OSError):
-            return ["inspection_failed"]
+        """Compatibility projection of the core first-registration gate."""
+        return service.registration_reasons(candidate_token, field_id)
 
     def _handle_v3_field_confirm(self) -> None:
         if not self._require_session_token():

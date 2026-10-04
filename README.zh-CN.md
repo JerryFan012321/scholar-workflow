@@ -54,6 +54,20 @@ scholar-workflow project overview --project-root /path/to/project --json
 预览零写入，不登记、不创建首页、不启动服务，也不代表内容或 Canvas 通过验收。
 Source/Field 的正式登记与分析成对提交仍是另行审议的操作。
 
+### 不依赖 Hub，登记单个知识领域（0.36.0）
+
+预览后选择一个候选相对目录（单个子目录为 `.`），运行：
+
+```bash
+scholar-workflow knowledge registration-plan /所选目录绝对路径 --field-root . --language zh
+scholar-workflow knowledge register /所选目录绝对路径 --field-root . --approved-digest 确认摘要 --language zh
+scholar-workflow knowledge list --language zh
+```
+
+先审阅导航与摘要，再确认；文件或登记状态变化后旧摘要失效。只登记所选 Field，不创建首页或
+改论文。含旧分析、旧端口链接的目录仍需联合迁移审议。已有便携清单改用 `--existing-source`，
+只登记到本机，保留全部身份和清单原字节。详见[登记契约](references/knowledge-registration.md)。
+
 ### 直接检查已有论文资料包（0.35.0）
 
 ```bash
