@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.32.2] - 2026-10-04
+
+### Fixed
+- **analyze-paper:** the installed 0.32.1 complete single-paper candidate exceeded
+  the existing 2:1 bound at 4552×9144. Increase the explicit expanded gutter cap
+  by four pixels, from 336 to 340, without changing content, boxes, font, sibling
+  spacing, node limits or aspect validation. Independent synthetic 9144/9208-height
+  inputs cover both exact fit and continued refusal beyond this bounded capacity.
+  Regression: 1,423 passed, 11 warnings in 73.82 seconds; 68 targeted passed.
+  Publication, installation and real-paper human assessment remain separate.
+
 ## [0.32.1] - 2026-10-04
 
 Independent v5 hotfix; main remains unmerged. Release/install and real-paper visual

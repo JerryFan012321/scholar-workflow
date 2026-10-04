@@ -2,6 +2,7 @@
 
 import json
 from copy import deepcopy
+from itertools import pairwise
 from pathlib import Path
 
 import jsonschema
@@ -10,6 +11,7 @@ from pydantic import ValidationError
 from referencing import Registry, Resource
 
 from scholar_workflow.analysis.batch import _validate_targeted_repair
+from scholar_workflow.analysis.complete_reference import TemplateNode, _layout_tree
 from scholar_workflow.analysis.conformance import validate_bundle
 from scholar_workflow.analysis.models import AnalysisBaseline, AnalysisDocument, ConformanceReport
 from scholar_workflow.analysis.updates import (
@@ -20,6 +22,32 @@ from scholar_workflow.analysis.updates import (
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "analysis_v5_toy.json"
 SCHEMA = Path(__file__).resolve().parents[2] / "contracts" / "analysis-ir.schema.json"
+
+
+@pytest.mark.parametrize("leaf_height,expected_height", [(135, 9144), (136, 9208)])
+def test_dense_aligned_gutter_remains_bounded(leaf_height, expected_height):
+    # Independent geometry: 64 equal leaves, 63 eight-pixel gaps, five layers.
+    widths = [200, 400, 400, 440, 432]
+    root = TemplateNode("root", "Synthetic", "root", None, "Synthetic", widths[0], 50)
+    chain = [root]
+    for depth, width in enumerate(widths[1:], 1):
+        node = TemplateNode(f"layer-{depth}", "Label", "group", None, "Label", width, 50)
+        chain[-1].children = [node]
+        chain.append(node)
+    chain[-1].children = [
+        TemplateNode(f"leaf-{i}", "Synthetic", "point", None, "Synthetic", 1000, leaf_height)
+        for i in range(64)
+    ]
+    _layout_tree(root, expanded=True)
+    leaves = chain[-1].children
+    assert {node.x for node in leaves} == {3572}
+    assert max(node.x + node.width for node in leaves) == 4572
+    assert min(node.y for node in leaves) == 0
+    assert max(node.y + node.height for node in leaves) == expected_height
+    assert all(node.height == leaf_height for node in leaves)
+    assert all(right.y - (left.y + left.height) == 8 for left, right in pairwise(leaves))
+    assert all(right.x - (left.x + left.width) == 340 for left, right in pairwise(chain))
+    assert (expected_height / 4572 <= 2) == (leaf_height == 135)
 
 
 def capacity_input(count, capacity=None):
