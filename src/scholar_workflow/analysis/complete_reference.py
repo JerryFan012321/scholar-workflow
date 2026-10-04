@@ -588,7 +588,7 @@ def _layout_tree(root: TemplateNode, *, expanded: bool = False) -> None:
         height = max(node.y + node.height for node in visible) - min(node.y for node in visible)
         if height > 2 * width:
             intervals = len(layer_widths) - 1
-            gutter = min(336, 64 + math.ceil((math.ceil(height / 2) - width) / intervals))
+            gutter = min(340, 64 + math.ceil((math.ceil(height / 2) - width) / intervals))
             for depth in range(1, len(layer_widths)):
                 layer_x[depth] = layer_x[depth - 1] + layer_widths[depth - 1] + gutter
             place(root, 0, 0)
