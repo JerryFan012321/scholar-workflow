@@ -5,6 +5,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+- **config-setup / knowledge:** developing independent digest-bound single-Field
+  registration and explicit existing-Source attachment, with readable navigation.
+  Core first-registration inspection is shared with the compatibility server;
+  managed/legacy analyses still require joint review. Normal installed and human
+  acceptance are separate pending steps, not implied by code or version metadata.
+
 - **analyze-paper (development ledger only):** record normal 0.35.0 installation,
   installed public inspection of the unchanged V-JEPA 2 package, readable report
   and resolved native file entries. Mac lock prevented fresh GUI assessment;
@@ -30,6 +36,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   public CLI's validated single-paper review pair. No runtime behavior change;
   native GUI human assessment remains pending due to the locked Mac. No main merge
   or canonical Vault migration is implied.
+
+## [0.36.0] - 2026-10-05
+
+### Added
+- **config-setup / knowledge:** `knowledge registration-plan`, `register` and `list`
+  compose the existing Field service without Hub or workspace prerequisites.
+  Confirmation binds selected navigation, root identity and content/manifest/registry
+  revisions across CLI processes; new random preview IDs are not approval credentials.
+  Existing portable Source attachment preserves all IDs and manifest bytes.
+  First-registration inspection rejects managed analyses, baselines and legacy links;
+  text inventory uses bounded nonblocking, no-follow regular-file reads.
+  Targeted contracts: 75 passed; after bounded-read hardening, full unit/contract:
+  1,508 passed, 11 existing warnings in 78.10 seconds. Changed core/server and new
+  module/tests pass Ruff; config-setup validator and whitespace checks pass.
+  Four historical CLI import-order findings are unchanged. Installed single-object
+  and human acceptance remain separate pending steps.
 
 ## [0.35.0] - 2026-10-05
 

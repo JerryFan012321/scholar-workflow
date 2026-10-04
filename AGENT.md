@@ -58,6 +58,8 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
   候选。已有便携 manifest 但尚未登记到本机时，须另行预览并明确确认整份现有 Source；只写 host
   registry，保留 manifest、Field ID 和正文原样，不把它伪装成新 Field 的批量初始化。不得固定
   Field 枚举或要求唯一 `research_vault_root`。
+  独立入口为 `knowledge registration-plan/register/list`，具体契约唯一持于
+  `references/knowledge-registration.md`；不把历史 Hub 当作登记前提或另建 registry。
 - 真实 Field 多文件迁移只可在外部编辑器/同步器停写窗口中执行，靠逐文件 CAS、持久 journal 和条件恢复
   达成可恢复的逻辑事务；不能宣称文件系统硬原子或把恢复快照称为已验证备份。旧论文分析改写须同时
   守恒旧 Markdown 未标记正文及每个字段、旧 Canvas 节点/边，并让候选 Markdown/Canvas/sidecar 通过

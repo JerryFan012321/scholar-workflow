@@ -32,8 +32,9 @@ comments.
 - Secrets never enter config or Git. Use environment variables; the Notion token is
   `SCHOLAR_WORKFLOW_NOTION_TOKEN`.
 - This skill covers core `config.yml`, not `recommend.yml`.
-- Dynamic Knowledge Sources/Fields are registered in the Hub; they are not mirrored into
-  the optional legacy `research_vault_root` setting.
+- Dynamic Knowledge Sources/Fields use the independent `knowledge` CLI, not a Hub
+  requirement or the optional legacy `research_vault_root` setting. When registering
+  a selected folder, load `${CLAUDE_PLUGIN_ROOT}/references/knowledge-registration.md`.
 - `config init` never overwrites a different existing file. Use `config set` for an
   existing configuration.
 - Zotero, web, and projection work belongs to their owning skills.

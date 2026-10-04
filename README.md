@@ -67,6 +67,17 @@ a zero-write preview, not registration or acceptance; it creates no homepage and
 does not start a service. Existing Source/Field registration and canonical analysis
 commits remain separate reviewed operations.
 
+### Register one knowledge Field without Hub (0.36.0)
+
+After `knowledge preview`, choose exactly one candidate relative root. Run
+`scholar-workflow knowledge registration-plan /absolute/selected/folder --field-root .`,
+review its navigation and digest, then `knowledge register /absolute/selected/folder
+--field-root . --approved-digest HEX_DIGEST`. Confirm locally; `knowledge list` shows
+registered navigation. Changes invalidate confirmation; managed/legacy analysis
+still requires joint migration review. Existing portable Sources use the separate
+`--existing-source` mode, preserving all IDs and manifest bytes. No homepage or
+paper rewrite. See [registration contract](references/knowledge-registration.md).
+
 ### Check an existing paper package (0.35.0)
 
 ```bash

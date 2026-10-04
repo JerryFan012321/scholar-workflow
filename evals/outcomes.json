@@ -2,6 +2,11 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "knowledge-installed-single-field-registration",
+      "description": "G17：安装版独立 knowledge plan/register/list 将一个明确清洁样例登记到原 host registry，便携清单只含所选 Field，导航与人类文档原样；跨进程摘要稳定，过期/旧稿不能简单登记。只在test独立对象验收，不登记整个Vault、不冒称已有论文provider归档；人工导航便利性未确认前pending。",
+      "status": "pending"
+    },
+    {
       "id": "knowledge-installed-folder-preview",
       "description": "G17：安装版 knowledge preview 仅检查显式文件夹，复用唯一 registry，完整呈现导航、未映射正文、外部 writer 与冲突；不创建首页/登记/迁移/启动 Hub，JSON 不导出进程内确认 token。合成输入零写入和单篇安装态预览分别验证，人类导航评鉴及正式 Source/Field 事务另行验收，全部证据前保持 pending",
       "status": "pending"

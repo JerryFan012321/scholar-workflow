@@ -3035,7 +3035,7 @@ def _format_rows(rows: list[dict], fmt: str) -> str:
 
 @main.group(name="knowledge")
 def knowledge() -> None:
-    """Inspect explicit knowledge folders without Hub or a workspace binding."""
+    """Preview and explicitly register knowledge folders without Hub."""
 
 
 @knowledge.command(name="preview")
@@ -3066,3 +3066,81 @@ def knowledge_preview(root: Path, fmt: str, language: str) -> None:
         }, ensure_ascii=False, indent=2))
     else:
         click.echo(preview_markdown(preview, language=language))
+
+
+def _local_field_service():
+    from scholar_workflow.knowledge.fields import FieldService, KnowledgeSourceRegistry
+
+    state_root = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME))
+    return FieldService(KnowledgeSourceRegistry(state_root / "hub" / "sources.json"))
+
+
+@knowledge.command(name="registration-plan")
+@click.argument("root", type=click.Path(path_type=Path))
+@click.option("--field-root", help="Exactly one relative root from knowledge preview.")
+@click.option("--existing-source", is_flag=True, help="Attach all existing portable Fields to this host.")
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["en", "zh"]), default="en")
+def knowledge_registration_plan(root: Path, field_root: str | None,
+                                existing_source: bool, fmt: str, language: str) -> None:
+    """Zero-write plan for one explicit Field, or an existing portable Source."""
+    from scholar_workflow.knowledge.fields import FieldRegistryError
+    from scholar_workflow.knowledge.registration import plan_markdown, registration_plan
+
+    try:
+        plan = registration_plan(_local_field_service(), root,
+                                 field_root=field_root, existing_source=existing_source)
+    except (FieldRegistryError, OSError, ValueError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    click.echo(json.dumps(plan.payload, ensure_ascii=False, indent=2) if fmt == "json"
+               else plan_markdown(plan.payload, language=language))
+
+
+@knowledge.command(name="register")
+@click.argument("root", type=click.Path(path_type=Path))
+@click.option("--field-root")
+@click.option("--existing-source", is_flag=True)
+@click.option("--approved-digest", required=True, help="Exact digest from the reviewed plan.")
+@click.option("--yes", is_flag=True, help="Confirm the already reviewed digest noninteractively.")
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["en", "zh"]), default="en")
+def knowledge_register(root: Path, field_root: str | None, existing_source: bool,
+                       approved_digest: str, yes: bool, fmt: str, language: str) -> None:
+    """Register only the reviewed scope; reject changed bytes and legacy cutovers."""
+    from scholar_workflow.knowledge.fields import FieldRegistryError
+    from scholar_workflow.knowledge.registration import fields_markdown, register
+
+    if not yes:
+        click.confirm("确认登记已审阅的目录？" if language == "zh" else
+                      "Register the reviewed folder scope?", abort=True, err=True)
+    try:
+        service = _local_field_service()
+        manifest = register(service, root, field_root=field_root,
+                            existing_source=existing_source, approved_digest=approved_digest)
+    except (FieldRegistryError, OSError, ValueError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    if fmt == "json":
+        click.echo(json.dumps({"schema_version": 1, "status": "registered",
+                               "manifest": manifest.model_dump(mode="json")},
+                              ensure_ascii=False, indent=2))
+    else:
+        click.echo("登记完成；没有改写正文或 Canvas。" if language == "zh" else
+                   "Registered; no prose or Canvas was rewritten.")
+        click.echo(fields_markdown([row for row in service.list_fields()
+                                    if row["source_id"] == manifest.source_id], language=language))
+
+
+@knowledge.command(name="list")
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["en", "zh"]), default="en")
+def knowledge_list(fmt: str, language: str) -> None:
+    """Read the single existing registry and portable navigation manifests."""
+    from scholar_workflow.knowledge.fields import FieldRegistryError
+    from scholar_workflow.knowledge.registration import fields_markdown
+
+    try:
+        fields = _local_field_service().list_fields()
+    except (FieldRegistryError, OSError, ValueError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    click.echo(json.dumps({"schema_version": 1, "fields": fields}, ensure_ascii=False, indent=2)
+               if fmt == "json" else fields_markdown(fields, language=language))

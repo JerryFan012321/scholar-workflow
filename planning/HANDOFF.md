@@ -7,6 +7,16 @@
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
 
+2026-10-05 下一切片：独立 `knowledge registration-plan/register/list`，复用现有
+FieldService、便携 manifest 与唯一 host registry。新 Field 一次只登记一个；已有便携
+Source 单独确认整份身份，只写 host。跨进程确认摘要绑定根 inode、内容、manifest、registry
+和确切导航，不把临时 UUID/token 当批准。含旧/受管分析或旧端口链接的新 Field 拒绝简单登记，
+保留联合事务门禁。先准备合成边界测试，再正常发布安装0.36.0，在 test 新目录只登记一个
+可读样例；不重新分析 V-JEPA2，不把清洁目录登记称为已有论文 provider 登记或模范 Vault 全完成。
+实现与定向75通过，安全读取补强后完整1508通过/11既有警告/78.10秒；新模块/变动core/server/tests
+Ruff、config-setup skill validator、diff通过，CLI四项既有I001未改。现在正常发布安装0.36.0，
+再仅登记test新独立目录；安装态/人工结果待补。详见 `knowledge-registration-test-plan.md`。
+
 **最新0.35.0正常发布安装：source4c630ef/runtime d83cd40，CLI/module/metadata/cache一致。
 完整1482通过；安装版public check-bundle检查现有V-JEPA2五分支包通过（68内容/105节点/104边），
 三份原件与registry前后hash相同。test新“论文包检查-0.35.0”含中文实际报告/机器记录/四个真实
