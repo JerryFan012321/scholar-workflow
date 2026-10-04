@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.32.3] - 2026-10-04
+
+### Fixed
+- **analyze-paper:** installed replay exposed a four-interval tree, not the five
+  intervals assumed by the previous capacity example. Add explicit four-interval
+  fit/refusal geometry tests and raise the bounded cap from 340 to 344 px; the
+  actual required gutter is 341. Content and the existing 2:1 gate remain intact.
+  Independent targeted tests: 70 passed; full unit/contract: 1,425 passed,
+  11 warnings in 73.48 seconds. Four-file Ruff and whitespace checks passed.
+  Real-paper aesthetics still require human assessment after normal installation.
+
 ## [0.32.2] - 2026-10-04
 
 ### Fixed

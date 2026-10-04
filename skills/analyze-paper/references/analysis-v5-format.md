@@ -93,7 +93,7 @@ schema. Concision cannot remove a material qualification or add unsupported fact
   do not count as facts but do count toward total nodes. Failure reports the actual
   conflict; it never hides records, merges slots, shrinks fonts or silently raises limits.
 - For an expanded tree that is too tall, aligned layer gutters may increase uniformly
-  from 64 px to at most 340 px, using only the width needed for the 2:1 limit.
+  from 64 px to at most 344 px, using only the width needed for the 2:1 limit.
   Box dimensions and vertical bands remain content-driven and unchanged. If bounded
   spacing is insufficient, conformance still fails; spacing is not visual acceptance.
 - A renderer may return a noncanonical candidate for review. Baseline creation,
