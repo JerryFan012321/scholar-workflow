@@ -276,6 +276,12 @@ def _render_legacy_canvas(
 def render_analysis(document: AnalysisDocument, *, note_stem: str) -> AnalysisBundle:
     """Render one validated IR without reading or writing external stores."""
     _safe_note_stem(note_stem)
+    if document.schema_version == 5:
+        from scholar_workflow.analysis.complete_reference import render_complete_analysis
+
+        # A candidate remains inspectable when geometry fails. Canonical writes
+        # and baselines require the independent conformance gate.
+        return render_complete_analysis(document, note_stem=note_stem, enforce_limits=False)
     if document.schema_version == 4:
         from scholar_workflow.analysis.reference_rendering import render_reference_analysis
 

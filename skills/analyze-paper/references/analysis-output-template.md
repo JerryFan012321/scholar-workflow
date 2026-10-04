@@ -1,7 +1,7 @@
 # Required Paper Analysis Output Template
 
 This is the current observable output contract for a paper that has been read and
-analyzed. It follows the user's generic reference image supplied on 2026-10-02.
+analyzed. It follows the user's generic paper-analysis reference image.
 It defines the delivered Markdown and editable Canvas, not a required reading order,
 reasoning procedure, or repetition of a previously analyzed paper.
 
@@ -89,6 +89,17 @@ corresponding-challenge or corresponding-contribution axis.
 - Use native editable JSON Canvas text nodes, fine straight square-routed arrowless
   connections, and the reference image's tree-like label treatment. An image, SVG,
   four/five dashboard cards or a flattened text outline is not an editable substitute.
+- Alignment and non-crossing are hard requirements: generated nodes at the same
+  hierarchy depth share a left edge; siblings follow consistent spacing and each
+  subtree occupies its own vertical band. Connections never cross unrelated branches
+  or pass through a node. A shared trunk among siblings is allowed, not a crossing.
+  Every visible human graph item, including preserved text, file, link and group nodes,
+  must leave managed content and its links unobscured. Extra edges that touch or cross
+  managed content obey the same crossing and occlusion checks; being user-created
+  does not bypass them. Independent safe human graph items remain preserved.
+  Fixed endpoint sides are required for a provable route; automatically floating
+  endpoints or otherwise unprovable paths do not qualify as non-crossing. Report
+  the conflict without deleting or rewriting human graph items.
 - Preserve compact two-dimensional placement rather than copying the tall screenshot's
   coordinates. Boxes fit their visible content plus roughly one extra line for clicks;
   text, source links and backlinks must not be clipped or obscured. Readability and
@@ -105,17 +116,18 @@ branches or be presented as a complete whole-paper result.
 
 ## Compatibility and completion boundary
 
-The existing IR v4 machine schema and renderer implement the older four-branch tree
+The IR v4 machine schema and renderer implement the older four-branch tree
 and one grouped details node per claim. `analysis-format.md` describes that versioned
-compatibility interface. They do **not** yet implement this five-branch template.
+compatibility interface. They do **not** implement this five-branch template.
+New analyses use the explicit v5 interface in `analysis-v5-format.md`. Check installed
+runtime support rather than inferring capability from the specification or a source checkout.
 Do not label a four-branch v4 render as a conformant new-format result, put Experiments
 under Method/Limitation to evade the schema, or bypass paired validation to save it.
 When the available tool cannot represent this template, report that implementation
 limitation and return a noncanonical proposal rather than a validated success.
 
-A versioned implementation must adapt schema, model, Markdown/Canvas renderers,
-conformance and baseline/update compatibility together. Count actual independently
-rendered nodes; do not use the old grouped-node accounting to conceal expanded nodes.
+Count actual independently rendered nodes; do not use the old grouped-node accounting
+to conceal expanded nodes.
 If a geometry or node budget conflicts with required content, report the conflict
 instead of merging away named slots, dropping content or silently relaxing a limit.
 An explicit format conversion preserves prior source/claim content and follows the

@@ -19,8 +19,10 @@
 
 Canvas 按原图把每项 challenge/contribution/module 的具名子项展开为独立可编辑节点，
 不以一张合并 details 卡替代。完整新输出规范见 `references/analysis-output-template.md`。
-当前 v4 生成器仍为四分支和合并详情卡片，运行适配尚未完成。以下 v4 说明属于历史兼容行为，
-不能证明已实现新格式；工具不支持时须明确报告，不能把旧输出冒称为新格式通过。
+新分析使用 `references/analysis-v5-format.md` 的显式 v5 接口：`schema_version: 5`、
+`framework: reference_tree_v5`。生成前检查实际安装工具是否支持它；旧 v4 四分支和合并详情
+仅用于既有格式兼容，不能替代新五分支结果。结构符合性不证明科学来源真实或 Obsidian 外观已验收；
+工具不支持时明确报告限制，不能把旧输出冒称为新格式通过。
 
 这些是输出的可见层级，不规定阅读或推理顺序。挑战、贡献和模块可按论文实际数量重复；原图中
 尚未填入内容的框架位置只保留结构，不据此编造论文事实。分析声明 `en` 或 `zh`，图中的框架
@@ -43,10 +45,10 @@ Vault Markdown 可跳到具体块。原文链接与 Canvas→正文反链同处�
 身份、版本和归属核验也不能由结构 conformance 代替。
 新分析正文在对应论点或逐点论据下方附**原文摘录**，并链接到同一原文页或段落。
 摘录保留原语言和原措辞；中文分析可以引用英文原句，意译或译文不冒充逐字引用。
-无法核实原措辞时明确报告来源缺口。Canvas 不重复摘录，保留已认可的外观与内容层级。
+无法核实原措辞时明确报告来源缺口。Canvas 不重复摘录，保留规定的可编辑树与内容层级。
 旧分析不会自动改变；转换须显式请求整篇格式更新，不能只手改受管 Markdown。
 完整规范见 `references/analysis-format.md`。
-v4 可通过 `reader` 显式选择已核验 Vault 的 ZotFlow Library Reader；Markdown 和 Canvas 均可在
+v4/v5 可通过 `reader` 显式选择已登记、核验 Vault 的 ZotFlow Library Reader；Markdown 和 Canvas 均可在
 Obsidian 内打开本机 Zotero 附件并定位物理页。不指定时仍生成 Zotero 原生入口。来源身份始终是
 结构化 span，页级链接不宣称逐句选中或批注同步；使用该选项前仍须核验插件、本机模式与附件。
 
@@ -58,6 +60,13 @@ Advanced Canvas 可呈现相应效果；不安装仍可编辑 `.canvas`，只是
 调整与自建图元会保留。
 生成文本框按中文换行估算并在正文下方预留约一行高度，便于点击来源与反链。v4 人类正文和
 Canvas 节点不含 `sw-analysis-claim` 机器注释；块锚点、确定性节点 ID 与 sidecar 负责身份。
+
+v5 为每条独立归属的逐点内容生成单独可编辑节点，不合并为详情行。同层对齐、无交叉和无穿框/
+遮挡是硬要求，完整几何契约见 `references/analysis-output-template.md`。既有 v4 文档对保留
+自己的版本化投影，不静默转换。
+
+旧 joint-placement、provider-bootstrap 与 Field legacy-cutover 入口仍只接受 v4。新 v5 分析
+支持不意味着这些迁移入口已支持 v5，也不授权初始化 Field、搬迁或静默降级为 v4。
 
 ## 批量一致性门禁
 

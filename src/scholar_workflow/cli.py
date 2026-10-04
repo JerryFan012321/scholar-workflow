@@ -2415,7 +2415,7 @@ def analysis_audit_batches(state_db: Path | None) -> None:
 @click.option(
     "--provider-state-root",
     type=click.Path(exists=True, file_okay=False, path_type=Path),
-    help="Legacy v1-v3 option; IR v4 resolves its provider from the registered Source.",
+    help="Legacy v1-v3 option; IR v4/v5 resolves its provider from the registered Source.",
 )
 def analysis_commit_bundle(
     request_path: Path,
@@ -2469,7 +2469,7 @@ def analysis_commit_bundle(
     if item.state.value != request.source_state:
         raise IdentityConflictError("commit request source_state differs from batch state")
     if (
-        request.document.schema_version == 4
+        request.document.schema_version in {4, 5}
         and staged_zotero_item_key != request.zotero_item_key
     ):
         raise IdentityConflictError(
@@ -2528,7 +2528,7 @@ def analysis_commit_bundle(
             provider_state_root=provider_state_root,
             source_registry=(
                 KnowledgeSourceRegistry(_hub_state_root() / "hub" / "sources.json")
-                if request.document.schema_version == 4
+                if request.document.schema_version in {4, 5}
                 else None
             ),
         )

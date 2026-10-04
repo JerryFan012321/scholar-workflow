@@ -98,6 +98,10 @@ def validate_bundle(
     note_stem: str,
 ) -> ConformanceReport:
     """Validate observable structure without judging prose quality or reasoning."""
+    if document.schema_version == 5:
+        from scholar_workflow.analysis.complete_conformance import validate_complete_bundle
+
+        return validate_complete_bundle(document, bundle, note_stem=note_stem)
     if document.schema_version == 4:
         from scholar_workflow.analysis.reference_conformance import (
             validate_reference_tree_bundle,

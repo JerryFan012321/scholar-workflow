@@ -3,14 +3,58 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [Unreleased]
+
+## [0.32.0] - 2026-10-04
+
+Independent hotfix on `codex/hotfix-project-context`; main is not merged.
+Approved pre-release regression: 1,408 passed, 11 dependency/multiprocessing warnings
+in 72.97 seconds after version synchronization; v5 targeted tests: 53 passed. Five-file Ruff, skill frontmatter
+and diff whitespace checks passed. Installed-product human assessment, real-paper
+source fidelity and new v5 public commit-chain acceptance remain separate pending
+gates; this publication does not certify them.
+
+### Added
+- **Explicit five-branch paper-analysis v5.** Versioned schema/model, native editable
+  tree renderer, point-local evidence/source/backlinks, Markdown-only adjacent excerpts,
+  container labels without fabricated parent facts, and baseline/update compatibility.
+  Same-depth alignment, orthogonal arrowless routing, non-crossing/non-occlusion,
+  click space and actual node/height/aspect limits are enforced before canonical success.
+  v1–v4 are not silently converted. Targeted repair cannot change container state or
+  point identities/order. Approved synthetic/adjacent regressions: 164 passed, 2 skipped
+  in 2.83 seconds; initial 25 passed/1 failed/2 skipped retained in the results report.
+  The first failure was a test metadata-key error, corrected against installed Advanced
+  Canvas source, not a relaxed output requirement. New-format installed-product human
+  assessment and scientific source fidelity remain pending; full release regression passed.
+
+### Fixed
+- **analyze-paper v5 geometry gaps.** Check extra managed edges and
+  visible human-node occlusion instead of examining required edges/managed boxes only;
+  unverifiable routes involving managed content fail closed. Stagger sparse unary trees
+  without changing node contents, sizes or hierarchy. Prepare exact update/budget/geometry
+  inputs and an integer-safe aspect assertion. Check human-to-human routes against managed
+  content rather than exempting them by endpoint ownership; floating endpoints fail closed.
+  Supplemental and full regression passed after explicit approval; fixed-input
+  aspect expectations include every visible box, without relaxing geometry limits.
+- **analyze-paper point-prose contract gaps.** Reject v5 point text or
+  Canvas summaries that introduce extra ATX headings; keep v4 prefixed prose and v1–v3
+  input compatibility. Reject machine claim markers in v4/v5 point prose consistently
+  in the runtime model and checked-in schema. Prepare independent positive/negative
+  inputs; no source content, actual Vault, installed package or release changed.
+- **analyze-paper runtime documentation boundary.** Keep development/installation status
+  in planning rather than runtime references. Describe v5 and v4 compatibility explicitly;
+  legacy placement/bootstrap/cutover routes remain v4-only, not new v5 migration support.
+
 ## [0.31.1] - 2026-10-02
 
 Hotfix on `codex/hotfix-project-context`, independently authorized for publication and
 normal installation; main is not merged. Full approved unit/contract regression:
 1,355 passed, 11 existing dependency/multiprocessing warnings, 73.00 seconds.
 The latest five-branch output template is a required specification, not implemented
-renderer support. Installation and the isolated test-Vault report are recorded separately;
-human assessment and new-template implementation remain pending.
+renderer support. Normal Codex/pipx installation and the isolated installed-package v4
+compatibility check completed; the report is saved separately in the test Vault.
+Human assessment and new-template implementation remain pending. This post-install record
+does not change the already published runtime commit.
 
 ### Changed
 - **Runtime skill/agent entrypoints: reuse inputs and one output owner.** Replace survey's

@@ -1,4 +1,5 @@
 """Public models for versioned paper-analysis artifacts and batches."""
+
 from __future__ import annotations
 
 import re
@@ -10,16 +11,34 @@ from uuid import UUID
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from scholar_workflow.knowledge.models import (
-    ATOMIC_RESOURCE_KINDS as ATOMIC_RESOURCE_KINDS,
-    CoreDocumentKind as CoreDocumentKind,
-    KnowledgeAtomicResource as KnowledgeAtomicResource,
-    KnowledgeCoreDocument as KnowledgeCoreDocument,
-    KnowledgeManifest as KnowledgeManifest,
-    KnowledgeProjection as KnowledgeProjection,
-    KnowledgeRelation as KnowledgeRelation,
-    KnowledgeSupportingDocument as KnowledgeSupportingDocument,
-    SupportingDocumentKind as SupportingDocumentKind,
-    _validate_vault_path as _validate_vault_path,
+    ATOMIC_RESOURCE_KINDS as ATOMIC_RESOURCE_KINDS,  # noqa: PLC0414 -- compatibility export
+)
+from scholar_workflow.knowledge.models import (
+    CoreDocumentKind as CoreDocumentKind,  # noqa: PLC0414 -- compatibility export
+)
+from scholar_workflow.knowledge.models import (
+    KnowledgeAtomicResource as KnowledgeAtomicResource,  # noqa: PLC0414 -- compatibility export
+)
+from scholar_workflow.knowledge.models import (
+    KnowledgeCoreDocument as KnowledgeCoreDocument,  # noqa: PLC0414 -- compatibility export
+)
+from scholar_workflow.knowledge.models import (
+    KnowledgeManifest as KnowledgeManifest,  # noqa: PLC0414 -- compatibility export
+)
+from scholar_workflow.knowledge.models import (
+    KnowledgeProjection as KnowledgeProjection,  # noqa: PLC0414 -- compatibility export
+)
+from scholar_workflow.knowledge.models import (
+    KnowledgeRelation as KnowledgeRelation,  # noqa: PLC0414 -- compatibility export
+)
+from scholar_workflow.knowledge.models import (
+    KnowledgeSupportingDocument as KnowledgeSupportingDocument,  # noqa: PLC0414 -- compatibility export
+)
+from scholar_workflow.knowledge.models import (
+    SupportingDocumentKind as SupportingDocumentKind,  # noqa: PLC0414 -- compatibility export
+)
+from scholar_workflow.knowledge.models import (
+    _validate_vault_path as _validate_vault_path,  # noqa: PLC0414 -- compatibility export
 )
 
 
@@ -32,6 +51,7 @@ class AnalysisRole(StrEnum):
     ABSTRACT = "abstract"
     INTRODUCTION = "introduction"
     METHOD = "method"
+    EXPERIMENTS = "experiments"
     LIMITATION = "limitation"
 
 
@@ -46,6 +66,13 @@ TREE_ROLES = (
     AnalysisRole.ABSTRACT,
     AnalysisRole.INTRODUCTION,
     AnalysisRole.METHOD,
+    AnalysisRole.LIMITATION,
+)
+FIVE_TREE_ROLES = (
+    AnalysisRole.ABSTRACT,
+    AnalysisRole.INTRODUCTION,
+    AnalysisRole.METHOD,
+    AnalysisRole.EXPERIMENTS,
     AnalysisRole.LIMITATION,
 )
 
@@ -95,6 +122,31 @@ def reference_tree_point_slots(path: str) -> frozenset[str] | None:
                 f"challenge-{index}" for index in range(1, 4)
             )
     return None
+
+
+def complete_tree_point_slots(path: str, point_ids: list[str]) -> frozenset[str] | None:
+    """Version-5 slots, without treating the example image's counts as limits."""
+    fixed = {
+        "method/overview": frozenset({"task-io", "steps"}),
+        "introduction/demos_application": frozenset(),
+    }
+    if path in fixed:
+        return fixed[path]
+    if re.fullmatch(rf"experiments/ablation/{_OUTLINE_SLUG}", path):
+        return frozenset({"components", "design-choices"})
+    numbered = (
+        (rf"abstract/previous_methods/{_OUTLINE_SLUG}", "challenge"),
+        (rf"abstract/experiment/{_OUTLINE_SLUG}", "finding"),
+        (rf"experiments/comparison/{_OUTLINE_SLUG}", "finding"),
+        (rf"limitation/explanation/{_OUTLINE_SLUG}", "reason"),
+    )
+    for pattern, prefix in numbered:
+        if re.fullmatch(pattern, path):
+            return frozenset(
+                point_id for point_id in point_ids
+                if re.fullmatch(rf"{prefix}-[1-9][0-9]*", point_id)
+            )
+    return reference_tree_point_slots(path)
 
 
 class ProfileKind(StrEnum):
@@ -194,16 +246,19 @@ class AnalysisProfile(BaseModel):
 
     kind: ProfileKind
     roles: list[AnalysisRole] = Field(default_factory=list)
-    framework: Literal["legacy", "reference_tree"] = "legacy"
+    framework: Literal["legacy", "reference_tree", "reference_tree_v5"] = "legacy"
     markdown_quotes: bool = Field(default=False, strict=True, exclude_if=lambda value: not value)
 
     @model_validator(mode="after")
     def validate_roles(self) -> AnalysisProfile:
-        if self.markdown_quotes and self.framework != "reference_tree":
+        if self.markdown_quotes and self.framework not in {"reference_tree", "reference_tree_v5"}:
             raise ValueError("Markdown quotations require the reference_tree framework")
         if len(self.roles) != len(set(self.roles)):
             raise ValueError("profile roles must be unique")
-        allowed_roles = TREE_ROLES if self.framework == "reference_tree" else ALL_ROLES
+        allowed_roles = (
+            FIVE_TREE_ROLES if self.framework == "reference_tree_v5"
+            else TREE_ROLES if self.framework == "reference_tree" else ALL_ROLES
+        )
         if self.kind is ProfileKind.WHOLE:
             if self.roles and set(self.roles) != set(allowed_roles):
                 raise ValueError("whole profile must declare all framework roles or omit roles")
@@ -273,7 +328,8 @@ class AnalysisClaim(BaseModel):
     claim_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{0,63}$")
     role: AnalysisRole
     title: str = Field(min_length=1, max_length=200)
-    body: str = Field(min_length=1, max_length=20_000)
+    body: str = Field(max_length=20_000)
+    container: bool = Field(default=False, strict=True, exclude_if=lambda value: not value)
     canvas_summary: str | None = Field(default=None, min_length=1, max_length=400)
     evidence: Evidence
     points: list[AnalysisPoint] = Field(default_factory=list, max_length=64, exclude_if=lambda value: not value)
@@ -307,7 +363,7 @@ class AnalysisClaim(BaseModel):
 class AnalysisDocument(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal[1, 2, 3, 4]
+    schema_version: Literal[1, 2, 3, 4, 5]
     artifact_id: str = Field(pattern=r"^analysis:[^\s]+$")
     paper_title: str = Field(min_length=1, max_length=1000)
     language: Literal["en", "zh"] | None = None
@@ -317,9 +373,19 @@ class AnalysisDocument(BaseModel):
 
     @model_validator(mode="after")
     def validate_projection(self) -> AnalysisDocument:
-        is_reference_tree = self.schema_version == 4
-        if is_reference_tree != (self.profile.framework == "reference_tree"):
-            raise ValueError("IR v4 requires reference_tree framework; v1-v3 require legacy")
+        is_reference_tree = self.schema_version in {4, 5}
+        expected_framework = (
+            "reference_tree_v5" if self.schema_version == 5
+            else "reference_tree" if self.schema_version == 4 else "legacy"
+        )
+        if self.profile.framework != expected_framework:
+            raise ValueError("IR v5 requires reference_tree_v5; v4 requires reference_tree; v1-v3 require legacy")
+        if self.schema_version == 5 and not self.profile.markdown_quotes:
+            raise ValueError("IR v5 requires Markdown original-source quotations")
+        if self.schema_version == 5 and self.reader is not None and (
+            self.reader.kind == "zotflow_library" and self.reader.vault_id is None
+        ):
+            raise ValueError("IR v5 ZotFlow projection requires a verified vault_id")
         if is_reference_tree and self.language is None:
             raise ValueError("IR v4 requires an explicit analysis language")
         if not is_reference_tree and self.reader is not None:
@@ -346,6 +412,17 @@ class AnalysisDocument(BaseModel):
 
         outline_paths: list[str] = []
         for claim in self.claims:
+            if claim.container:
+                if self.schema_version != 5:
+                    raise ValueError("structural containers require IR v5")
+                if (
+                    claim.body != "" or claim.canvas_summary is not None
+                    or claim.evidence.kind is not EvidenceKind.NOT_APPLICABLE
+                    or claim.evidence.anchor is not None or claim.evidence.source_spans
+                ):
+                    raise ValueError("structural containers cannot carry facts, summaries or source evidence")
+            elif not claim.body or (self.schema_version == 5 and not claim.body.strip()):
+                raise ValueError("non-container claim body must not be blank")
             if not is_reference_tree:
                 if claim.outline_path is not None:
                     raise ValueError("legacy claims cannot carry outline_path")
@@ -357,6 +434,16 @@ class AnalysisDocument(BaseModel):
                 raise ValueError("IR v4 claim title must be a single line")
             if re.search(r"(?m)^#{1,6}\s", claim.body) or "sw-analysis-claim" in claim.body:
                 raise ValueError("IR v4 claim body cannot inject framework headings or markers")
+            for point in claim.points:
+                prose = (point.text, point.canvas_summary or "")
+                if any("sw-analysis-claim" in text for text in prose) or (
+                    self.schema_version == 5 and any(
+                        re.match(r"^ {0,3}#{1,6}(?:[ \t]|$)", text) for text in prose
+                    )
+                ):
+                    raise ValueError(
+                        f"IR v{self.schema_version} point {point.point_id} cannot inject framework headings or markers"
+                    )
             if len(claim.title) > 120:
                 raise ValueError("IR v4 Canvas claim title must not exceed 120 characters")
             if len(claim.body) > 180 and claim.canvas_summary is None:
@@ -396,7 +483,10 @@ class AnalysisDocument(BaseModel):
                         raise ValueError(
                             "Markdown source quotations require an excerpt for each supported claim/point"
                         )
-            slots = reference_tree_point_slots(path)
+            slots = (
+                complete_tree_point_slots(path, [point.point_id for point in claim.points])
+                if self.schema_version == 5 else reference_tree_point_slots(path)
+            )
             if slots is None:
                 raise ValueError(f"IR v4 outline_path is outside the reference tree: {path}")
             unexpected_points = {point.point_id for point in claim.points} - slots
@@ -410,7 +500,12 @@ class AnalysisDocument(BaseModel):
 
         covered = {claim.role for claim in self.claims}
         expected = set(self.profile.roles)
-        required_roles = TREE_ROLES if is_reference_tree else ALL_ROLES
+        required_roles = (
+            FIVE_TREE_ROLES if self.schema_version == 5
+            else TREE_ROLES if is_reference_tree else ALL_ROLES
+        )
+        if not covered.issubset(required_roles):
+            raise ValueError("claim roles must belong to the versioned framework")
         if (
             self.profile.kind is ProfileKind.WHOLE
             and not is_reference_tree
@@ -435,6 +530,9 @@ class AnalysisDocument(BaseModel):
             raise ValueError("workflow order must be unique and contiguous from 1")
 
         generated_semantic_nodes = (
+            sum(not claim.container for claim in self.claims)
+            + sum(len(claim.points) for claim in self.claims)
+            if self.schema_version == 5 else
             len(self.claims) + sum(bool(claim.points) for claim in self.claims)
             if is_reference_tree
             else 1 + len(covered) + len(self.claims)
@@ -484,7 +582,7 @@ class AnalysisBaseline(BaseModel):
             raise ValueError("baseline generated_node_ids must be unique")
         if len(self.generated_edge_ids) != len(set(self.generated_edge_ids)):
             raise ValueError("baseline generated_edge_ids must be unique")
-        max_generated_nodes = 96 if self.document.schema_version == 4 else 40
+        max_generated_nodes = 96 if self.document.schema_version in {4, 5} else 40
         if len(self.generated_node_ids) > max_generated_nodes:
             raise ValueError(
                 f"baseline cannot own more than {max_generated_nodes} generated nodes"
@@ -676,7 +774,7 @@ class AnalysisCommitRequest(BaseModel):
     def validate_commit_contract(self) -> AnalysisCommitRequest:
         if any(token in self.note_stem for token in ("/", "\\", "#", "^", "[", "]")):
             raise ValueError("note_stem must be a plain filename stem")
-        if self.document.schema_version == 4:
+        if self.document.schema_version in {4, 5}:
             parents = {
                 PurePosixPath(path).parent for path in self.paths.as_list()
             }

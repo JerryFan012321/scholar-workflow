@@ -77,7 +77,7 @@ def _json_bytes(value: object) -> bytes:
 
 def _request_fingerprint(request: AnalysisCommitRequest) -> str:
     semantic = request.model_dump(mode="json")
-    if request.document.schema_version != 4:
+    if request.document.schema_version not in {4, 5}:
         # Preserve persisted v1-v3 receipt fingerprints from before these v4 fields existed.
         semantic.pop("base_snapshot_revision", None)
         semantic.pop("zotero_item_key", None)
@@ -1174,9 +1174,9 @@ def _authoritative_paper_folder(
     request: AnalysisCommitRequest,
     provider_state_root: Path | None,
 ) -> Iterator[KnowledgeProviderSnapshot | None]:
-    """Pin the provider declaration while an IR v4 bundle is committed."""
+    """Pin the provider declaration while an IR v4/v5 bundle is committed."""
 
-    if request.document.schema_version != 4:
+    if request.document.schema_version not in {4, 5}:
         yield None
         return
     if provider_state_root is None:
@@ -1217,7 +1217,7 @@ def _registered_v4_provider(
     vault_root: Path,
     request: AnalysisCommitRequest,
 ) -> Iterator[tuple[Path, str]]:
-    """Resolve the only v4 provider through the host-registered Obsidian Source.
+    """Resolve a v4/v5 provider through the host-registered Obsidian Source.
 
     Managed Source writes take the same registry lock exclusively. Keep a shared
     lock until the canonical bundle has committed so a managed re-registration
@@ -1453,13 +1453,13 @@ def commit_analysis_bundle(
     contains only the three committed artifacts plus relations and projections
     supplied explicitly in ``request``.
 
-    IR v4 resolves its provider solely from the registered Source's host-state
+    IR v4/v5 resolves its provider solely from the registered Source's host-state
     location. Older arbitrary provider directories and snapshots without a
-    Vault binding remain disabled for v4; this operation never migrates or
+    Vault binding remain disabled for v4/v5; this operation never migrates or
     silently rebinds them.
     """
 
-    if request.document.schema_version == 4:
+    if request.document.schema_version in {4, 5}:
         if provider_state_root is not None:
             raise AnalysisCommitSafetyError(
                 "IR v4 --provider-state-root is not an authority; use the registered Source"
