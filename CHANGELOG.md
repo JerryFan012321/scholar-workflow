@@ -5,6 +5,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+- **knowledge (0.37.1 native-open fix):** percent-encode spaces as `%20`, not
+  form-style `+`, in Obsidian document URIs. The first installed native request
+  returned success without opening its target; actual frontend file identity is
+  checked separately from OS acceptance. No paper content or Canvas change.
+
 - **analyze-paper / knowledge:** separate Source file scope from its containing
   Obsidian reader Vault; retain the exact-root resolver compatibility interface,
   fail closed on ambiguous host mappings, and remove the analysis commit's reader
