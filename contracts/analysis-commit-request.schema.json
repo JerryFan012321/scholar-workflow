@@ -30,7 +30,7 @@
     "document": {"$ref": "analysis-ir.schema.json"},
     "paths": {
       "type": "object",
-      "description": "For analysis IR v4, runtime validation requires all three paths to share one Field-local resources/papers/<paper-segment>/ folder; earlier IR versions retain their existing paths.",
+      "description": "For analysis IR v4/v5, all three paths share one Field-local resources/papers/<paper-segment>/ folder. A registered root Field uses resources/papers directly; runtime commit verifies the actual Source/Field owner. Earlier IR versions retain their existing paths.",
       "additionalProperties": false,
       "required": ["markdown", "canvas", "sidecar"],
       "properties": {

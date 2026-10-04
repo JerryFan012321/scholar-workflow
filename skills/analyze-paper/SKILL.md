@@ -29,6 +29,10 @@ new template. Report an unsupported-version limitation rather than substituting 
    than treating `research_vault_root` as a required singleton. If the destination
    is ambiguous or the Field is not initialized, ask for a choice or run the
    Field preview; do not silently create a topic directory or migrate a Vault.
+   If this already-ingested paper has no owner yet, use the explicit new-folder
+   registration in `${CLAUDE_PLUGIN_ROOT}/references/paper-registration.md` before
+   paired commit. Existing folders require their own reviewed adoption/migration;
+   never initialize a provider with a fabricated owner.
    Then load `references/analysis-output-template.md` and the versioned interface in
    `references/analysis-v5-format.md` for a new five-branch analysis, or
    `references/analysis-format.md` for an existing v4 pair. Declare the supported version/framework explicitly;

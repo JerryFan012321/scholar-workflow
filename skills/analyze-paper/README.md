@@ -115,6 +115,10 @@ Requested reproducible exemplars include a non-secret versioned input and replay
 note alongside the pair, using the installed public batch/commit interfaces.
 `references/reproduction.md` distinguishes staged files, navigable review copies
 and canonical receipts, and records source and human-visual checks separately.
+For a missing paper owner, the explicit `knowledge paper-plan/register-paper`
+interface creates only a new companion folder, inventory and navigation through
+a digest-bound recoverable transaction; see the shared paper-registration contract.
+It does not adopt existing review copies or substitute for the paired commit receipt.
 
 Each paper in a batch is staged and checked independently. A hard contract validates profile
 coverage, IDs, inline evidence, backlinks, Canvas integrity, readable geometry, and node count

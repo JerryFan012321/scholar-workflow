@@ -3075,6 +3075,61 @@ def _local_field_service():
     return FieldService(KnowledgeSourceRegistry(state_root / "hub" / "sources.json"))
 
 
+def _paper_selection_options(command):
+    for name in ("source-id", "field-id", "item-key", "attachment-key", "segment"):
+        command = click.option("--" + name, required=True)(command)
+    return click.option("--language", type=click.Choice(["en", "zh"]), default="en")(command)
+
+
+@knowledge.command(name="paper-plan")
+@_paper_selection_options
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+def knowledge_paper_plan(fmt: str, **selection) -> None:
+    """Zero-write, digest-bound plan for one new paper owner and navigation entry."""
+    from scholar_workflow.adapters.zotero_local import ZoteroLocalAdapter
+    from scholar_workflow.knowledge.presentation import _text
+    from scholar_workflow.workflows.register_paper import paper_plan
+
+    try:
+        with ZoteroLocalAdapter() as zotero:
+            plan = paper_plan(_local_field_service().registry, zotero, **selection)
+    except (RuntimeError, OSError, ValueError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    if fmt == "json":
+        click.echo(json.dumps(plan, ensure_ascii=False, indent=2))
+    else:
+        zh = selection["language"] == "zh"
+        click.echo("# 单篇论文登记方案\n" if zh else "# Paper registration plan\n")
+        click.echo(_text(plan["paper"]["title"]) + "\n")
+        click.echo(f"{'新增资料笔记' if zh else 'New companion note'}: {plan['owner_path']}\n")
+        click.echo(plan["note"])
+        click.echo("确认摘要：" if zh else "Confirmation digest:")
+        click.echo(plan["approved_digest"])
+        click.echo("尚未写入；登记不等于分析或科学验收。" if zh else
+                   "Nothing written; registration is not analysis or scientific acceptance.")
+
+
+@knowledge.command(name="register-paper")
+@_paper_selection_options
+@click.option("--approved-digest", required=True)
+@click.option("--yes", is_flag=True)
+def knowledge_register_paper(approved_digest: str, yes: bool, **selection) -> None:
+    """CAS-register one reviewed paper; repeat the exact request to resume its journal."""
+    from scholar_workflow.adapters.zotero_local import ZoteroLocalAdapter
+    from scholar_workflow.workflows.register_paper import register_paper
+
+    if not yes:
+        click.confirm("登记已审阅的单篇论文？" if selection["language"] == "zh" else
+                      "Register the reviewed paper?", abort=True, err=True)
+    try:
+        with ZoteroLocalAdapter() as zotero:
+            result = register_paper(_local_field_service().registry, zotero,
+                                    approved_digest=approved_digest, **selection)
+    except (RuntimeError, OSError, ValueError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    click.echo(json.dumps(result, ensure_ascii=False, indent=2))
+
+
 @knowledge.command(name="registration-plan")
 @click.argument("root", type=click.Path(path_type=Path))
 @click.option("--field-root", help="Exactly one relative root from knowledge preview.")

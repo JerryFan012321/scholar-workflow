@@ -95,6 +95,12 @@ paper rewrite. See [registration contract](references/knowledge-registration.md)
 
 ### Check an existing paper package (0.35.0)
 
+The single-paper enrollment interface (0.38.0+) is documented in
+[Paper registration](references/paper-registration.md): `knowledge paper-plan`
+and `knowledge register-paper` use an existing registered Source/Field, live Zotero
+identity, a new companion folder and digest-bound conditional recovery. This is
+not adoption of old packages or scientific acceptance; verify installed support.
+
 ```bash
 scholar-workflow analysis check-bundle /absolute/paper-folder \
   --markdown 'Paper Analysis.md' --canvas 'Paper Tree.canvas' \
