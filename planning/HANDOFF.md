@@ -7,6 +7,16 @@
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
 
+**最新：0.33.0 已正常发布安装（source150aa75/runtime3f009997），CLI/module/metadata/cache身份一致。
+普通系统Python调用安装缓存 example_project.py 成功，未装系统依赖；其后只在新独立示例中
+提交明确源码并实际执行，一个失败/两个成功 Attempt；同源码新克隆重建身份、配方、结果一致。
+六项资料清单包含已选 V-JEPA2 原文/分析引用，未复制或改写论文。test 已新增
+`Scholar Workflow 实验/项目与实验-0.33.0/本轮成果.md`；两份项目资料及实验报告可直接阅读。
+完整1441回归通过，人类便利性、新论文图评鉴、完整 Source/Field 和原生工具评鉴仍未全项完成。
+新能力已沉淀为安装版 init-project 的模板/入口/reference，但 G17 不完结；不重跑这个有效样例。
+下一能力切片先只读核对 test Source/Field 所需的真实契约和原生工具能力，再提出明确预览/评鉴；
+不靠隐藏Hub注册、额外首页或假科学通过弥补缺口。main/正式库/Zotero/旧服务未改变。**
+
 0.33.0 开发切片已通过：init-project 新公开 example_project.py plan/apply、便携四数模板和
 按需复现 reference；系统 Python 无 pydantic 的实测问题由已安装 console entry 产品环境解决。
 定向37通过（4.58s），完整1441通过、11既有警告（77.10s）；七文件Ruff/skill validator/diff通过。

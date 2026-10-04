@@ -5,6 +5,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+- **init-project (development ledger only):** record normal 0.33.0 installation,
+  public installed preparation/replay and a fresh-clone rebuild with matching
+  project identity, frozen recipe and output hash. Readable review artifacts are
+  available in the test Vault and independent exemplar projects; human assessment
+  and the complete first-stage goal remain pending. No additional runtime change,
+  main merge or canonical Vault migration. The existing paper Canvas retains its
+  nodes/edges and allowed editor metadata; serialization changes are not analysis
+  content changes.
 - **Development ledger only:** record normal 0.32.3 installation and the installed
   public CLI's validated single-paper review pair. No runtime behavior change;
   native GUI human assessment remains pending due to the locked Mac. No main merge
