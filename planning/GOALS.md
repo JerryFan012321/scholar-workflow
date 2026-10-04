@@ -48,6 +48,8 @@ knowledge核心而非Hub。安装版仅登记test新清洁对象，一个Source/
 不把该切片代替完整模范Vault，详见 `hotfix-0.36.0-results.md`。
 下一切片0.37.0分离Source文件范围与包含它的Obsidian reader Vault，并提供无Hub的原生笔记/Canvas
 打开。完整论文provider归属和人工评鉴仍独立待完成，不以打开请求代替canonical提交。
+0.37.1已正常安装，完整1535通过；修编码后原生打开的backend文件状态确为指定Source笔记，
+test可读入口四条链接解析。锁屏导致实际截图陈旧，已排除；GUI/人工及完整论文归属继续pending。
 
 ## 长期不变量（INV）
 

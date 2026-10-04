@@ -45,3 +45,19 @@ test新“原生阅读验收-0.37.0/开始使用.md”是可读使用入口，�
 0.37.1补丁定向26通过，完整1535通过/11既有警告/79.06秒；Ruff与diff通过。
 首次版本替换误命中同号referencing依赖，uv立即拒绝解析，0项测试；按package name修复lock，
 依赖版本不变，后续全部回归成功。不是跳过wheel检查或修改依赖来绕过失败。
+
+## 0.37.1 安装态修复结果
+
+source afa6b54f8ac7738515204d38b8d6eb2e9b2e57d8，runtime45ccf0960ac0b4034f7b77e2a93b0e6bd2671603
+均已正常提交/发布，pipx按runtime固定SHA安装，Codex marketplace upgrade/add安装0.37.1。
+CLI/module/distribution/cache均一致，direct_url固定runtime。安装版reader与同一个open请求成功，
+后续Obsidian CLI读到activeFile为指定Source内02-使用方法.md，第一次不是仅OS退出0的判断。
+registry、manifest和原V-JEPA2三文件hash均保持不变，未重新生成或迁移论文。
+
+开始使用.md已原生打开，四条native links由metadataCache全部解析；机器记录独立放同目录。
+准备阅读视图时内部setMode参数尝试失败，未改正文；只重新打开本轮新review tab并使用正式
+markdown:toggle-preview command，后续mode为preview。dev:screenshot返回旧0.34画面，已验证
+并移出可见交付，保留于可丢弃release temp作诊断；不以旧画面冒称0.37效果。
+CUA本轮确认Mac仍锁屏，因此真实屏幕/人工评鉴pending。文件和新native能力可供解锁后评鉴。
+项目/root与各skill既有完整输出契约保留；skill-creator仅使操作/末端规则按需维护。
+完整论文provider归属及联合登记、科学支持、人工Canvas/便利性仍待完成，G17未完成。

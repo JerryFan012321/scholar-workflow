@@ -5,6 +5,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+- **knowledge (development ledger only):** record normal pinned 0.37.1 installation,
+  correct containing-reader identity and actual target file state after native open,
+  unchanged registry/manifest/paper bytes, and a four-link readable test entry.
+  Mac lock produced a stale screenshot which was excluded. Visual/human acceptance
+  and canonical paper enrollment remain pending; no main merge or service switch.
+
 - **knowledge (0.37.1 native-open fix):** percent-encode spaces as `%20`, not
   form-style `+`, in Obsidian document URIs. The first installed native request
   returned success without opening its target; actual frontend file identity is

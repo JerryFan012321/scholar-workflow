@@ -7,6 +7,15 @@
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
 
+**最新0.37.1已正常发布安装：sourceafa6b54/runtime45ccf096，CLI/module/dist/cache一致；
+完整1535通过。子目录Source与reader Vault分离、knowledge reader/open已实机返回正确身份，
+修%20后native open的Obsidian activeFile实际变为指定Source文件，不仅exit0。
+test“原生阅读验收-0.37.0/开始使用.md”提供完整正文/Canvas与两份知识说明，4条native links
+解析，机器记录分开。Mac仍锁屏，截图旧0.34画面已排除，GUI/人工pending。
+原V-JEPA2三文件/registry/manifesthash不变，main/服务/正式库/Zotero不动。回退0.36 runtime e73bf26。
+下一真正缺口仍是v5论文provider归属及联合审议；不再重复已有效的格式/实验/登记/reader测试。
+详细hotfix-0.37.0-results.md，不把本切片冒称完整模范Vault或G17完成。**
+
 2026-10-05 本轮推进到下一版可见成果：先修 Source 子目录与包含它的 Obsidian reader Vault
 混同的问题，并补 `knowledge reader/open` 原生打开入口。写入授权仍以登记的 Source 根为准；
 reader ID 只路由 Obsidian，不扩大父 Vault 权限。先准备独立合成契约，再正常发布安装 hotfix，
