@@ -13,6 +13,12 @@ layout correction and an on-demand reproducible analysis package contract using
 the installed public CLI. The 0.32.0 publication remains the rollback baseline.
 
 ### Changed
+- **Runtime identity:** installation probing exposed a stale CLI version constant;
+  synchronize it with 0.32.1 and add a package/host/public-version contract test.
+  This corrects the same hotfix before its real-paper presentation, not a new feature.
+  All 1,420 existing regressions passed; the new test's program-name harness was
+  corrected separately, then 21 version/manifest/lifecycle tests passed. No paper
+  output had been generated from the first build.
 - **analyze-paper:** add an on-demand reproducible package contract: frozen public
   CLI request, replay instructions, source identity checks and an explicitly
   noncanonical review pair. Skill description and default behavior are unchanged.
