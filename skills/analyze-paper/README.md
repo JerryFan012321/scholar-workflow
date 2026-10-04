@@ -82,7 +82,10 @@ claim identity is carried by block anchors, deterministic Canvas IDs, and the si
 
 For v5, each independently attributable point has its own editable node rather than a
 grouped detail line. Same-depth alignment and non-crossing/non-occlusion are hard requirements;
-see `references/analysis-output-template.md` for the complete geometry contract. Existing v4
+the default budget remains 40 records/96 managed nodes. An explicit document-level
+`capacity: expanded` selects 96 records/192 managed nodes in supporting installations.
+It does not relax geometry, evidence or readability, and ordinary updates cannot change it.
+See `references/analysis-output-template.md` for the complete geometry contract. Existing v4
 pairs retain their own versioned projection and are not silently converted.
 
 The legacy joint-placement, provider-bootstrap and Field legacy-cutover interfaces still
@@ -90,6 +93,11 @@ accept v4 only. New v5 analysis support does not enable those migration routes o
 Field initialization, relocation or a silent v5-to-v4 downgrade.
 
 ## Batch conformance
+
+Requested reproducible exemplars include a non-secret versioned input and replay
+note alongside the pair, using the installed public batch/commit interfaces.
+`references/reproduction.md` distinguishes staged files, navigable review copies
+and canonical receipts, and records source and human-visual checks separately.
 
 Each paper in a batch is staged and checked independently. A hard contract validates profile
 coverage, IDs, inline evidence, backlinks, Canvas integrity, readable geometry, and node count

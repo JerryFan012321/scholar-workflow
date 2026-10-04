@@ -56,7 +56,14 @@
   "allOf": [
     {
       "if": {"properties": {"document": {"properties": {"schema_version": {"enum": [4, 5]}}}}},
-      "then": {"properties": {"generated_node_ids": {"maxItems": 96}}},
+      "then": {
+        "if": {"properties": {"document": {
+          "required": ["capacity"],
+          "properties": {"schema_version": {"const": 5}, "capacity": {"const": "expanded"}}
+        }}},
+        "then": {"properties": {"generated_node_ids": {"maxItems": 192}}},
+        "else": {"properties": {"generated_node_ids": {"maxItems": 96}}}
+      },
       "else": {"properties": {"generated_node_ids": {"maxItems": 40}}}
     },
     {

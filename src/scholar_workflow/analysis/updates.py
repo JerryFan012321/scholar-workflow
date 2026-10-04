@@ -250,6 +250,8 @@ def _merged_document(
         )
     if baseline.profile.framework != update.profile.framework:
         raise AnalysisUpdateError("analysis update cannot change its framework")
+    if baseline.capacity != update.capacity:
+        raise AnalysisUpdateError("analysis update cannot silently change its capacity profile")
     if baseline.schema_version in {4, 5} and update.reader is not None and update.reader != baseline.reader:
         raise AnalysisUpdateError(
             "reference-tree reader changes require an explicit migration"
@@ -309,6 +311,7 @@ def _merged_document(
             language=baseline.language,
             profile=profile,
             reader=baseline.reader,
+            capacity=baseline.capacity,
             claims=claims,
         )
     claims = [claim for claim in baseline.claims if claim.role not in replaced_roles]

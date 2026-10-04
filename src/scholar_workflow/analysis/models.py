@@ -369,10 +369,25 @@ class AnalysisDocument(BaseModel):
     language: Literal["en", "zh"] | None = None
     profile: AnalysisProfile
     reader: AnalysisReader | None = None
+    capacity: Literal["expanded"] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
     claims: list[AnalysisClaim] = Field(min_length=1)
+
+    @property
+    def fact_node_limit(self) -> int:
+        return 96 if self.schema_version == 5 and self.capacity == "expanded" else 40
+
+    @property
+    def managed_node_limit(self) -> int:
+        if self.schema_version == 5 and self.capacity == "expanded":
+            return 192
+        return 96 if self.schema_version in {4, 5} else 40
 
     @model_validator(mode="after")
     def validate_projection(self) -> AnalysisDocument:
+        if self.capacity is not None and self.schema_version != 5:
+            raise ValueError("expanded capacity is available only in IR v5")
         is_reference_tree = self.schema_version in {4, 5}
         expected_framework = (
             "reference_tree_v5" if self.schema_version == 5
@@ -537,10 +552,10 @@ class AnalysisDocument(BaseModel):
             if is_reference_tree
             else 1 + len(covered) + len(self.claims)
         )
-        if generated_semantic_nodes > 40:
+        if generated_semantic_nodes > self.fact_node_limit:
             raise ValueError(
-                "analysis projection exceeds 40 generated semantic Canvas nodes "
-                "(limit: 40 generated semantic Canvas nodes)"
+                f"analysis projection exceeds {self.fact_node_limit} generated semantic Canvas nodes "
+                f"(limit: {self.fact_node_limit} generated semantic Canvas nodes)"
             )
         return self
 
@@ -582,7 +597,7 @@ class AnalysisBaseline(BaseModel):
             raise ValueError("baseline generated_node_ids must be unique")
         if len(self.generated_edge_ids) != len(set(self.generated_edge_ids)):
             raise ValueError("baseline generated_edge_ids must be unique")
-        max_generated_nodes = 96 if self.document.schema_version in {4, 5} else 40
+        max_generated_nodes = self.document.managed_node_limit
         if len(self.generated_node_ids) > max_generated_nodes:
             raise ValueError(
                 f"baseline cannot own more than {max_generated_nodes} generated nodes"

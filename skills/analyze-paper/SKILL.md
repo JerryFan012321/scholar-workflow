@@ -68,6 +68,11 @@ new template. Report an unsupported-version limitation rather than substituting 
 
 ## Constraints
 
+When the user requests a reproducible exemplar or replayable analysis package,
+load `references/reproduction.md`. Keep the versioned input and reader/source
+checks alongside the displayed pair; a staged or copied review candidate is not
+a canonical commit. Replay uses the installed public CLI, not a private renderer.
+
 - Each paper receives its own Markdown/Canvas pair and conformance result; a batch never merges
   analyses or lets one failed item roll back a conformant sibling.
 - Zotero indexed full text is the paper-text channel; repository code is an optional,
@@ -96,6 +101,7 @@ new template. Report an unsupported-version limitation rather than substituting 
 - `references/analysis-output-template.md` — current required Markdown/Canvas framework.
 - `references/analysis-v5-format.md` — explicit five-branch machine/result interface.
 - `references/analysis-format.md`
+- `references/reproduction.md` — only for a requested exemplar or replayable package.
 - `references/analysis-batch.md` — load only for multi-paper analysis.
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/source-policy.md`

@@ -447,12 +447,12 @@ def validate_complete_bundle(
     expected_edges = {edge["id"]: edge for edge in expected.canvas["edges"]}
     nodes = {node["id"]: node for node in canvas["nodes"]}
     edges = {edge["id"]: edge for edge in canvas["edges"]}
-    if len(expected_nodes) > 96:
+    if len(expected_nodes) > document.managed_node_limit:
         findings.append(
             _finding(
                 "canvas-node-limit",
                 "canvas/nodes",
-                "The complete tree exceeds 96 actual managed nodes.",
+                f"The complete tree exceeds {document.managed_node_limit} actual managed nodes.",
             )
         )
     record_paths = {}

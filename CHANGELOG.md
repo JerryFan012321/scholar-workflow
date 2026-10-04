@@ -5,9 +5,51 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.32.1] - 2026-10-04
+
+Independent v5 hotfix; main remains unmerged. Release/install and real-paper visual
+acceptance are separate. Includes explicit expanded capacity, bounded aligned
+layout correction and an on-demand reproducible analysis package contract using
+the installed public CLI. The 0.32.0 publication remains the rollback baseline.
+
+### Changed
+- **analyze-paper:** add an on-demand reproducible package contract: frozen public
+  CLI request, replay instructions, source identity checks and an explicitly
+  noncanonical review pair. Skill description and default behavior are unchanged.
+  Version-synchronized regression: 1,420 passed, 11 warnings in 75.93 seconds;
+  six-file Ruff, skill frontmatter and whitespace checks passed. The earlier
+  unverified/failed entries below describe intermediate development history only.
+- **analyze-paper:** follow-up synthetic regression now passes: 65 targeted and
+  1,420 full unit/contract tests (11 existing warnings). Expanded trees distribute
+  bounded layer gutters up to 336 px while preserving text-box dimensions and
+  vertical bands; the valid v4 counterexample rejects expanded capacity. Geometry
+  limits remain unchanged. This development capability is not yet installed or
+  visually accepted on a real-paper sample; earlier failed rounds below remain history.
+- **analyze-paper (unverified development):** explicit v5 expanded capacity
+  (96 independent records/192 managed nodes), shared model/render/conformance/baseline
+  limits and schema conditions; standard and legacy budgets remain unchanged.
+  Capacity changes are refused by ordinary updates. Independent boundary tests
+  are prepared but not run; this is not an installed or validated capability.
+  Focused merges retain the selected capacity, and targeted batch repair cannot
+  switch it; corresponding synthetic regression cases are also pending execution.
+  Approved execution subsequently reported 63 passed/2 failed targeted and
+  1,418 passed/2 failed full unit/contract: one invalid v4 test precondition and
+  one real 70-record Canvas aspect-ratio failure. Ruff and diff checks passed;
+  the capability remains unvalidated and unreleased.
+  Follow-up fixes prepare a valid v4 capacity counterexample and bounded,
+  uniformly distributed layer gutters for overly tall expanded trees, preserving
+  node dimensions and vertical bands. Revised geometry expectations are prepared;
+  the corrected implementation has not been retested or installed.
+- **Planning only:** define G17 and the first-stage reproducible exemplar contract
+  for a Vault, project, experiment folder and native-tool interactions. Record the
+  complete V-JEPA 2 sample's capacity conflict and partial content revision without
+  claiming a new installed capability, completed Canvas or acceptance result.
+
 ## [0.32.0] - 2026-10-04
 
 Independent hotfix on `codex/hotfix-project-context`; main is not merged.
+Normal Codex marketplace and fixed-runtime pipx installation completed. The
+post-install identity ledger is development-only; no real Vault sample was generated.
 Approved pre-release regression: 1,408 passed, 11 dependency/multiprocessing warnings
 in 72.97 seconds after version synchronization; v5 targeted tests: 53 passed. Five-file Ruff, skill frontmatter
 and diff whitespace checks passed. Installed-product human assessment, real-paper

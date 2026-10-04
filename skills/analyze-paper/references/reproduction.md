@@ -1,0 +1,52 @@
+# Reproducible Paper Analysis Package
+
+Use only when the user requests an exemplar or reproducible/replayable package.
+The required five-branch output and evidence contract remain owned by the analysis
+template and selected version. This reference adds operational inputs and receipts,
+not a prescribed research or reasoning sequence.
+
+## Required companion material
+
+Place the selected paper's readable analysis, editable Canvas and machine sidecar
+together with a non-secret CLI request and a short replay note. The request records
+the actual versioned IR, profile, language, source spans and chosen capacity. The
+replay note records the installed plugin/CLI version, input and source hashes,
+expected file names, invoked public command, actual conformance result and outstanding
+source/visual checks. Keep machine details outside the analysis prose.
+
+PDFs remain in Zotero; do not redistribute private attachments, keys, complete
+application settings or host environment dumps. Host-local Vault IDs and roots are
+reader/location projections, not portable identities. Resolve and verify them in
+the destination environment before replay; changing those values requires fresh
+input hashes and a new batch identity, not reuse of a previous success receipt.
+
+## Installed replay entry
+
+Use `scholar-workflow analysis batch-run --request INPUT --state-db DB --stage-root STAGE`
+with exactly one selected paper if the exemplar is single-paper. See `analysis-batch.md`
+for identity, failure cleanup and one-repair semantics. Choose a new explicit batch ID
+and staging location for an independent replay; the same completed ID is an idempotent
+lookup, not proof that the model regenerated or reran the analysis.
+
+This command stages fixed names such as `analysis.md` and `analysis.canvas`. A staged
+Canvas's Markdown backlinks use the request's `note_stem`, so staging files are not
+automatically a navigable Vault presentation. An explicitly requested noncanonical
+review copy must preserve the renderer's bytes, give its Markdown that exact filename
+stem in the selected folder, and label the package as a candidate. Never manually
+change Canvas links/layout to bypass conformance or call that copy a canonical write.
+Formal storage still requires the public paired commit receipt and registered owner.
+
+## Completion evidence
+
+Show the actual installed version, input identity/hash, per-paper batch result and
+output paths. Check that every source span belongs to the selected attachment and
+its exact version; quotation presence and scientific support are separate judgments.
+Keep source gaps visible. Verify editable JSON nodes, complete required slots, geometry,
+reader links and exact Markdown backlinks using their owning contracts.
+
+When human assessment is required, state it in the conversation: which Canvas/note
+to open in Obsidian, which source links to click, and what constitutes readability,
+alignment, non-crossing, editability and correct PDF-page placement. Automated
+conformance does not certify visual quality or source truth. Mark these checks pending
+until the user explicitly confirms them. A reproducible package is not a new authority,
+a verified backup or permission to operate on other papers or Vaults.

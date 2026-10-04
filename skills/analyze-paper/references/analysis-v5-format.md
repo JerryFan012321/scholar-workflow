@@ -10,6 +10,10 @@ protection retain `analysis-format.md` and the shared source/storage policies.
 - New analyses use this explicit v5 interface. Check installed runtime support;
   a specification or source checkout is not proof that the installed tool supports it.
 - `schema_version: 5`, `profile.framework: reference_tree_v5`, explicit `language: en|zh`.
+- Optional document-level `capacity: expanded` explicitly selects 96 independent
+  records and 192 managed nodes. Omission retains the standard 40/96 limits.
+  This option is v5-only; ordinary updates cannot change the selected capacity.
+  Verify installed support before supplying it; older installations reject it.
 - `profile.markdown_quotes: true`. Supported author claims/inferences include a
   short original-language excerpt and a verified source span; only Markdown renders
   the excerpt. Structural projection cannot prove that the source contains it.
@@ -83,10 +87,15 @@ schema. Concision cannot remove a material qualification or add unsupported fact
   layout and extra graph items that interact with managed content. Absence of
   rectangle overlaps alone is not enough.
 - Text boxes fit measured visible text plus approximately one click line. The current
-  version preserves limits of 40 actual independent records, 96 total managed nodes,
+  standard capacity preserves limits of 40 actual independent records, 96 total managed nodes;
+  explicitly selected expanded capacity allows 96 records and 192 managed nodes. Both retain
   420 px maximum node height and 2:1 maximum overall aspect ratio. Container labels
   do not count as facts but do count toward total nodes. Failure reports the actual
   conflict; it never hides records, merges slots, shrinks fonts or silently raises limits.
+- For an expanded tree that is too tall, aligned layer gutters may increase uniformly
+  from 64 px to at most 336 px, using only the width needed for the 2:1 limit.
+  Box dimensions and vertical bands remain content-driven and unchanged. If bounded
+  spacing is insufficient, conformance still fails; spacing is not visual acceptance.
 - A renderer may return a noncanonical candidate for review. Baseline creation,
   batch success and canonical writes require a passing conformance report. A file
   existing is not proof of success. Source fidelity and human visual assessment are
