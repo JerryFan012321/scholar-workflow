@@ -22,6 +22,16 @@ input hashes and a new batch identity, not reuse of a previous success receipt.
 
 ## Installed replay entry
 
+Inspect the explicitly selected Vault or subfolder with
+`scholar-workflow knowledge preview ABSOLUTE_FOLDER --language zh` (or `en`).
+Use `--format json` for the separate machine preview. This installed entry needs
+neither Hub nor a workspace and writes no manifest, registry or document. It lists
+candidate/existing Fields, navigation, unmapped prose, external writers and conflicts.
+The printed new candidate identities are provisional; no process-local confirmation
+token is exported. A preview does not register a Source, create a homepage, approve
+an existing-document transaction or certify paper content. Registration/commit still
+uses its independently reviewed boundary.
+
 Use `scholar-workflow analysis batch-run --request INPUT --state-db DB --stage-root STAGE`
 with exactly one selected paper if the exemplar is single-paper. See `analysis-batch.md`
 for identity, failure cleanup and one-repair semantics. Choose a new explicit batch ID

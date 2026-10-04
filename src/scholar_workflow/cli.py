@@ -3002,3 +3002,38 @@ def _format_rows(rows: list[dict], fmt: str) -> str:
     lines = ["| " + " | ".join(cols) + " |", "|" + "---|" * len(cols)]
     lines += ["| " + " | ".join(str(r.get(c, "")) for c in cols) + " |" for r in rows]
     return "\n".join(lines)
+
+
+@main.group(name="knowledge")
+def knowledge() -> None:
+    """Inspect explicit knowledge folders without Hub or a workspace binding."""
+
+
+@knowledge.command(name="preview")
+@click.argument("root", type=click.Path(path_type=Path))
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["en", "zh"]), default="en")
+def knowledge_preview(root: Path, fmt: str, language: str) -> None:
+    """Zero-write Source/Field preview of exactly the chosen absolute folder."""
+    from scholar_workflow.knowledge.fields import (
+        FieldRegistryError,
+        FieldService,
+        KnowledgeSourceRegistry,
+    )
+    from scholar_workflow.knowledge.presentation import preview_markdown
+
+    # Retain the existing registry location; do not create a second fact store.
+    state_root = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME))
+    try:
+        preview = FieldService(KnowledgeSourceRegistry(state_root / "hub" / "sources.json")).preview(root)
+    except (FieldRegistryError, OSError, ValueError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    if fmt == "json":
+        click.echo(json.dumps({
+            "schema_version": 1,
+            "product_version": __version__,
+            "status": "preview-only",
+            "preview": preview.model_dump(mode="json", exclude={"candidate_token"}),
+        }, ensure_ascii=False, indent=2))
+    else:
+        click.echo(preview_markdown(preview, language=language))

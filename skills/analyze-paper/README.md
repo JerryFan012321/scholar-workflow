@@ -94,6 +94,10 @@ Field initialization, relocation or a silent v5-to-v4 downgrade.
 
 ## Batch conformance
 
+The replay package can inspect its explicitly selected knowledge folder with
+`scholar-workflow knowledge preview /absolute/folder --language en` without Hub.
+This is a zero-write navigation/ownership preview, not Source registration or paper acceptance.
+
 Requested reproducible exemplars include a non-secret versioned input and replay
 note alongside the pair, using the installed public batch/commit interfaces.
 `references/reproduction.md` distinguishes staged files, navigable review copies

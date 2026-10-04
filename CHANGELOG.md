@@ -5,10 +5,33 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+- **init-project (development ledger only):** record normal 0.33.0 installation,
+  public installed preparation/replay and a fresh-clone rebuild with matching
+  project identity, frozen recipe and output hash. Readable review artifacts are
+  available in the test Vault and independent exemplar projects; human assessment
+  and the complete first-stage goal remain pending. No additional runtime change,
+  main merge or canonical Vault migration. The existing paper Canvas retains its
+  nodes/edges and allowed editor metadata; serialization changes are not analysis
+  content changes.
 - **Development ledger only:** record normal 0.32.3 installation and the installed
   public CLI's validated single-paper review pair. No runtime behavior change;
   native GUI human assessment remains pending due to the locked Mac. No main merge
   or canonical Vault migration is implied.
+
+## [0.34.0] - 2026-10-05
+
+### Added
+- **analyze-paper / knowledge:** an independent, zero-write public
+  `knowledge preview` command for one explicitly chosen Vault/subfolder. Reuses
+  the knowledge Field service and original host registry, without starting Hub,
+  requiring a workspace, creating a homepage or registering any Source. Readable
+  English/Chinese and separate JSON include navigation, unmapped prose, external
+  writers, conflicts and unapplied legacy-link proposals; process-local candidate
+  tokens are not exported. The opt-in paper replay reference documents this entry.
+  Targeted contracts: 41 passed; full unit/contract: 1,453 passed, 11 existing
+  warnings in 76.36 seconds. New formatter/tests pass Ruff and the owning skill
+  validator passes; four historical CLI import-order warnings remain unchanged.
+  Normal installation and human assessment are separate pending gates.
 
 ## [0.33.0] - 2026-10-05
 
