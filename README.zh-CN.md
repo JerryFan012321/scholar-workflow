@@ -47,6 +47,13 @@ scholar-workflow project overview --project-root /path/to/project --json
 不需要插件配置、网页服务或模型配置页。字段、来源归属和阅读器入口见
 [项目资料契约](references/project-context.md)。
 
+### 不依赖 Hub 的知识文件夹预览（0.34.0）
+
+运行 `scholar-workflow knowledge preview /所选文件夹绝对路径 --language zh`。
+它列出候选/已有领域、完整导航、未映射正文、外部 writer 和冲突；`--format json` 输出独立机器记录。
+预览零写入，不登记、不创建首页、不启动服务，也不代表内容或 Canvas 通过验收。
+Source/Field 的正式登记与分析成对提交仍是另行审议的操作。
+
 ### 可复现项目／实验样例（0.33.0）
 
 在已安装插件根目录运行 `python3 skills/init-project/scripts/example_project.py plan /chosen/new-project`，

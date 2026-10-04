@@ -198,6 +198,12 @@
       "action": "assume port 23128 identifies the current Hub, depend on a source checkout, kill an unknown listener or reused PID on open-hub/restart/stop, or trust a stale discovery record",
       "expected": "blocked by installed-package launch and mode-0600 dynamic discovery: status/doctor prove executable, build, PID, port and generation; only a live managed-process identity handshake authorizes stop/restart, while mismatch fails closed (INV51/NG12)",
       "enforcement_layer": "cli"
+    },
+    {
+      "id": "knowledge-preview-not-registration",
+      "action": "treat knowledge preview output as registration/approval, use its provisional IDs or process-local token to commit, or require Hub/workspace to inspect a selected folder",
+      "expected": "the public CLI is read-only, delegates to the knowledge provider and same registry, writes no state/manifest/content, and exports no candidate token; result is explicitly preview-only. Existing registration and content-transaction gates remain unchanged",
+      "enforcement_layer": "cli"
     }
   ]
 }

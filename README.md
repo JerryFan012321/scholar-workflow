@@ -58,6 +58,15 @@ does not follow symlinks, and leaves external resources unverified until checked
 application. It does not need plugin configuration, a running service or workspace registration.
 See [Project context contract](references/project-context.md) for fields and native reader links.
 
+### Inspect a knowledge folder without Hub (0.34.0)
+
+Run `scholar-workflow knowledge preview /absolute/selected/folder --language en`.
+It reports candidate/existing Fields, complete navigation, unmapped Markdown,
+external writers and conflicts. Add `--format json` for machine output. This is
+a zero-write preview, not registration or acceptance; it creates no homepage and
+does not start a service. Existing Source/Field registration and canonical analysis
+commits remain separate reviewed operations.
+
 ### Reproducible project/experiment example (0.33.0)
 
 The installed init-project skill includes an optional portable example:

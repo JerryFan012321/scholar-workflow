@@ -2,6 +2,11 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "knowledge-installed-folder-preview",
+      "description": "G17：安装版 knowledge preview 仅检查显式文件夹，复用唯一 registry，完整呈现导航、未映射正文、外部 writer 与冲突；不创建首页/登记/迁移/启动 Hub，JSON 不导出进程内确认 token。合成输入零写入和单篇安装态预览分别验证，人类导航评鉴及正式 Source/Field 事务另行验收，全部证据前保持 pending",
+      "status": "pending"
+    },
+    {
       "id": "dedup-same-doi",
       "description": "相同 DOI 重复输入只产生一个 Zotero 条目和一份 PDF",
       "status": "pending"

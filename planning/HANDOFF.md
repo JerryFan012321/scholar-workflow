@@ -7,6 +7,12 @@
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
 
+2026-10-05 下一切片：test 尚无 fields.yml，本机 sources 为空；现有公开 Field 入口仍依赖
+历史 Hub。现在补 `knowledge preview` 的独立零写入 CLI，复用 knowledge.FieldService 和原 registry
+位置，不另建事实源、不登记整个 test、不生成首页、不改论文。先合成 fixture/安全负例，
+定向41、完整1453通过（76.36s，11既有警告），新formatter/tests Ruff及skill validator通过。
+正在正常发布安装0.34.0，之后只读预览现有 V-JEPA2 单篇候选并展示；正式登记/事务和人工评鉴仍未完成。
+
 **最新：0.33.0 已正常发布安装（source150aa75/runtime3f009997），CLI/module/metadata/cache身份一致。
 普通系统Python调用安装缓存 example_project.py 成功，未装系统依赖；其后只在新独立示例中
 提交明确源码并实际执行，一个失败/两个成功 Attempt；同源码新克隆重建身份、配方、结果一致。
