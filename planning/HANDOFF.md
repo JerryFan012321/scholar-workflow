@@ -7,6 +7,15 @@
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
 
+**最新0.36.0已正常发布安装：source106a4f3/runtime e73bf26，CLI/module/dist/cache一致。
+完整1508通过；public plan/register/list已在test仅登记新“模范知识目录-0.36.0”，一个Source/Field，
+导航完整、正文原字节；旧父folder登记保留，V-JEPA2原三文件不变。test同级“知识登记验收-0.36.0”
+提供本轮成果/真实回执，9条native links全部解析。Mac仍锁屏，GUI/人工pending，不再截图旧画面。
+main/服务/正式Vault/Zotero未动，回退0.35 runtime d83cd40。初次release落后已fetch重建，未强推。
+下一切片是已有foldered v5论文的provider归属与完整审议登记，以及Source根和reader Vault身份分离。
+当前清洁Field登记不是旧分析canonical归档，G17仍active。具体hotfix-0.36.0-results.md。
+不要重跑现有格式/实验/整库测试来替代这项缺口。**
+
 2026-10-05 下一切片：独立 `knowledge registration-plan/register/list`，复用现有
 FieldService、便携 manifest 与唯一 host registry。新 Field 一次只登记一个；已有便携
 Source 单独确认整份身份，只写 host。跨进程确认摘要绑定根 inode、内容、manifest、registry

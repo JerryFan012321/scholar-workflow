@@ -42,9 +42,10 @@ G17 当前证据：0.32.3 已生成完整论文候选，现有安装入口已验
 原件与registry不变，中文报告和实际资料入口在test。Mac锁屏阻止当前GUI评鉴，旧截图不作证据。
 检查不能替代正式Source/Field事务；具体 `hotfix-0.35.0-results.md`，不重复已有效检查。
 人类可读性/Canvas评鉴、完整 Source/Field 与外部工具交互证据仍须逐项确认；G17 未完成。
-0.36.0独立单Field登记/显式portable Source attach已实现，完整1508通过；旧稿门禁复用
-knowledge核心而非Hub。下一步正常安装后只登记test新清洁对象；已有论文provider与v5联合
-归档仍未完成，不把该切片代替完整模范Vault，详见 `knowledge-registration-test-plan.md`。
+0.36.0独立单Field登记/显式portable Source attach已正常发布安装，完整1508通过；旧稿门禁复用
+knowledge核心而非Hub。安装版仅登记test新清洁对象，一个Source/Field和完整两文档导航真实存在，
+原文/图不变，9条native links解析；GUI因锁屏pending。已有论文provider与v5联合归档仍未完成，
+不把该切片代替完整模范Vault，详见 `hotfix-0.36.0-results.md`。
 
 ## 长期不变量（INV）
 

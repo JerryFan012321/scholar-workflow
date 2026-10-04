@@ -5,6 +5,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+- **config-setup / knowledge (development ledger only):** record normal 0.36.0
+  pinned package/plugin installation and the installed public CLI's actual clean
+  single-Field registration, preserving the original parent folder entry and all
+  displayed documents. Nine native note links resolve. Mac lock still prevents
+  fresh GUI/human assessment; canonical paper enrollment remains incomplete.
+  A stale release ref was fetched and rebuilt without force-pushing or running
+  the new business operation on the old installed version.
+
 - **config-setup / knowledge:** developing independent digest-bound single-Field
   registration and explicit existing-Source attachment, with readable navigation.
   Core first-registration inspection is shared with the compatibility server;
