@@ -84,6 +84,11 @@ scholar-workflow knowledge list --language zh
 
 ### 直接检查已有论文资料包（0.35.0）
 
+0.38.0 起的单篇归属入口见[论文登记契约](references/paper-registration.md)：
+`knowledge paper-plan/register-paper` 使用已登记 Source/Field，先核 Zotero 身份，再按
+摘要创建新的资料笔记、归属和导航；中断只能条件续行。它不接管旧包，也不代表科学验收。
+目前使用前必须确认安装版本已提供这些命令。
+
 ```bash
 scholar-workflow analysis check-bundle /论文目录绝对路径 \
   --markdown '论文分析.md' --canvas '论文解析树.canvas' \

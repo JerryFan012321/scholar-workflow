@@ -184,8 +184,14 @@ def test_new_v4_commit_keeps_analysis_bundle_in_one_paper_folder() -> None:
         canvas="resources/papers/v-jepa-2/V-JEPA 2解析树.canvas",
         sidecar="resources/papers/v-jepa-2/V-JEPA 2分析.analysis.json",
     )
+    assert request(rootless_paths).paths == rootless_paths
+    shallow_paths = AnalysisCanonicalPaths(
+        markdown="papers/v-jepa-2/V-JEPA 2分析.md",
+        canvas="papers/v-jepa-2/V-JEPA 2解析树.canvas",
+        sidecar="papers/v-jepa-2/V-JEPA 2分析.analysis.json",
+    )
     with pytest.raises(ValidationError, match="Field resources/papers"):
-        request(rootless_paths)
+        request(shallow_paths)
     split_paths = good_paths.model_copy(update={
         "canvas": "World Models/resources/papers/other/V-JEPA 2解析树.canvas"
     })

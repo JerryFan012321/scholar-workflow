@@ -5,6 +5,26 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.38.0] - 2026-10-05
+
+### Added
+- **analyze-paper / knowledge:** implement
+  digest-bound `knowledge paper-plan/register-paper` using live Zotero identity,
+  local attachment hashes, a new readable companion, existing provider ownership
+  and Field navigation. Conditional journal recovery preserves human conflicts;
+  existing resources/receipts survive and completed registration can be replayed.
+  Registering is not an analysis receipt, migration or verified backup. An end-to-end
+  v5 commit test exposed and corrected the old mandatory parent-prefix assumption:
+  a registered root Field uses `resources/papers` directly, while actual ownership
+  and all three-file/CAS checks remain enforced. Malformed recovery journals fail
+  closed without publishing a note or provider. Installed single-object and human
+  assessment remain distinct from development tests.
+  Final unit/contract regression: 1,561 passed, 11 existing warnings in 77.66 seconds;
+  an earlier legacy worker timing failure passed unchanged both independently and
+  in this full rerun. Changed-module Ruff, skill validation and whitespace checks pass.
+
+## Earlier development ledger (0.37.1)
+
 - **knowledge (development ledger only):** record normal pinned 0.37.1 installation,
   correct containing-reader identity and actual target file state after native open,
   unchanged registry/manifest/paper bytes, and a four-link readable test entry.

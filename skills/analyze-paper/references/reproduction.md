@@ -63,6 +63,12 @@ stem in the selected folder, and label the package as a candidate. Never manuall
 change Canvas links/layout to bypass conformance or call that copy a canonical write.
 Formal storage still requires the public paired commit receipt and registered owner.
 
+For a paper without a Knowledge owner, first use the shared
+`paper-registration.md` contract's installed `knowledge paper-plan/register-paper`
+entry in the selected Source/Field. Registration and analysis commit receipts have
+different purposes. A successful new-folder registration does not adopt a displayed
+old package, certify its content, or replace the paired commit and provider apply.
+
 ## Completion evidence
 
 Show the actual installed version, input identity/hash, per-paper batch result and

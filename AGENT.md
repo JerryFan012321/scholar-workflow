@@ -62,6 +62,9 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
   `references/knowledge-registration.md`；不把历史 Hub 当作登记前提或另建 registry。
   `knowledge reader/open` 把包含 Source 的 Obsidian Vault 仅作为原生打开位置；授权仍限 Source，
   不读取秘密配置，不把原生打开请求或阅读器 ID 当作论文正式归属/人工评鉴证明。
+  单篇新owner登记的契约由 `references/paper-registration.md` 持有；只创建新论文目录，
+  不把旧审阅副本或裸provider初始化冒充登记。根Field `.` 的合法路径直接从resources/papers
+  起算，成对提交仍独立核实实际Source/Field及provider owner。
 - 真实 Field 多文件迁移只可在外部编辑器/同步器停写窗口中执行，靠逐文件 CAS、持久 journal 和条件恢复
   达成可恢复的逻辑事务；不能宣称文件系统硬原子或把恢复快照称为已验证备份。旧论文分析改写须同时
   守恒旧 Markdown 未标记正文及每个字段、旧 Canvas 节点/边，并让候选 Markdown/Canvas/sidecar 通过

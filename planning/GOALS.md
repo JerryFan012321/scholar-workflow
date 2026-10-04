@@ -50,6 +50,9 @@ knowledge核心而非Hub。安装版仅登记test新清洁对象，一个Source/
 打开。完整论文provider归属和人工评鉴仍独立待完成，不以打开请求代替canonical提交。
 0.37.1已正常安装，完整1535通过；修编码后原生打开的backend文件状态确为指定Source笔记，
 test可读入口四条链接解析。锁屏导致实际截图陈旧，已排除；GUI/人工及完整论文归属继续pending。
+当前开发续行补单篇paper-plan/register-paper与可恢复owner/导航/provider登记；已通过合成
+身份/权限/冲突/恢复测试，新增v5成对提交联测发现根Field路径误拒绝并已定向修正。
+尚未正常发布安装或对真实test对象进行canonical登记；G17仍未完成，不以开发树命令冒称能力已交付。
 
 ## 长期不变量（INV）
 

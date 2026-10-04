@@ -796,7 +796,7 @@ class AnalysisCommitRequest(BaseModel):
             if len(parents) != 1:
                 raise ValueError("IR v4 analysis files must share one paper folder")
             parent = next(iter(parents))
-            if len(parent.parts) < 4 or parent.parts[-3:-1] != ("resources", "papers"):
+            if len(parent.parts) < 3 or parent.parts[-3:-1] != ("resources", "papers"):
                 raise ValueError(
                     "IR v4 canonical paths require a Field resources/papers/<paper> folder"
                 )

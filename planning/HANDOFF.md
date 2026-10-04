@@ -7,6 +7,39 @@
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
 
+0.38.0单篇owner登记实现已完成，最终完整unit/contract1561通过（77.66秒，11既有警告）；
+之前一轮旧Hub worker计时失败已原样单项及完整复测通过，未改旧worker/断言。
+新增恢复journal损坏拒绝、根Field `.` 正例、真实登记→v5 paired commit/provider apply
+合成联测；Ruff/skill validator/diff通过。现在正常runtime-only发布、安装后只在已有清洁test
+Source/Field新建V-JEPA2正式资料目录，保留完整冻结内容与旧包；main/服务/正式库不动。
+安装态事务、原生打开和人工/科学评鉴仍须分别记录，不以开发测试替代。
+
+本轮续行补真正的单篇owner登记能力，不再重放既有V-JEPA2副本替代正式归属。新增公开
+paper-plan/register-paper：只针对已登记Source/Field的新论文目录，通过Local API读取实际
+item/attachment并核本机PDF，摘要绑定根inode、registry、Field/provider基线和新增资料笔记。
+复用唯一provider状态，workflow只协调资料笔记/导航/provider的journal与条件续行，不新增Hub
+前提或第二事实源；旧v4迁移入口不放宽。先独立合成测试，安装态仍在正常hotfix之后，仅test
+一个对象；不改正式Vault/Zotero/服务/main。未验证或未安装前不宣称canonical入口已可用。
+
+2026-10-05 用户要求续行直到下一版可见成果。本轮以已安装0.37.1公开batch入口，在test新建
+一个可直接阅读的V-JEPA2独立资料包：使用新的batch/artifact身份和唯一正文stem，保留原68条
+内容与五分支；不手改Canvas、不重做科学分析、不复制PDF。人类资料笔记和复现说明留在论文
+文件夹，机器输入/回执单列。仅新增候选，不伪造Source/provider owner或canonical receipt，
+不扩大为v5首次归属/旧Field迁移事务。先核实际安装、Local API附件/hash和reader，再单对象
+生成/成对检查并原生打开。Mac当前锁屏，GUI/人工评鉴仍pending；不以旧截图作成果。
+该次可见产物将明确是安装版重放及资料包交付，不是新CLI能力或完整模范Vault完成。
+
+本轮已实际交付test/V-JEPA2/0.37.1-可复现资料包（与旧0.32.3包同级），含资料笔记、完整正文、
+Canvas、基线、独立输入与复现/测试说明及机器结果。installed public batch单篇validated、零诊断/
+零修复，实际副本check-bundle conformant，68内容/105节点/104边；渲染暂存与展示MD/Canvas
+逐字一致。Obsidian实际activeFile为新Canvas、view=canvas；4条资料笔记wiki与68条Canvas正文
+block反链在原生metadataCache全部解析到新正文。Local API原附件hash与48页身份匹配，
+test ZotFlow1.6.6已启用/local=true；未读秘密、未复制PDF。旧MD/Canvas/registry/manifesthash
+前后不变，源码功能/安装/服务/main未改。不补新版本或重跑全量回归来冒充新功能。
+Mac仍锁屏；此次是后台打开/解析证据，未截旧画面作证明，GUI美观/点击/编辑与逐项科学支持
+仍pending；v5正式owner/provider事务仍未实现。用户查看该包后再按真实缺口推进，不再重放
+同一冻结内容来代替下一能力交付。
+
 **最新0.37.1已正常发布安装：sourceafa6b54/runtime45ccf096，CLI/module/dist/cache一致；
 完整1535通过。子目录Source与reader Vault分离、knowledge reader/open已实机返回正确身份，
 修%20后native open的Obsidian activeFile实际变为指定Source文件，不仅exit0。
