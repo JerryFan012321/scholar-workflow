@@ -200,6 +200,12 @@
       "enforcement_layer": "cli"
     },
     {
+      "id": "analysis-package-check-not-approval",
+      "action": "treat a passing existing-package format check as source verification, human assessment, canonical enrollment or permission to repair files",
+      "expected": "analysis check-bundle only reads three explicit bounded files and reports actual versioned conformance/baseline consistency; it changes no files or state and lists source, reader, visual and registration checks as not checked. Explicit required IR and actual Markdown filename are enforced",
+      "enforcement_layer": "cli"
+    },
+    {
       "id": "knowledge-preview-not-registration",
       "action": "treat knowledge preview output as registration/approval, use its provisional IDs or process-local token to commit, or require Hub/workspace to inspect a selected folder",
       "expected": "the public CLI is read-only, delegates to the knowledge provider and same registry, writes no state/manifest/content, and exports no candidate token; result is explicitly preview-only. Existing registration and content-transaction gates remain unchanged",

@@ -2396,6 +2396,35 @@ def analysis_audit_batches(state_db: Path | None) -> None:
     click.echo(json.dumps(report.model_dump(mode="json"), ensure_ascii=False, indent=2))
 
 
+@analysis.command(name="check-bundle")
+@click.argument("directory", type=click.Path(path_type=Path))
+@click.option("--markdown", required=True, help="Exact Markdown filename in the selected directory.")
+@click.option("--canvas", required=True, help="Exact Canvas filename in the selected directory.")
+@click.option("--sidecar", required=True, help="Exact baseline JSON filename in the selected directory.")
+@click.option("--require-ir", type=click.IntRange(1, 5), default=None)
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["en", "zh"]), default="en")
+def analysis_check_bundle(
+    directory: Path, markdown: str, canvas: str, sidecar: str,
+    require_ir: int | None, fmt: str, language: str,
+) -> None:
+    """Read only: validate an existing explicit pair and its baseline, without Hub."""
+    from scholar_workflow.analysis.package_check import check_package, package_check_markdown
+
+    try:
+        report = check_package(
+            directory, markdown=markdown, canvas=canvas, sidecar=sidecar, require_ir=require_ir,
+        )
+    except (OSError, ValueError, TypeError) as exc:
+        raise InputError(str(exc)) from None
+    click.echo(
+        json.dumps(report, ensure_ascii=False, indent=2)
+        if fmt == "json" else package_check_markdown(report, language=language),
+    )
+    if report["status"] != "conformant":
+        raise click.exceptions.Exit(7)
+
+
 @analysis.command(name="commit-bundle")
 @click.option(
     "--request",

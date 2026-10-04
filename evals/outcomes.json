@@ -244,6 +244,11 @@
       "status": "pending"
     },
     {
+      "id": "analysis-installed-existing-package-check",
+      "description": "G17：安装版 public analysis check-bundle 对单篇现有Markdown/Canvas/sidecar实际字节只读校验，不重新分析或登记；三份原件和registry hash保持不变，test中独立可读报告与原图入口可用。自动结构、来源、阅读器和人类评鉴分栏，人工评鉴未确认前保持pending。",
+      "status": "pending"
+    },
+    {
       "id": "project-context-explicit-portable-inventory",
       "description": "G16/INV59：单个合成项目的可选 project-context.json 匹配既有 schema-2 project_id；七类显式资料均有用途和 typed ref。只校验声明与已选本地路径，不扫描、查询外部对象、复制、同步、启动工具或改变文件。缺失、symlink、错配、非法阅读 URI 和未核验来源分别诊断；unit/contract/CLI 材料已准备，未经批准运行前保持 pending。",
       "status": "pending"

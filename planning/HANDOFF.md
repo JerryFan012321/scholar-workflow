@@ -7,6 +7,17 @@
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
 
+2026-10-05 本轮切片：首次登记仍缺独立 v5 事务入口；现有单篇已是成对资料包，
+不人为拆散再套用旧平铺搬迁。先补登记前可复用的 public `analysis check-bundle`：
+显式读取一个目录中的 Markdown、Canvas、sidecar，复用正式 conformance 与 baseline，
+检查已展示的字节而不是重新生成；只读报告格式/几何/反链和基线一致性，不证明科学支持、
+原文当前状态或正式登记。独立合成输入与失败预期先准备，随后正常发布安装 hotfix，
+只对现有 V-JEPA2 包执行一次并在 test 展示。原件、registry、正式库、Zotero、main及服务不动。
+开发验证已完成：定向90通过，补充负例后完整1481通过/1失败（诊断名称预期错误），
+修正该断言后完整1482通过/11既有警告/77.07秒。新模块/tests Ruff、skill validator与
+diff检查通过，四项旧CLI排序告警不变。正在正常发布安装0.35.0；安装态和人工结果待补。
+具体 `analysis-package-check-test-plan.md`、`hotfix-0.35.0-results.md`。
+
 **最新0.34.0已正常发布安装：source108658d/runtime7afea994，CLI/metadata/module/cache均一致。
 完整1453通过；安装版 public knowledge preview 已只读检查V-JEPA2单篇文件夹，输出有导航且
 论文/Canvas/registry hash前后不变。test `Scholar Workflow 实验/知识文件夹-0.34.0/本轮成果.md`

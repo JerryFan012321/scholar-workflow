@@ -98,6 +98,13 @@ The replay package can inspect its explicitly selected knowledge folder with
 `scholar-workflow knowledge preview /absolute/folder --language en` without Hub.
 This is a zero-write navigation/ownership preview, not Source registration or paper acceptance.
 
+Check an existing displayed pair with `scholar-workflow analysis check-bundle
+/absolute/paper-folder --markdown 'Paper Analysis.md' --canvas 'Paper Tree.canvas'
+--sidecar 'analysis.baseline.json' --require-ir 5 --language en`. The public checker
+reads only these files and checks actual conformance, geometry, backlinks and baseline
+consistency; it neither regenerates nor registers them. JSON reports preserve file hashes
+and original findings. Source fidelity, live readers and human assessment remain separate.
+
 Requested reproducible exemplars include a non-secret versioned input and replay
 note alongside the pair, using the installed public batch/commit interfaces.
 `references/reproduction.md` distinguishes staged files, navigable review copies

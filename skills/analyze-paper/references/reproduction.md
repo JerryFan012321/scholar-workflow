@@ -32,6 +32,23 @@ token is exported. A preview does not register a Source, create a homepage, appr
 an existing-document transaction or certify paper content. Registration/commit still
 uses its independently reviewed boundary.
 
+Check an already displayed package without generating or committing it:
+
+```bash
+scholar-workflow analysis check-bundle /absolute/paper-folder \
+  --markdown 'Paper Analysis.md' --canvas 'Paper Tree.canvas' \
+  --sidecar 'analysis.baseline.json' --require-ir 5 --language en
+```
+
+Use the actual three filenames; the Markdown filename must match the sidecar's
+`note_stem` for its Canvas backlinks to resolve. `--format json` provides the separate
+byte-hash and finding record. Exit 0 means conformance and baseline consistency;
+exit 7 reports a nonconformant pair and exit 2 rejects invalid/unsafe input. No
+registry, batch database, Hub, external reader or network is consulted. Safe editor
+metadata does not cause false drift; an edited baseline is not silently re-trusted.
+The check does not establish PDF/source truth, live links, human visual acceptance
+or canonical ownership. It checks exactly one explicit package, not an entire Vault.
+
 Use `scholar-workflow analysis batch-run --request INPUT --state-db DB --stage-root STAGE`
 with exactly one selected paper if the exemplar is single-paper. See `analysis-batch.md`
 for identity, failure cleanup and one-repair semantics. Choose a new explicit batch ID
