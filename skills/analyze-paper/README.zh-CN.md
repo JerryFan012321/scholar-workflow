@@ -1,5 +1,17 @@
 # analyze-paper（论文分析）
 
+已有资料包可以直接只读检查，不必重新生成：
+
+```bash
+scholar-workflow analysis check-bundle /论文目录绝对路径 \
+  --markdown '论文分析.md' --canvas '论文解析树.canvas' \
+  --sidecar 'analysis.baseline.json' --require-ir 5 --language zh
+```
+
+使用实际文件名；正文名称须和sidecar中的反链名称一致。检查格式、几何、反链和基线，
+不会改写、登记或启动Hub。`--format json`另给文件hash与原始诊断；0表示自动通过，
+7表示格式不通过，2表示输入无效。原文真实性、阅读器点击和人工审美仍须单独评鉴。
+
 为一篇已入库论文生成持久化分析，或为用户选定的一批论文分别生成独立分析文档对。每篇论文都
 拥有一份可独立阅读的 Obsidian Markdown 正文和一份可编辑 JSON Canvas 投影。
 

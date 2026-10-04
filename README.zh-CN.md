@@ -54,6 +54,18 @@ scholar-workflow project overview --project-root /path/to/project --json
 预览零写入，不登记、不创建首页、不启动服务，也不代表内容或 Canvas 通过验收。
 Source/Field 的正式登记与分析成对提交仍是另行审议的操作。
 
+### 直接检查已有论文资料包（0.35.0）
+
+```bash
+scholar-workflow analysis check-bundle /论文目录绝对路径 \
+  --markdown '论文分析.md' --canvas '论文解析树.canvas' \
+  --sidecar 'analysis.baseline.json' --require-ir 5 --language zh
+```
+
+使用实际三个文件名。入口只读取当前正文、Canvas和sidecar，检查格式、几何、反链及基线一致性，
+不重新生成、不登记。`--format json`给出hash和诊断；退出0/7/2分别表示自动通过/不通过/输入无效。
+科学来源、阅读器点击和人工评鉴仍是独立事项。
+
 ### 可复现项目／实验样例（0.33.0）
 
 在已安装插件根目录运行 `python3 skills/init-project/scripts/example_project.py plan /chosen/new-project`，

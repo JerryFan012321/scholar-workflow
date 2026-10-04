@@ -5,6 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+- **analyze-paper / knowledge (development ledger only):** record normal 0.34.0
+  package/plugin installation and the public CLI's single-folder zero-write preview.
+  Readable output, machine output, resolved native links and an actual Obsidian
+  reading-view screenshot are available in the test Vault. Existing paper/Canvas
+  and registry hashes stayed unchanged. Human assessment and complete Source/Field
+  registration/v5 joint transactions remain pending; no main merge is implied.
+
 - **init-project (development ledger only):** record normal 0.33.0 installation,
   public installed preparation/replay and a fresh-clone rebuild with matching
   project identity, frozen recipe and output hash. Readable review artifacts are
@@ -17,6 +24,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   public CLI's validated single-paper review pair. No runtime behavior change;
   native GUI human assessment remains pending due to the locked Mac. No main merge
   or canonical Vault migration is implied.
+
+## [0.35.0] - 2026-10-05
+
+### Added
+- **analyze-paper:** public read-only `analysis check-bundle` for one explicitly
+  selected existing Markdown/Canvas/baseline package. Reuses formal versioned
+  conformance and baseline checks without regeneration, registration, Hub or a
+  batch database. Readable English/Chinese output separates automated format
+  checks from source fidelity, live-reader, visual and canonical-ownership gates;
+  JSON records raw file hashes and findings. Explicit IR requirement and actual
+  Markdown filename protect new-template acceptance and resolvable backlinks.
+  Bounded regular-file reads reject symlinks, FIFO, duplicate JSON keys and changed
+  read sets. Initial targeted 90 passed; an added top-level-field refusal test
+  expected a legacy diagnostic although the v5 gate correctly rejected it. After
+  correcting that expectation, full unit/contract: 1,482 passed, 11 existing
+  warnings in 77.07 seconds. New module/tests, skill validation and whitespace
+  checks pass; four historical CLI import-order findings are unchanged.
+  Installed single-paper and human acceptance remain separate pending gates.
 
 ## [0.34.0] - 2026-10-05
 

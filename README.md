@@ -67,6 +67,19 @@ a zero-write preview, not registration or acceptance; it creates no homepage and
 does not start a service. Existing Source/Field registration and canonical analysis
 commits remain separate reviewed operations.
 
+### Check an existing paper package (0.35.0)
+
+```bash
+scholar-workflow analysis check-bundle /absolute/paper-folder \
+  --markdown 'Paper Analysis.md' --canvas 'Paper Tree.canvas' \
+  --sidecar 'analysis.baseline.json' --require-ir 5 --language en
+```
+
+Supply the exact three filenames. The checker reads the displayed bytes and reports
+format/geometry/backlink and baseline consistency without regenerating or registering.
+Use `--format json` for hashes/findings. Source truth, live readers and visual acceptance
+remain separate; exit 0/7/2 means conformant/nonconformant/invalid input respectively.
+
 ### Reproducible project/experiment example (0.33.0)
 
 The installed init-project skill includes an optional portable example:
