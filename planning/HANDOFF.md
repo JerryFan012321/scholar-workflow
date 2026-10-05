@@ -3,7 +3,21 @@
 > 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
 > `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-10-05。
 
-## 2026-10-05 当前交付：0.39.0 归属复现 hotfix
+## 2026-10-05 当前交付：0.40.0 单项目资料预览已安装
+
+source52ac731/runtimeaa1861d已正常发布安装，PATH CLI、pipx direct_url与Codex缓存两manifest
+均为0.40.0。安装版public validate-context/overview对同一个model-project-0330的明确候选
+实际成功：8项，JSON preview:true；4个本地入口available，4个外部入口unverified，不冒称
+reader点击或科学支持完成。根目录“项目资料-0.40.0预览.md”保存真实公开输出，test中
+“项目资料整合-0.40.0/使用说明.md”给出独立可读入口及人工判断标准；机器回执另存。
+两文件已请求在Codex打开，UI返回queued，不冒称当前已显示。原清单/旧展示/代码/指标
+四hash与修改前全部一致，不覆盖生效清单、不重跑实验或论文，不动Canvas及正式Vault。
+详细结果见project-context-candidate-results.md。main未合并；回退0.39.0 runtime63a29f1。
+单项目生效替换仍待独立覆盖确认，人工便利性/外部reader动作及全篇科学支持未完成；G17 active。
+
+以下记录为此前开发阶段，“仍0.39.0/未发布安装”由上述安装实证覆盖，不改写历史事实。
+
+## 2026-10-05 历史交付：0.39.0 归属复现 hotfix
 
 下一切片核模范项目整合：既有清单仍指0.32.3候选且缺Canvas/资料笔记；已在会话再次请求仅
 备份更新该示例context与展示的批准，未收到前不替换。现有档案public validate为1/3/1/1。

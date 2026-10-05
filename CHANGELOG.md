@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **init-project / development ledger only:** record normal 0.40.0 hotfix publication and
+  installation, then one installed public candidate preview of eight explicit project materials.
+  Save the readable output at the example project root and the review guide in the test Vault;
+  active inventory, old overview, source code and metrics retain their protected hashes.
+  External reader availability, human assessment and applying the inventory remain separate
+  pending decisions. No experiment rerun, paper/Canvas rewrite, new runtime build or main merge.
+
 - **analyze-paper / development ledger only:** record normal 0.39.0 hotfix publication and
   installation, then one installed portable ownership replay into a new test directory with
   isolated host state. Eight file hashes and stable identities are preserved; receipt replay

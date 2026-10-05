@@ -84,7 +84,9 @@ Canvas格式不改；既有V-JEPA2短摘录修订与内容评鉴仍pending。G17
 
 最新项目整合切片：0.40.0开发树新增只读--context-file预览明确根JSON候选，沿用项目身份和
 有界拒symlink reader；不覆盖旧清单，默认输出不变。独立candidate19项和旧project/eval组合
-105通过；完整1695回归通过、11既有warnings。正常发布安装与实机候选展示尚待完成。真实model-project-0330旧清单仍
+105通过；完整1695回归通过、11既有warnings。source52ac731/runtimeaa1861d正常发布安装0.40.0，
+public单项目候选8项明确未应用；实际Markdown已保存为项目根“项目资料-0.40.0预览.md”，
+test“项目资料整合-0.40.0”保存可读说明、机器回执及四项原件hash保护。真实model-project-0330旧清单仍
 未替换，覆盖确认已在会话询问；既有实验档案无需重跑。cmux已安装但当前无live socket，
 原生窗口动作未通过；G17继续按完整四类对象标准核验，不能用预览能力替代资料实际整合。
 

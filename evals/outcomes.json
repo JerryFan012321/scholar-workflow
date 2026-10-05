@@ -3,7 +3,7 @@
   "cases": [
     {
       "id": "project-context-candidate-public-preview",
-      "description": "G16/G17：使用安装版project overview/validate-context的明确--context-file预览根JSON候选；沿用有界reader和稳定project_id，旧清单与候选不变，显示未应用状态，默认接口输出不变；无provider/Git/service/launch，非法文件名、symlink、重复JSON字段、身份错配和不安全reader拒绝。不通过私有模型、虚构项目或覆盖旧清单来预览。开发19新CLI测试及旧project/eval组合105通过；正常hotfix安装、单示例实测和人类便利性尚未完成，保持pending。见planning/project-context-candidate-test-plan.md。",
+      "description": "G16/G17：使用安装版project overview/validate-context的明确--context-file预览根JSON候选；沿用有界reader和稳定project_id，旧清单与候选不变，显示未应用状态，默认接口输出不变；无provider/Git/service/launch，非法文件名、symlink、重复JSON字段、身份错配和不安全reader拒绝。不通过私有模型、虚构项目或覆盖旧清单来预览。开发19新CLI测试及旧project/eval组合105通过，完整1695通过；source52ac731/runtimeaa1861d正常安装0.40.0后，单示例公开preview8项成功，4本地可定位/4外部未核验，真实Markdown与独立说明已保存，四项原件hash不变。未应用候选，人类便利性及外部reader点击尚未完成，保持pending。见planning/project-context-candidate-results.md。",
       "status": "pending"
     },
     {
