@@ -12,8 +12,8 @@ from itertools import combinations, pairwise
 from typing import Any
 
 from scholar_workflow.analysis.models import AnalysisDocument, ConformanceFinding, ConformanceReport
+from scholar_workflow.analysis.complete_reference import canvas_image_width, canvas_visible_height
 from scholar_workflow.analysis.reference_rendering import (
-    _visible_height,
     reference_source_quote_lines,
 )
 from scholar_workflow.analysis.rendering import (
@@ -152,9 +152,7 @@ def geometry_findings(canvas: dict[str, Any], expected: dict[str, Any]) -> list[
                 )
             )
         text = node.get("text")
-        if isinstance(text, str) and node["height"] < _visible_height(
-            text, minimum=0, width=node["width"]
-        ):
+        if isinstance(text, str) and node["height"] < canvas_visible_height(text, width=node["width"]):
             findings.append(
                 _finding(
                     "canvas-text-click-space",
@@ -162,6 +160,8 @@ def geometry_findings(canvas: dict[str, Any], expected: dict[str, Any]) -> list[
                     "Text and source/backlinks require one extra visible line.",
                 )
             )
+        if isinstance(text, str) and node["width"] < canvas_image_width(text):
+            findings.append(_finding("canvas-image-width", f"canvas/nodes/{node['id']}", "The declared image does not fit its editable card."))
     # Human nodes remain untouched, but cannot hide managed prose or its links.
     # Groups are visual containers, not opaque content boxes.
     visible_nodes = {

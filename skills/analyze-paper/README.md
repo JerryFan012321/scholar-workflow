@@ -66,8 +66,14 @@ accommodates necessary context without imposing that capacity as a target length
 is a source gap. Canvas does not repeat the quotations and retains the required editable tree.
 Older analyses remain unchanged; converting their format requires an explicit whole-analysis
 update, not a silent refresh. The detailed contract is `references/analysis-format.md`.
-On request, native PDF region screenshots can accompany Markdown claims without changing
-Canvas. Paper-local images and their crop replay input have explicit asset ownership;
+On request, native PDF region screenshots can accompany Markdown claims; this does not
+implicitly add them to Canvas. Canvas image supplements follow the experimental-table /
+key-process-diagram restriction in `references/analysis-output-template.md`, without
+replacing the editable tree. The optional v5 `canvas_image` interface is available from
+0.41.0; its fields and conflict behavior are in `references/analysis-v5-format.md`.
+Check the actual installed version before adding images; structural checks do not
+prove native display or human readability.
+Paper-local images and their crop replay input have explicit asset ownership;
 0.40.1 reproduction includes that manifest and its hash-checked files, not just the
 analysis trio. See the same format contract and shared reproduction contract.
 The v4/v5 `reader` projection can select an explicitly verified ZotFlow Library Reader in a registered

@@ -63,7 +63,10 @@ Vault Markdown 可跳到具体块。原文链接与 Canvas→正文反链同处�
 无法核实原措辞时明确报告来源缺口。Canvas 不重复摘录，保留规定的可编辑树与内容层级。
 旧分析不会自动改变；转换须显式请求整篇格式更新，不能只手改受管 Markdown。
 完整规范见 `references/analysis-format.md`。
-用户要求时，正文论点旁可加入原生PDF区域截图；不会因此给Canvas增加图片节点。
+用户要求时，正文论点旁可加入原生PDF区域截图；不会因此自动把它们加入Canvas。
+Canvas图片仅限实验数据表和关键流程图，不替代可编辑树；详细规则唯一持于
+`references/analysis-output-template.md`。0.41.0起的v5可选`canvas_image`字段与冲突处理见
+`references/analysis-v5-format.md`；添加前核对实际安装版本，结构通过不证明原生显示或人工可读性。
 图片与裁剪复现输入同处论文attachments目录，归属显式声明；0.40.1的复现包包含附件清单
 及校验过的文件，不只带走分析三文件。完整原句与页级原文入口仍保留。
 v4/v5 可通过 `reader` 显式选择已登记、核验 Vault 的 ZotFlow Library Reader；Markdown 和 Canvas 均可在

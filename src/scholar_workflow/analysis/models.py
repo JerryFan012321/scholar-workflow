@@ -301,6 +301,41 @@ class AnalysisReader(BaseModel):
         return self
 
 
+class CanvasImage(BaseModel):
+    """One paper-local source visual; never an arbitrary URL or paragraph crop."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["experimental_table", "process_diagram"]
+    asset_id: str = Field(min_length=1, max_length=240, pattern=r"^[^\s]+$")
+    image_path: str = Field(min_length=5, max_length=512)
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    pixel_width: int = Field(ge=16, le=20_000, strict=True)
+    pixel_height: int = Field(ge=16, le=20_000, strict=True)
+    caption: str = Field(min_length=1, max_length=120)
+    source: ZoteroPdfSpan
+
+    @field_validator("image_path")
+    @classmethod
+    def validate_image_path(cls, value: str) -> str:
+        if (
+            not value.startswith("attachments/") or not value.endswith(".png")
+            or any(part in {"", ".", ".."} for part in value.split("/"))
+            or any(char in value for char in "\\:#|[]\r\n\x00")
+            or value.strip() != value
+        ):
+            raise ValueError("canvas image must be a safe paper-relative attachments PNG")
+        return value
+
+    @model_validator(mode="after")
+    def validate_caption_and_source(self) -> CanvasImage:
+        if not self.caption.strip() or any(char in self.caption for char in "[]|<>\r\n"):
+            raise ValueError("canvas image caption must be a plain nonblank single line")
+        if self.source.quote is not None:
+            raise ValueError("canvas images cannot carry paragraph quotations")
+        return self
+
+
 class AnalysisPoint(BaseModel):
     """One evidence-bearing statement inside a Canvas-sized analysis claim."""
 
@@ -310,6 +345,7 @@ class AnalysisPoint(BaseModel):
     text: str = Field(min_length=1, max_length=5_000)
     canvas_summary: str | None = Field(default=None, min_length=1, max_length=180)
     evidence: Evidence
+    canvas_image: CanvasImage | None = Field(default=None, exclude_if=lambda value: value is None)
 
     @model_validator(mode="after")
     def validate_readable_projection(self) -> AnalysisPoint:
@@ -332,6 +368,7 @@ class AnalysisClaim(BaseModel):
     container: bool = Field(default=False, strict=True, exclude_if=lambda value: not value)
     canvas_summary: str | None = Field(default=None, min_length=1, max_length=400)
     evidence: Evidence
+    canvas_image: CanvasImage | None = Field(default=None, exclude_if=lambda value: value is None)
     points: list[AnalysisPoint] = Field(default_factory=list, max_length=64, exclude_if=lambda value: not value)
     order: int | None = Field(default=None, ge=1)
     outline_path: str | None = Field(default=None, min_length=1, max_length=160)
@@ -386,6 +423,8 @@ class AnalysisDocument(BaseModel):
 
     @model_validator(mode="after")
     def validate_projection(self) -> AnalysisDocument:
+        if self.schema_version == 5 and re.search(r"!\[|<img\b", self.paper_title, re.IGNORECASE):
+            raise ValueError("Canvas image embeds must use typed canvas_image, not the paper title")
         if self.capacity is not None and self.schema_version != 5:
             raise ValueError("expanded capacity is available only in IR v5")
         is_reference_tree = self.schema_version in {4, 5}
@@ -427,6 +466,36 @@ class AnalysisDocument(BaseModel):
 
         outline_paths: list[str] = []
         for claim in self.claims:
+            if self.schema_version == 5:
+                projected = [claim.title, claim.canvas_summary or claim.body]
+                projected += [point.canvas_summary or point.text for point in claim.points]
+                projected += [label for record in (claim, *claim.points)
+                              for label in (record.evidence.anchor or "", record.evidence.detail or "")]
+                if any(re.search(r"!\[|<img\b", text, re.IGNORECASE) for text in projected):
+                    raise ValueError("Canvas image embeds must use typed canvas_image; Markdown crops require a plain Canvas summary")
+            for record in (claim, *claim.points):
+                image = record.canvas_image
+                if image is None:
+                    continue
+                if self.schema_version != 5:
+                    raise ValueError("canvas images require IR v5")
+                path = claim.outline_path or ""
+                allowed = (
+                    path.startswith(("experiments/comparison/", "experiments/ablation/"))
+                    if image.kind == "experimental_table" else
+                    path == "method/overview" or path.startswith("method/modules/")
+                )
+                if not allowed or (record is claim and claim.container):
+                    raise ValueError("canvas image must supplement its corresponding experiment or method record")
+                if record.evidence.kind not in {EvidenceKind.AUTHOR_STATED, EvidenceKind.ANALYSIS_INFERENCE}:
+                    raise ValueError("canvas image requires a supported source record")
+                identity_fields = ("library_type", "library_id", "attachment_key", "content_hash", "page_index")
+                if not any(
+                    isinstance(span, ZoteroPdfSpan)
+                    and all(getattr(span, key) == getattr(image.source, key) for key in identity_fields)
+                    for span in record.evidence.source_spans
+                ):
+                    raise ValueError("canvas image PDF identity and page must match its own record")
             if claim.container:
                 if self.schema_version != 5:
                     raise ValueError("structural containers require IR v5")

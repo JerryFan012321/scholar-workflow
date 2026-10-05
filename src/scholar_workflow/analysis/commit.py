@@ -30,6 +30,7 @@ from scholar_workflow.analysis.apply_changes import (
     _read_snapshot,
 )
 from scholar_workflow.analysis.conformance import validate_bundle
+from scholar_workflow.analysis.image_assets import ImageAssetError, document_images, image_manifest, verify_canvas_assets
 from scholar_workflow.analysis.models import (
     AnalysisBaseline,
     AnalysisCommitFile,
@@ -830,6 +831,19 @@ def _canonical_payloads(
     }
 
 
+def _assert_canvas_image_assets(root: Path, descriptor: int, request: AnalysisCommitRequest) -> None:
+    if not document_images(request.document):
+        return
+    try:
+        manifest = image_manifest(_read_target_regular(root, descriptor, ".scholar-workflow/assets.yml"))
+        verify_canvas_assets(
+            request.document, PurePosixPath(request.paths.markdown).parent, manifest,
+            lambda path: _read_target_regular(root, descriptor, path),
+        )
+    except ImageAssetError as exc:
+        raise AnalysisCommitSafetyError(str(exc)) from exc
+
+
 def _make_change_set(
     request: AnalysisCommitRequest,
     after_hashes: dict[str, str],
@@ -1574,6 +1588,7 @@ def _commit_analysis_bundle_locked(
         _open_state_layout(state, request.commit_id) as state_layout,
         _commit_lock(root, root_identity) as vault_descriptor,
     ):
+        _assert_canvas_image_assets(root, vault_descriptor, request)
         if source_id is not None:
             # Field registration uses the same Vault inode lock for manifest
             # replacement; recheck after locking, before any canonical write.
@@ -1793,6 +1808,7 @@ def _commit_analysis_bundle_locked(
                     fault_inject(f"after-replace:{relative_path}")
             if fault_inject is not None:
                 fault_inject("before-receipt")
+            _assert_canvas_image_assets(root, vault_descriptor, request)
             _atomic_write_state(
                 state_layout,
                 state_layout.receipts_descriptor,

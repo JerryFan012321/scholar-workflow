@@ -114,6 +114,32 @@ ownership retain the boundaries in `analysis-format.md` and the shared policies.
 A focused result declares its selected branches; it must not silently remove sibling
 branches or be presented as a complete whole-paper result.
 
+## Selected Canvas images
+
+Canvas image supplements are limited to **experimental data tables** and **key
+pipeline / process diagrams**. Paragraph crops and verbatim excerpts belong in
+Markdown, not Canvas. This restriction concerns image supplements; it does not
+replace any required editable framework or claim/point node.
+
+- Place a data table beside its corresponding comparison or ablation content under
+  Experiments; place a key process diagram beside Method Overview or its actual module.
+  Keep each image associated with that content, not a detached evidence gallery.
+- Preserve the source table's caption, column/row labels, units and necessary conditions;
+  preserve a process diagram's labels, legend and meaningful connections. A crop must
+  not hide a qualification or imply that an agent-redrawn diagram is an original figure.
+- Keep a readable figure/table identifier, verified source-page entry and exact
+  Markdown-block backlink beside each image. Use explicitly owned paper-local assets
+  with their hashes and replay inputs, following the existing source/image contract in
+  `analysis-format.md` and the shared knowledge reproduction contract.
+- Images supplement the editable text tree; they never flatten it into a bitmap or
+  replace named subslots, evidence links or material qualifications. Apply the same
+  alignment, crossing, occlusion and readable-size requirements to the actual graph,
+  including images and their captions. Preserve a safe accepted layout when updating.
+
+Do not bulk add images to existing pairs. Use a verified installed paired interface
+that can represent and validate the selected supplements; an unsupported generator
+must report the limitation rather than hand-edit one managed file or claim completion.
+
 ## Compatibility and completion boundary
 
 The IR v4 machine schema and renderer implement the older four-branch tree

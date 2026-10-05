@@ -11,6 +11,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from scholar_workflow.analysis.conformance import validate_bundle
+from scholar_workflow.analysis.image_assets import document_images, verify_png
 from scholar_workflow.analysis.models import AnalysisBaseline, ConformanceFinding
 from scholar_workflow.analysis.rendering import AnalysisBundle
 from scholar_workflow.analysis.updates import create_baseline
@@ -38,7 +39,7 @@ def _identity(info: os.stat_result) -> tuple[int, ...]:
 def check_package(
     root: Path, *, markdown: str, canvas: str, sidecar: str, require_ir: int | None = None,
 ) -> dict[str, Any]:
-    """Check three named files; never discover, repair, register or publish content."""
+    """Check the named trio and explicit Canvas images; never discover or publish."""
     names = (markdown, canvas, sidecar)
     if len(set(names)) != 3:
         raise ValueError("package requires three distinct files")
@@ -93,6 +94,25 @@ def check_package(
     baseline = AnalysisBaseline.model_validate(baseline_data)
     bundle = AnalysisBundle(markdown=contents[markdown].decode("utf-8"), canvas=canvas_data)
     document = baseline.document
+    image_hashes = {}
+    if images := document_images(document):
+        from scholar_workflow.analysis.commit import _read_target_regular
+
+        image_descriptor = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        try:
+            if _identity(os.fstat(image_descriptor))[:2] != root_identity:
+                raise ValueError("package directory changed before image inspection")
+            for image in images:
+                payload = _read_target_regular(root, image_descriptor, image.image_path)
+                verify_png(image, payload)
+                image_hashes[image.image_path] = "sha256:" + image.sha256
+            for name in names:
+                if _identity(os.stat(name, dir_fd=image_descriptor, follow_symlinks=False)) != identities[name]:
+                    raise ValueError("package input changed during image inspection")
+            if _identity(os.stat(root, follow_symlinks=False))[:2] != root_identity:
+                raise ValueError("package directory changed during image inspection")
+        finally:
+            os.close(image_descriptor)
     report = validate_bundle(document, bundle, note_stem=baseline.note_stem)
     findings = list(report.findings)
     if require_ir is not None and document.schema_version != require_ir:
@@ -129,7 +149,7 @@ def check_package(
         + sum(len(claim.points) for claim in document.claims),
         "canvas_nodes": len(canvas_data.get("nodes", [])),
         "canvas_edges": len(canvas_data.get("edges", [])),
-        "files": {name: "sha256:" + sha256(contents[name]).hexdigest() for name in names},
+        "files": {**{name: "sha256:" + sha256(contents[name]).hexdigest() for name in names}, **image_hashes},
         "findings": [finding.model_dump(mode="json") for finding in findings],
         "not_checked": ["source_fidelity", "live_reader", "human_visual_review", "canonical_registration"],
     }
@@ -181,9 +201,9 @@ def package_check_markdown(report: dict[str, Any], *, language: str) -> str:
     ]
     lines += ["", "## 未由本次检查证明" if zh else "## Not established by this check", "",
         ("原文是否支持论点、阅读器当前是否可用、人工审美/编辑评鉴、正式登记均未检查。"
-         "通过只绑定本次读取的三份文件；修改后须重新检查。" if zh else
+         "通过只绑定本次读取的分析文件及显式图片；修改后须重新检查。" if zh else
          "Source support, live reader availability, human visual/editing assessment and canonical "
-         "registration were not checked. Passing binds only these inspected bytes; recheck after edits."),
+         "registration were not checked. Passing binds only these inspected bundle and selected-image bytes; recheck after edits."),
         "",
     ]
     return "\n".join(lines)

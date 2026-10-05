@@ -7,6 +7,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **exemplar navigation / development evidence only:** correct the existing single-test
+  Source's home, usage and paper companion notes after preserving byte-exact originals.
+  The installed 0.40.2 preview keeps external unverified states; independent identity,
+  owner, URI and inventory checks match all four selected external objects. Obsidian
+  resolves twelve note links and three existing-copy relative-path probes. Only three
+  plain notes change in the thirteen-file package; managed analysis, Canvas, assets,
+  registry/provider and project/PDF protections remain unchanged. Keep historical
+  records outside the export explicit. No new replay, runtime release/install, service
+  change or main merge; project overwrite permission and human usability remain pending.
+
+- **find-resource / deployment evidence only:** record normal 0.40.2 hotfix release and
+  installation of the native-open reference. Installed CLI, pinned runtime commit,
+  both cached manifests and skill/reference bytes agree. Preserve the prior real-window
+  evidence and four source hashes; no business replay, Canvas edit, service change or
+  main merge. The normal installer cleaned the old cache; rollback uses the retained
+  Git runtime commit rather than a presumed local copy. Human usability and the
+  complete exemplar goal remain pending.
 - **analyze-paper / installed exemplar evidence only:** apply the 33 targeted quotation,
   location and qualification corrections through installed 0.40.1 paired staging/commit
   and explicit provider registration. Record the initial overlap refusal and bounded
@@ -77,6 +94,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   portable Canvas declaration. Replay preserves receipt values and all six protected file hashes;
   the readable replay note is in the existing test package. This does not revise real quotations,
   certify human/source assessment, restore a cross-host provider or introduce another runtime build.
+
+## [0.41.0] - 2026-10-05
+
+### Added
+
+- **analyze-paper:** optional v5 selected source-image cards for experimental tables
+  and key process diagrams, retaining the editable tree, caption/source/backlinks and
+  geometric gates. Canonical commits verify explicitly owned local PNG dependencies
+  before writes and receipts; package checks and reproduction keep their bytes and
+  ownership, refusing omitted or changed assets. Existing safe layouts are retained;
+  an image that cannot fit returns a conflict proposal. Installed/native visual and
+  human acceptance remain separate from development tests.
+
+### Changed
+
+- **analyze-paper / output contract:** limit Canvas image supplements to experimental
+  data tables and key process diagrams beside their associated editable tree content.
+  Keep paragraph crops and verbatim excerpts in Markdown, with source identity,
+  captions, asset ownership and replay protection retained. This does not implement
+  automatic crop selection or rewrite existing pairs. The five-branch and
+  alignment/non-crossing requirements remain.
 
 ## [0.40.2] - 2026-10-05
 
