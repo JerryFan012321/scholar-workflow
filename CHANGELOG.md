@@ -7,6 +7,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **exemplar navigation / development evidence only:** correct the existing single-test
+  Source's home, usage and paper companion notes after preserving byte-exact originals.
+  The installed 0.40.2 preview keeps external unverified states; independent identity,
+  owner, URI and inventory checks match all four selected external objects. Obsidian
+  resolves twelve note links and three existing-copy relative-path probes. Only three
+  plain notes change in the thirteen-file package; managed analysis, Canvas, assets,
+  registry/provider and project/PDF protections remain unchanged. Keep historical
+  records outside the export explicit. No new replay, runtime release/install, service
+  change or main merge; project overwrite permission and human usability remain pending.
+
 - **find-resource / deployment evidence only:** record normal 0.40.2 hotfix release and
   installation of the native-open reference. Installed CLI, pinned runtime commit,
   both cached manifests and skill/reference bytes agree. Preserve the prior real-window
