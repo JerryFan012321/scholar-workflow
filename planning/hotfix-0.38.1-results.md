@@ -46,3 +46,18 @@ canonical编码匹配登记的8baf7daf，MD/sidecar未改。provider因此出现
 可读入口在同一论文目录的复现/证据修订-0.38.1/修订说明.md；Obsidian后台activeFile确为
 该新MD，4入口解析。人工点击/编辑/审美仍待确认。registry与Fieldhash和既有身份保持，
 正式Vault/Zotero/PDF/服务/main/项目既有清单均未改。
+
+## 0.38.2：编码缺口闭环
+
+69定向与完整1580通过（80.87秒，11既有警告），Ruff/skill/diff通过。
+正常发布安装source1a77d297299fa34bc36f8236afd9d61141d82b5a、runtime
+7b6f89432b03619224e7d7907c66117c99b6d6d5；CLI/module/dist/direct_url/Codex cache一致。
+public校准使用明确登记旧hash8baf7daf和当前三文件/provider版本，证明完整图canonical
+编码精确匹配旧登记，只记当前物理Canvas hashc8e2c97b，没有写论文三文件。
+原生打开新图再关闭到修订说明后，三文件与校准输入及provider全部一致；重复校准回执
+完全相同。实际check通过69/106/105，最新检查与独立输入/回执在同一复现目录中。
+
+0.38.1历史提交回执没有改动；其Canvas字节变化通过独立校准回执追溯，不编造物理hash
+恒定。回退可固定安装0.38.1 runtime d6752da，不自动删除资料。没有服务切换或main合并。
+人工点击/美观/编辑与逐项科学支持仍待评鉴；项目context与便携Canvas清单的后续能力
+尚待推进，本次不宣称第一阶段全部完成。

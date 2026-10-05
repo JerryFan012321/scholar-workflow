@@ -7,6 +7,18 @@
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
 
+**最新已正常发布安装0.38.2：source1a77d297/runtime7b6f8943，CLI/module/dist/Codex cache一致。
+完整1580通过、11既有警告。安装版显式encoding校准成功且回执重放完全相同；原生打开/关闭
+当前Canvas后，三文件物理hash全部保持且与provider一致。内容仍是已成对提交的两点修订，
+69内容/106节点/105边、34其他claims/全部105旧节点几何样式/104旧边保留；不重写科学正文。
+test同一目录复现/证据修订-0.38.1/修订说明.md已原生打开，69反链与4wiki入口解析。
+旧0.38.1的8baf7daf提交hash记录真实保留；当前Canvas编码hashc8e2c97b经独立provider回执
+校准，不修改历史提交回执来假称hash未变。原文p5图3与p14表2只读核对，非全篇科学支持评鉴。
+registry/Field、正式库/Zotero/PDF/服务/main/项目既有context未改。GUI/点击/编辑仍待人工。
+回退0.38.1 runtime d6752da；业务内容和校准回执不会随安装回退删除。
+第一阶段与G17仍进行中；下一切片核模范Vault的便携归属与模范项目资料整合，不重做论文样本。
+项目既有context覆盖仍缺独立授权，不能静默替换；参见hotfix-0.38.1-results.md后续记录。**
+
 2026-10-05 最新安装态：0.38.1正常发布安装source0045097/runtime d6752da；CLI/module/dist/
 Codex cache一致。仅当前test canonical V-JEPA2两处证据经public metadata校准、stage-update、
 成对commit和provider apply成功。34未改claims、105旧节点几何/样式与104旧边保留，

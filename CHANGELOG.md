@@ -5,6 +5,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+- **analyze-paper (development ledger only):** record normal 0.38.1/0.38.2
+  installation, two canonical V-JEPA 2 evidence corrections in the existing test
+  package, retained geometry, native backlink resolution, and the exact editor
+  encoding proof. Installed 0.38.2 metadata receipt replay is identical; after
+  native open/close all three file hashes match their registered provider. No
+  reanalysis, formal-library mutation, service switch or main merge. Human visual,
+  reader-click and whole-paper scientific assessment remain separate and pending.
+
 - **development rules:** route ordinary deterministic test authorization to the
   current global rule instead of retaining a blanket approval gate in project
   guidance. Data writes, external operations and human acceptance remain separate.
