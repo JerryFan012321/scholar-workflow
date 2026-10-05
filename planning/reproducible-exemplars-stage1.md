@@ -8,6 +8,11 @@ conformance通过；四显式附件随13文件inventory在一个新目录、隔�
 提供证据，G17不缩为附件复制。详见evidence-images-results.md与project-context-candidate-results.md。
 下方版本阶段状态保留作历史，完成仍以四类交付全部证据为准。
 
+原生交互后续：cmux0.64.25已实际在一个独立工作区显示V-JEPA2原PDF（48页），fresh CUA画面
+可见。仅外部CLI拒绝不再被当作整体不可用：通过原生界面新建的cmux子终端执行原生命令成功，
+不降低安全、不要求Hub、不修改现有用户终端。test中的中文操作说明和分离机器结果可复用；
+四原件hash不变。阅读便利性仍待人工，其他交付不由该动作代替，详见native-tool-interaction-results.md。
+
 状态：0.32.3 已有完整 V-JEPA2 候选；安装版已创建模范项目和实验，并从新克隆目录实际重建。
 0.33.0 已把项目/实验模板和复现入口沉淀为正常安装的 init-project 能力，安装态新示例及新克隆重建通过。
 人工评鉴、完整 Source/Field 与外部工具全项证据仍未完成。本文是开发规格，不被运行期 skill 加载。

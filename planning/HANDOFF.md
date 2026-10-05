@@ -3,6 +3,18 @@
 > 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
 > `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-10-05。
 
+## 2026-10-05 原生 cmux 交互实证
+
+installed0.40.1经Local API核实V-JEPA2原附件后，cmux0.64.25已实际在独立“Scholar 原生阅读验收”
+工作区显示原生PDF预览，48页，fresh CUA窗口可见。外部CLI被child-only控制模式拒绝，未改安全
+设置；改用原生界面新建空工作区，仅在该新终端执行公开identify/open成功，不向旧用户终端输入。
+原PDF/当前正文/Canvas/sidecar四hash与操作前一致；无Hub前置或服务操作，无PDF下载/复制。
+test“原生工具验收-0.40.1”已保存中文实际使用说明、独立方案与分离机器结果，详见
+native-tool-interaction-results.md。它覆盖以下旧“无live socket/原生窗口未通过”的当时状态，
+但不表示PDF有Zotero数据库批注或实时同步。翻页/缩放便利性仍待人工；截图体验、项目清单生效及
+全项科学支持仍分别pending。无runtime变更/新发布/实验重跑/Canvas图片节点，G17仍active。
+本次文档留档10项eval结构测试及JSON/diff检查通过，不把结构检查外推为阅读体验通过。
+
 ## 2026-10-05 当前切片：正文证据截图与附件复现
 
 用户明确要求在分析正文加入原生PDF区域截图；Canvas只问了能力，未授权加入图片节点。

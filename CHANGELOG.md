@@ -7,6 +7,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **find-resource / development evidence only:** record an actual native cmux PDF preview
+  of the single existing test paper, with live Zotero attachment resolution and unchanged
+  PDF/analysis/Canvas/sidecar hashes. Preserve the child-only control mode: the external
+  CLI rejection is recorded, while commands in one newly created native terminal succeed.
+  Save a readable minimal interaction recipe and separate test-Vault result. No Hub,
+  runtime change, new release, annotation-sync claim or implicit human usability approval.
 - **analyze-paper / development ledger only:** record normal 0.40.1 hotfix publication
   and installation, then the installed paired update of two source-region images and
   fuller method excerpts in the single test paper. Preserve all Canvas geometry,

@@ -110,6 +110,12 @@ test独立可读报告与机器记录已存，原件四hash不变；不把该范
 不冒称物理新机、verified backup或reader点击已通过。新截图人工阅读仍pending；G17整体继续active，
 项目资料生效、外部原生交互和全篇科学验收不由附件复现替代。详见evidence-images-results.md。
 
+原生交互后续实证：installed0.40.1核Local API附件位置，cmux0.64.25原生PDF文件预览已在一个
+独立工作区实际显示V-JEPA2的48页。外部CLI在child-only控制模式下拒绝，原生界面新建终端中
+identify/open成功，不变更安全设置或已有用户终端；原PDF/正文/Canvas/sidecar四hash不变。
+test已保存最短操作及失败诊断，详见native-tool-interaction-results.md。这覆盖旧cmux不可用状态，
+不代表批注同步、翻页/缩放人工便利性或全部外部能力通过；G17及其他独立未完成项仍保持。
+
 ## 长期不变量（INV）
 
 已激活的不变量对任何实现、任何阶段都必须成立，违反即为回归。标为**目标态（未激活）**的条目记录
