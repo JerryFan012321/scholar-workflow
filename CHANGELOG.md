@@ -7,6 +7,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **analyze-paper / development ledger only:** record normal 0.40.1 hotfix publication
+  and installation, then the installed paired update of two source-region images and
+  fuller method excerpts in the single test paper. Preserve all Canvas geometry,
+  styles and edges; only add one page-five source link. The explicit 13-file/4-asset
+  package restores ownership in isolated host state and re-exports the same digest.
+  Current conformance and image hashes agree; inspected native previews show both
+  crops, excerpts and links. Visible rendering is not human crop
+  approval, scientific sign-off, physical new-host reader proof or verified backup.
+  No further runtime build, main merge, experiment rerun or formal Vault migration.
 - **development ledger only:** record read-only source review of eight points in the
   first two method modules. Two excerpts need fuller method evidence; dataset/model
   scaling and 3D-RoPE require the actual page-five locator. Preserve inference labels

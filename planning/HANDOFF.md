@@ -10,11 +10,23 @@
 现有IR正文允许Markdown嵌入，Canvas使用原正文摘要即可保持原图；不新建ROI服务或同步器。
 发现公开复现inventory遗漏既有assets.yml声明及附件，先补这一范围的合成反例，再修复导出/恢复。
 截图和裁剪输入由显式assets清单归属到分析文件，不靠正文链接推断；正文修改仍走安装版
-stage-update/commit-bundle。此前方法摘录候选尚未提交，因误用portable revision作为live CAS；
-须重新读实际provider和三文件hash、使用新ID，不绕过CAS、不复用已失败请求。
+stage-update/commit-bundle。此前方法摘录候选因误用portable revision作为live CAS而未提交；
+本轮已重新读实际provider和三文件hash、使用新ID，不绕过CAS、不复用已失败请求。
 17附件+28 v5组合45通过，完整1713回归通过/11既有warnings（86.56秒），Ruff/Skill/diff通过。
-下一步正常0.40.1 hotfix安装后才进行真实单对象更新与带图复现验收。
-无正式Vault迁移、无Canvas重新排版；G17仍active，截图人工阅读/科学全项评鉴不冒称完成。
+0.40.1已正常hotfix发布安装：source b644f82001395bcb43a1e2145cada80d57eb1b09，runtime
+21c29a734795071e0cdfb0a57575ccde31984756；PATH CLI、pipx direct_url与Codex缓存两manifest一致。
+安装版在test原登记样本成对提交两张正文截图及两处完整方法摘录，登记change-set成功。
+实际check-bundle conformant/零findings，36claims/69内容/106节点/105边；全节点几何/样式及
+全部连线保持，仅方法模块2节点新增第5页来源入口，Canvas没有图片或摘录节点。
+13个显式inventory文件（含4个附件）复制到新test复现Source，隔离host state经公开register、
+restore-plan/restore恢复归属；再导出package digest与原包一致（35505054…），两份成对校验通过。
+这不是物理新主机或verified backup；reader绑定匹配不证明真实点击，科学全项和截图人工阅读仍pending。
+可见正文、输入/提交/归属/恢复回执及中文说明在test“正文证据截图-0.40.1”，详见
+evidence-images-results.md。回退0.40.0 runtime aa1861df517e0e22bab2bc01780e327366475aa7。
+本轮Obsidian阅读视图实际显示两图、对应摘录与页链接，两张新capture逐张目视确认；截图渲染
+延迟的旧画面排除。文件显示不是用户字号/位置评鉴或页级点击成功。留档10项eval通过，代码未改。
+下一步仅处理剩余真实证据：项目资料清单生效仍待覆盖确认；外部原生窗口与新截图体验分开评鉴。
+无正式Vault迁移、无Canvas重新排版、无新服务或main合并；G17仍active。
 
 ## 2026-10-05 当前交付：0.40.0 单项目资料预览已安装
 
