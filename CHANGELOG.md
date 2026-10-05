@@ -7,6 +7,34 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **analyze-paper / installed exemplar evidence only:** apply the 33 targeted quotation,
+  location and qualification corrections through installed 0.40.1 paired staging/commit
+  and explicit provider registration. Record the initial overlap refusal and bounded
+  summary/source-link repair; preserve exact Canvas geometry, styling, edges and metadata,
+  69 records, the explicit source gap, original PDF and crops. Export the current 13-file
+  inventory without rerunning restoration or experiments. New quote/reader assessment
+  remains separate; no runtime release, formal migration or main merge.
+- **analyze-paper / development evidence only:** review all 69 existing content records
+  in the single test paper: 35 bounded supports, 33 local quotation/page/qualification
+  completions and one explicit source gap. Preserve all four source hashes and the accepted
+  Canvas. Save an independent readable report and machine record; verify the native report
+  display, 34 block backlinks and 33 four-column issue rows. This is not 33 false conclusions,
+  whole-analysis scientific approval, human acceptance, a runtime release or a business rewrite.
+- **find-resource / development evidence only:** record an actual native cmux PDF preview
+  of the single existing test paper, with live Zotero attachment resolution and unchanged
+  PDF/analysis/Canvas/sidecar hashes. Preserve the child-only control mode: the external
+  CLI rejection is recorded, while commands in one newly created native terminal succeed.
+  Save a readable minimal interaction recipe and separate test-Vault result. No Hub,
+  runtime change, new release, annotation-sync claim or implicit human usability approval.
+- **analyze-paper / development ledger only:** record normal 0.40.1 hotfix publication
+  and installation, then the installed paired update of two source-region images and
+  fuller method excerpts in the single test paper. Preserve all Canvas geometry,
+  styles and edges; only add one page-five source link. The explicit 13-file/4-asset
+  package restores ownership in isolated host state and re-exports the same digest.
+  Current conformance and image hashes agree; inspected native previews show both
+  crops, excerpts and links. Visible rendering is not human crop
+  approval, scientific sign-off, physical new-host reader proof or verified backup.
+  No further runtime build, main merge, experiment rerun or formal Vault migration.
 - **development ledger only:** record read-only source review of eight points in the
   first two method modules. Two excerpts need fuller method evidence; dataset/model
   scaling and 3D-RoPE require the actual page-five locator. Preserve inference labels
@@ -49,6 +77,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   portable Canvas declaration. Replay preserves receipt values and all six protected file hashes;
   the readable replay note is in the existing test package. This does not revise real quotations,
   certify human/source assessment, restore a cross-host provider or introduce another runtime build.
+
+## [0.40.2] - 2026-10-05
+
+### Fixed
+
+- **find-resource:** make the verified native-open recipe available in the runtime
+  reference: live local enclosure resolution, cmux's current or explicitly chosen
+  location, child-only refusal and non-invasive handoff. Preserve stable identity,
+  source bytes and tool permissions. Distinguish accepted launches, observed displays
+  and human usability; original PDFs are not synchronized Zotero annotation readers.
+  No Hub prerequisite, new launcher, Canvas changes or real-paper/experiment rerun.
 
 ## [0.40.1] - 2026-10-05
 

@@ -14,6 +14,8 @@ description: Search for papers, verify paper identity, recall related items from
   abstract or indexed-text match signals and the stated basis of any ordering.
 - **Discovery:** external metadata candidates with normalized identifiers, arXiv-PDF
   availability and `existing | not-found | conflict` Zotero status.
+- **Requested open:** use the chosen native reader or cmux destination without copying
+  the source. Report launch acceptance separately from an observed reader display.
 
 ## Source and identity boundary
 
@@ -33,7 +35,7 @@ candidate signal, never identity proof.
 ## References
 
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
-- `references/resource-location.md`
+- `references/resource-location.md` — locate a resource or open it in a requested native reader/cmux location.
 - `${CLAUDE_PLUGIN_ROOT}/references/identity-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/source-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`
