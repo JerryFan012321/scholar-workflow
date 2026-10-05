@@ -81,6 +81,7 @@
           "body": {"type": "string", "maxLength": 20000},
           "container": {"type": "boolean", "default": false},
           "canvas_summary": {"type": ["string", "null"], "minLength": 1, "maxLength": 400},
+          "canvas_image": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/canvas_image"}]},
           "points": {
             "type": "array",
             "maxItems": 64,
@@ -92,6 +93,7 @@
                 "point_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"},
                 "text": {"type": "string", "minLength": 1, "maxLength": 5000, "pattern": "^(?=.*\\S)[^\\r\\n]+$"},
                 "canvas_summary": {"type": ["string", "null"], "minLength": 1, "maxLength": 180, "pattern": "\\S"},
+                "canvas_image": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/canvas_image"}]},
                 "evidence": {
                   "type": "object",
                   "additionalProperties": false,
@@ -162,6 +164,30 @@
     }
   },
   "$defs": {
+    "canvas_image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "asset_id", "image_path", "sha256", "pixel_width", "pixel_height", "caption", "source"],
+      "properties": {
+        "kind": {"enum": ["experimental_table", "process_diagram"]},
+        "asset_id": {"type": "string", "minLength": 1, "maxLength": 240, "pattern": "^[^\\s]+$"},
+        "image_path": {"type": "string", "maxLength": 512, "pattern": "^attachments/(?:(?!\\.{1,2}/)[^/\\\\:#|\\[\\]\\r\\n\\u0000]+/)*(?!\\.{1,2}$)[^/\\\\:#|\\[\\]\\r\\n\\u0000]+\\.png$"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "pixel_width": {"type": "integer", "minimum": 16, "maximum": 20000},
+        "pixel_height": {"type": "integer", "minimum": 16, "maximum": 20000},
+        "caption": {"type": "string", "minLength": 1, "maxLength": 120, "pattern": "^(?=.*\\S)[^\\[\\]|<>\\r\\n]+$"},
+        "source": {"allOf": [{"$ref": "#/$defs/zotero_pdf_span"}, {"properties": {"quote": {"type": "null"}}}]}
+      }
+    },
+    "canvas_image_placement": {
+      "if": {"properties": {"outline_path": {"pattern": "^method/(?:overview$|modules/)"}}},
+      "then": {"properties": {"canvas_image": {"properties": {"kind": {"const": "process_diagram"}}}, "points": {"items": {"properties": {"canvas_image": {"properties": {"kind": {"const": "process_diagram"}}}}}}}},
+      "else": {
+        "if": {"properties": {"outline_path": {"pattern": "^experiments/(?:comparison|ablation)/"}}},
+        "then": {"properties": {"canvas_image": {"properties": {"kind": {"const": "experimental_table"}}}, "points": {"items": {"properties": {"canvas_image": {"properties": {"kind": {"const": "experimental_table"}}}}}}}},
+        "else": {"properties": {"canvas_image": {"type": "null"}, "points": {"items": {"properties": {"canvas_image": {"type": "null"}}}}}}
+      }
+    },
     "reference_tree_path": {
       "type": "string",
       "maxLength": 160,
@@ -368,6 +394,10 @@
   },
   "allOf": [
     {
+      "if": {"properties": {"schema_version": {"enum": [1, 2, 3, 4]}}},
+      "then": {"properties": {"claims": {"items": {"properties": {"canvas_image": {"type": "null"}, "points": {"items": {"properties": {"canvas_image": {"type": "null"}}}}}}}}}
+    },
+    {
       "if": {"required": ["capacity"], "properties": {"capacity": {"const": "expanded"}}},
       "then": {"properties": {"schema_version": {"const": 5}}},
       "else": {"properties": {"claims": {"maxItems": 40}}}
@@ -496,6 +526,7 @@
             "allOf": [
               {"properties": {"role": {"enum": ["abstract", "introduction", "method", "experiments", "limitation"]}}},
               {"$ref": "#/$defs/reference_tree_v5_claim"},
+              {"$ref": "#/$defs/canvas_image_placement"},
               {"properties": {
                 "title": {"maxLength": 120, "pattern": "^[^\\r\\n]*$"},
                 "body": {"not": {"pattern": "(?:^|\\n)#{1,6}\\s|sw-analysis-claim"}},

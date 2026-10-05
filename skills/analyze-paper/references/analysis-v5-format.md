@@ -101,6 +101,41 @@ schema. Concision cannot remove a material qualification or add unsupported fact
   existing is not proof of success. Source fidelity and human visual assessment are
   separate, explicitly reported checks.
 
+## Selected Canvas source images
+
+An optional `canvas_image` on a factual claim or point supplements that same record
+with one editable image card. Only `experimental_table` under experiment comparison /
+ablation and `process_diagram` under Method Overview / an actual module are allowed.
+No paragraph, quotation or generic screenshot kind exists. Do not encode untyped
+image embeds in Canvas summaries or labels; Markdown paragraph crops can remain in
+the full body with a plain Canvas summary.
+
+The image object declares `asset_id`, paper-relative `image_path` under `attachments/`
+(PNG only), bare SHA-256, `pixel_width`, `pixel_height`, a single-line `caption`, and
+`source` (a Zotero PDF span without `quote`). Its attachment identity, hash and page
+must match a supported source span of its own record. The label identifies the
+source figure/table; matching metadata alone does not prove crop fidelity.
+
+The renderer adds a child text card with a note-relative image embed, caption,
+verified-source projection and exact record-block backlink; it does not replace
+any framework node, render quotations in Canvas or change Markdown. Image dimensions
+contribute to the card's measured size; all existing geometry gates remain.
+
+Canonical commit requires the image's ID, owner, paper-local path, media type, size
+and hash in `.scholar-workflow/assets.yml`; it checks the actual PNG bytes/dimensions
+before writing and before issuing a receipt. Image drift triggers paired recovery,
+not an overwrite of the external image. Read-only package inspection checks the
+explicit images as well as the analysis trio. Reproduction refuses an image missing
+from its owned inventory and carries the declared images and manifest.
+
+Keep the source-region replay input as an explicitly owned supporting asset under
+the shared reproduction/source-image contract. Selecting `experimental_table` or
+`process_diagram` is a claim about the crop, not an automatic visual classification
+or proof that labels, units and qualifiers survive. Native display and human review
+are separate. This optional interface is available from 0.41.0; check the actual
+installed version before use, since 0.40.2 rejects it. Existing safe layouts remain protected; an update
+that cannot fit its image returns a conflict proposal, not a silent relayout.
+
 ## Reader, ownership and old artifacts
 
 Verified ZotFlow projections require the registered Vault ID and local PDF mode.

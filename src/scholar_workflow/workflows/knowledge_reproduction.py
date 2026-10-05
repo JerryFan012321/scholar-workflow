@@ -16,6 +16,7 @@ from scholar_workflow.analysis.apply_changes import (
 )
 from scholar_workflow.analysis.commit import _read_target_regular
 from scholar_workflow.analysis.models import AnalysisBaseline
+from scholar_workflow.analysis.image_assets import ImageAssetError, verify_canvas_assets
 from scholar_workflow.analysis.package_check import check_package
 from scholar_workflow.knowledge.catalog_models import HubAsset, HubCatalog
 from scholar_workflow.knowledge.fields import (
@@ -130,6 +131,10 @@ def _inventory(root, root_fd, state_fd, fields, snapshot):
         ):
             raise FieldRegistryError("Analysis reproduction bundle is nonconformant or changed")
         baselines[parent_id] = (sidecar.resource_id, baseline)
+        try:
+            verify_canvas_assets(baseline.document, folder, snapshot.catalog.assets, contents.__getitem__)
+        except (ImageAssetError, KeyError) as exc:
+            raise FieldRegistryError("Selected Canvas images are absent, changed or not explicitly owned in the reproduction inventory") from exc
     manifest_bytes = {}
     for name in ("fields.yml", "artifacts.yml", "assets.yml"):
         payload, _ = _read(state_fd, name)

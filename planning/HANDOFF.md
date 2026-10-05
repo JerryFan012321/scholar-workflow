@@ -3,7 +3,41 @@
 > 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
 > `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-10-05。
 
+## 2026-10-05 Canvas 选定图片能力开发
+
+下一步按既有hotfix安装态原则发布/安装0.41.0候选，不合并main、不切换Hub服务。
+先复验四处版本身份/manifest/eval，沿用1754完整与末次168定向结果，不重做整库业务测试。
+源码提交仅含本能力和已完成的开发记录，保留三份无关审阅文件。干净受管worktree生成
+runtime-only release并审计，再经pipx固定runtime SHA和Codex正常marketplace更新安装；
+回退为0.40.2 runtime8704947fbe4d04deacca17ed0bd1be2225e2d31c。
+实机仅新建test里的一个V-JEPA2候选包、两张源图及明确输入/结果，不覆盖现有canonical。
+具体步骤和通过/失败边界见canvas-selected-images-plan.md；目前尚未执行发布/安装或实机。
+
+上轮已固化用户“仅实验数据表与关键流程图”的输出规则，本轮补现有 v5 成对接口的可选图卡，
+不重做论文分析，不改当前已登记 V-JEPA 2。独立合成输入、预期、失败用例和安装/人工边界见
+canvas-selected-images-plan.md；先准备契约测试，再最小修改模型、投影、校验及图片依赖检查。
+开发实现已覆盖typed图卡、图片尺寸/来源反链、提交前/回执前PNG及归属检查、显式附件复现。
+257项定向与20项附件复现测试通过，旧布局居中保护的93项定向及随后完整1754项通过。
+末次题注HTML图片注入收紧后168项受影响模型/图卡/提交/更新/只读/schema回归通过，
+未重复全套测试；1754项结果绑定收紧题注之前的代码，不混淆不同代码状态。
+Skill quick_validate、JSON和diff检查通过，完整回归的11项warnings为既有依赖/fork提示。
+旧布局新增图卡与实际保留owner精确居中，不挪动已有节点；放不下时返回冲突候选。
+测试输入/实际结果见canvas-selected-images-plan.md。尚未发布或安装，当前0.40.2不支持新字段；
+V-JEPA2 canonical无新增图卡，Obsidian实际显示/点击、裁剪充分性和人工美观均pending。
+不把合成测试、规则文件或源码实现冒充安装态/人工能力通过。
+
 ## 2026-10-05 当前模范入口已跟上已提交内容
+
+最新用户收窄Canvas图片范围：只加实验数据表和关键流程图，段落截图/逐字摘录仍在Markdown。
+只更新既有输出模板及引用说明，不把图片替代五分支/具名可编辑节点，不声称安装版已经自动生成。
+本轮installed0.40.2原生打开当前Canvas并放大显示文字/源链接，正文表2与EK100截图实际可见；
+人工评鉴仍独立pending。Obsidian查看后重编码Canvas，完整节点/边/顺序/metadata语义与提交候选
+相同、canonical编码精确重现原provider hash，但raw hash已变；check-bundle仍零findings。
+reproduction-plan因此正确拒绝旧artifact hash；随后已用既有公开metadata acknowledgement
+校准这个已证明的编码变化，回执明确canonical_written=false，仅更新provider中的Canvas hash。
+再次导出当前13文件包成功，只有Canvas原始编码hash变化，另12项保持；新输入/回执存于test
+既有“入口核对-0.40.2”目录，不手改provider/sidecar，不重跑分析/恢复/实验。
+模板限制尚未进入本机缓存，不发布或安装前不得宣称运行期规则已更新；项目覆盖授权仍待确认。
 
 installed0.40.2只核现有Source及一个项目候选，修正01/02/Paper三份普通人类说明：默认入口
 不再指旧候选，完整摘录/正文两图/定点证据更新和保留空缺说明真实，登记与归属恢复步骤分开。

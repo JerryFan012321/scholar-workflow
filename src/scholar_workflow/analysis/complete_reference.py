@@ -8,6 +8,7 @@ import re
 import unicodedata
 from dataclasses import dataclass, field
 from typing import Any
+from urllib.parse import quote
 
 from scholar_workflow.analysis.models import (
     FIVE_TREE_ROLES,
@@ -16,12 +17,14 @@ from scholar_workflow.analysis.models import (
     AnalysisPoint,
     AnalysisReader,
     AnalysisRole,
+    CanvasImage,
 )
 from scholar_workflow.analysis.reference_rendering import (
     _visible_height,
     reference_canvas_inline_evidence,
     reference_inline_evidence,
     reference_source_quote_lines,
+    reference_source_link,
 )
 from scholar_workflow.analysis.rendering import (
     AnalysisBundle,
@@ -100,6 +103,18 @@ _POINT_LABELS = {
 }
 _MD_LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
 _WIKILINK = re.compile(r"\[\[[^\]|]+\|([^\]]+)\]\]")
+_IMAGE_EMBED = re.compile(r"(?m)^!\[[^\]\r\n]*\|([1-9][0-9]*)x([1-9][0-9]*)\]\(\./attachments/[^\r\n)]+\.png\)$")
+
+
+def canvas_visible_height(text: str, *, width: int) -> int:
+    """Account for declared embedded-image pixels as well as editable prose."""
+    return _visible_height(_IMAGE_EMBED.sub("", text), minimum=0, width=width) + sum(
+        int(match[2]) for match in _IMAGE_EMBED.finditer(text)
+    )
+
+
+def canvas_image_width(text: str) -> int:
+    return max((int(match[1]) + 28 for match in _IMAGE_EMBED.finditer(text)), default=0)
 
 
 def _label(labels: tuple[str, str], language: str) -> str:
@@ -298,6 +313,9 @@ def _visible_lines(text: str) -> list[str]:
 
 
 def _dimensions(text: str, kind: str) -> tuple[int, int]:
+    if kind == "image":
+        width = canvas_image_width(text)
+        return width, canvas_visible_height(text, width=width)
     units = max(
         (
             sum(2 if unicodedata.east_asian_width(char) in {"W", "F"} else 1 for char in line)
@@ -357,12 +375,24 @@ def template_tree(document: AnalysisDocument, note_stem: str) -> TemplateNode:
             claim=claim,
         )
         points = {point.point_id: point for point in complete_points(claim)}
+
+        def image_node(image: CanvasImage, parent_path: str, anchor: str) -> TemplateNode:
+            scale = min(880 / image.pixel_width, 240 / image.pixel_height, 1)
+            width, height = round(image.pixel_width * scale), round(image.pixel_height * scale)
+            backlink = "Analysis" if language == "en" else "正文"
+            text = (
+                f"**{image.caption}**\n\n"
+                f"![{image.caption}|{width}x{height}](./{quote(image.image_path, safe='/')})\n\n"
+                f"{reference_source_link(image.source, language, compact=True, reader=document.reader)} "
+                f"↩ [[{note_stem}#^{anchor}|{backlink}]]"
+            )
+            return _node(parent_path + "/image", image.caption, "image", claim.role, text=text)
+
         slots = _SLOTS.get(_slot_prefix(claim.outline_path or "") or "", tuple(points))
         for slot in slots:
             label = complete_point_label(claim, slot, language)
             point = points.get(slot)
-            node.children.append(
-                _node(
+            point_node = _node(
                     f"{path}/point/{slot}",
                     label,
                     "point" if point else "empty-slot",
@@ -375,7 +405,11 @@ def template_tree(document: AnalysisDocument, note_stem: str) -> TemplateNode:
                     claim=claim,
                     point=point,
                 )
-            )
+            if point is not None and point.canvas_image is not None:
+                point_node.children.append(image_node(point.canvas_image, point_node.path, point_anchor(claim, point)))
+            node.children.append(point_node)
+        if claim.canvas_image is not None:
+            node.children.append(image_node(claim.canvas_image, path, f"claim-{claim.claim_id}"))
         return node
 
     def group(role: AnalysisRole, path: str) -> TemplateNode:
@@ -499,6 +533,8 @@ def _render_markdown(document: AnalysisDocument, tree: TemplateNode) -> str:
     ]
 
     def visit(node: TemplateNode, level: int) -> None:
+        if node.kind == "image":
+            return  # A Canvas supplement is not another Markdown heading or fact.
         if level > 6:
             raise ValueError("Complete-reference Markdown exceeds six heading levels")
         lines.append("")

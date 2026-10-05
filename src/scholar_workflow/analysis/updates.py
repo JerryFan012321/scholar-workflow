@@ -400,8 +400,14 @@ def _merge_canvas(
             height = replacement.get("height")
             node_text = replacement.get("text")
             if isinstance(width, int) and width > 0 and isinstance(height, int) and isinstance(node_text, str):
+                if baseline.document.schema_version == 5:
+                    from scholar_workflow.analysis.complete_reference import canvas_visible_height
+
+                    required_height = canvas_visible_height(node_text, width=width)
+                else:
+                    required_height = _visible_height(node_text, minimum=0, width=width)
                 replacement["height"] = max(
-                    height, _visible_height(node_text, minimum=0, width=width)
+                    height, required_height
                 )
         merged_nodes.append(replacement)
         emitted_node_ids.add(node_id)
@@ -413,6 +419,16 @@ def _merge_canvas(
             column = retained_columns.get(added.get("x"), set())
             if len(column) == 1:
                 added["x"] = next(iter(column))
+            if baseline.document.schema_version == 5:
+                from scholar_workflow.analysis.complete_reference import canvas_image_width
+
+                if canvas_image_width(added.get("text", "")):
+                    parent_id = next(edge["fromNode"] for edge in rendered["edges"] if edge["toNode"] == node_id)
+                    parent = next(row for row in merged_nodes if isinstance(row, dict) and row.get("id") == parent_id)
+                    # New supplements follow the actual retained owner, not a
+                    # regenerated Y position. Match parity for an exact center.
+                    added["height"] += (parent["height"] - added["height"]) % 2
+                    added["y"] = parent["y"] + (parent["height"] - added["height"]) // 2
             merged_nodes.append(added)
             emitted_node_ids.add(node_id)
 

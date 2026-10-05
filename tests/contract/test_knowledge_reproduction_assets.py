@@ -6,6 +6,9 @@ import base64
 import hashlib
 import json
 import shutil
+import struct
+import zlib
+from pathlib import Path
 
 import pytest
 import yaml
@@ -21,8 +24,81 @@ from scholar_workflow.workflows.knowledge_reproduction import (
     restore,
     restore_plan,
 )
+from scholar_workflow.analysis.apply_changes import apply_knowledge_change_set
+from scholar_workflow.analysis.commit import commit_analysis_bundle
+from scholar_workflow.analysis.models import AnalysisCommitRequest, AnalysisDocument
+from scholar_workflow.analysis.updates import render_analysis_projection
+from scholar_workflow.workflows.register_paper import paper_plan, register_paper
 from tests.contract.test_canvas_registration import canvas_scope  # noqa: F401
 from tests.contract.test_paper_registration import scope  # noqa: F401
+
+
+@pytest.fixture
+def selected_canvas_scope(scope, tmp_path):
+    root, registry, zotero, selection = scope
+    proposal = paper_plan(registry, zotero, **selection)
+    owner = register_paper(registry, zotero, approved_digest=proposal["approved_digest"], **selection)
+    folder = Path(owner["owner_path"]).parent.as_posix()
+    artifact_id = "analysis:" + owner["resource_id"]
+
+    def chunk(kind, payload):
+        return struct.pack(">I", len(payload)) + kind + payload + struct.pack(">I", zlib.crc32(kind + payload) & 0xFFFFFFFF)
+
+    png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 1200, 360, 8, 2, 0, 0, 0))
+    png += chunk(b"IDAT", zlib.compress((b"\0" + b"\xff" * 3600) * 360)) + chunk(b"IEND", b"")
+    source = {"kind": "zotero_pdf", "library_type": "personal", "library_id": "123", "attachment_key": "EFGH2345", "content_hash": "sha256:" + hashlib.sha256(zotero.pdf.read_bytes()).hexdigest(), "page_index": 0}
+    claims, rows = [], []
+    (root / folder / "attachments").mkdir()
+    for name, role, path, kind, label in (
+        ("flow", "method", "method/overview", "process_diagram", "Figure 1: synthetic process"),
+        ("table", "experiments", "experiments/comparison/synthetic", "experimental_table", "Table 1: synthetic comparison"),
+    ):
+        local = f"attachments/{name}.png"
+        (root / folder / local).write_bytes(png)
+        rows.append({"asset_id": "asset:" + name, "owner_artifact_ids": [artifact_id], "vault_path": folder + "/" + local, "display_name": name + ".png", "media_type": "image/png", "size": len(png), "sha256": "sha256:" + hashlib.sha256(png).hexdigest(), "role": "embed"})
+        claims.append({"claim_id": name, "role": role, "outline_path": path, "title": label, "body": "This is synthetic source content, not a scientific claim.", "evidence": {"kind": "author_stated", "anchor": label, "source_spans": [{**source, "quote": "This is synthetic source content."}]}, "canvas_image": {"kind": kind, "asset_id": "asset:" + name, "caption": label, "image_path": local, "sha256": hashlib.sha256(png).hexdigest(), "pixel_width": 1200, "pixel_height": 360, "source": source}})
+    (root / ".scholar-workflow/assets.yml").write_text(yaml.safe_dump({"schema_version": 1, "assets": rows}))
+    document = AnalysisDocument.model_validate({"schema_version": 5, "artifact_id": artifact_id, "paper_title": "Synthetic selected images", "language": "en", "profile": {"kind": "whole", "framework": "reference_tree_v5", "markdown_quotes": True}, "claims": claims})
+    paths = {"markdown": folder + "/Analysis.md", "canvas": folder + "/Tree.canvas", "sidecar": folder + "/analysis.baseline.json"}
+    request = AnalysisCommitRequest.model_validate({"commit_id": "selected-images", "batch_id": "selected-images", "item_id": "one", "source_state": "validated", "resource_id": owner["resource_id"], "note_stem": "Analysis", "document": document.model_dump(mode="json"), "paths": paths, "base_revisions": {p: None for p in paths.values()}, "base_catalog_revision": owner["catalog_revision"], "base_snapshot_revision": owner["snapshot_revision"], "zotero_item_key": selection["item_key"], "relations": [{"from_id": owner["resource_id"], "relation": "has-analysis", "to_id": artifact_id}]})
+    bundle, baseline = render_analysis_projection(document, note_stem="Analysis")
+    receipt = commit_analysis_bundle(vault_root=root, state_root=tmp_path / "image-commit", request=request, bundle=bundle, baseline=baseline, source_registry=registry)
+    provider = registry.path.parent / "knowledge-providers" / selection["source_id"]
+    apply_knowledge_change_set(state_root=provider, change_set=receipt.change_set)
+    return root, registry, selection, rows, paths
+
+
+def test_selected_canvas_images_export_restore_and_reexport(selected_canvas_scope, scope, tmp_path):
+    source, original_registry, selection, rows, paths = selected_canvas_scope
+    exported = reproduction_plan(original_registry, source_id=selection["source_id"])
+    assert all(exported["package"]["files"][row["vault_path"]] == row["sha256"] for row in rows)
+    root = tmp_path / "copied-image-source"
+    shutil.copytree(source, root)
+    registry = KnowledgeSourceRegistry(tmp_path / "image-host/hub/sources.json")
+    service = FieldService(registry)
+    preview = registration_plan(service, root, field_root=None, existing_source=True)
+    register(service, root, field_root=None, existing_source=True, approved_digest=preview.payload["approved_digest"])
+    package = tmp_path / "image-replay.json"
+    package.write_text(json.dumps(exported))
+    plan = restore_plan(registry, scope[2], source_id=selection["source_id"], package=package)
+    result = restore(registry, scope[2], source_id=selection["source_id"], package=package, approved_digest=plan["approved_digest"])
+    assert result["status"] == "ownership-restored"
+    assert reproduction_plan(registry, source_id=selection["source_id"])["package_digest"] == exported["package_digest"]
+    assert all((root / row["vault_path"]).read_bytes() == (source / row["vault_path"]).read_bytes() for row in rows)
+    canvas = json.loads((root / paths["canvas"]).read_text())
+    assert sum("./attachments/" in node.get("text", "") for node in canvas["nodes"]) == 2
+
+
+@pytest.mark.parametrize("case", ["undeclared", "different-owner"])
+def test_selected_canvas_image_cannot_be_omitted_from_inventory(selected_canvas_scope, case):
+    root, registry, selection, rows, _ = selected_canvas_scope
+    if case == "undeclared":
+        rows.pop()
+    else:
+        rows[0]["owner_artifact_ids"] = [rows[0]["owner_artifact_ids"][0] + ":canvas"]
+    (root / ".scholar-workflow/assets.yml").write_text(yaml.safe_dump({"schema_version": 1, "assets": rows}))
+    with pytest.raises(FieldRegistryError, match="Selected Canvas images"):
+        reproduction_plan(registry, source_id=selection["source_id"])
 
 
 @pytest.fixture

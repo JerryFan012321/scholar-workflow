@@ -95,6 +95,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   the readable replay note is in the existing test package. This does not revise real quotations,
   certify human/source assessment, restore a cross-host provider or introduce another runtime build.
 
+## [0.41.0] - 2026-10-05
+
+### Added
+
+- **analyze-paper:** optional v5 selected source-image cards for experimental tables
+  and key process diagrams, retaining the editable tree, caption/source/backlinks and
+  geometric gates. Canonical commits verify explicitly owned local PNG dependencies
+  before writes and receipts; package checks and reproduction keep their bytes and
+  ownership, refusing omitted or changed assets. Existing safe layouts are retained;
+  an image that cannot fit returns a conflict proposal. Installed/native visual and
+  human acceptance remain separate from development tests.
+
+### Changed
+
+- **analyze-paper / output contract:** limit Canvas image supplements to experimental
+  data tables and key process diagrams beside their associated editable tree content.
+  Keep paragraph crops and verbatim excerpts in Markdown, with source identity,
+  captions, asset ownership and replay protection retained. This does not implement
+  automatic crop selection or rewrite existing pairs. The five-branch and
+  alignment/non-crossing requirements remain.
+
 ## [0.40.2] - 2026-10-05
 
 ### Fixed

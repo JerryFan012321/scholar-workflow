@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import multiprocessing
 import queue
+import struct
+import zlib
 from copy import deepcopy
 from datetime import UTC, datetime
 from hashlib import sha256
@@ -97,6 +99,110 @@ def _register_v4_source(tmp_path: Path, vault: Path) -> Path:
 
 def _registry_for_provider(provider: Path) -> KnowledgeSourceRegistry:
     return KnowledgeSourceRegistry(provider.parent.parent / "sources.json")
+
+
+def _image_commit_case(tmp_path: Path):
+    """Prepare one independent, explicitly owned synthetic process PNG."""
+    vault, state = _roots(tmp_path)
+    folder = vault / "field/resources/papers/commit"
+    (folder / "attachments").mkdir(parents=True)
+    provider, revision, snapshot_revision = _provider_state(
+        tmp_path, vault, [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Note.md")],
+    )
+
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+
+    width, height = 1200, 360
+    png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+    png += chunk(b"IDAT", zlib.compress((b"\0" + b"\xff" * (width * 3)) * height)) + chunk(b"IEND", b"")
+    image = folder / "attachments/flow.png"
+    image.write_bytes(png)
+    payload = _v4_document().model_dump(mode="json")
+    payload["schema_version"] = 5
+    payload["profile"] = {"kind": "whole", "framework": "reference_tree_v5", "markdown_quotes": True}
+    source = {"kind": "zotero_pdf", "library_type": "personal", "library_id": "1", "attachment_key": "IMG00001", "content_hash": "sha256:" + "b" * 64, "page_index": 0}
+    method = payload["claims"][0]
+    method.update(claim_id="method", role="method", outline_path="method/overview", title="Synthetic process")
+    method["evidence"] = {"kind": "author_stated", "anchor": "Figure 1", "source_spans": [{**source, "quote": "The synthetic process estimates one scalar."}]}
+    method["canvas_image"] = {"kind": "process_diagram", "asset_id": "asset:flow", "image_path": "attachments/flow.png", "sha256": sha256(png).hexdigest(), "pixel_width": width, "pixel_height": height, "caption": "Figure 1: synthetic process", "source": source}
+    asset = {"asset_id": "asset:flow", "owner_artifact_ids": [payload["artifact_id"]], "vault_path": "field/resources/papers/commit/attachments/flow.png", "display_name": "flow.png", "media_type": "image/png", "size": len(png), "sha256": "sha256:" + sha256(png).hexdigest(), "role": "supplement"}
+    (vault / ".scholar-workflow/assets.yml").write_text(yaml.safe_dump({"schema_version": 1, "assets": [asset]}))
+    document = AnalysisDocument.model_validate(payload)
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+    return vault, state, provider, request, bundle, baseline, image
+
+
+def test_v5_image_commit_and_replay_use_owned_real_png(tmp_path: Path) -> None:
+    vault, state, provider, request, bundle, baseline, image = _image_commit_case(tmp_path)
+    before = image.read_bytes()
+    receipt = commit_analysis_bundle(vault_root=vault, state_root=state, request=request, bundle=bundle, baseline=baseline, source_registry=_registry_for_provider(provider))
+    assert receipt.state == "committed"
+    replay = commit_analysis_bundle(vault_root=vault, state_root=state, request=request, bundle=bundle, baseline=baseline, source_registry=_registry_for_provider(provider))
+    assert replay == receipt
+    assert image.read_bytes() == before
+    from scholar_workflow.analysis.package_check import check_package
+
+    report = check_package(image.parent.parent, markdown="Commit分析.md", canvas="Commit解析树.canvas", sidecar="Commit分析.analysis.json")
+    assert report["status"] == "conformant"
+    assert report["files"]["attachments/flow.png"] == "sha256:" + sha256(before).hexdigest()
+    image.write_bytes(before + b"changed after commit")
+    from scholar_workflow.analysis.image_assets import ImageAssetError
+
+    with pytest.raises(ImageAssetError):
+        check_package(image.parent.parent, markdown="Commit分析.md", canvas="Commit解析树.canvas", sidecar="Commit分析.analysis.json")
+
+
+@pytest.mark.parametrize("case", ["missing", "changed", "wrong-dimensions", "wrong-owner", "undeclared", "symlink", "corrupt-png"])
+def test_v5_image_commit_refuses_invalid_dependencies_before_writes(tmp_path: Path, case: str) -> None:
+    vault, state, provider, request, bundle, baseline, image = _image_commit_case(tmp_path)
+    manifest = vault / ".scholar-workflow/assets.yml"
+    rows = yaml.safe_load(manifest.read_text())
+    if case == "missing":
+        image.unlink()
+    elif case == "changed":
+        image.write_bytes(b"not the original image")
+    elif case == "wrong-owner":
+        rows["assets"][0]["owner_artifact_ids"] = ["analysis:another-paper"]
+        manifest.write_text(yaml.safe_dump(rows))
+    elif case == "undeclared":
+        rows["assets"] = []
+        manifest.write_text(yaml.safe_dump(rows))
+    elif case == "symlink":
+        copied = tmp_path / "external.png"
+        copied.write_bytes(image.read_bytes())
+        image.unlink()
+        image.symlink_to(copied)
+    else:
+        data = request.document.model_dump(mode="json")
+        method = next(c for c in data["claims"] if c["role"] == "method")
+        if case == "wrong-dimensions":
+            method["canvas_image"]["pixel_height"] += 1
+        else:
+            damaged = b"not PNG even with matching declared hash"
+            image.write_bytes(damaged)
+            method["canvas_image"]["sha256"] = sha256(damaged).hexdigest()
+            rows["assets"][0].update(sha256="sha256:" + sha256(damaged).hexdigest(), size=len(damaged))
+            manifest.write_text(yaml.safe_dump(rows))
+        request = request.model_copy(update={"document": AnalysisDocument.model_validate(data)})
+        bundle, baseline = render_analysis_projection(request.document, note_stem=request.note_stem)
+    with pytest.raises(AnalysisCommitSafetyError):
+        commit_analysis_bundle(vault_root=vault, state_root=state, request=request, bundle=bundle, baseline=baseline, source_registry=_registry_for_provider(provider))
+    assert not any((vault / path).exists() for path in request.paths.as_list())
+
+
+def test_v5_image_change_before_receipt_rolls_back_pair_not_external_edit(tmp_path: Path) -> None:
+    vault, state, provider, request, bundle, baseline, image = _image_commit_case(tmp_path)
+
+    def concurrent_edit(event: str) -> None:
+        if event == "before-receipt":
+            image.write_bytes(b"external image editor changed this")
+
+    with pytest.raises(AnalysisCommitSafetyError):
+        commit_analysis_bundle(vault_root=vault, state_root=state, request=request, bundle=bundle, baseline=baseline, source_registry=_registry_for_provider(provider), fault_inject=concurrent_edit)
+    assert not any((vault / path).exists() for path in request.paths.as_list())
+    assert image.read_bytes() == b"external image editor changed this"
 
 
 def _document() -> AnalysisDocument:

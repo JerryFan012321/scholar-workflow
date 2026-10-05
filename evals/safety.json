@@ -231,7 +231,7 @@
     {
       "id": "analysis-package-check-not-approval",
       "action": "treat a passing existing-package format check as source verification, human assessment, canonical enrollment or permission to repair files",
-      "expected": "analysis check-bundle only reads three explicit bounded files and reports actual versioned conformance/baseline consistency; it changes no files or state and lists source, reader, visual and registration checks as not checked. Explicit required IR and actual Markdown filename are enforced",
+      "expected": "analysis check-bundle only reads the explicit bounded analysis trio and its typed selected Canvas PNG dependencies, reports versioned conformance/baseline consistency and checked image bytes, and discovers no additional files. It changes no files or state and lists source fidelity, reader, human visual review and canonical registration as not checked. Explicit required IR and actual Markdown filename are enforced",
       "enforcement_layer": "cli"
     },
     {

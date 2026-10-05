@@ -2,6 +2,11 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "analysis-canvas-selected-source-visuals",
+      "description": "用户规定：Canvas图片补充仅限实验数据表和关键流程图，分别贴近Experiments对应比较/消融和Method总览/实际模块；段落截图与逐字摘录留在Markdown。图片不替代五分支或具名可编辑子节点，保留题注/标签/单位/限定、核实原文入口、准确正文反链与显式附件归属，实际图仍须对齐、无交叉/遮挡且可读。开发树已有typed图卡、PNG/归属校验、旧布局保护与带图包导出/恢复的合成证据；这些不证明选区科学充分性或Obsidian实际显示。当前安装0.40.2不支持新字段、真实V-JEPA2样本尚未增图，安装态显示/点击及人工评鉴仍pending。见planning/canvas-selected-images-plan.md。",
+      "status": "pending"
+    },
+    {
       "id": "resource-native-open-reusable-recipe",
       "description": "G17：find-resource安装版按需reference持有实时父子附件/enclosure定位、cmux当前/明确打开位置、child-only拒绝与非侵入交接。无Hub/Scholar绑定前置；独立区分接受、显示和人工便利性，原PDF不冒称数据库批注或同步。既有0.40.1单篇实机显示证据保留；0.40.2规则安装字节及人类便利性未核前pending，不通过重跑分析/实验来验收本说明。见planning/native-tool-runtime-contract.md。",
       "status": "pending"
