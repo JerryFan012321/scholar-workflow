@@ -7,6 +7,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **find-resource / deployment evidence only:** record normal 0.40.2 hotfix release and
+  installation of the native-open reference. Installed CLI, pinned runtime commit,
+  both cached manifests and skill/reference bytes agree. Preserve the prior real-window
+  evidence and four source hashes; no business replay, Canvas edit, service change or
+  main merge. Human usability and the complete exemplar goal remain pending.
 - **analyze-paper / installed exemplar evidence only:** apply the 33 targeted quotation,
   location and qualification corrections through installed 0.40.1 paired staging/commit
   and explicit provider registration. Record the initial overlap refusal and bounded

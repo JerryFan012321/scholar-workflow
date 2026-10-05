@@ -4,7 +4,7 @@
 
 将已实证的cmux打开步骤放入find-resource的既有resource-location reference，
 使安装后的skill可按需调用。不改变定位身份、源码接口、权限或任何已认可Canvas。
-0.40.2只是一轮文档修正候选，发布/安装身份须由实际回执补充。
+0.40.2已正常发布安装，发布/安装身份在下方与分离部署JSON记录；开发验证不冒称GUI验收。
 
 ## 冻结测试范围与预期
 
@@ -37,3 +37,17 @@ find-resource quick_validate通过，原触发description未变；本机open/ide
 
 版本修正后定向11项（版本契约+eval schema）全部通过，0.06秒；与前述1712通过结果共同
 覆盖原1713项，不宣称重新跑了一次完整suite。Skill及diff检查通过；发布/安装待实际回执。
+
+### 正常发布安装回执
+
+- source：7fb712ab795d160900745b89f53f365b68871184（codex/hotfix-project-context）。
+- runtime：8704947fbe4d04deacca17ed0bd1be2225e2d31c。独立干净clone使用既有release脚本，
+  从权威remote release正常fast-forward推送；242 runtime文件不含开发层，个人路径/样例ID扫描无命中。
+- pipx正常固定已推送runtime SHA安装，PATH CLI为0.40.2；direct_url commit_id及requested_revision一致。
+- 只刷新jerry-plugins marketplace并通过codex plugin add正常安装0.40.2，不手改缓存。
+  双宿主manifest同版本；安装skill/reference SHA256分别95442c3a…、66dd99bd…，与提交字节相同。
+- PDF、Markdown、Canvas、sidecar四hash与本轮前现有证据更新记录相同；不重新启动窗口或重跑业务。
+- test既有“原生工具验收-0.40.1”保存“运行期规则更新-0.40.2.md”与“部署结果-0.40.2.json”。
+  仍待人工便利性确认；新会话加载新版规则，不宣称当前会话已自动重载。
+- 回退：runtime21c29a734795071e0cdfb0a57575ccde31984756；旧0.40.1缓存仍保留，按正常安装入口恢复，
+  不自动执行回退、不修改服务或业务库。main未合并，G17仍active。

@@ -13,8 +13,9 @@ conformance通过；四显式附件随13文件inventory在一个新目录、隔�
 不降低安全、不要求Hub、不修改现有用户终端。test中的中文操作说明和分离机器结果可复用；
 四原件hash不变。阅读便利性仍待人工，其他交付不由该动作代替，详见native-tool-interaction-results.md。
 
-运行期沉淀后续：find-resource既有resource-location已补入原生打开的可复用说明；0.40.2候选
-仍需正常打包安装后核对实际规则字节，不手改缓存。保留上述真实显示证据，不重跑论文或实验；
+运行期沉淀后续：find-resource既有resource-location已补入原生打开的可复用说明；0.40.2已
+正常发布安装，实际规则字节、PATH CLI/pipx commit和双cache manifest一致，不手改缓存。
+保留上述真实显示证据，四业务hash不变，不重跑论文或实验；
 人工便利性和其他模范对象仍独立pending。见native-tool-runtime-contract.md。
 
 来源可靠性后续：只核当前单篇全部69条内容，35条限定支持、33条需补摘录/实际页范围/推断

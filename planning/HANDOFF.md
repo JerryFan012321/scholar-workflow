@@ -8,9 +8,14 @@
 当前安装版0.40.1的find-resource没有原生cmux操作细节；已验证流程仅存开发/test记录。
 本轮只将按请求打开、本机enclosure定位、当前/明确目的地、child-only拒绝和结果分级写入
 既有resource-location reference；不新增工具控制面、模型推理流程或Canvas图片。
-按同一hotfix准备0.40.2候选，先进行合成unit/contract及eval结构回归，再正常打包安装。
-尚未执行的安装/人工评鉴不得记通过；不重跑单篇分析、实验或原生窗口业务操作。
+同一hotfix0.40.2已正常发布安装：source7fb712ab795d160900745b89f53f365b68871184，
+runtime8704947fbe4d04deacca17ed0bd1be2225e2d31c。首次完整1712通过/1版本遗漏失败，
+补常量后11版本/eval复验通过；不假称另跑完整suite。安装CLI/pipx commit/双cache manifest
+及skill/reference字节一致，242 runtime文件边界与个人路径/样例ID扫描通过。
+人工便利性仍pending；不重跑单篇分析、实验或原生窗口业务操作。四业务原件hash不变。
 独立输入、预期和结果边界见native-tool-runtime-contract.md；已有项目清单覆盖授权仍pending。
+test既有原生工具验收目录新增0.40.2中文更新说明与分离部署JSON；旧实机显示证据原样保留。
+回退runtime为21c29a734795071e0cdfb0a57575ccde31984756；不合并main、不切换服务。
 
 ## 2026-10-05 当前单篇定点补证据已提交
 
