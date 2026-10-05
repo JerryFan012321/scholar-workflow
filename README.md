@@ -84,6 +84,11 @@ paper enrollment. PDF/ZotFlow capability checks remain independent.
 
 ### Register one knowledge Field without Hub (0.36.0)
 
+From 0.39.0, export portable ownership with
+`knowledge reproduction-plan` and restore a copied, explicitly attached Source with
+`knowledge restore-plan/restore`. See [replay contract](references/knowledge-reproduction.md)
+for exact inputs, non-overwrite boundaries and outstanding reader/source/human checks.
+
 After `knowledge preview`, choose exactly one candidate relative root. Run
 `scholar-workflow knowledge registration-plan /absolute/selected/folder --field-root .`,
 review its navigation and digest, then `knowledge register /absolute/selected/folder

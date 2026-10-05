@@ -70,6 +70,10 @@ scholar-workflow knowledge open SOURCE_ID '相对目录/解析树.canvas' --lang
 
 ### 不依赖 Hub，登记单个知识领域（0.36.0）
 
+0.39.0 起支持便携归属复现：`knowledge reproduction-plan` 导出明确归属；
+复制并显式附着 Source 后用 `knowledge restore-plan/restore` 恢复缺失 provider。
+输入、拒绝覆盖及阅读器/来源/人工待验收边界见[复现契约](references/knowledge-reproduction.md)。
+
 预览后选择一个候选相对目录（单个子目录为 `.`），运行：
 
 ```bash
