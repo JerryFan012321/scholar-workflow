@@ -80,6 +80,13 @@ in `.scholar-workflow/artifacts.yml`. Use it for this portable exemplar rather t
 inventing an owner or injecting private fields into Canvas. This declaration alone is not full
 cross-host provider restoration or proof that reader links work at a new destination.
 
+For an explicitly requested copy to another registered root/host, use the shared
+`${CLAUDE_PLUGIN_ROOT}/references/knowledge-reproduction.md` contract's
+`knowledge reproduction-plan` and `restore-plan/restore` interfaces when present in
+the installed version. They preserve the canonical pair and restore ownership without
+regenerating it; reader rebindings and source/human assessments remain separate.
+Field attachment or a portable Canvas declaration alone is not provider restoration.
+
 ## Completion evidence
 
 Show the actual installed version, input identity/hash, per-paper batch result and

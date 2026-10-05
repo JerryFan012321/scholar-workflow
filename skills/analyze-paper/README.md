@@ -83,6 +83,12 @@ The [Canvas declaration contract](../../references/canvas-registration.md) cover
 review, unchanged prose/graph, conflicts and conditional recovery. This is not full provider
 restoration on another host or scientific/human approval.
 
+From 0.39.0, ownership replay provides `knowledge reproduction-plan` and
+`restore-plan/restore` for a copied, explicitly attached Source. It preserves all content,
+refuses existing providers, and records reader/source handoffs separately; see the shared
+[reproduction contract](../../references/knowledge-reproduction.md). Verify these commands
+are present in the installed version; tests are not external-tool or human acceptance.
+
 The historical v4 Canvas is a concise view, not a second knowledge database. It uses one root, four branches,
 gray framework labels, and fine parent-child lines instead of card panels. The v4 budget is at
 most 40 generated claim/detail Canvas nodes and 96 total generated Canvas nodes including framework labels. User

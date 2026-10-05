@@ -3,7 +3,46 @@
 > 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
 > `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-10-05。
 
-## 2026-10-05 当前切片：单篇 Canvas 便携登记
+## 2026-10-05 当前交付：0.39.0 归属复现 hotfix
+
+此前完整1676项回归通过；本轮仅同步两个plugin manifest、包/module版本及说明到0.39.0，
+再做版本/CLI/归属定向回归后按正常release脚本构建、推送、pipx及Codex marketplace安装。
+不合并main，不改变服务，不提交用户的analysis-v5-human-review-plan与两个quotation-preview文件。
+回退0.38.3 runtime8f2cdacbabb2d7b963ae805e0fbc4bae9d435a6a。
+安装后仅在test Vault新目录复制当前单篇Source的明确inventory，隔离SCHOLAR_WORKFLOW_HOME
+模拟新主机；通过安装版registration-plan/register及restore-plan/restore恢复归属、复验hash，
+并用公开knowledge open展示。原Source/host registry/provider/正文/图及正式资料均不修改。
+源身份和字节保持不代表科学支持已通过；原文/页面解释、真实reader点击及人工阅读分别记录。
+结果写hotfix-0.39.0-results.md；当前仍是待提交/发布/安装计划，不能冒称已完成。
+
+## 2026-10-05 最新：完整摘录已提交，Canvas 保持不变
+
+下一开发切片：明确Source归属复现输入的只读导出，独立方案knowledge-reproduction-inventory-plan.md。
+现有Field attach/Canvas声明不恢复整份provider；不覆盖模范项目既有context、不重做论文分析。
+只读公开reproduction-plan及版本化package schema已实现，26新增测试与登记/评估组合86通过，
+Ruff/diff通过。未提交/发布/安装，未对真实Source执行；恢复侧仍未实现，不能声称整份provider
+可跨机重建。下一步实现目标归属恢复、CAS/冲突/reader/source边界，再同批正常发布安装。
+具体证据knowledge-reproduction-inventory-results.md；不重复整库操作或已认可论文格式测试。
+
+当前续行已实现 restore-plan/restore：仅为显式登记的新目的地创建缺失的 provider，保存恢复
+journal；不复制/改正文或 Canvas，不覆盖已有 provider。输入绑定文件、目标身份和
+Local API 附件/PDF；reader 及科学/人工验收分开报告。30项恢复合成测试通过，中断/续接、
+并发修改、journal篡改、PDF hash及reader变化有独立反例；组合112通过，Ruff/diff通过。
+完整unit/contract：1676 passed、11既有warnings（84.43秒）。未提交/发布/安装，真实单篇目的地
+重建未执行；旧安装仍0.38.3。共享知识复现契约和analyze-paper按需指针已补齐，trigger不变。
+
+安装版0.38.3已对现有test V-JEPA2单篇执行stage-update、commit-bundle和明确change-set登记。
+70处旧短摘录已扩为完整原句及必要语境：58同页连续文本、9跨页连续作者段落，2公式符号和
+1双栏题注经PDF目视核对。跨页证据补可见页范围；原始来源身份和链接不变。36claims/69内容
+守恒，整个Canvas JSON数据与更新前相同：106节点/105边、文本/链接/几何/样式均保留。
+Canvas字节编码规范化为8baf7daf，不冒称物理hash未变；最终check-bundle为conformant、零findings。
+当前Markdown hash d02be6fc，sidecar047f535d；provider最后登记回执dee52620…。
+test资料包复现/完整摘录-0.38.3/保存输入、核验、两次成对提交及登记回执、修订结果。
+knowledge open已请求打开正文；新摘录阅读体验仍待人工确认，不重做已认可图的评审。
+PDF、Field、registry和便携声明hash不变；正式库/其他论文/项目/服务/main未改。无需新runtime发布。
+以下段落保留为此前切片的历史记录，其“短摘录尚未修订”不再表示当前状态；G17尚未整体完成。
+
+## 2026-10-05 历史切片：单篇 Canvas 便携登记
 
 **0.38.3已正常发布安装：source12f054003773cd14dce274030cefa448c8422e89，runtime
 8f2cdacbabb2d7b963ae805e0fbc4bae9d435a6a，PATH CLI/module/dist/Codex cache及两manifest一致。

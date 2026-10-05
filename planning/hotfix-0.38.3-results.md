@@ -50,3 +50,18 @@ SHA-256前后全部相同；没有重排106个节点和105条边。
 本地test论文目录新增“复现/便携声明-0.38.3/使用说明.md”，机器plan/receipt单列。
 installed knowledge open已请求Obsidian打开说明，但这里只记录请求成功，不声称目视确认。
 本轮没有扩写真实旧摘录、没有生成新图，也没有重跑整篇分析或批量迁移。
+
+## 后续安装态内容修订：已执行
+
+此段覆盖上节登记阶段“没有扩写”的历史状态，不改变已发布运行包。
+
+- 当前Zotero附件QR4ZU2S9仍为48页，hash9cfcfde5…，经Local API索引全文、本机PDF及必要页面目视核对。
+- 现有单篇70处摘录已扩为完整原句与必要语境：58同页连续文本、9跨页连续作者段落、2公式符号及1双栏题注。
+- installed stage-update先零写入暂存，commit-bundle提交并用回执change-set登记；随后仅对8条跨页证据补可见范围，仍走同一流程。
+- 全部36claims/69内容保留；完整Canvas JSON图数据与更新前相同，106节点/105边、文字、链接、位置、样式和metadata均不变。
+- Canvas保存字节编码由c8e2c97b…规范化为8baf7daf…，登记实际物理hash，不冒称字节未变。
+- 最终check-bundle：conformant、findings为空。Markdown hash d02be6fc…；sidecar047f535d…。
+- 第一次通用check对内部stage的analysis.md文件名报反链stem不一致；stage自身已validated，实际目标名下最终检查通过。这是检查接口误用，不掩饰为全程零错误。
+- 最后provider receipt knowledge-apply:dee52620c1f0f3b3f3a2242b899a971b0ce748ded8ddd659deaf2f16c4d1f836。
+- test现有论文目录复现/完整摘录-0.38.3/保存完整输入、来源核验、提交/登记回执与人类说明；knowledge open请求成功，人工阅读仍pending。
+- PDF、Field、host registry与便携manifest hash保持不变；正式库、其他论文、项目、服务及main均未改，不重跑整库或发布新版本。

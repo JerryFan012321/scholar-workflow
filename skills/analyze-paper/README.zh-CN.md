@@ -76,6 +76,11 @@ Source 可以只是 Vault 子目录。`knowledge reader SOURCE_ID` 会查找包�
 只追加所选声明，不重写正文和图；冲突与中断恢复见[Canvas 登记契约](../../references/canvas-registration.md)。
 这一步不等于整份 provider 已跨机恢复，也不代表科学支持或人工评鉴通过。
 
+0.39.0 起，归属复现入口 `knowledge reproduction-plan` 与 `restore-plan/restore` 用于明确复制、
+附着后的 Source：保留所有内容，只创建缺失的目标 provider，不覆盖已有 provider；阅读器、
+来源及人工交接分别记录。详见[复现契约](../../references/knowledge-reproduction.md)。
+使用前检查安装版是否已有命令；自动测试通过不代表外部工具或人工评鉴通过。
+
 历史 v4 Canvas 是简洁、可编辑的树形视图，不是第二份知识正文：单根、四大分支、浅灰框架标签和细线
 连接，不使用四张卡片。v4 最多有 40 个生成的 claim/details Canvas 语义节点，包含框架标签和合并详情节点在内的受管 Canvas 节点最多
 96 个；用户自建的文本、文件、链接和分组节点不占该预算。生成器提供方角连线提示，已安装的

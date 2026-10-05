@@ -3284,6 +3284,97 @@ def knowledge_register_canvas(approved_digest: str, yes: bool, **selection) -> N
     click.echo(json.dumps(result, ensure_ascii=False, indent=2))
 
 
+@knowledge.command(name="reproduction-plan")
+@click.option("--source-id", required=True)
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["en", "zh"]), default="en")
+def knowledge_reproduction_plan(source_id: str, fmt: str, language: str) -> None:
+    """Export one explicit Source's portable ownership and file checks, without writes."""
+    from scholar_workflow.workflows.knowledge_reproduction import reproduction_plan
+
+    try:
+        result = reproduction_plan(_local_field_service().registry, source_id=source_id)
+    except (RuntimeError, OSError, ValueError, TypeError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    if fmt == "json":
+        click.echo(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        zh = language == "zh"
+        package = result["package"]
+        click.echo("# 知识归属复现输入\n" if zh else "# Knowledge reproduction input\n")
+        click.echo(("Source：" if zh else "Source: ") + source_id)
+        click.echo(("已核文件：" if zh else "Checked files: ") + str(len(package["files"])))
+        click.echo(("需重新绑定阅读器：" if zh else "Reader rebinding required: ")
+                   + str(len(package["reader_rebind_required"])))
+        click.echo(("输入摘要：" if zh else "Input digest: ") + result["package_digest"])
+        click.echo("零写入；尚未恢复目的地或完成人工/科学验收。机器输入使用 --format json。" if zh else
+                   "Nothing written; destination not restored or human/source-approved. Use --format json for replay input.")
+
+
+def _reproduction_restore_options(command):
+    command = click.option("--source-id", required=True)(command)
+    command = click.option("--package", required=True, type=click.Path(path_type=Path))(command)
+    command = click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")(command)
+    return click.option("--language", type=click.Choice(["en", "zh"]), default="en")(command)
+
+
+def _reproduction_restore_summary(result, fmt, language, *, committed):
+    if fmt == "json":
+        click.echo(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+    zh = language == "zh"
+    click.echo("# 知识归属恢复\n" if zh else "# Knowledge ownership restoration\n")
+    click.echo(("Source：" if zh else "Source: ") + result["source_id"])
+    click.echo(("确认摘要：" if zh else "Confirmation digest: ") + result["approved_digest"])
+    if committed:
+        click.echo("已恢复归属；正文、Canvas 和便携清单未修改。" if zh else
+                   "Ownership restored; prose, Canvas and portable manifests unchanged.")
+    else:
+        click.echo(("已核文件：" if zh else "Checked files: ") + str(len(result["files"])))
+        click.echo("尚未写入；只会创建缺失的主机 provider 和恢复记录。" if zh else
+                   "Nothing written; creates only missing host ownership and recovery records.")
+    for reader in result["readers"]:
+        labels = {"binding-matched": "阅读器身份匹配", "rebinding-required": "需要重新绑定阅读器",
+                  "reader-unresolved": "阅读器未登记或不明确"}
+        click.echo(reader["artifact_id"] + ": " + (labels[reader["status"]] if zh else reader["status"]))
+    click.echo("阅读器实际打开、科学支持和人工评鉴尚未通过；不是已验证备份或全部复现完成。" if zh else
+               "Reader launches, scientific support and human review remain unverified; not a verified backup or complete reproduction.")
+
+
+@knowledge.command(name="restore-plan")
+@_reproduction_restore_options
+def knowledge_restore_plan(source_id, package, fmt, language):
+    """Preview restoring exported ownership into one explicitly attached Source."""
+    from scholar_workflow.adapters.zotero_local import ZoteroLocalAdapter
+    from scholar_workflow.workflows.knowledge_reproduction import restore_plan
+    try:
+        with ZoteroLocalAdapter() as zotero:
+            result = restore_plan(_local_field_service().registry, zotero, source_id=source_id, package=package)
+    except (RuntimeError, OSError, ValueError, TypeError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    _reproduction_restore_summary(result, fmt, language, committed=False)
+
+
+@knowledge.command(name="restore")
+@_reproduction_restore_options
+@click.option("--approved-digest", required=True)
+@click.option("--yes", is_flag=True)
+def knowledge_restore(source_id, package, fmt, language, approved_digest, yes):
+    """Create missing ownership from the reviewed input, or resume its exact journal."""
+    from scholar_workflow.adapters.zotero_local import ZoteroLocalAdapter
+    from scholar_workflow.workflows.knowledge_reproduction import restore
+    if not yes:
+        click.confirm("恢复已审阅的知识归属？" if language == "zh" else
+                      "Restore the reviewed ownership?", abort=True, err=True)
+    try:
+        with ZoteroLocalAdapter() as zotero:
+            result = restore(_local_field_service().registry, zotero, source_id=source_id,
+                             package=package, approved_digest=approved_digest)
+    except (RuntimeError, OSError, ValueError, TypeError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    _reproduction_restore_summary(result, fmt, language, committed=True)
+
+
 @knowledge.command(name="registration-plan")
 @click.argument("root", type=click.Path(path_type=Path))
 @click.option("--field-root", help="Exactly one relative root from knowledge preview.")

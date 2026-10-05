@@ -2,13 +2,18 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "knowledge-portable-provider-reproduction",
+      "description": "G17：从明确注册的Source导出完整资源/附属产物归属、Field、相对路径及文件hash，移除主机root绑定和旧回执，不扫描推断owner、不复制PDF或密钥；新目的地经明确preview/CAS恢复本机provider，保持稳定identity和正文/Canvas格式，并独立处理reader/source可用性。开发树reproduction-plan及restore-plan/restore已实现；26导出与30恢复合成测试通过，完整unit/contract 1676 passed、11既有warnings；未正常hotfix安装或执行单对象目的地重建，不能用导出、Field attach或合成恢复冒称整个能力通过。见planning/knowledge-reproduction-inventory-results.md。",
+      "status": "pending"
+    },
+    {
       "id": "knowledge-installed-portable-canvas-declaration",
       "description": "G17的单篇便携声明子项：0.38.3 source12f0540/runtime8f2cdac正常安装后，public canvas-plan/register-canvas在现有test V-JEPA2 Source新增artifacts.yml；同摘要回执字段值一致，正文/图/sidecar/provider/Field/registry六hash不变。24登记定向与完整1620合成测试通过，漂移、冲突、中断与无关行由独立fixture覆盖。此pass仅证明本接口和安装态单对象声明，不证明整份provider跨机恢复、科学支持、人工审美或G17完成；记录见planning/hotfix-0.38.3-results.md。",
       "status": "pass"
     },
     {
       "id": "analysis-readable-complete-source-excerpts",
-      "description": "用户规定：普通论述原文摘录至少保留一个完整原句，必要时含相邻原句交代主语/条件/限制；图表/公式保留完整题注/定义/结果标签及必要原文解释，不能只用关键词、半句或图号。逐字、来源链接和语境充分性分别核验；Canvas 不重复摘录，已认可五分支格式不变。结构 quote matching 不证明此人工内容评鉴通过；既有 V-JEPA2 短摘录修订和评鉴仍待完成。",
+      "description": "用户规定：普通论述原文摘录至少保留一个完整原句，必要时含相邻原句交代主语/条件/限制；图表/公式保留完整题注/定义/结果标签及必要原文解释，不能只用关键词、半句或图号。逐字、来源链接和语境充分性分别核验；Canvas不重复摘录。installed0.38.3已在现有test V-JEPA2经公开成对流程提交70处完整摘录，58同页连续文本/9跨页作者段落/2公式符号及1双栏题注独立核验；36claims/69内容及完整106节点/105边图数据不变，最终conformance零findings。新摘录阅读体验尚未得到用户确认，保持pending，不把字面匹配当作人工评鉴或全篇科学支持认证；见planning/hotfix-0.38.3-results.md。",
       "status": "pending"
     },
     {

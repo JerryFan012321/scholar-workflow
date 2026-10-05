@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholar-workflow.local/contracts/knowledge-reproduction-package.schema.json",
+  "title": "Explicit portable Knowledge replay input, not a live provider or verified backup",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_id",
+    "fields",
+    "provider",
+    "files",
+    "reader_rebind_required"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "source_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "fields": {
+      "$ref": "#/$defs/FieldManifest"
+    },
+    "provider": {
+      "allOf": [
+        {
+          "$ref": "knowledge-provider-snapshot.schema.json"
+        },
+        {
+          "properties": {
+            "vault_binding": {
+              "type": "null"
+            },
+            "receipts": {
+              "maxItems": 0
+            },
+            "catalog": {
+              "properties": {
+                "sources": {
+                  "maxItems": 0
+                },
+                "diagnostics": {
+                  "maxItems": 0
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "files": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      }
+    },
+    "reader_rebind_required": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "$defs": {
+    "FieldDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "relative_root": {
+          "title": "Relative Root",
+          "type": "string"
+        },
+        "home": {
+          "title": "Home",
+          "type": "string"
+        },
+        "navigation": {
+          "items": {
+            "$ref": "#/$defs/FieldNavigationGroup"
+          },
+          "title": "Navigation",
+          "type": "array"
+        }
+      },
+      "required": [
+        "field_id",
+        "title",
+        "relative_root",
+        "home"
+      ],
+      "title": "FieldDefinition",
+      "type": "object"
+    },
+    "FieldNavigationGroup": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Items",
+          "type": "array"
+        }
+      },
+      "required": [
+        "label"
+      ],
+      "title": "FieldNavigationGroup",
+      "type": "object"
+    },
+    "FieldManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "source_id": {
+          "title": "Source Id",
+          "type": "string"
+        },
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/FieldDefinition"
+          },
+          "title": "Fields",
+          "type": "array"
+        }
+      },
+      "required": [
+        "source_id",
+        "fields"
+      ],
+      "title": "FieldManifest",
+      "type": "object"
+    }
+  }
+}

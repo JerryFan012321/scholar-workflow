@@ -7,10 +7,32 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **development ledger only:** installed 0.38.3 now paired-commits 70 complete source excerpts
+  and explicit cross-page evidence labels in the existing single V-JEPA 2 test package.
+  All claims and the complete Canvas graph are preserved; final conformance passes.
+  New excerpt readability remains pending human confirmation. No new runtime release or bulk refresh.
+
 - **development ledger only:** record normal 0.38.3 publication/installation and its single-paper
   portable Canvas declaration. Replay preserves receipt values and all six protected file hashes;
   the readable replay note is in the existing test package. This does not revise real quotations,
   certify human/source assessment, restore a cross-host provider or introduce another runtime build.
+
+## [0.39.0] - 2026-10-05
+
+### Added
+
+- **analyze-paper / knowledge reproduction:** zero-write `knowledge reproduction-plan`
+  exports one explicit Source's portable ownership, file hashes and reader-rebinding requirements.
+  The public replay-input schema reuses strict provider contracts without host roots or old receipts.
+  Missing/drifted/unsafe/incomplete bundles and concurrent read-set changes refuse export.
+  `knowledge restore-plan/restore` binds the explicit destination, package/file bytes and
+  Local API attachment identity, exclusively creates missing host ownership, and conditionally
+  resumes a durable journal without rewriting content or importing old receipts. Reader rebinding,
+  scientific support and human acceptance remain explicit handoffs.
+- **analyze-paper:** installed replay contract covers export, explicit copied-Source attachment,
+  digest-bound restoration, interruption/conflict recovery and reader/source handoffs without
+  changing the accepted Markdown/Canvas format or requiring Hub. The 1,676-case unit/contract
+  suite passes; live installation/replay and human acceptance are recorded separately.
 
 ## [0.38.3] - 2026-10-05
 
