@@ -2,6 +2,16 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "knowledge-installed-portable-canvas-declaration",
+      "description": "G17：单篇已归属分析经安装版 knowledge canvas-plan/register-canvas，在 Source 的 artifacts.yml 声明稳定身份与父级，保留正文/图/sidecar/provider/Field 与无关清单行；漂移、冲突和中断须明确拒绝或条件恢复。合成测试不代替安装态单对象验收，也不证明整份 provider 跨机恢复、科学支持或人工审美。",
+      "status": "pending"
+    },
+    {
+      "id": "analysis-readable-complete-source-excerpts",
+      "description": "用户规定：普通论述原文摘录至少保留一个完整原句，必要时含相邻原句交代主语/条件/限制；图表/公式保留完整题注/定义/结果标签及必要原文解释，不能只用关键词、半句或图号。逐字、来源链接和语境充分性分别核验；Canvas 不重复摘录，已认可五分支格式不变。结构 quote matching 不证明此人工内容评鉴通过；既有 V-JEPA2 短摘录修订和评鉴仍待完成。",
+      "status": "pending"
+    },
+    {
       "id": "knowledge-installed-native-document-open",
       "description": "G17：安装版 knowledge reader/open 识别子目录 Source 的唯一 Obsidian Vault，原生打开其既有 Markdown/Canvas；无需Hub、workspace或CLI设置，registry与正文不变。实际显示、编辑和点击需会话明确人工确认；不能代替论文provider归属、canonical提交或ZotFlow本机能力验收。",
       "status": "pending"

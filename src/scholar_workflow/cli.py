@@ -3232,6 +3232,58 @@ def knowledge_register_paper(approved_digest: str, yes: bool, **selection) -> No
     click.echo(json.dumps(result, ensure_ascii=False, indent=2))
 
 
+def _canvas_selection_options(command):
+    for name in ("source-id", "field-id", "artifact-id"):
+        command = click.option("--" + name, required=True)(command)
+    return command
+
+
+@knowledge.command(name="canvas-plan")
+@_canvas_selection_options
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["en", "zh"]), default="en")
+def knowledge_canvas_plan(fmt: str, language: str, **selection) -> None:
+    """Zero-write portable declaration plan for one already-owned analysis Canvas."""
+    from scholar_workflow.workflows.register_canvas import canvas_plan
+
+    try:
+        plan = canvas_plan(_local_field_service().registry, **selection)
+    except (RuntimeError, OSError, ValueError, TypeError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    if fmt == "json":
+        click.echo(json.dumps(plan, ensure_ascii=False, indent=2))
+    else:
+        zh = language == "zh"
+        click.echo("# Canvas 便携登记方案\n" if zh else "# Portable Canvas registration plan\n")
+        click.echo(plan["artifact"]["vault_path"] + "\n")
+        click.echo("只更新身份清单；不改正文、图或 provider。" if zh else
+                   "Only the identity manifest changes; prose, graph and provider remain unchanged.")
+        click.echo("已登记，无需改变。" if zh and plan["status"] == "unchanged" else
+                   "Already declared; no change needed." if plan["status"] == "unchanged" else
+                   "将新增单篇声明，其他行保留。" if zh else "Append one declaration; preserve other rows.")
+        click.echo(("确认摘要：\n" if zh else "Confirmation digest:\n") + plan["approved_digest"])
+        click.echo("尚未写入；不证明科学支持、人工评鉴或整库跨机恢复。" if zh else
+                   "Nothing written; source support, human assessment and full cross-host recovery are not proven.")
+
+
+@knowledge.command(name="register-canvas")
+@_canvas_selection_options
+@click.option("--approved-digest", required=True)
+@click.option("--yes", is_flag=True)
+def knowledge_register_canvas(approved_digest: str, yes: bool, **selection) -> None:
+    """CAS-register one reviewed portable Canvas identity, with conditional replay."""
+    from scholar_workflow.workflows.register_canvas import register_canvas
+
+    if not yes:
+        click.confirm("Register the reviewed Canvas declaration?", abort=True, err=True)
+    try:
+        result = register_canvas(_local_field_service().registry,
+                                 approved_digest=approved_digest, **selection)
+    except (RuntimeError, OSError, ValueError, TypeError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    click.echo(json.dumps(result, ensure_ascii=False, indent=2))
+
+
 @knowledge.command(name="registration-plan")
 @click.argument("root", type=click.Path(path_type=Path))
 @click.option("--field-root", help="Exactly one relative root from knowledge preview.")

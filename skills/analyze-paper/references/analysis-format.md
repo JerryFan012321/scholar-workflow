@@ -179,21 +179,34 @@ Vault block against its registered document. Stale locators require re-verificat
 
 New analyses explicitly set `profile.markdown_quotes: true`. Each `author_stated` or
 `analysis_inference` claim and point supplies at least one short, contiguous, verbatim excerpt in
-its supporting `source_span.quote` (1–400 characters). PDF and registered Markdown spans both
+its supporting `source_span.quote` (1–1,600 characters). This is storage capacity, not a target
+length or permission to exceed applicable quotation limits. PDF and registered Markdown spans both
 support this field. The excerpt follows that statement in the human Markdown, with the same
 span's page/annotation or block link; it is not a separate Evidence section or a bibliography.
 For an inference, quote the source observation it rests on, not an invented author conclusion.
 
 Keep the original spelling, punctuation, qualifications, and language. A translation or
-paraphrase remains analysis prose, not the exact quote. Use the shortest sufficient passage within
-applicable quotation limits; do not silently splice passages or insert an ellipsis into `quote`.
+paraphrase remains analysis prose, not the exact quote. An ordinary prose excerpt must contain
+at least one complete source sentence that a reader can understand on its own, including the
+relevant subject, conditions and qualifications. One sentence is a minimum, not a target or a
+completion shortcut: the passage must expose the source observation supporting the nearby
+analysis. Include adjacent complete source sentences when a pronoun, comparison or claim would
+otherwise lack its necessary context. A few keywords,
+an isolated clause, or a figure/table label alone does not satisfy the readable-excerpt contract,
+even if it occurs verbatim on the cited page. More words are not automatically better evidence.
+For non-sentence source material such as equations or tables, retain a complete relevant caption,
+definition or labeled result together with the source explanation needed to interpret it; do not
+invent a sentence or disguise analysis prose as quotation. Choose a sufficient contiguous passage
+within applicable quotation limits and the span capacity; do not truncate a sentence to fit,
+silently splice passages or insert an ellipsis into `quote`.
 Multiple excerpts use separate spans and source links. If the accessible source channel cannot
 verify the wording or its precise location, report an explicit source gap rather than guessing a
 quotation or recording a supported success. Availability-only statements need no invented quote.
 
 The renderer escapes Markdown/HTML syntax to show source text literally. Conformance checks
 presence, attribution, link, and agreement with the supplied IR; it cannot prove verbatim fidelity
-to the source, which still requires source review. Canvas receives **no quote text or quote nodes**;
+or sentence/context sufficiency, which still require source review. A short fragment passing the
+structural gate is not a passed readable-excerpt assessment. Canvas receives **no quote text or quote nodes**;
 its concise claims, inline evidence, source links, backlinks, geometry, and node budgets are unchanged.
 
 Previously saved IRs omit this profile field (or set it to `false`) and keep their existing output,

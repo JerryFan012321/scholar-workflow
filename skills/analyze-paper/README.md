@@ -59,7 +59,10 @@ backlink. Page links are not exact text selections, and source identity/revision
 separately from structural conformance.
 New analyses also include short verbatim source excerpts immediately below the supported
 statement in Markdown, each with its own page/block link. Original wording and language are
-retained; paraphrases and translations are not presented as exact quotes. Unverifiable wording
+retained. Ordinary prose quotes include a complete source sentence and enough adjacent context
+to understand its subject, conditions and qualifications, not isolated keywords or figure labels;
+paraphrases and translations are not presented as exact quotes. The bounded quote capacity
+accommodates necessary context without imposing that capacity as a target length. Unverifiable wording
 is a source gap. Canvas does not repeat the quotations and retains the required editable tree.
 Older analyses remain unchanged; converting their format requires an explicit whole-analysis
 update, not a silent refresh. The detailed contract is `references/analysis-format.md`.
@@ -73,6 +76,12 @@ resolves the containing Obsidian Vault for the reader without granting parent
 folder access. `knowledge open SOURCE_ID 'relative/note.md'` (or `.canvas`)
 opens an existing document in its native editor without Hub; see the shared
 [registration/open contract](../../references/knowledge-registration.md).
+
+For a requested portable exemplar, use `knowledge canvas-plan` and `knowledge register-canvas`
+after paired commit/provider apply to declare the existing Canvas in the Source's artifact manifest.
+The [Canvas declaration contract](../../references/canvas-registration.md) covers digest-bound
+review, unchanged prose/graph, conflicts and conditional recovery. This is not full provider
+restoration on another host or scientific/human approval.
 
 The historical v4 Canvas is a concise view, not a second knowledge database. It uses one root, four branches,
 gray framework labels, and fine parent-child lines instead of card panels. The v4 budget is at

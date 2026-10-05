@@ -184,7 +184,7 @@ class ZoteroPdfSpan(BaseModel):
     page_label: str | None = Field(default=None, min_length=1, max_length=64)
     annotation_key: str | None = Field(default=None, pattern=r"^[A-Z0-9]{8}$")
     section: str | None = Field(default=None, min_length=1, max_length=160)
-    quote: str | None = Field(default=None, min_length=1, max_length=400)
+    quote: str | None = Field(default=None, min_length=1, max_length=1600)
 
 
 class VaultMarkdownSpan(BaseModel):
@@ -198,7 +198,7 @@ class VaultMarkdownSpan(BaseModel):
     vault_path: str = Field(min_length=4, max_length=512)
     block_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9-]{0,127}$")
     quote: str | None = Field(
-        default=None, min_length=1, max_length=400, exclude_if=lambda value: value is None
+        default=None, min_length=1, max_length=1600, exclude_if=lambda value: value is None
     )
 
     @field_validator("vault_path")

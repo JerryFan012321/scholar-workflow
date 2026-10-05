@@ -57,6 +57,9 @@ Vault Markdown 可跳到具体块。原文链接与 Canvas→正文反链同处�
 身份、版本和归属核验也不能由结构 conformance 代替。
 新分析正文在对应论点或逐点论据下方附**原文摘录**，并链接到同一原文页或段落。
 摘录保留原语言和原措辞；中文分析可以引用英文原句，意译或译文不冒充逐字引用。
+普通论述至少保留一个完整原句，必要时带相邻原句，交代主语、条件与限制；关键词、半句或孤立
+图号不算可读摘录。图表/公式需完整题注、定义或有标签的结果及必要原文解释。
+正文摘录容量允许保留必要语境，上限不是应凑满的目标长度，也不免除适用的引用限制。
 无法核实原措辞时明确报告来源缺口。Canvas 不重复摘录，保留规定的可编辑树与内容层级。
 旧分析不会自动改变；转换须显式请求整篇格式更新，不能只手改受管 Markdown。
 完整规范见 `references/analysis-format.md`。
@@ -67,6 +70,11 @@ Obsidian 内打开本机 Zotero 附件并定位物理页。不指定时仍生成
 Source 可以只是 Vault 子目录。`knowledge reader SOURCE_ID` 会查找包含它的 Obsidian Vault，
 但不扩大父目录权限；`knowledge open SOURCE_ID '相对目录/笔记.md'`（或 `.canvas`）
 可不经 Hub 直接打开已有文件。详见[登记与打开契约](../../references/knowledge-registration.md)。
+
+需要便携模范对象时，在成对提交/provider apply 后，通过 `knowledge canvas-plan` 预览，
+再用 `knowledge register-canvas` 将既有 Canvas 身份声明到 Source 的 artifacts.yml。
+只追加所选声明，不重写正文和图；冲突与中断恢复见[Canvas 登记契约](../../references/canvas-registration.md)。
+这一步不等于整份 provider 已跨机恢复，也不代表科学支持或人工评鉴通过。
 
 历史 v4 Canvas 是简洁、可编辑的树形视图，不是第二份知识正文：单根、四大分支、浅灰框架标签和细线
 连接，不使用四张卡片。v4 最多有 40 个生成的 claim/details Canvas 语义节点，包含框架标签和合并详情节点在内的受管 Canvas 节点最多

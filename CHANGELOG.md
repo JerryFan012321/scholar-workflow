@@ -5,6 +5,32 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.38.3] - 2026-10-05
+
+### Added
+
+- **analyze-paper / knowledge:** independent, digest-bound `knowledge canvas-plan/register-canvas`
+  for one already-owned analysis bundle. Publish its portable Canvas identity with manifest CAS
+  and conditional journal recovery, preserving the three content files, provider and unrelated rows.
+  28 focused checks and the 1,604-case unit/contract suite pass (11 existing warnings);
+  Ruff/skill validation pass. Development implementation; installed acceptance and full cross-host
+  restoration remain separate.
+
+### Changed
+
+- **analyze-paper:** increase only Markdown source-span quote capacity from 400 to 1,600
+  characters so complete sentences and necessary context need not be truncated. PDF and Vault
+  spans share the bounded capacity; Canvas summaries and geometry limits stay unchanged.
+  Independent synthetic boundary/render/update verification is recorded separately; this does
+  not certify existing paper quotations or installed acceptance.
+  Focused quotation/v5 checks: 127 passed; final complete unit/contract suite: 1,620 passed,
+  11 existing warnings in 82.80 seconds. Ruff, skill validation and diff checks pass.
+
+- **analyze-paper:** readable Markdown excerpts require complete source sentences and necessary
+  context, not keywords, isolated clauses or figure labels. Original wording and source links remain
+  mandatory; Canvas does not gain quotations or change its accepted five-branch layout. Structural
+  quote matching does not certify sentence/context adequacy; existing packages are not bulk refreshed.
+
 - **analyze-paper (development ledger only):** record normal 0.38.1/0.38.2
   installation, two canonical V-JEPA 2 evidence corrections in the existing test
   package, retained geometry, native backlink resolution, and the exact editor

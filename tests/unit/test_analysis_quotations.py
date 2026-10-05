@@ -1,7 +1,9 @@
 """Markdown quotations use one synthetic object and do not alter Canvas."""
 from __future__ import annotations
 
+import html
 import json
+import re
 from copy import deepcopy
 from pathlib import Path
 
@@ -54,6 +56,49 @@ def test_enabling_quotes_does_not_change_any_canvas_data() -> None:
     assert "Original excerpt" not in without_quotes.markdown
     assert "markdown_quotes" not in old.model_dump(mode="json")["profile"]
     assert validate_bundle(old, without_quotes, note_stem="Synthetic analysis").ok
+
+
+@pytest.mark.parametrize("version", [4, 5])
+def test_complete_context_quote_renders_and_updates_without_changing_canvas(version) -> None:
+    passages = (FIXTURE / "SOURCE-CONTEXT.md").read_text(encoding="utf-8").strip().split("\n\n")
+    if version == 4:
+        payload = _payload()
+        selected_claim = payload["claims"][0]
+        selected_evidence = selected_claim["evidence"]
+        quote = passages[0]
+    else:
+        payload = json.loads((FIXTURE.parent / "analysis_v5_toy.json").read_text(encoding="utf-8"))
+        selected_claim = next(claim for claim in payload["claims"] if claim["claim_id"] == "m-1")
+        selected_evidence = next(point for point in selected_claim["points"] if point["point_id"] == "method")["evidence"]
+        quote = passages[1]
+    assert 400 < len(quote) <= 1600
+    original = AnalysisDocument.model_validate(deepcopy(payload))
+    bundle, baseline = render_analysis_projection(original, note_stem="Synthetic analysis")
+    selected_evidence["source_spans"][0]["quote"] = quote
+    revised = AnalysisDocument.model_validate(payload)
+    rendered = render_analysis(revised, note_stem="Synthetic analysis")
+    assert rendered.canvas == bundle.canvas
+    quote_line = next(line for line in rendered.markdown.splitlines() if line.startswith(
+        "> " + quote.split(" ", 3)[0] + " " + quote.split(" ", 3)[1]
+    ))
+    assert html.unescape(re.sub(r"\\(.)", r"\1", quote_line[2:])) == quote
+    assert "\n".join(reference_source_quote_lines(
+        revised.claims[0].evidence if version == 4 else next(
+            point.evidence for claim in revised.claims if claim.claim_id == "m-1"
+            for point in claim.points if point.point_id == "method"
+        ), "en", indent="",
+    )) in rendered.markdown
+    assert validate_bundle(revised, rendered, note_stem="Synthetic analysis").ok
+
+    payload["profile"].update(kind="focused", roles=["method"])
+    payload["claims"] = [claim for claim in payload["claims"] if claim["role"] == "method"]
+    plan = plan_analysis_update(
+        baseline=baseline, current=bundle,
+        update=AnalysisDocument.model_validate(payload), note_stem="Synthetic analysis",
+    )
+    assert plan.status == "ready", plan.conflicts
+    assert plan.proposed.canvas == bundle.canvas
+    assert plan.proposed.markdown == rendered.markdown
 
 
 @pytest.mark.parametrize("markdown_quotes", [False, True])

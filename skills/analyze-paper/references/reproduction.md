@@ -74,6 +74,12 @@ entry in the selected Source/Field. Registration and analysis commit receipts ha
 different purposes. A successful new-folder registration does not adopt a displayed
 old package, certify its content, or replace the paired commit and provider apply.
 
+After the provider owns the complete pair, the public `knowledge canvas-plan/register-canvas`
+interface in the shared `canvas-registration.md` contract declares its existing Canvas identity
+in `.scholar-workflow/artifacts.yml`. Use it for this portable exemplar rather than manually
+inventing an owner or injecting private fields into Canvas. This declaration alone is not full
+cross-host provider restoration or proof that reader links work at a new destination.
+
 ## Completion evidence
 
 Show the actual installed version, input identity/hash, per-paper batch result and
