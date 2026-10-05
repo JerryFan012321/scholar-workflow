@@ -98,6 +98,8 @@ v5 为每条独立归属的逐点内容生成单独可编辑节点，不合并�
 Canvas metadata，先显式运行 `analysis acknowledge-canvas-metadata`，保存返回的
 `next_request` 后再暂存。校准只通过 provider CAS 记录已证明的新 hash，不改 Vault 文件，
 不接纳文字/布局变化，也不代表分析修订已提交；输入与回执独立保留。
+0.38.2 起可通过显式 `--registered-canvas-hash` 校准已有 metadata 图的纯编码变化，
+但须同时匹配 provider 旧 hash 和当前完整图的精确编码证明；不是通用格式化或布局接纳入口。
 
 复现包可运行 `scholar-workflow knowledge preview /所选文件夹绝对路径 --language zh`，
 不依赖 Hub 地检查导航、归属和冲突。它零写入，不是 Source 登记或论文验收。

@@ -7,6 +7,20 @@
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
 
+2026-10-05 最新安装态：0.38.1正常发布安装source0045097/runtime d6752da；CLI/module/dist/
+Codex cache一致。仅当前test canonical V-JEPA2两处证据经public metadata校准、stage-update、
+成对commit和provider apply成功。34未改claims、105旧节点几何/样式与104旧边保留，
+新增1推断节点；实际check通过69内容/106节点/105边，原生后台新图69反链全解析，
+修订说明4wiki入口解析。registry/Fieldhash不变。PDF/正式库/项目context/服务/main未改。
+
+关闭图时Advanced Canvas重新编码JSON，实际Canvas hash由8baf7daf变为c8e2c97b；
+完整JSON、全部nodes/edges/metadata逐项相同，canonical编码精确回到登记的8baf7daf。
+不能声称provider物理hash仍一致。0.38.2补显式--registered-canvas-hash，仅精确encoding
+证明与provider旧hash同时匹配才校准；不接受内容/布局变化，不手工还原文件。
+69定向通过、Ruff/skill通过；版本同步0.38.2后完整1580通过、11既有警告、80.87秒。
+准备正常发布安装此补丁，只校准实际encoding漂移，不重新分析或成对重写论文。
+当前可读成果仍是0.38.1正文/图和复现/证据修订-0.38.1/修订说明.md，GUI/点击/审美pending。
+
 2026-10-05 最新续行：已重新完整读取全局AGENT/RTK和安装态验收规则，普通确定性
 测试不再等待额外批准。stage-update、旧图保留提交守护及显式metadata校准的63项
 定向测试通过；补公开CLI拒绝/成功/重放及新路由后68项通过（1.58秒），变动模块Ruff通过。

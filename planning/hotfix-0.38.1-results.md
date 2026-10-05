@@ -28,3 +28,21 @@ analysis acknowledge-canvas-metadata只接受能精确证明的新增空frontmat
 校准、暂存、成对提交与回执登记。真实两点证据修订仍未提交，不用开发测试冒充安装态成果。
 GUI美观、编辑/点击与逐项科学支持仍独立待人工评鉴；未合并main、未改正式库或服务。
 模范项目既有context覆盖仍等待其独立业务授权；本切片不等于第一阶段全部完成。
+
+## 后续安装态结果（覆盖上述待执行状态）
+
+正常runtime-only发布安装完成：source00450977342a750778c621f7cce9f57a634fef29，
+runtime d6752da419c2cde8bfcfe99d369552a444fb4c11；CLI/module/dist/Codex cache均0.38.1。
+public metadata校准只记Canvas新hash；stage-update单篇validated、零修复/诊断；
+commit-bundle三文件committed，apply-change-set登记三项产物，commit回执重复查询完全相同。
+实际check为69内容、106节点、105边、五分支，原生后台加载106/105且69正文反链解析。
+34其他claims逐项不变；105旧节点几何/样式及104旧边保留，metadata保留。
+原文物理p5的图3和p14表2只读核对；未将引文匹配当成全篇科学支持评鉴。
+
+最后打开再关闭图发现编辑器重新编码：物理Canvas从8baf7daf变c8e2c97b；完整JSON完全相同，
+canonical编码匹配登记的8baf7daf，MD/sidecar未改。provider因此出现物理CAS漂移，不伪称
+链路稳定完成。另开0.38.2精确编码校准，不改回文件、不放宽布局/内容证明。
+
+可读入口在同一论文目录的复现/证据修订-0.38.1/修订说明.md；Obsidian后台activeFile确为
+该新MD，4入口解析。人工点击/编辑/审美仍待确认。registry与Fieldhash和既有身份保持，
+正式Vault/Zotero/PDF/服务/main/项目既有清单均未改。

@@ -92,6 +92,16 @@ it does not mean the requested content revision has been committed. Concurrent e
 still require fresh checks; never edit provider files or substitute a semantic hash
 for a physical file base.
 
+Runtime 0.38.2 additionally accepts `--registered-canvas-hash sha256:<registered-hash>`
+when the editor only re-encodes an already metadata-bearing graph. The supplied hash
+must match the provider's actual old Canvas artifact and the canonical encoding of
+the complete current graph (or its metadata-free predecessor). Empty frontmatter,
+all three physical bases, baseline trust, ownership and provider revisions still apply.
+The explicit hash makes the proof and receipt replay stable; it is not permission to
+adopt modified content. Save the returned `next_request` just as above. If the old
+registered bytes cannot be reproduced by these exact encodings, report a conflict;
+do not generalize this entry to arbitrary layout or serialization normalization.
+
 `validated` and `repaired` mean that the staged bundle passed conformance; they do not mean it is
 already canonical. Commit one staged bundle with:
 

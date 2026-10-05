@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from contextlib import ExitStack
 from hashlib import sha256
 from pathlib import Path
@@ -50,6 +51,7 @@ def _metadata_graph(payload: bytes) -> dict:
 def acknowledge_canvas_metadata(
     *, vault_root: Path, request: AnalysisCommitRequest,
     source_registry: KnowledgeSourceRegistry,
+    registered_canvas_hash: str | None = None,
 ) -> dict:
     """CAS-record an additive editor metadata save; do not write any Vault file."""
     if request.document.schema_version not in {4, 5} or any(
@@ -64,7 +66,14 @@ def acknowledge_canvas_metadata(
     finally:
         os.close(descriptor)
     original_graph = {key: value for key, value in canvas.items() if key != "metadata"}
-    original_hash = _sha256_bytes(_json_bytes(original_graph))
+    original_hash = (
+        registered_canvas_hash if registered_canvas_hash is not None
+        else _sha256_bytes(_json_bytes(original_graph))
+    )
+    if re.fullmatch(r"sha256:[a-f0-9]{64}", original_hash) is None or original_hash not in {
+        _sha256_bytes(_json_bytes(original_graph)), _sha256_bytes(_json_bytes(canvas)),
+    }:
+        raise AnalysisCommitConflict("Canvas encoding does not prove the registered graph hash")
     current_hash = request.base_revisions[request.paths.canvas]
     semantic = {
         "source_receipt": "canvas-metadata:" + _request_fingerprint(request),
@@ -102,7 +111,10 @@ def acknowledge_canvas_metadata(
                     raise AnalysisCommitConflict("metadata acknowledgement base changed")
                 current_graph = _metadata_graph(contents[request.paths.canvas])
                 stripped = {k: v for k, v in current_graph.items() if k != "metadata"}
-                if _sha256_bytes(_json_bytes(stripped)) != original_hash:
+                if original_hash not in {
+                    _sha256_bytes(_json_bytes(stripped)),
+                    _sha256_bytes(_json_bytes(current_graph)),
+                }:
                     raise AnalysisCommitConflict("Canvas graph changed during metadata acknowledgement")
                 prior = any(row.change_id == change.change_id for row in snapshot.receipts)
                 bases = dict(request.base_revisions)

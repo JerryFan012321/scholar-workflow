@@ -113,6 +113,9 @@ only added supported empty-frontmatter Canvas metadata, use the explicit
 `analysis acknowledge-canvas-metadata` entry first and save its returned `next_request`
 for staging. It records the proven new hash through provider CAS without rewriting
 the Vault files; it does not adopt text/layout edits or commit an analysis revision.
+From 0.38.2, an explicit `--registered-canvas-hash` also permits proven re-encoding
+of that unchanged metadata-bearing graph; the provider and exact encoding proof
+must both agree. See the same reference before using it.
 
 The replay package can inspect its explicitly selected knowledge folder with
 `scholar-workflow knowledge preview /absolute/folder --language en` without Hub.

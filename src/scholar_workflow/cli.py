@@ -2380,7 +2380,10 @@ def analysis_batch_run(
 @analysis.command(name="acknowledge-canvas-metadata")
 @click.option("--request", "request_path", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True)
 @click.option("--vault-root", type=click.Path(file_okay=False, path_type=Path), required=True)
-def analysis_acknowledge_canvas_metadata(request_path: Path, vault_root: Path) -> None:
+@click.option("--registered-canvas-hash", help="Explicit registered hash for an unchanged graph re-encoded by its editor.")
+def analysis_acknowledge_canvas_metadata(
+    request_path: Path, vault_root: Path, registered_canvas_hash: str | None,
+) -> None:
     """Explicitly record an editor's metadata-only save; never rewrite the pair."""
     from scholar_workflow.analysis.apply_changes import KnowledgeApplyConflict, KnowledgeApplyError
     from scholar_workflow.analysis.commit import AnalysisCommitConflict, AnalysisCommitSafetyError
@@ -2396,6 +2399,7 @@ def analysis_acknowledge_canvas_metadata(request_path: Path, vault_root: Path) -
         result = acknowledge_canvas_metadata(
             vault_root=vault_root, request=request,
             source_registry=KnowledgeSourceRegistry(_hub_state_root() / "hub" / "sources.json"),
+            registered_canvas_hash=registered_canvas_hash,
         )
     except (AnalysisCommitConflict, KnowledgeApplyConflict) as exc:
         raise IdentityConflictError(str(exc)) from None

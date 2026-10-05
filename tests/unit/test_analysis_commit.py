@@ -366,7 +366,7 @@ def test_v4_commit_uses_unique_provider_manifest_paper_folder(tmp_path: Path) ->
     assert all(item.action == "unchanged" for item in unchanged.files)
 
 
-@pytest.mark.parametrize("changed_field", ["none", "text", "layout", "frontmatter", "stale"])
+@pytest.mark.parametrize("changed_field", ["none", "serialization", "text", "layout", "frontmatter", "stale"])
 def test_editor_metadata_acknowledgement_is_bounded_and_replayable(
     tmp_path: Path, changed_field: str, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -384,6 +384,8 @@ def test_editor_metadata_acknowledgement_is_bounded_and_replayable(
     document = _v4_document()
     request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
     bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+    if changed_field == "serialization":
+        bundle.canvas["metadata"] = {"version": "1.0-1.0", "frontmatter": {}}
     initial = commit_analysis_bundle(
         vault_root=vault, state_root=state, request=request, bundle=bundle,
         baseline=baseline, source_registry=_registry_for_provider(provider),
@@ -409,7 +411,7 @@ def test_editor_metadata_acknowledgement_is_bounded_and_replayable(
     })
     before = {p: (vault / p).read_bytes() for p in request.paths.as_list()}
     provider_before = (provider / "knowledge-provider.snapshot.json").read_bytes()
-    if changed_field != "none":
+    if changed_field not in {"none", "serialization"}:
         with pytest.raises((AnalysisCommitConflict, AnalysisCommitSafetyError)):
             acknowledge_canvas_metadata(
                 vault_root=vault, request=update, source_registry=_registry_for_provider(provider),
@@ -420,6 +422,15 @@ def test_editor_metadata_acknowledgement_is_bounded_and_replayable(
         request_path.write_text(update.model_dump_json())
         args = ["analysis", "acknowledge-canvas-metadata", "--request", str(request_path),
                 "--vault-root", str(vault)]
+        registered_hash = None
+        if changed_field == "serialization":
+            registered_hash = next(a.sha256 for a in snapshot.artifacts if a.kind == "analysis_canvas")
+            wrong_hash = "sha256:" + "0" * 64
+            monkeypatch.setenv("SCHOLAR_WORKFLOW_HOME", str(tmp_path))
+            wrong = CliRunner().invoke(main, [*args, "--registered-canvas-hash", wrong_hash])
+            assert wrong.exit_code == 5, wrong.output
+            assert (provider / "knowledge-provider.snapshot.json").read_bytes() == provider_before
+            args.extend(["--registered-canvas-hash", registered_hash])
         monkeypatch.setenv("SCHOLAR_WORKFLOW_HOME", str(tmp_path / "unknown-source"))
         refused = CliRunner().invoke(main, args)
         assert refused.exit_code == 7, refused.output
@@ -431,6 +442,7 @@ def test_editor_metadata_acknowledgement_is_bounded_and_replayable(
         applied = (provider / "knowledge-provider.snapshot.json").read_bytes()
         replay = acknowledge_canvas_metadata(
             vault_root=vault, request=update, source_registry=_registry_for_provider(provider),
+            registered_canvas_hash=registered_hash,
         )
         assert replay == result
         assert result["canonical_written"] is False

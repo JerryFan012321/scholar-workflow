@@ -27,6 +27,8 @@ Canvas物理hash已变。公开batch暂存目前没有保留原图的更新入�
 | provider登记后仅metadata或安全布局变化，调用者提交新物理hash | commit-bundle | 仍拒绝provider hash漂移，canonical与provider零写入；不能用sidecar语义hash替代物理CAS |
 | 仅新增合法metadata，去掉它后精确匹配provider旧图 | acknowledge-canvas-metadata | 原三文件字节不变，仅通过现有provider CAS记新Canvas hash；有独立回执，重放不写 |
 | 节点文字/坐标同时变化、非空frontmatter、过期请求 | acknowledge-canvas-metadata | 拒绝，不写provider或canonical；不能接受未证明的内容/布局变化 |
+| 已有合法metadata，编辑器仅改变JSON编码，显式指定登记旧hash | acknowledge-canvas-metadata | 完整图canonical编码须精确匹配实际provider旧hash；三文件不改，回执重放一致 |
+| 上一场景指定错误旧hash | acknowledge-canvas-metadata | 拒绝，provider与三文件零写入 |
 
 ## 新发现的原生保存边界
 
@@ -42,6 +44,10 @@ provider登记的006787d2；MD/sidecar未变，105节点与104边完全相同。
 不放宽一般hash检查。校准返回最新provider版本的next_request，后续使用它暂存，
 不手工查找或修改版本。68项定向测试及1579项完整回归已通过；安装态结果单独记录。
 不宣称真实两点提交已完成。
+
+0.38.1安装态已成对提交两点修订并应用归属、实际检查通过；原生关闭图后发现纯JSON编码
+改变物理hash，图完全相同。0.38.2针对这一实证缺口扩充受控校准，69项定向已通过，完整
+回归与正常安装态校准另记结果；不手工把编码改回、不扩大为任意semantic hash接纳。
 
 ## 命令、影响与可见产物
 
