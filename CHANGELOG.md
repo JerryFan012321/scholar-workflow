@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **analyze-paper / development ledger only:** independently review nine key parent claims
+  against Local API text and selected rendered PDF pages. The stated numbers and bounded
+  conditions have source support, but three adjacent excerpt sets need fuller coverage of
+  results or qualifications. Preserve the canonical Markdown/Canvas/sidecar and save a
+  separate test-Vault review proposal. This is not an all-content scientific sign-off,
+  a new analysis, a runtime change or another release.
+
 - **init-project / development ledger only:** record normal 0.40.0 hotfix publication and
   installation, then one installed public candidate preview of eight explicit project materials.
   Save the readable output at the example project root and the review guide in the test Vault;

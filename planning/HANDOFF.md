@@ -5,6 +5,14 @@
 
 ## 2026-10-05 当前交付：0.40.0 单项目资料预览已安装
 
+续行只读科学来源核对：现有V-JEPA2的4个比较/5个局限父论点经Local API全文与PDF
+第3/14/15/18/20页目视核对；数值及限定设置有出处，发现3处当前摘录覆盖不足：表2
+数字只引题注、SSv2/EK100只引后者、EK100局限缺长时域/闭集类别语境。独立test
+“来源审阅-0.40.0/关键结论核对.md”及机器建议已保存；未改正文/图/sidecar/PDF，
+三个分析文件hash仍d02be6fc/8baf7daf/047f535d。跨页长时域段落在索引中夹表3，
+简单连续匹配失败不等于不存在；本次9父论点不代表69内容全部科学通过。下一步仅
+按安装版paired update补充分项证据，保留原格式/几何，不重跑分析、实验或整库。
+
 source52ac731/runtimeaa1861d已正常发布安装，PATH CLI、pipx direct_url与Codex缓存两manifest
 均为0.40.0。安装版public validate-context/overview对同一个model-project-0330的明确候选
 实际成功：8项，JSON preview:true；4个本地入口available，4个外部入口unverified，不冒称
