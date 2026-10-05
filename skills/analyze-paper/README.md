@@ -66,6 +66,10 @@ accommodates necessary context without imposing that capacity as a target length
 is a source gap. Canvas does not repeat the quotations and retains the required editable tree.
 Older analyses remain unchanged; converting their format requires an explicit whole-analysis
 update, not a silent refresh. The detailed contract is `references/analysis-format.md`.
+On request, native PDF region screenshots can accompany Markdown claims without changing
+Canvas. Paper-local images and their crop replay input have explicit asset ownership;
+0.40.1 reproduction includes that manifest and its hash-checked files, not just the
+analysis trio. See the same format contract and shared reproduction contract.
 The v4/v5 `reader` projection can select an explicitly verified ZotFlow Library Reader in a registered
 Vault, opening a local Zotero attachment at its physical page inside Obsidian in both artifacts.
 The default remains Zotero-native. The structured source span remains authoritative; a page

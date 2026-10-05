@@ -193,6 +193,19 @@ def _document() -> AnalysisDocument:
     return AnalysisDocument.model_validate(_payload())
 
 
+def test_requested_markdown_image_preserves_the_entire_canvas_projection() -> None:
+    payload = _payload()
+    before = render_analysis(AnalysisDocument.model_validate(payload), note_stem=NOTE_STEM)
+    claim = next(row for row in payload["claims"] if row["claim_id"] == "l-r")
+    claim["canvas_summary"] = claim["body"]
+    claim["body"] += "\n\n![Source limitation paragraph](attachments/limitation.png)\n\nSource region: physical PDF page 4."
+    document = AnalysisDocument.model_validate(payload)
+    after = render_analysis(document, note_stem=NOTE_STEM)
+    assert "![Source limitation paragraph](attachments/limitation.png)" in after.markdown
+    assert after.canvas == before.canvas
+    assert validate_bundle(document, after, note_stem=NOTE_STEM).ok
+
+
 def _node_id(path: str) -> str:
     # Standard, externally specified node identity, not a renderer snapshot.
     return sha256(f"{ARTIFACT_ID}\n{path}".encode()).hexdigest()[:16]

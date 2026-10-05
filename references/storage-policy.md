@@ -11,7 +11,7 @@ Canonical rule for where every object lives. Applies to all skills and agents.
 | Downloaded paper PDFs (awaiting ingest) | Inbox | `paper_inbox` |
 | Personal knowledge, notes, technical docs | Registered Obsidian Source/Field | trusted `folder_id` + `.scholar-workflow/fields.yml` |
 | JSON Canvas identity (content stays in Canvas) | Registered Obsidian Source | `.scholar-workflow/artifacts.yml` |
-| Images, data, and supplements attached to Vault notes | Registered Obsidian Source | Source-relative `attachments/` + `.scholar-workflow/assets.yml` relation manifest |
+| Images, data, and supplements attached to Vault notes | Registered Obsidian Source | Paper-local `attachments/` (legacy Source-level `attachments/`) + `.scholar-workflow/assets.yml` relation manifest |
 | ZotFlow Source Notes | ZotFlow-owned path inside its registered Obsidian Source | disjoint from Better Notes and Scholar-managed paths |
 | Annotated PDF snapshots for external readers | Derived snapshot store | hash-bound copy; never the Zotero attachment path |
 | Reusable knowledge navigation, outline, prose and Canvas | Obsidian Source/Field | owned Markdown and explicit Knowledge manifests |

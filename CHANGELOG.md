@@ -50,6 +50,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   the readable replay note is in the existing test package. This does not revise real quotations,
   certify human/source assessment, restore a cross-host provider or introduce another runtime build.
 
+## [0.40.1] - 2026-10-05
+
+### Fixed
+
+- **analyze-paper / knowledge reproduction:** include the existing explicit asset
+  manifest and its owned, hash/size-checked image/data files in portable export and
+  restoration. Reject invalid ownership, duplicate/colliding paths, unsafe files
+  and concurrent read-set changes. Project portable assets without modifying the
+  live provider or using old receipts to certify the projection. No inferred prose
+  relationships, PDF redistribution, Hub dependency or new screenshot service.
+  The complete 1,713-case unit/contract suite passes; installed single-paper and
+  human crop assessment remain separate.
+- **analyze-paper:** document requested native PDF crops beside Markdown claims,
+  paper-local attachments and non-secret replay inputs. Preserve excerpts, source
+  links, accepted Canvas and paired commit protections. Image inclusion alone is
+  not human approval of crop readability or a new scientific-source verdict.
+
 ## [0.40.0] - 2026-10-05
 
 ### Added
