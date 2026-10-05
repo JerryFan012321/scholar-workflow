@@ -147,6 +147,8 @@ unverified边界；修正模范Source的01/02/Paper三份滞后说明。Obsidian
 0.41.0已正常发布安装；唯一真实V-JEPA2的新增图卡stage因末列碰撞拒绝，原三文件保持且
 check-bundle通过。0.41.1最小列定位修复的169项定向检查通过，安装后复验与原生/人工评鉴
 仍pending；不合并main、不迁移正式库、不以局部进展宣称G17完成。详见canvas-selected-images-plan.md。
+其后0.41.1正常发布安装与单篇候选已通过公开stage/check，106旧节点及105旧边、正文和原件hash
+保持，只新增两图。原生路径/正文块解析正确，但截图仍旧帧，图卡显示/点击/人工评鉴仍pending。
 
 ## 长期不变量（INV）
 

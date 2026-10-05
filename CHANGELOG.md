@@ -7,6 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **analyze-paper / installed evidence only:** normally publish/install 0.41.1 and
+  validate one selected table/process candidate through the public paired staging and
+  read-only package interfaces. Preserve all 69 records, old node text/geometry/edges,
+  original bundle and registry/provider hashes. Obsidian resolves candidate assets and
+  backlinks; its byte reencoding preserves complete JSON semantics. Exclude stale
+  new-tab captures: fresh image display, actual reader clicks and human review remain
+  pending. No canonical commit, formal migration, service change or main merge.
+
 - **exemplar navigation / development evidence only:** correct the existing single-test
   Source's home, usage and paper companion notes after preserving byte-exact originals.
   The installed 0.40.2 preview keeps external unverified states; independent identity,

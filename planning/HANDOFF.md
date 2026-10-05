@@ -11,7 +11,13 @@ runtimeaa7c8fa37b74d3c5a63c1c4883ca51d69ff86851；CLI、pipx固定commit及双ca
 原包check-bundle仍通过、三hash不变；test独立目录保留选图2/表2和失败输入，不冒称成功。
 问题是重生成末列坐标未使用实际保留列宽，不是原图不合格；窄修复仅扩展新增图卡列。
 合成多比较实验/1000px旧末列已复现碰撞，修复后169项相关回归通过；不重做整库或完整业务。
-下一步正常发布安装0.41.1可识别更新，再复验同一真实对象、保留旧失败输入和canonical。
+0.41.1已正常发布安装：source4a9759cf2b4860668dbd4e5e46dbf4fd6f6d4604、
+runtimeabf54497e5ed4b6849b7f4d49b31078a5b38a306；实际CLI/pipx/cache/模板一致，另15项版本/eval通过。
+同一真实对象新ID02公开stage-update已validated，候选包69记录/108节点/107边且零findings；
+旧节点文字/几何与边精确不变、正文逐字不变。原三文件及registry/provider五hash保持。
+候选在test的Canvas图片验收-0.41.0目录（沿用首轮名，旧失败输入保留），未提交canonical。
+Obsidian加载候选、两图路径及两正文块解析到本候选；重编码后完整JSON语义与暂存一致，包检查通过。
+截图仍旧新标签页，不作fresh显示证据；图卡显示/真实点击/人工评鉴仍pending，别反复重跑业务。
 干净受管worktree打包runtime-only，保留三份无关审阅文件；不合并main、不切换Hub/其他服务。
 0.41.0为这次更新回退点，0.40.2的runtime8704947也仍保留。具体输入与边界见
 canvas-selected-images-plan.md。新版安装/候选显示/点击/科学裁剪与人工评鉴不能用合成通过代替。
