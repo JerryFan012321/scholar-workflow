@@ -74,8 +74,13 @@ Canvas格式不改；既有V-JEPA2短摘录修订与内容评鉴仍pending。G17
 后续归属复现输入导出已在开发树实现：explicit Source/provider→portable package及文件hash，
 导出26项、恢复30项合成测试通过；公开restore-plan/restore可在显式新主机目标独占创建provider，
 保留全部内容、身份及旧源，只写本机恢复journal；reader重绑定、科学/人工验收分别报告。
-正常安装/单对象跨机重建仍未完成，零真实业务写入；
-不以只读导出代替完整模范Vault或G17完成。
+后续0.39.0 source907c3f9/runtime63a29f1已正常发布安装；在test新目录使用隔离host状态
+模拟新主机，public attach/restore恢复同一Source/Field/provider归属。8文件完全保留、
+同摘要回执幂等、目的地导出摘要与原包一致，旧源/主机registry/provider/PDF保护hash不变。
+最终三文件conformant，69内容/106节点/105边；native正文/Canvas backend载入。Mac锁屏，
+截图与当前backend不一致，全部排除出本轮GUI证据；reader身份匹配，
+新摘录人工阅读、新副本来源/反链点击及科学全项仍pending，不冒称物理另一台主机实测。
+上述覆盖“正常安装/单对象重建未完成”，不代表完整模范Vault或G17完成。
 
 ## 长期不变量（INV）
 

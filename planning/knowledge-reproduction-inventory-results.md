@@ -53,3 +53,13 @@ Source/Field/resource/artifact ID保留，provider绑定新目录且不导入旧
 这不是实机/安装态验收；没有调用真实Source导出/恢复，没有打开应用或写Zotero。
 当前安装仍0.38.3。尚需同批发布安装、单篇目的地真实重建、外部工具/reader与人工确认；
 科学支持不由hash与归属校验认证，G17仍未完成。
+
+## 0.39.0 安装态结果补充
+
+上述未安装/未执行是开发阶段边界，现由hotfix-0.39.0-results.md的实际证据更新：正常release及
+pipx/Codex安装已完成；installed public导出、明确复制、existing-source attach、restore和重放
+在同一test Vault新目录执行，使用隔离host registry模拟新主机，而非宣称另一台物理机器已实测。
+原8文件与稳定身份守恒、provider主机绑定重建、回执幂等、目的地导出摘要吻合、原保护hash不变。
+新Markdown和Canvas被Obsidian backend载入，结构检查零问题；Mac锁屏下截图已排除，GUI未验收。
+科学、真实reader点击与新摘录人工阅读
+保持独立pending；不扩大到正式Vault、项目context或整库迁移，也不重复已认可的图。

@@ -5,15 +5,21 @@
 
 ## 2026-10-05 当前交付：0.39.0 归属复现 hotfix
 
-此前完整1676项回归通过；本轮仅同步两个plugin manifest、包/module版本及说明到0.39.0，
-再做版本/CLI/归属定向回归后按正常release脚本构建、推送、pipx及Codex marketplace安装。
+完整1676项回归及版本/CLI/归属71项通过。源码907c3f9、runtime63a29f1已按正常release脚本
+构建并推送；pipx固定runtime SHA和Codex marketplace正常安装均为0.39.0，实际身份核实。
 不合并main，不改变服务，不提交用户的analysis-v5-human-review-plan与两个quotation-preview文件。
 回退0.38.3 runtime8f2cdacbabb2d7b963ae805e0fbc4bae9d435a6a。
 安装后仅在test Vault新目录复制当前单篇Source的明确inventory，隔离SCHOLAR_WORKFLOW_HOME
 模拟新主机；通过安装版registration-plan/register及restore-plan/restore恢复归属、复验hash，
 并用公开knowledge open展示。原Source/host registry/provider/正文/图及正式资料均不修改。
 源身份和字节保持不代表科学支持已通过；原文/页面解释、真实reader点击及人工阅读分别记录。
-结果写hotfix-0.39.0-results.md；当前仍是待提交/发布/安装计划，不能冒称已完成。
+单对象复现已执行：8文件守恒、归属恢复回执幂等、目的地再导出摘要等于原包，原件8项保护
+hash不变。三文件conformant/零问题，69内容/106节点/105边；native view/path核实新正文和
+Canvas backend载入。native app检查确认Mac锁屏，三张截图可能陈旧，均排除出GUI证据；
+backend载入不能代替实际屏幕更新，解锁后只复验显示，不重复恢复/分析。
+reader身份匹配不等于真实点击成功；新摘录阅读体验/入口反链仍待人工确认，科学全项未完成。
+真实记录见hotfix-0.39.0-results.md及test“复现记录-0.39.0/使用说明.md”；G17保持active。
+以下开发段落是历史阶段记录，其“未提交/安装/真实恢复”由上述实际结果覆盖，不改写旧事实。
 
 ## 2026-10-05 最新：完整摘录已提交，Canvas 保持不变
 

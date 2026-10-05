@@ -7,6 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **analyze-paper / development ledger only:** record normal 0.39.0 hotfix publication and
+  installation, then one installed portable ownership replay into a new test directory with
+  isolated host state. Eight file hashes and stable identities are preserved; receipt replay
+  and destination re-export agree, and original source/registry/provider/PDF remain unchanged.
+  Native Markdown/Canvas backend load is observed; locked-screen cached captures are excluded
+  from GUI evidence. Reader clicks, new excerpt readability and scientific assessment remain
+  separate pending gates. No runtime changes or main merge.
+
 - **development ledger only:** installed 0.38.3 now paired-commits 70 complete source excerpts
   and explicit cross-page evidence labels in the existing single V-JEPA 2 test package.
   All claims and the complete Canvas graph are preserved; final conformance passes.
