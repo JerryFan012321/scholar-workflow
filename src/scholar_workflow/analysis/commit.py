@@ -39,7 +39,12 @@ from scholar_workflow.analysis.models import (
     KnowledgeChangeSet,
 )
 from scholar_workflow.analysis.rendering import AnalysisBundle
-from scholar_workflow.analysis.updates import create_baseline
+from scholar_workflow.analysis.updates import (
+    AnalysisUpdateError,
+    AnalysisUpdatePlan,
+    create_baseline,
+    plan_analysis_update,
+)
 from scholar_workflow.knowledge.fields import (
     FieldRegistryError,
     FieldService,
@@ -1441,6 +1446,53 @@ def _assert_v4_target_ownership(
             )
 
 
+def _plan_existing_analysis_update(
+    root: Path, descriptor: int, request: AnalysisCommitRequest,
+) -> AnalysisUpdatePlan:
+    if request.document.schema_version not in {4, 5} or any(
+        value is None for value in request.base_revisions.values()
+    ):
+        raise AnalysisCommitSafetyError("an existing v4/v5 update requires all three base revisions")
+    contents = {
+        path: _read_target_regular(root, descriptor, path)
+        for path in request.paths.as_list()
+    }
+    for path, payload in contents.items():
+        if _sha256_bytes(payload) != request.base_revisions[path]:
+            raise AnalysisCommitConflict(f"base revision changed for {path}; refusing to stage an update")
+    for path, expected in request.base_revisions.items():
+        if _target_hash(root, descriptor, path) != expected:
+            raise AnalysisCommitConflict("analysis base changed during update preparation")
+    try:
+        canvas = json.loads(contents[request.paths.canvas].decode("utf-8"))
+        if not isinstance(canvas, dict):
+            raise TypeError("existing Canvas must be an object")
+        baseline = AnalysisBaseline.model_validate_json(contents[request.paths.sidecar])
+        plan = plan_analysis_update(
+            current=AnalysisBundle(
+                markdown=contents[request.paths.markdown].decode("utf-8"), canvas=canvas,
+            ),
+            baseline=baseline, update=request.document, note_stem=request.note_stem,
+        )
+    except (ValueError, TypeError, UnicodeDecodeError, AnalysisUpdateError) as exc:
+        raise AnalysisCommitSafetyError(f"existing analysis baseline is invalid: {exc}") from exc
+    if plan.status != "ready":
+        raise AnalysisCommitConflict("paired update conflict: " + ", ".join(plan.conflicts))
+    return plan
+
+
+def plan_existing_analysis_update(
+    *, vault_root: Path, request: AnalysisCommitRequest,
+) -> AnalysisUpdatePlan:
+    """Read a CAS-bound pair and preserve its graph; never write canonical files."""
+    root = _existing_root(vault_root, label="Vault root")
+    descriptor = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        return _plan_existing_analysis_update(root, descriptor, request)
+    finally:
+        os.close(descriptor)
+
+
 def commit_analysis_bundle(
     *,
     vault_root: Path,
@@ -1655,6 +1707,15 @@ def _commit_analysis_bundle_locked(
             if before_hashes[relative_path] != expected:
                 raise AnalysisCommitConflict(
                     f"base revision changed for {relative_path}; refusing to overwrite"
+                )
+
+        if request.document.schema_version in {4, 5} and any(
+            value is not None for value in request.base_revisions.values()
+        ):
+            plan = _plan_existing_analysis_update(root, vault_descriptor, request)
+            if plan.proposed != bundle or plan.baseline != baseline:
+                raise AnalysisCommitConflict(
+                    "staged update would discard the existing graph; use analysis stage-update"
                 )
 
         file_records = _expected_file_records(request, after_hashes)

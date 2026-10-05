@@ -27,6 +27,12 @@ from scholar_workflow.analysis.models import (
     KnowledgeArtifactChange,
     KnowledgeChangeSet,
 )
+from scholar_workflow.knowledge.catalog_models import (
+    ArtifactFormat,
+    ArtifactKind,
+    HubArtifact,
+    HubCatalog,
+)
 from scholar_workflow.knowledge.models import (
     KnowledgeManifest,
     KnowledgeProjection,
@@ -34,12 +40,6 @@ from scholar_workflow.knowledge.models import (
     KnowledgeSupportingDocument,
     SupportingDocumentKind,
     _validate_vault_path,
-)
-from scholar_workflow.knowledge.catalog_models import (
-    ArtifactFormat,
-    ArtifactKind,
-    HubArtifact,
-    HubCatalog,
 )
 from scholar_workflow.models import ResourceKind
 
@@ -658,6 +658,7 @@ def apply_knowledge_change_set(
     change_set: KnowledgeChangeSet,
     clock: Clock | None = None,
     fault_inject: FaultInjector | None = None,
+    before_apply: Callable[[KnowledgeProviderSnapshot], None] | None = None,
 ) -> KnowledgeApplyReceipt:
     """CAS-apply one explicit change and atomically persist its receipt.
 
@@ -670,6 +671,8 @@ def apply_knowledge_change_set(
     with _locked_state_root(state_root) as root:
         root.ensure_current()
         snapshot, before_bytes, before_identity = _read_snapshot(root.fd)
+        if before_apply is not None:
+            before_apply(snapshot)
         prior = next(
             (item for item in snapshot.receipts if item.change_id == change_set.change_id),
             None,

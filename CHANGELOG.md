@@ -5,6 +5,39 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+- **development rules:** route ordinary deterministic test authorization to the
+  current global rule instead of retaining a blanket approval gate in project
+  guidance. Data writes, external operations and human acceptance remain separate.
+
+## [0.38.1] - 2026-10-05
+
+### Fixed
+- **analyze-paper (development validated; installed acceptance separate):** add a CAS-bound
+  existing-pair staging interface and prevent canonical commits from discarding the
+  retained graph. New v4/v5 nodes use the unique existing hierarchy column without
+  moving retained nodes or normalizing conflicting human columns. Synthetic test
+  inputs and expected results are prepared independently; 68 targeted tests pass,
+  including the public metadata CLI's unregistered-source refusal and receipt replay.
+  Explicit metadata-only acknowledgement verifies the actual three-file base and
+  unchanged graph under registered provider/Vault locks, records only the existing
+  Canvas hash through provider CAS, and returns a fresh staging request. Text/layout
+  changes, nonempty frontmatter and stale bases fail closed. Full unit/contract
+  regression: 1,579 passed, 11 existing warnings in 80.34 seconds. Ruff, skill
+  validation and whitespace checks pass. Installed V-JEPA 2 verification remains
+  separate. The five-branch format is unchanged.
+
+## Earlier development ledger (0.38.0)
+
+- **analyze-paper / knowledge (development ledger only):** record pinned 0.38.0
+  package/plugin installation and the installed public single-paper registration,
+  v5 paired commit, provider apply and actual-package check in one new test folder.
+  All 68 excerpts match their declared local PDF pages; 68 block backlinks and four
+  companion links resolve natively. Old prose/registry remain unchanged. Advanced
+  Canvas added its allowed metadata to the old graph; nodes/edges remain identical,
+  but its byte hash changed and is recorded rather than claimed unchanged.
+  Locked-Mac visual/human and scientific assessment remain pending. No main merge,
+  service switch, formal Vault migration, PDF download or Zotero mutation.
+
 ## [0.38.0] - 2026-10-05
 
 ### Added

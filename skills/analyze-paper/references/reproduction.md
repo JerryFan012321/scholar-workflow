@@ -63,6 +63,11 @@ stem in the selected folder, and label the package as a candidate. Never manuall
 change Canvas links/layout to bypass conformance or call that copy a canonical write.
 Formal storage still requires the public paired commit receipt and registered owner.
 
+To revise an existing exemplar, use `analysis stage-update` with exact existing hashes
+and a new update request as described in `analysis-batch.md`. Save its returned complete
+commit request with the replay records. Do not regenerate a new layout or hand-patch
+the displayed Canvas to bypass the existing-pair preservation check.
+
 For a paper without a Knowledge owner, first use the shared
 `paper-registration.md` contract's installed `knowledge paper-plan/register-paper`
 entry in the selected Source/Field. Registration and analysis commit receipts have

@@ -363,6 +363,15 @@ def _merge_canvas(
     new_nodes = {str(node["id"]): node for node in rendered["nodes"]}
     new_edges = {str(edge["id"]): edge for edge in rendered["edges"]}
 
+    retained_columns: dict[int, set[int]] = {}
+    if baseline.document.schema_version in {4, 5}:
+        for node in node_items:
+            if not isinstance(node, dict) or node.get("id") not in old_node_ids:
+                continue
+            expected = new_nodes.get(node["id"])
+            if expected is not None and type(expected.get("x")) is int and type(node.get("x")) is int:
+                retained_columns.setdefault(expected["x"], set()).add(node["x"])
+
     merged_nodes: list[dict[str, Any]] = []
     emitted_node_ids: set[str] = set()
     for current_node in node_items:
@@ -400,7 +409,11 @@ def _merge_canvas(
     for node in rendered["nodes"]:
         node_id = str(node["id"])
         if node_id not in emitted_node_ids:
-            merged_nodes.append(deepcopy(node))
+            added = deepcopy(node)
+            column = retained_columns.get(added.get("x"), set())
+            if len(column) == 1:
+                added["x"] = next(iter(column))
+            merged_nodes.append(added)
             emitted_node_ids.add(node_id)
 
     merged_edges: list[dict[str, Any]] = []

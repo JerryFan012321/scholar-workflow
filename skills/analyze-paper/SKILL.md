@@ -59,7 +59,13 @@ new template. Report an unsupported-version limitation rather than substituting 
    ZotFlow Library Reader projection requires an explicitly verified Vault and local PDF mode;
    follow the reader-link
    boundary in `references/analysis-format.md`.
-6. Validate the pair against the hard conformance boundary before registration. For a multi-paper
+6. For an existing v4/v5 pair, load `references/analysis-batch.md` and use
+   `scholar-workflow analysis stage-update` with the exact three-file base hashes.
+   It preserves the existing graph and returns a complete merged commit request;
+   ordinary `batch-run` regeneration is not an existing-pair update.
+   The same reference owns the explicit metadata-only acknowledgement for an editor save;
+   it never replaces a content commit or adopts text/layout drift.
+   Validate the pair against the hard conformance boundary before registration. For a multi-paper
    request, load `references/analysis-batch.md` and invoke `scholar-workflow analysis batch-run`
    with the versioned request; stage and validate each paper independently, permit at most one
    targeted repair, clean failed drafts, and keep conformant siblings. A nonzero gate result means
@@ -106,6 +112,6 @@ a canonical commit. Replay uses the installed public CLI, not a private renderer
 - `references/analysis-v5-format.md` — explicit five-branch machine/result interface.
 - `references/analysis-format.md`
 - `references/reproduction.md` — only for a requested exemplar or replayable package.
-- `references/analysis-batch.md` — load only for multi-paper analysis.
+- `references/analysis-batch.md` — load for multi-paper analysis or an existing-pair update.
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/source-policy.md`

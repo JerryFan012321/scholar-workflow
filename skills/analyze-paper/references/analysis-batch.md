@@ -1,6 +1,6 @@
 # Paper Analysis Batch Contract
 
-Load this file only for a user-selected batch of already-ingested papers. The unit of validation,
+Load this file for a user-selected batch or an existing-pair update of already-ingested papers. The unit of validation,
 repair, cleanup, and success is one paper; a failing item never rolls back a conformant sibling.
 
 ## State and staging
@@ -41,6 +41,56 @@ returns its recorded result; it does not regenerate content or open another repa
 batch ID with different input is an identity conflict.
 
 ## Canonical commit
+
+### Existing-pair update
+
+The `stage-update` and `acknowledge-canvas-metadata` entries require runtime 0.38.1
+or later; verify the installed command rather than using a source checkout as an
+installation substitute.
+
+For an existing v4/v5 pair, prepare an `AnalysisCommitRequest` with a new batch/commit ID,
+the actual three base hashes, and current provider revisions. The requested IR may be a
+whole update or a focused update containing every retained claim in the selected branches.
+Use the installed preservation entry before commit:
+
+```bash
+scholar-workflow analysis stage-update --request <update-request.json> \
+  --vault-root <registered-source-root> --state-db <analysis.db> --stage-root <stage-root>
+```
+
+This stages exactly one merged pair and returns `batch` plus a complete `commit_request`.
+Save that returned request separately, then pass it to `commit-bundle`. The original pair is
+read-only during staging. Existing graph items, metadata and layout remain preserved;
+new tree nodes adopt the unique retained column at their depth. Split columns, crossings,
+occlusion, stale bases and human text conflicts are not normalized or overwritten.
+The batch identity includes the update's base context, not just its merged prose.
+
+Staging does not establish source truth or registered ownership; canonical commit still
+verifies the actual Source/Field/provider and its revisions. A default new-tree batch is
+not an existing-layout update: commit refuses a staged replacement that discards the
+baseline-bound graph. After commit, use its receipt for replay; the old staging base is
+no longer current and cannot be treated as a fresh update.
+
+If Advanced Canvas has newly added supported metadata, the physical Canvas hash can
+differ from its provider record even though the graph is unchanged. This does not
+waive provider CAS. Use an explicit request containing the current three file hashes
+and registered provider revisions with:
+
+```bash
+scholar-workflow analysis acknowledge-canvas-metadata --request <update-request.json> \
+  --vault-root <registered-source-root>
+```
+
+This accepts only additive metadata with empty frontmatter. Removing that metadata
+and canonically encoding the graph must exactly reproduce the registered Canvas hash;
+node text, layout, other content, ownership and baseline changes are not adopted.
+The command writes no Vault file. It CAS-records only the existing Canvas artifact's
+new hash in the registered provider, retaining a separate idempotent receipt. Save the
+returned `next_request`, which carries the current provider revisions, and use it with
+`stage-update`. Save the metadata receipt separately from an analysis commit receipt;
+it does not mean the requested content revision has been committed. Concurrent edits
+still require fresh checks; never edit provider files or substitute a semantic hash
+for a physical file base.
 
 `validated` and `repaired` mean that the staged bundle passed conformance; they do not mean it is
 already canonical. Commit one staged bundle with:

@@ -1605,8 +1605,8 @@ def hub_target() -> None:
 def hub_target_list() -> None:
     """List public execution-target metadata; never print registered host paths."""
     from scholar_workflow.hub.directory import ProjectRegistry
-    from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
     from scholar_workflow.hub.routing import ExecutionTargetRegistry
+    from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
 
     root = _hub_state_root() / "hub"
     registry = ExecutionTargetRegistry(
@@ -1633,16 +1633,16 @@ def hub_target_list() -> None:
 def hub_target_add_source(source_id: str, target_id: str) -> None:
     """Authorize one already registered Knowledge Source as a Codex cwd target."""
     from scholar_workflow.hub.directory import ProjectRegistry
-    from scholar_workflow.knowledge.fields import (
-        FieldRegistryError,
-        KnowledgeSourceRegistry,
-        KnowledgeSourceRegistryDocument,
-    )
     from scholar_workflow.hub.routing import (
         ExecutionTarget,
         ExecutionTargetError,
         ExecutionTargetRegistry,
         ExecutionTargetRegistryDocument,
+    )
+    from scholar_workflow.knowledge.fields import (
+        FieldRegistryError,
+        KnowledgeSourceRegistry,
+        KnowledgeSourceRegistryDocument,
     )
 
     root = _hub_state_root() / "hub"
@@ -1720,13 +1720,13 @@ def hub_target_add_source(source_id: str, target_id: str) -> None:
 def hub_target_add_project(project_id: str, target_id: str) -> None:
     """Authorize one already registered Project as a Codex cwd target."""
     from scholar_workflow.hub.directory import ProjectRegistry, RegistryError
-    from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
     from scholar_workflow.hub.routing import (
         ExecutionTarget,
         ExecutionTargetError,
         ExecutionTargetRegistry,
         ExecutionTargetRegistryDocument,
     )
+    from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
 
     root = _hub_state_root() / "hub"
     projects = ProjectRegistry(root / "projects.json")
@@ -1815,8 +1815,8 @@ def hub_codex_configure(executable: Path, model: str, sandbox: str) -> None:
     """CLI fallback: approve an explicit installation, model and existing targets."""
     from scholar_workflow.hub.codex_setup import CodexSetupService
     from scholar_workflow.hub.directory import ProjectRegistry
-    from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
     from scholar_workflow.hub.routing import ExecutionTargetRegistry
+    from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
 
     root = _hub_state_root() / "hub"
     projects = ProjectRegistry(root / "projects.json")
@@ -2375,6 +2375,104 @@ def analysis_batch_run(
         raise PartialCompletionError(
             "one or more analysis items failed conformance; inspect the JSON result"
         )
+
+
+@analysis.command(name="acknowledge-canvas-metadata")
+@click.option("--request", "request_path", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True)
+@click.option("--vault-root", type=click.Path(file_okay=False, path_type=Path), required=True)
+def analysis_acknowledge_canvas_metadata(request_path: Path, vault_root: Path) -> None:
+    """Explicitly record an editor's metadata-only save; never rewrite the pair."""
+    from scholar_workflow.analysis.apply_changes import KnowledgeApplyConflict, KnowledgeApplyError
+    from scholar_workflow.analysis.commit import AnalysisCommitConflict, AnalysisCommitSafetyError
+    from scholar_workflow.analysis.editor_metadata import acknowledge_canvas_metadata
+    from scholar_workflow.analysis.models import AnalysisCommitRequest
+    from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
+
+    try:
+        request = AnalysisCommitRequest.model_validate_json(request_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise InputError(str(exc)) from None
+    try:
+        result = acknowledge_canvas_metadata(
+            vault_root=vault_root, request=request,
+            source_registry=KnowledgeSourceRegistry(_hub_state_root() / "hub" / "sources.json"),
+        )
+    except (AnalysisCommitConflict, KnowledgeApplyConflict) as exc:
+        raise IdentityConflictError(str(exc)) from None
+    except (AnalysisCommitSafetyError, KnowledgeApplyError, OSError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    click.echo(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+@analysis.command(name="stage-update")
+@click.option("--request", "request_path", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True)
+@click.option("--vault-root", type=click.Path(file_okay=False, path_type=Path), required=True)
+@click.option("--state-db", type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--stage-root", type=click.Path(file_okay=False, path_type=Path))
+def analysis_stage_update(
+    request_path: Path, vault_root: Path, state_db: Path | None, stage_root: Path | None,
+) -> None:
+    """Stage one baseline-bound update without replacing the existing pair."""
+    from hashlib import sha256
+
+    from pydantic import ValidationError
+
+    from scholar_workflow.analysis.batch import (
+        AnalysisBatchConflict,
+        AnalysisBatchRunner,
+        AnalysisBatchStore,
+    )
+    from scholar_workflow.analysis.commit import (
+        AnalysisCommitConflict,
+        AnalysisCommitSafetyError,
+        plan_existing_analysis_update,
+    )
+    from scholar_workflow.analysis.models import AnalysisBatchRequest, AnalysisCommitRequest
+
+    try:
+        request = AnalysisCommitRequest.model_validate_json(request_path.read_text(encoding="utf-8"))
+        if request.zotero_item_key is None:
+            raise ValueError("an update requires the explicit Zotero item key")
+        plan = plan_existing_analysis_update(vault_root=vault_root, request=request)
+    except AnalysisCommitConflict as exc:
+        raise IdentityConflictError(str(exc)) from None
+    except AnalysisCommitSafetyError as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    except (OSError, UnicodeDecodeError, ValidationError, ValueError) as exc:
+        raise InputError(str(exc)) from None
+
+    merged_request = request.model_copy(update={"document": plan.document, "source_state": "validated"})
+    batch = AnalysisBatchRequest.model_validate({
+        "schema_version": 1, "batch_id": request.batch_id,
+        "items": [{"item_id": request.item_id, "zotero_item_key": request.zotero_item_key,
+                   "note_stem": request.note_stem, "document": plan.document.model_dump(mode="json")}],
+    })
+    context = "sha256:" + sha256(request.model_dump_json().encode()).hexdigest()
+    default_db, default_stage = _analysis_state_paths()
+    store = AnalysisBatchStore(state_db or default_db)
+    try:
+        def preserved_renderer(document, note_stem):
+            if document != plan.document or note_stem != request.note_stem:
+                raise ValueError("staged update identity changed")
+            return plan.proposed
+
+        runner = AnalysisBatchRunner(
+            store=store, stage_root=stage_root or default_stage, renderer=preserved_renderer,
+        )
+        result = runner.run(batch, input_context=context)
+    except AnalysisBatchConflict as exc:
+        raise IdentityConflictError(str(exc)) from None
+    except (OSError, ValueError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    finally:
+        store.close()
+    click.echo(json.dumps({
+        "batch": result.model_dump(mode="json"),
+        "commit_request": merged_request.model_dump(mode="json") if result.state == "completed" else None,
+        "canonical_written": False,
+    }, ensure_ascii=False, indent=2))
+    if result.state != "completed":
+        raise PartialCompletionError("the update did not pass paired conformance")
 
 
 @analysis.command(name="audit-batches")
