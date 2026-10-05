@@ -40,12 +40,14 @@ scholar-workflow project context-template --project-root /path/to/project --lang
 scholar-workflow project validate-context --project-root /path/to/project
 scholar-workflow project overview --project-root /path/to/project
 scholar-workflow project overview --project-root /path/to/project --json
+scholar-workflow project overview --project-root /path/to/project --context-file project-context-candidate.json
 ```
 
 默认总览以人类 Markdown 输出到终端；需要时显式保存为项目根下的文档，相对链接以项目根为基准。
 本地缺失和不安全引用会报告，不跟随符号链接；外部对象未联网核验时明确标为“未核验”。
 不需要插件配置、网页服务或模型配置页。字段、来源归属和阅读器入口见
 [项目资料契约](references/project-context.md)。
+可选候选文件参数只预览项目根一个 JSON 声明，明确标为未应用；不会替换生效清单或批准覆盖。
 
 ### 不依赖 Hub 的知识文件夹预览（0.34.0）
 

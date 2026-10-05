@@ -2,6 +2,11 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "project-context-candidate-public-preview",
+      "description": "G16/G17：使用安装版project overview/validate-context的明确--context-file预览根JSON候选；沿用有界reader和稳定project_id，旧清单与候选不变，显示未应用状态，默认接口输出不变；无provider/Git/service/launch，非法文件名、symlink、重复JSON字段、身份错配和不安全reader拒绝。不通过私有模型、虚构项目或覆盖旧清单来预览。开发19新CLI测试及旧project/eval组合105通过；正常hotfix安装、单示例实测和人类便利性尚未完成，保持pending。见planning/project-context-candidate-test-plan.md。",
+      "status": "pending"
+    },
+    {
       "id": "knowledge-portable-provider-reproduction",
       "description": "G17：从明确注册的Source导出完整资源/附属产物归属、Field、相对路径及文件hash，移除主机root绑定和旧回执，不扫描推断owner、不复制PDF或密钥；新目的地经明确preview/CAS恢复本机provider，保持稳定identity和正文/Canvas格式，并独立处理reader/source可用性。26导出与30恢复合成测试及完整1676项通过。0.39.0 source907c3f9/runtime63a29f1正常安装后，test新目录以隔离host状态模拟新主机：8文件hash、identity守恒，provider绑定新根且无旧回执，同摘要幂等，目的地再导出摘要一致，原件保护hash不变，最终三文件conformant。native正文/Canvas载入；reader身份匹配但实际点击与新摘录人工阅读未确认，全篇科学支持未认证，保持pending。未在另一台物理主机实测，不能用此单对象自动结果冒称G17全完成；见planning/hotfix-0.39.0-results.md。",
       "status": "pending"

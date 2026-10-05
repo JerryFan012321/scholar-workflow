@@ -25,6 +25,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   the readable replay note is in the existing test package. This does not revise real quotations,
   certify human/source assessment, restore a cross-host provider or introduce another runtime build.
 
+## [0.40.0] - 2026-10-05
+
+### Added
+
+- **init-project / project materials:** `project overview` and `validate-context` accept
+  an explicit root-level `--context-file` candidate, using the existing bounded declaration
+  reader and project identity checks. They render a clearly unapplied preview without
+  replacing the active inventory, querying providers or launching tools. Default outputs
+  are unchanged. Candidate JSON adds a preview marker and selected filename; runtime skill
+  instructions use these public interfaces instead of importing private models.
+  Development validation, normal installation and human assessment are tracked separately.
+
 ## [0.39.0] - 2026-10-05
 
 ### Added

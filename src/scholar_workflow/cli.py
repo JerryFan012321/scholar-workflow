@@ -320,14 +320,25 @@ def project_context_template(project_root: Path, language: str) -> None:
     "--project-root", required=True,
     type=click.Path(exists=True, file_okay=False, path_type=Path),
 )
-def project_validate_context(project_root: Path) -> None:
+@click.option(
+    "--context-file", metavar="NAME",
+    help="Preview one root-level JSON candidate without replacing project-context.json.",
+)
+def project_validate_context(project_root: Path, context_file: str | None) -> None:
     """Validate one explicit context inventory, not external source availability."""
     from scholar_workflow.project.context import load_project_context
 
     try:
-        context = load_project_context(project_root)
+        context = load_project_context(project_root, **(
+            {"context_file": context_file} if context_file is not None else {}
+        ))
     except ValueError as exc:
         raise InputError(str(exc)) from None
+    if context_file is not None:
+        click.echo(
+            "候选预览：尚未替换项目资料清单。" if context.language == "zh" else
+            "Candidate preview: the project inventory has not been replaced."
+        )
     if context.language == "zh":
         click.echo(
             f"项目资料清单有效：明确声明了 {len(context.entries)} 项。"
@@ -347,19 +358,41 @@ def project_validate_context(project_root: Path) -> None:
 )
 @click.option("--json", "as_json", is_flag=True, help="Emit machine-readable references and status.")
 @click.option("--language", type=click.Choice(["en", "zh"]), help="Override presentation language without changing files.")
-def project_overview(project_root: Path, as_json: bool, language: str | None) -> None:
+@click.option(
+    "--context-file", metavar="NAME",
+    help="Preview one root-level JSON candidate without replacing project-context.json.",
+)
+def project_overview(
+    project_root: Path, as_json: bool, language: str | None, context_file: str | None,
+) -> None:
     """Read declared code, papers, notes and results; print Markdown by default."""
-    from scholar_workflow.project.context import build_project_overview, render_project_overview
+    from scholar_workflow.project.context import (
+        build_project_overview,
+        load_project_context,
+        render_project_overview,
+    )
 
     try:
-        overview = build_project_overview(project_root)
+        context = (
+            load_project_context(project_root, context_file=context_file)
+            if context_file is not None else None
+        )
+        overview = build_project_overview(project_root, context)
     except ValueError as exc:
         raise InputError(str(exc)) from None
     if language is not None:
         overview = overview.model_copy(update={"language": language})
     if as_json:
-        click.echo(json.dumps(overview.model_dump(mode="json"), ensure_ascii=False, indent=2))
+        payload = overview.model_dump(mode="json")
+        if context_file is not None:
+            payload.update(preview=True, context_file=context_file)
+        click.echo(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
+        if context_file is not None:
+            click.echo(
+                "> 候选预览：尚未替换项目资料清单。\n" if overview.language == "zh" else
+                "> Candidate preview: the project inventory has not been replaced.\n"
+            )
         click.echo(render_project_overview(overview), nl=False)
 
 

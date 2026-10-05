@@ -53,6 +53,9 @@ authorize synchronization, copies, execution or registration with the legacy Hub
 `project overview --project-root TARGET` reads the declared inventory as Markdown. Neither command
 writes a project file or starts an application. Do not turn a missing inventory into invented
 project facts or a mandatory homepage. Project integration is not a new initializer side effect.
+For a selected root-level candidate, `project overview` or `validate-context` accepts
+`--context-file NAME` to preview it without replacing the active inventory; follow the
+shared contract for filenames, identity, preview state and separate overwrite approval.
 
 ## References
 

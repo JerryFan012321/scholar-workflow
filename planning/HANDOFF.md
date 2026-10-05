@@ -5,6 +5,15 @@
 
 ## 2026-10-05 当前交付：0.39.0 归属复现 hotfix
 
+下一切片核模范项目整合：既有清单仍指0.32.3候选且缺Canvas/资料笔记；已在会话再次请求仅
+备份更新该示例context与展示的批准，未收到前不替换。现有档案public validate为1/3/1/1。
+原生cmux0.64.25已安装但不在当前PATH，应用内CLI可运行，ping/list均报告无live socket。
+不把历史Hub绑定当必要条件，不自动建立工作区。当前实际缺口是公开CLI不能预览未生效清单，
+最小--context-file零写入入口已在0.40.0开发树实现；独立输入/预期见project-context-candidate-test-plan.md，
+19新CLI测试和旧project/eval组合105通过，Ruff/skill校验通过，完整1695回归通过、11既有warnings，85.34秒。
+开发测试不操作真实项目，已认可论文格式和70完整摘录不重做。当前安装仍0.39.0，不能将开发
+入口当作实机可用；先完整测试，正常hotfix发布安装后只预览单个候选，应用更新仍需独立覆盖确认。
+
 完整1676项回归及版本/CLI/归属71项通过。源码907c3f9、runtime63a29f1已按正常release脚本
 构建并推送；pipx固定runtime SHA和Codex marketplace正常安装均为0.39.0，实际身份核实。
 不合并main，不改变服务，不提交用户的analysis-v5-human-review-plan与两个quotation-preview文件。

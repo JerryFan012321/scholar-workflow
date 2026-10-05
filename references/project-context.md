@@ -71,6 +71,8 @@ scholar-workflow project validate-context --project-root <project>
 scholar-workflow project overview --project-root <project>
 scholar-workflow project overview --project-root <project> --language en
 scholar-workflow project overview --project-root <project> --json
+scholar-workflow project validate-context --project-root <project> --context-file project-context-candidate.json
+scholar-workflow project overview --project-root <project> --context-file project-context-candidate.json
 ```
 
 `context-template` prints an empty, editable inventory with the existing project ID.
@@ -78,6 +80,18 @@ It does not write a manifest. Explicitly save and populate it only when requeste
 never overwrite an existing inventory implicitly. `validate-context` validates the
 declared inventory. `overview` checks only its declared local locators, without
 network requests, Git execution, directory discovery, copying, or launching tools.
+
+For an explicitly selected draft, `--context-file NAME` chooses one root-level JSON
+declaration instead of the active inventory. It uses the same bounded, no-symlink reader
+and requires the same project identity; a missing/invalid candidate stops rather than
+falling back to `project-context.json`. Names use the existing declaration convention:
+lowercase letter first, then lowercase letters, digits or hyphens, followed by `.json`.
+Paths and absolute filenames are rejected. Preparing that candidate is separate from
+these read-only commands; an existing candidate or active inventory is not overwritten.
+Markdown and validation output explicitly state that this is a candidate preview and
+the active inventory has not been replaced. Candidate JSON retains the usual overview
+fields and adds `preview: true` and `context_file`; default JSON is unchanged.
+Preview success is not approval, application, source verification or human acceptance.
 
 No Scholar config, Hub, cmux destination, Codex model, service port, or host registry
 is required. `--language` changes only the returned presentation, not the manifest.
@@ -114,3 +128,6 @@ regression passed 1,313 cases; human and installed-product functional evaluation
 separate. Editing these files alone never updates an installation. Legacy Hub entry points remain for
 compatibility, including some existing Field transaction paths; their retention does
 not make Hub the owner of the new project overview.
+Candidate preview is a later capability; use it only when the installed command's
+help exposes `--context-file`, not by importing private models or changing the active
+inventory just to render a draft.
