@@ -7,6 +7,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **analyze-paper / development evidence only:** review all 69 existing content records
+  in the single test paper: 35 bounded supports, 33 local quotation/page/qualification
+  completions and one explicit source gap. Preserve all four source hashes and the accepted
+  Canvas. Save an independent readable report and machine record; verify the native report
+  display, 34 block backlinks and 33 four-column issue rows. This is not 33 false conclusions,
+  whole-analysis scientific approval, human acceptance, a runtime release or a business rewrite.
 - **find-resource / development evidence only:** record an actual native cmux PDF preview
   of the single existing test paper, with live Zotero attachment resolution and unchanged
   PDF/analysis/Canvas/sidecar hashes. Preserve the child-only control mode: the external
