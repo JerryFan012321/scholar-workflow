@@ -364,6 +364,7 @@ def _merge_canvas(
     new_edges = {str(edge["id"]): edge for edge in rendered["edges"]}
 
     retained_columns: dict[int, set[int]] = {}
+    retained_widths: dict[int, int] = {}
     if baseline.document.schema_version in {4, 5}:
         for node in node_items:
             if not isinstance(node, dict) or node.get("id") not in old_node_ids:
@@ -371,6 +372,10 @@ def _merge_canvas(
             expected = new_nodes.get(node["id"])
             if expected is not None and type(expected.get("x")) is int and type(node.get("x")) is int:
                 retained_columns.setdefault(expected["x"], set()).add(node["x"])
+                if type(node.get("width")) is int:
+                    retained_widths[node["x"]] = max(
+                        retained_widths.get(node["x"], 0), node["width"]
+                    )
 
     merged_nodes: list[dict[str, Any]] = []
     emitted_node_ids: set[str] = set()
@@ -425,6 +430,18 @@ def _merge_canvas(
                 if canvas_image_width(added.get("text", "")):
                     parent_id = next(edge["fromNode"] for edge in rendered["edges"] if edge["toNode"] == node_id)
                     parent = next(row for row in merged_nodes if isinstance(row, dict) and row.get("id") == parent_id)
+                    if not column:
+                        # Extend a new layer from retained column widths, not
+                        # the narrower regenerated layout. Keep old nodes fixed.
+                        preceding = max(
+                            (x for x in retained_widths if x < parent["x"]), default=None
+                        )
+                        gutter = 64 if preceding is None else min(
+                            344, max(64, parent["x"] - preceding - retained_widths[preceding])
+                        )
+                        added["x"] = parent["x"] + retained_widths.get(
+                            parent["x"], parent["width"]
+                        ) + gutter
                     # New supplements follow the actual retained owner, not a
                     # regenerated Y position. Match parity for an exact center.
                     added["height"] += (parent["height"] - added["height"]) % 2

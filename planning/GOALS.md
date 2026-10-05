@@ -143,6 +143,11 @@ unverified边界；修正模范Source的01/02/Paper三份滞后说明。Obsidian
 保持，完整成对格式仍通过。旧历史记录保留且明确不属于该包。人工体验与项目生效覆盖授权
 仍独立pending；无新版本/服务/主线变化，G17仍active。见exemplar-navigation-results.md。
 
+当前Canvas图片切片：规则限定实验数据表和关键流程图，正文摘录截图不进入Canvas。
+0.41.0已正常发布安装；唯一真实V-JEPA2的新增图卡stage因末列碰撞拒绝，原三文件保持且
+check-bundle通过。0.41.1最小列定位修复的169项定向检查通过，安装后复验与原生/人工评鉴
+仍pending；不合并main、不迁移正式库、不以局部进展宣称G17完成。详见canvas-selected-images-plan.md。
+
 ## 长期不变量（INV）
 
 已激活的不变量对任何实现、任何阶段都必须成立，违反即为回归。标为**目标态（未激活）**的条目记录

@@ -5,13 +5,16 @@
 
 ## 2026-10-05 Canvas 选定图片能力开发
 
-下一步按既有hotfix安装态原则发布/安装0.41.0候选，不合并main、不切换Hub服务。
-先复验四处版本身份/manifest/eval，沿用1754完整与末次168定向结果，不重做整库业务测试。
-源码提交仅含本能力和已完成的开发记录，保留三份无关审阅文件。干净受管worktree生成
-runtime-only release并审计，再经pipx固定runtime SHA和Codex正常marketplace更新安装；
-回退为0.40.2 runtime8704947fbe4d04deacca17ed0bd1be2225e2d31c。
-实机仅新建test里的一个V-JEPA2候选包、两张源图及明确输入/结果，不覆盖现有canonical。
-具体步骤和通过/失败边界见canvas-selected-images-plan.md；目前尚未执行发布/安装或实机。
+0.41.0已正常发布安装：source68fed843347457d24a88d53d509781fedfadd0e1，
+runtimeaa7c8fa37b74d3c5a63c1c4883ca51d69ff86851；CLI、pipx固定commit及双cache manifest一致。
+单篇V-JEPA2首次公开stage-update因新增表格卡侵入旧宽节点103px返回canvas-integrity-conflict。
+原包check-bundle仍通过、三hash不变；test独立目录保留选图2/表2和失败输入，不冒称成功。
+问题是重生成末列坐标未使用实际保留列宽，不是原图不合格；窄修复仅扩展新增图卡列。
+合成多比较实验/1000px旧末列已复现碰撞，修复后169项相关回归通过；不重做整库或完整业务。
+下一步正常发布安装0.41.1可识别更新，再复验同一真实对象、保留旧失败输入和canonical。
+干净受管worktree打包runtime-only，保留三份无关审阅文件；不合并main、不切换Hub/其他服务。
+0.41.0为这次更新回退点，0.40.2的runtime8704947也仍保留。具体输入与边界见
+canvas-selected-images-plan.md。新版安装/候选显示/点击/科学裁剪与人工评鉴不能用合成通过代替。
 
 上轮已固化用户“仅实验数据表与关键流程图”的输出规则，本轮补现有 v5 成对接口的可选图卡，
 不重做论文分析，不改当前已登记 V-JEPA 2。独立合成输入、预期、失败用例和安装/人工边界见
@@ -22,8 +25,8 @@ canvas-selected-images-plan.md；先准备契约测试，再最小修改模型�
 未重复全套测试；1754项结果绑定收紧题注之前的代码，不混淆不同代码状态。
 Skill quick_validate、JSON和diff检查通过，完整回归的11项warnings为既有依赖/fork提示。
 旧布局新增图卡与实际保留owner精确居中，不挪动已有节点；放不下时返回冲突候选。
-测试输入/实际结果见canvas-selected-images-plan.md。尚未发布或安装，当前0.40.2不支持新字段；
-V-JEPA2 canonical无新增图卡，Obsidian实际显示/点击、裁剪充分性和人工美观均pending。
+上述1754/168结果属于0.41.0开发状态，不当作窄修复后的完整回归。
+V-JEPA2 canonical无新增图卡，Obsidian候选实际显示/点击、裁剪充分性和人工美观均pending。
 不把合成测试、规则文件或源码实现冒充安装态/人工能力通过。
 
 ## 2026-10-05 当前模范入口已跟上已提交内容

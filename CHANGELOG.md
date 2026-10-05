@@ -95,6 +95,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   the readable replay note is in the existing test package. This does not revise real quotations,
   certify human/source assessment, restore a cross-host provider or introduce another runtime build.
 
+## [0.41.1] - 2026-10-05
+
+### Fixed
+
+- **analyze-paper:** place a newly added source-image layer beyond the actual retained
+  column's widest node, preserving its existing gutter and all old node geometry.
+  A grouped synthetic comparison reproduces the wide-last-column collision before
+  the fix; 169 targeted image/update/staging/commit/package/safety checks pass after it.
+  Keep table/process-only scope and fail-closed layout checks. The first installed
+  0.41.0 single-paper staging attempt was refused without changing its canonical
+  bundle; native image display and human acceptance remain separate pending checks.
+
 ## [0.41.0] - 2026-10-05
 
 ### Added

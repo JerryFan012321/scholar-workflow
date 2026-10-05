@@ -221,3 +221,47 @@ def test_added_images_follow_retained_owner_without_reflowing_old_nodes() -> Non
         assert plan.status == "conflict" and plan.baseline is None
         assert "canvas-integrity-conflict" in plan.conflicts
     assert plan.current.canvas == current.canvas
+
+
+def test_new_image_layer_extends_the_retained_wide_last_column() -> None:
+    data = _payload(with_images=False)
+    comparison = next(claim for claim in data["claims"] if claim["claim_id"] == "e-c")
+    second = deepcopy(comparison)
+    second.update(claim_id="e-c2", outline_path="experiments/comparison/second")
+    data["claims"].append(second)
+    comparison.update(container=True, body="", evidence={
+        "kind": "not_applicable", "detail": "Structural container only"
+    })
+    finding = deepcopy(_image_point(_payload()))
+    image = finding.pop("canvas_image")
+    finding["point_id"] = "finding-1"
+    comparison["points"] = [finding]
+    document = AnalysisDocument.model_validate(data)
+    current = render_analysis(document, note_stem=NOTE)
+    baseline = create_baseline(document, current, note_stem=NOTE)
+    last_x = max(node["x"] for node in current.canvas["nodes"])
+    for node in current.canvas["nodes"]:
+        if node["x"] == last_x:
+            node["width"] = 1000
+    before = {node["id"]: deepcopy(node) for node in current.canvas["nodes"]}
+    update = document.model_dump(mode="json")
+    next(claim for claim in update["claims"] if claim["claim_id"] == "e-c")["points"][0]["canvas_image"] = image
+    plan = plan_analysis_update(
+        current=current,
+        baseline=baseline,
+        update=AnalysisDocument.model_validate(update),
+        note_stem=NOTE,
+    )
+    after = {node["id"]: node for node in plan.proposed.canvas["nodes"]}
+    images = set(after) - set(before)
+    assert len(images) == 1
+    for image_id in images:
+        edge = next(edge for edge in plan.proposed.canvas["edges"] if edge["toNode"] == image_id)
+        image, parent = after[image_id], after[edge["fromNode"]]
+        assert image["x"] >= parent["x"] + parent["width"] + 64
+        assert parent["x"] == last_x
+        assert image["x"] >= last_x + 1000 + 64
+    for node_id, node in before.items():
+        assert {key: after[node_id][key] for key in ("x", "y", "width", "height")} == {
+            key: node[key] for key in ("x", "y", "width", "height")
+        }
