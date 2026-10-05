@@ -9,6 +9,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   current global rule instead of retaining a blanket approval gate in project
   guidance. Data writes, external operations and human acceptance remain separate.
 
+## [0.38.2] - 2026-10-05
+
+### Fixed
+- **analyze-paper:** installed 0.38.1 evidence revision retained all old geometry,
+  but the native editor subsequently re-encoded identical JSON and changed its
+  physical hash. Add an explicit registered-hash proof for this metadata-bearing
+  unchanged graph; both provider CAS and exact canonical encoding must agree.
+  Three-file bases, baseline/owner checks and no Vault writes remain enforced;
+  incorrect hashes fail closed. This is not arbitrary content/layout adoption.
+  69 focused synthetic tests pass; full unit/contract regression: 1,580 passed,
+  11 existing warnings in 80.87 seconds. Ruff and skill validation pass. Installed
+  acceptance follows separately, with no new paper analysis or Vault rewrite.
+
 ## [0.38.1] - 2026-10-05
 
 ### Fixed
