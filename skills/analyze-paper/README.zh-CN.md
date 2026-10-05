@@ -63,6 +63,9 @@ Vault Markdown 可跳到具体块。原文链接与 Canvas→正文反链同处�
 无法核实原措辞时明确报告来源缺口。Canvas 不重复摘录，保留规定的可编辑树与内容层级。
 旧分析不会自动改变；转换须显式请求整篇格式更新，不能只手改受管 Markdown。
 完整规范见 `references/analysis-format.md`。
+用户要求时，正文论点旁可加入原生PDF区域截图；不会因此给Canvas增加图片节点。
+图片与裁剪复现输入同处论文attachments目录，归属显式声明；0.40.1的复现包包含附件清单
+及校验过的文件，不只带走分析三文件。完整原句与页级原文入口仍保留。
 v4/v5 可通过 `reader` 显式选择已登记、核验 Vault 的 ZotFlow Library Reader；Markdown 和 Canvas 均可在
 Obsidian 内打开本机 Zotero 附件并定位物理页。不指定时仍生成 Zotero 原生入口。来源身份始终是
 结构化 span，页级链接不宣称逐句选中或批注同步；使用该选项前仍须核验插件、本机模式与附件。

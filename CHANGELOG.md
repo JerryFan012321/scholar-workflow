@@ -7,6 +7,31 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **development ledger only:** record read-only source review of eight points in the
+  first two method modules. Two excerpts need fuller method evidence; dataset/model
+  scaling and 3D-RoPE require the actual page-five locator. Preserve inference labels
+  and the projected full-resolution timing baseline. No analysis/Canvas changes or
+  new runtime release; retain prior valid experiment reexecution rather than rerun it.
+- **development ledger only:** acknowledge the user's satisfaction with the 0.39.0
+  result without extending it to the unapplied 0.40.0 project inventory. Record two
+  native-tool PDF region examples in the test Vault: complete table evidence and a
+  full limitations paragraph, reader/backlinks, independent inputs and replay results.
+  Same-version rerendered PNG bytes agree; four source hashes remain unchanged.
+  No runtime API, automatic analysis-format change or new release.
+- **analyze-paper / development ledger only:** independently review nine key parent claims
+  against Local API text and selected rendered PDF pages. The stated numbers and bounded
+  conditions have source support, but three adjacent excerpt sets need fuller coverage of
+  results or qualifications. Preserve the canonical Markdown/Canvas/sidecar and save a
+  separate test-Vault review proposal. This is not an all-content scientific sign-off,
+  a new analysis, a runtime change or another release.
+
+- **init-project / development ledger only:** record normal 0.40.0 hotfix publication and
+  installation, then one installed public candidate preview of eight explicit project materials.
+  Save the readable output at the example project root and the review guide in the test Vault;
+  active inventory, old overview, source code and metrics retain their protected hashes.
+  External reader availability, human assessment and applying the inventory remain separate
+  pending decisions. No experiment rerun, paper/Canvas rewrite, new runtime build or main merge.
+
 - **analyze-paper / development ledger only:** record normal 0.39.0 hotfix publication and
   installation, then one installed portable ownership replay into a new test directory with
   isolated host state. Eight file hashes and stable identities are preserved; receipt replay
@@ -24,6 +49,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   portable Canvas declaration. Replay preserves receipt values and all six protected file hashes;
   the readable replay note is in the existing test package. This does not revise real quotations,
   certify human/source assessment, restore a cross-host provider or introduce another runtime build.
+
+## [0.40.1] - 2026-10-05
+
+### Fixed
+
+- **analyze-paper / knowledge reproduction:** include the existing explicit asset
+  manifest and its owned, hash/size-checked image/data files in portable export and
+  restoration. Reject invalid ownership, duplicate/colliding paths, unsafe files
+  and concurrent read-set changes. Project portable assets without modifying the
+  live provider or using old receipts to certify the projection. No inferred prose
+  relationships, PDF redistribution, Hub dependency or new screenshot service.
+  The complete 1,713-case unit/contract suite passes; installed single-paper and
+  human crop assessment remain separate.
+- **analyze-paper:** document requested native PDF crops beside Markdown claims,
+  paper-local attachments and non-secret replay inputs. Preserve excerpts, source
+  links, accepted Canvas and paired commit protections. Image inclusion alone is
+  not human approval of crop readability or a new scientific-source verdict.
 
 ## [0.40.0] - 2026-10-05
 

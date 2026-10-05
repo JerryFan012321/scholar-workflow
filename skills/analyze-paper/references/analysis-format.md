@@ -216,6 +216,27 @@ an existing pair needs an explicitly requested whole-analysis format update with
 verification and the usual paired CAS/conflict protections. Never bulk refresh older papers or
 hand-edit just the Markdown to add quotations.
 
+### Requested source-region images
+
+When the user requests PDF evidence screenshots, place native-rendered region images
+beside the supported Markdown claim, retaining its source excerpt and page link.
+Use a relative image embed in that claim's IR `body` and an explicit `canvas_summary`
+containing the unchanged concise claim; images do not enter Canvas by implication.
+Keep the full caption/headers or complete relevant paragraph, not just isolated
+matching words. Preserve the source image; do not redraw, alter scientific content,
+or claim that a crop displays Zotero database annotations.
+
+Save images in the paper's `attachments/` folder. Declare each image and the replay
+input as explicit assets owned by the analysis in `.scholar-workflow/assets.yml`,
+following the shared storage and knowledge-reproduction contracts. The separate
+non-secret replay input records attachment/library identity, source PDF SHA-256,
+zero-based physical page, page box/rotation, DPI, top-left crop coordinates/units,
+native tool/version and resulting image dimensions/SHA-256. Resolve the source via
+Local API at replay; do not store an absolute PDF path, port or credentials as identity.
+Use installed paired update/commit for the analysis, not a single-file Markdown patch.
+The image caption names its source page/region in the analysis language; crop
+completeness/readability requires explicit human assessment separately from byte replay.
+
 ### Obsidian-internal ZotFlow reader link
 
 The source span stays `library_id + attachment_key + content_hash + page_index` regardless of the

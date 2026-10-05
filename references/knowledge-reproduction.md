@@ -18,7 +18,15 @@ Bodies, PDFs, credentials and application settings are not embedded or downloade
 Every owned analysis must contain its conformant Markdown/Canvas/sidecar trio in
 the same paper folder. Declared artifacts/assets must match their physical hashes.
 Home/navigation paths are Field-relative; file inventory paths are Source-relative.
-The explicit inventory also binds portable manifests, including absence of artifacts.yml.
+From 0.40.1, explicitly declared `.scholar-workflow/assets.yml` assets and the manifest
+travel with this inventory. Their existing artifact owners, paths, sizes and hashes
+are verified; dangling ownership, collisions, duplicates and concurrent changes refuse
+export. The portable catalog projects these declarations without rewriting the live
+provider or importing its receipt history. No Markdown embed or filename is scanned
+to infer ownership. An explicit image embed must have its asset declaration before
+export; a successful three-file analysis check alone does not verify image bytes.
+The explicit inventory also binds portable manifests, including absence of artifacts.yml
+and assets.yml during inspection.
 Missing, unsafe, changed or incomplete members refuse export rather than producing
 a misleading partial package. `--format md --language en|zh` gives a separate readable
 summary; it does not provide the complete replay input.

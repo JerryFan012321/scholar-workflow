@@ -7,6 +7,8 @@ import re
 from collections.abc import Callable
 from pathlib import Path, PurePosixPath
 
+from ruamel.yaml import YAML
+
 from scholar_workflow.analysis.apply_changes import (
     KnowledgeProviderSnapshot,
     _locked_state_root,
@@ -15,7 +17,7 @@ from scholar_workflow.analysis.apply_changes import (
 from scholar_workflow.analysis.commit import _read_target_regular
 from scholar_workflow.analysis.models import AnalysisBaseline
 from scholar_workflow.analysis.package_check import check_package
-from scholar_workflow.knowledge.catalog_models import HubCatalog
+from scholar_workflow.knowledge.catalog_models import HubAsset, HubCatalog
 from scholar_workflow.knowledge.fields import (
     FieldManifest,
     FieldRegistryError,
@@ -37,8 +39,51 @@ from scholar_workflow.workflows.register_paper import (
 )
 
 
+def _asset_projection(snapshot, payload):
+    """Overlay explicit portable assets without changing the live provider."""
+    if payload is None:
+        return snapshot
+    try:
+        declaration = YAML(typ="safe").load(payload.decode("utf-8"))
+        if (not isinstance(declaration, dict) or set(declaration) != {"schema_version", "assets"}
+                or type(declaration["schema_version"]) is not int
+                or declaration["schema_version"] != 1 or not isinstance(declaration["assets"], list)):
+            raise ValueError("Invalid asset manifest shape")
+        rows = [HubAsset.model_validate(row) for row in declaration["assets"]]
+    except Exception as exc:
+        raise FieldRegistryError("Invalid portable asset manifest") from exc
+    owners = {row.artifact_id for row in snapshot.catalog.artifacts}
+    occupied = {r.markdown_path for r in snapshot.manifest.atomic_resources}
+    occupied.update(d.markdown_path for d in snapshot.manifest.core_documents)
+    occupied.update(d.vault_path for d in snapshot.manifest.supporting_documents)
+    occupied.update(a.vault_path for a in snapshot.artifacts)
+    merged = {row.asset_id: row for row in snapshot.catalog.assets}
+    seen_ids, seen_paths = set(), set()
+    for row in rows:
+        if row.asset_id in seen_ids or row.vault_path in seen_paths:
+            raise FieldRegistryError("Duplicate portable asset identity or path")
+        if (set(row.owner_artifact_ids) - owners or row.vault_path in occupied
+                or row.vault_path.startswith(".scholar-workflow/")):
+            raise FieldRegistryError("Portable asset has unknown ownership or an occupied path")
+        if row.asset_id in merged and merged[row.asset_id] != row:
+            raise FieldRegistryError("Portable asset declaration conflicts with provider")
+        seen_ids.add(row.asset_id)
+        seen_paths.add(row.vault_path)
+        merged[row.asset_id] = row
+    data = snapshot.model_dump(mode="json")
+    catalog = data["catalog"]
+    catalog.update(revision="", assets=[merged[key].model_dump(mode="json") for key in sorted(merged)])
+    # This is a portable projection, not a new live catalog revision. Original
+    # receipt history remains in the untouched provider and cannot certify it.
+    data.update(snapshot_revision="", receipts=[],
+                catalog=HubCatalog.model_validate(catalog).model_dump(mode="json"))
+    return KnowledgeProviderSnapshot.model_validate(data)
+
+
 def _inventory(root, root_fd, state_fd, fields, snapshot):
     """Check the same complete explicit file set for export and restoration."""
+    asset_bytes, _ = _read(state_fd, "assets.yml")
+    snapshot = _asset_projection(snapshot, asset_bytes)
     paths = {r.markdown_path for r in snapshot.manifest.atomic_resources}
     paths.update(d.markdown_path for d in snapshot.manifest.core_documents)
     paths.update(d.vault_path for d in snapshot.manifest.supporting_documents)
@@ -86,14 +131,16 @@ def _inventory(root, root_fd, state_fd, fields, snapshot):
             raise FieldRegistryError("Analysis reproduction bundle is nonconformant or changed")
         baselines[parent_id] = (sidecar.resource_id, baseline)
     manifest_bytes = {}
-    for name in ("fields.yml", "artifacts.yml"):
+    for name in ("fields.yml", "artifacts.yml", "assets.yml"):
         payload, _ = _read(state_fd, name)
+        if name == "assets.yml" and payload != asset_bytes:
+            raise FieldRegistryError("Portable asset manifest changed during inspection")
         manifest_bytes[name] = payload
         if payload is not None:
             hashes[".scholar-workflow/" + name] = _hash(payload)
     if manifest_bytes["fields.yml"] is None:
         raise FieldRegistryError("Portable Field manifest disappeared")
-    return contents, hashes, manifest_bytes, baselines
+    return contents, hashes, manifest_bytes, baselines, snapshot
 
 
 def reproduction_plan(registry: KnowledgeSourceRegistry, *, source_id: str,
@@ -126,7 +173,8 @@ def reproduction_plan(registry: KnowledgeSourceRegistry, *, source_id: str,
         if snapshot.vault_binding != binding:
             raise FieldRegistryError("Knowledge provider belongs to another Source root")
 
-        contents, hashes, manifest_bytes, baselines = _inventory(root, root_fd, state_fd, fields, snapshot)
+        contents, hashes, manifest_bytes, baselines, snapshot = _inventory(
+            root, root_fd, state_fd, fields, snapshot)
         reader_rebind = [parent for parent, (_, baseline) in baselines.items()
                          if baseline.document.reader is not None
                          and baseline.document.reader.kind == "zotflow_library"]
@@ -323,7 +371,8 @@ def restore_plan(registry: KnowledgeSourceRegistry, zotero, *, source_id: str, p
     try:
         state_fd = _open_directory_chain(root / ".scholar-workflow")
         try:
-            contents, hashes, manifests, baselines = _inventory(root, root_fd, state_fd, fields, snapshot)
+            contents, hashes, manifests, baselines, snapshot = _inventory(
+                root, root_fd, state_fd, fields, snapshot)
             if hashes != portable["files"]:
                 raise FieldRegistryError("Destination files differ from the complete reproduction inventory")
             expected_readers = sorted(parent for parent, (_, baseline) in baselines.items()
