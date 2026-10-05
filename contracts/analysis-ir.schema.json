@@ -349,7 +349,7 @@
         "page_label": {"type": ["string", "null"], "minLength": 1, "maxLength": 64},
         "annotation_key": {"type": ["string", "null"], "pattern": "^[A-Z0-9]{8}$"},
         "section": {"type": ["string", "null"], "minLength": 1, "maxLength": 160},
-        "quote": {"type": ["string", "null"], "minLength": 1, "maxLength": 400}
+        "quote": {"type": ["string", "null"], "minLength": 1, "maxLength": 1600}
       }
     },
     "vault_markdown_span": {
@@ -362,7 +362,7 @@
         "artifact_id": {"type": "string", "minLength": 1, "maxLength": 240, "pattern": "^[^\\s]+$"},
         "vault_path": {"type": "string", "minLength": 4, "maxLength": 512, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.?/)(?!.*//)[^\\\\#|\\[\\]\\r\\n]+\\.md$"},
         "block_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,127}$"},
-        "quote": {"type": ["string", "null"], "minLength": 1, "maxLength": 400}
+        "quote": {"type": ["string", "null"], "minLength": 1, "maxLength": 1600}
       }
     }
   },

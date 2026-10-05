@@ -46,7 +46,9 @@ new template. Report an unsupported-version limitation rather than substituting 
    artifacts. The Markdown remains independently readable; the required Canvas expands the
    reference image's named subslots into separate editable nodes, each keeping its inline
    evidence, original-source link and exact Markdown-block backlink.
-   The Markdown-only verbatim-excerpt contract is in `references/analysis-format.md`;
+   The Markdown-only verbatim-excerpt contract is in `references/analysis-format.md`:
+   prose excerpts retain complete sentences and enough source context to be independently readable,
+   not just matching keywords or isolated labels;
    Canvas keeps a concise projection without quotations.
    Keep machine claim markers out of v4 human Markdown and Canvas; use block anchors and the
    sidecar for identity. Keep the current reference image's five-branch hierarchy and its
@@ -74,6 +76,8 @@ new template. Report an unsupported-version limitation rather than substituting 
    `scholar-workflow analysis commit-bundle`; only its receipt makes the Markdown, Canvas, and
    sidecar canonical. Register only the receipt's explicit `KnowledgeChangeSet`. Keep analysis,
    annotations, and literature trees as separate artifacts; never infer relations from prose.
+   For a portable exemplar, also use `${CLAUDE_PLUGIN_ROOT}/references/canvas-registration.md`
+   to declare its already-owned Canvas in the Source manifest; this does not regenerate the pair.
 8. Return each pair's paths, profile/scope, validation state, and every source gap or conflict.
 
 ## Constraints
@@ -115,3 +119,4 @@ a canonical commit. Replay uses the installed public CLI, not a private renderer
 - `references/analysis-batch.md` — load for multi-paper analysis or an existing-pair update.
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/source-policy.md`
+- `${CLAUDE_PLUGIN_ROOT}/references/canvas-registration.md` — only for a requested portable exemplar.
