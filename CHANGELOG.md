@@ -5,6 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Changed
+
+- **development ledger only:** record normal 0.38.3 publication/installation and its single-paper
+  portable Canvas declaration. Replay preserves receipt values and all six protected file hashes;
+  the readable replay note is in the existing test package. This does not revise real quotations,
+  certify human/source assessment, restore a cross-host provider or introduce another runtime build.
+
 ## [0.38.3] - 2026-10-05
 
 ### Added

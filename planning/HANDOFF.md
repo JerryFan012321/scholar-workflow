@@ -5,6 +5,18 @@
 
 ## 2026-10-05 当前切片：单篇 Canvas 便携登记
 
+**0.38.3已正常发布安装：source12f054003773cd14dce274030cefa448c8422e89，runtime
+8f2cdacbabb2d7b963ae805e0fbc4bae9d435a6a，PATH CLI/module/dist/Codex cache及两manifest一致。
+安装版两个span模型均实际报告maxLength1600。public canvas-plan/register-canvas已在现有
+test Source为V-JEPA2新增artifacts.yml；回执9368df8d…，manifest hash74999b24…。
+同摘要重放的JSON字段值相同（键顺序不同，不冒称输出字节相同）；正文/Canvas/sidecar/
+Field/registry/provider六文件hash全部不变，Canvas仍106nodes/105edges。
+复现/便携声明-0.38.3/使用说明.md与分离机器回执已新增，installed knowledge open已发起
+原生打开请求，但不声称已目视或人工验收。完整1620通过、11既有警告；main/服务/正式库/
+Zotero/PDF/模范项目既有context未改，用户审阅文件未纳入提交。回退0.38.2 runtime7b6f8943。
+下一真实内容工作是当前单篇的完整原句/语境修订：旧短摘录仍在，不能用规则/容量/安装通过
+代替内容修订。之后仍需论文provider跨机复现及项目资料整合等G17剩余证据，目标未完成。**
+
 续行处理正文摘录容量：独立手写合成原文超过400字符，现有PDF/Markdown span均拒绝；
 新边界/呈现测试已先运行，10失败、6通过，失败均定位现有400上限。准备仅提高quote至
 1600字符并同步公开schema；Canvas摘要、节点和布局容量不变。真实V-JEPA2和安装版本

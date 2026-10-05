@@ -3,8 +3,8 @@
   "cases": [
     {
       "id": "knowledge-installed-portable-canvas-declaration",
-      "description": "G17：单篇已归属分析经安装版 knowledge canvas-plan/register-canvas，在 Source 的 artifacts.yml 声明稳定身份与父级，保留正文/图/sidecar/provider/Field 与无关清单行；漂移、冲突和中断须明确拒绝或条件恢复。合成测试不代替安装态单对象验收，也不证明整份 provider 跨机恢复、科学支持或人工审美。",
-      "status": "pending"
+      "description": "G17的单篇便携声明子项：0.38.3 source12f0540/runtime8f2cdac正常安装后，public canvas-plan/register-canvas在现有test V-JEPA2 Source新增artifacts.yml；同摘要回执字段值一致，正文/图/sidecar/provider/Field/registry六hash不变。24登记定向与完整1620合成测试通过，漂移、冲突、中断与无关行由独立fixture覆盖。此pass仅证明本接口和安装态单对象声明，不证明整份provider跨机恢复、科学支持、人工审美或G17完成；记录见planning/hotfix-0.38.3-results.md。",
+      "status": "pass"
     },
     {
       "id": "analysis-readable-complete-source-excerpts",
