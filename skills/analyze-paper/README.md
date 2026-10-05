@@ -100,6 +100,20 @@ Field initialization, relocation or a silent v5-to-v4 downgrade.
 
 ## Batch conformance
 
+For an existing v4/v5 pair, prepare an `AnalysisCommitRequest` containing its exact
+three-file base hashes, then run `scholar-workflow analysis stage-update --request
+update.json --vault-root /registered/source`. This stages a layout-preserving update
+without changing the originals. Save the returned `commit_request` as JSON and use it
+with `analysis commit-bundle`; apply only the receipt's explicit change set.
+Human-content, stale-base or geometry conflicts stop the update. A regenerated
+whole-tree batch cannot be committed if it would discard the existing graph.
+See `references/analysis-batch.md` for the request and handoff contract.
+These update entries require installed runtime 0.38.1 or later. When an editor has
+only added supported empty-frontmatter Canvas metadata, use the explicit
+`analysis acknowledge-canvas-metadata` entry first and save its returned `next_request`
+for staging. It records the proven new hash through provider CAS without rewriting
+the Vault files; it does not adopt text/layout edits or commit an analysis revision.
+
 The replay package can inspect its explicitly selected knowledge folder with
 `scholar-workflow knowledge preview /absolute/folder --language en` without Hub.
 This is a zero-write navigation/ownership preview, not Source registration or paper acceptance.

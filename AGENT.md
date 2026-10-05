@@ -161,7 +161,8 @@ hotfix 按可正式发布的独立版本打包并通过正常安装/更新入口
 必须有可识别版本、确定源码提交和完整 runtime-only 产物，临时 venv 或源码直跑不算
 产品安装。hotfix 发布/安装与 main 合并分离，约定验收通过后才合并；不得在验收前
 冒称稳定主线已完成。发布脚本从当前已提交且干净的开发分支生成 runtime-only release，
-可用于 hotfix，不得为发布而提前合并。测试范围与安装/服务切换影响先按测试独立原则展示并获批；
+可用于 hotfix，不得为发布而提前合并。测试范围先按全局测试原则说明；安装/服务切换及业务
+写入的授权独立判断，不把普通测试说明变成额外审批；
 只复验受影响的单对象功能及必要回归，不重做仍有效的整批业务验收。
 
 开发或迭代 skill、CLI、Hub 契约时，内循环先用合成 fixture 和一个受控对象
@@ -273,8 +274,9 @@ methodology (stable); `planning/` is the per-phase **"what to build / goals / ha
 - Test skill triggering by reviewing the `description` field — it's the primary routing mechanism
 - Write contract test before modifying any adapter interface
 - Update `contracts/handoff.schema.json` before modifying the state machine
-- Before committing, propose the `pytest tests/unit tests/contract` test plan with its
-  inputs, expected results, impact, and artifacts; run it only after user approval.
+- Before committing, explain the `pytest tests/unit tests/contract` test plan with its
+  inputs, expected results, impact, and artifacts. Follow the global test rule rather
+  than imposing a blanket approval gate.
   Do not treat an untested change as validated or ready to commit.
 
 ### Ask First

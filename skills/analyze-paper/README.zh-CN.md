@@ -89,6 +89,16 @@ v5 为每条独立归属的逐点内容生成单独可编辑节点，不合并�
 
 ## 批量一致性门禁
 
+已有 v4/v5 文档对更新时，先准备包含原三文件精确 base hash 的 `AnalysisCommitRequest`，
+再运行 `scholar-workflow analysis stage-update --request update.json --vault-root /已登记Source`。
+它保留旧图，仅写暂存产物，不改原件。将返回的 `commit_request` 保存为 JSON 后交给
+`analysis commit-bundle`，仅登记回执中的显式 change set。人工内容、过期基线或几何冲突会
+停止更新；不能提交会丢弃旧图布局的全图重生成结果。详细接口见 `references/analysis-batch.md`。
+这些更新入口需要安装版 0.38.1 或更新版本。若编辑器仅新增了合法且 frontmatter 为空的
+Canvas metadata，先显式运行 `analysis acknowledge-canvas-metadata`，保存返回的
+`next_request` 后再暂存。校准只通过 provider CAS 记录已证明的新 hash，不改 Vault 文件，
+不接纳文字/布局变化，也不代表分析修订已提交；输入与回执独立保留。
+
 复现包可运行 `scholar-workflow knowledge preview /所选文件夹绝对路径 --language zh`，
 不依赖 Hub 地检查导航、归属和冲突。它零写入，不是 Source 登记或论文验收。
 

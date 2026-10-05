@@ -7,6 +7,61 @@
 
 ### 当前目标与下一能力切片（覆盖以下历史状态说明）
 
+2026-10-05 最新续行：已重新完整读取全局AGENT/RTK和安装态验收规则，普通确定性
+测试不再等待额外批准。stage-update、旧图保留提交守护及显式metadata校准的63项
+定向测试通过；补公开CLI拒绝/成功/重放及新路由后68项通过（1.58秒），变动模块Ruff通过。
+版本同步0.38.1后完整unit/contract为1579通过、11既有警告、80.34秒，skill/diff通过。
+metadata校准仅接纳能精确证明的新增空frontmatter metadata，通过现有provider CAS
+更新已登记Canvas hash，并返回可供stage-update使用的next_request；不改Vault文件，
+不接纳节点文字或布局漂移。此段覆盖下方历史“尚未测试/等待测试批准”措辞。
+准备正常提交、发布、安装0.38.1，真实test两处证据修订仍未canonical提交。模范项目
+既有context覆盖的独立批准仍未收到；不扩大业务写入范围，不合并main，不改服务或正式库。
+
+本次续行只读证明ef814cab去掉metadata按canonical编码即006787d2，与provider完全匹配。
+又核现有apply-change-set只检登记CAS、并不读取Vault；不能凭手工change-set冒称安全
+metadata校准。准备两个独立负例：登记后仅metadata或安全布局变化仍provider冲突、两端
+零写入；测试尚未执行。新发现不是可直接绕过的旧hash问题，未来需有受控校准证据/回执，
+不靠sidecar语义hash取代物理CAS。更新测试预期，测试批准和项目清单覆盖批准仍未收到。
+
+本轮已准备最小更新hotfix源码、独立合成输入与断言，以及skill的stage-update交接说明；
+尚未运行新增测试，尚未提交/发布/安装，仍等待本轮测试确认。test对象实际新增
+复现/证据修订-20261005/证据修订预览.md，通过已安装knowledge open打开后，Obsidian
+activeFile确为该新Markdown、view=markdown。这是两处文字/页级来源的可读预览，不是
+canonical新分析或新Canvas。原生打开笔记时Advanced Canvas关闭旧视图自动补写
+metadata={version:1.0-1.0,frontmatter:{}}，Canvas字节hash变为ef814cab；105nodes/104edges
+与读取基线逐项完全相同，MD与sidecarhash不变。provider仍记录旧006787d2物理hash，
+后续不能仅替换请求base或手改provider来绕过漂移，须先解决受控布局/metadata更新的
+权威记录边界。GUI/点击/审美未据此标通过。
+不要把预览当成0.38.1安装态成果，也不要用未验证补丁继续业务提交。
+
+本轮续行只修test canonical V-JEPA2的两处证据：图3追加物理p5 span，机器人comparison
+将原有泛化边界文字拆成analysis_inference finding-1。完整其余34 claims与身份/框架保留；
+新显式batch暂存，先比对现有hash/provider与所有未改内容，再考虑公开CAS成对提交。几何或
+人工修改冲突不绕过，不手改Canvas/sidecar；原pdf/正式库/项目清单/代码/实验/服务不动。
+上一轮项目整合候选只是新增预览，既有project-context覆盖确认仍未收到，不能据此替换。
+
+实际新batch仅暂存validated（69内容/106节点），canonical未写。安装包公开更新引擎的
+零写入诊断返回canvas-integrity-conflict/canvas-level-alignment：新节点沿用新列坐标，
+旧图列位置保留。不得把105旧节点全图重排的passing草稿直接commit来绕过。独立测试方案
+见analysis-existing-update-test-plan.md，已在会话询问本轮测试批准。下一最小hotfix补同层
+新增节点对齐，以及公开stage-update暂存保留旧图；commit守护已有图，拒绝未经该边界的
+全图覆盖。先合成fixture，正常发布安装后才再碰该test对象；现在不宣称修订已提交。
+
+2026-10-05 下一目标续行：上一轮是实质progress，不是全阶段完成。核对模范项目与当前已登记
+V-JEPA2/Canvas/实验档案的实际连接，发现project-context仍指旧0.32.3候选。只读准备显式引用
+补丁和现有实验/原生工具检查，不重做论文或算术执行。示例项目AGENTS要求修改既有文件先
+确认，已在会话询问仅改资料引用；批准前不覆盖manifest或补项目规则占位符。科学支持仍不能
+由68条quote匹配代替，优先核重点数值/局限上下文。main/服务/正式库不动。
+
+本轮实际新增model-project-0330的project-context-0.38.0候选.json和项目资料-0.38.0候选.md，
+用已安装包的ProjectContext/build_project_overview/render_project_overview准备8入口预览；
+不是public CLI已应用更新。原manifest和code/recipe/MD/Canvas hashes全部不变；既有档案
+public validate仍1 Run/3 Attempts/1 Target/1 Artifact通过，没有重跑。Obsidian原生查询可定位
+新MD/Canvas/owner；Mac仍锁屏、cmux无live socket，GUI/窗口动作未通过。本轮原文核对四组
+关键数值，另发现图3逐级数值需补物理p5入口（现仅p6累计段），机器人段的泛化边界应标
+分析推断而非整体author_stated；原文核对-0.38.0.md给出可读说明和原文页链接，未手改受管包。
+下一步需获准替换既有context后用public CLI刷新，以及经成对更新修这两项；勿再生成重复样本。
+
 **0.38.0已正常发布安装并交付下一版实际资料包：source4d604c19/runtime29c8ad00，
 CLI/module/dist/Codex cache一致。安装版公开paper-plan/register-paper在原清洁test Source/Field
 新建resources/papers/2025-v-jepa-2-0380，owner/导航/provider真实一致；随后public batch、

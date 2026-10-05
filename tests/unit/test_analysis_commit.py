@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import multiprocessing
 import queue
+from copy import deepcopy
 from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
@@ -363,6 +364,201 @@ def test_v4_commit_uses_unique_provider_manifest_paper_folder(tmp_path: Path) ->
         source_registry=_registry_for_provider(provider),
     )
     assert all(item.action == "unchanged" for item in unchanged.files)
+
+
+@pytest.mark.parametrize("changed_field", ["none", "text", "layout", "frontmatter", "stale"])
+def test_editor_metadata_acknowledgement_is_bounded_and_replayable(
+    tmp_path: Path, changed_field: str, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from click.testing import CliRunner
+
+    from scholar_workflow.analysis.editor_metadata import acknowledge_canvas_metadata
+    from scholar_workflow.cli import main
+
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    provider, revision, snapshot_revision = _provider_state(
+        tmp_path, vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Note.md")],
+    )
+    document = _v4_document()
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+    initial = commit_analysis_bundle(
+        vault_root=vault, state_root=state, request=request, bundle=bundle,
+        baseline=baseline, source_registry=_registry_for_provider(provider),
+    )
+    apply_knowledge_change_set(state_root=provider, change_set=initial.change_set)
+    snapshot = load_knowledge_provider_snapshot(provider)
+    canvas_path = vault / request.paths.canvas
+    canvas = json.loads(canvas_path.read_text())
+    canvas["metadata"] = {"version": "1.0-1.0", "frontmatter": {}}
+    if changed_field == "text":
+        canvas["nodes"][0]["text"] += " human content"
+    elif changed_field == "layout":
+        canvas["nodes"][0]["x"] += 128
+    elif changed_field == "frontmatter":
+        canvas["metadata"]["frontmatter"]["human"] = "observation"
+    canvas_path.write_text(json.dumps(canvas))
+    bases = {p: _digest((vault / p).read_bytes()) for p in request.paths.as_list()}
+    if changed_field == "stale":
+        bases[request.paths.canvas] = "sha256:" + "0" * 64
+    update = request.model_copy(update={
+        "base_revisions": bases, "base_catalog_revision": snapshot.catalog.revision,
+        "base_snapshot_revision": snapshot.snapshot_revision,
+    })
+    before = {p: (vault / p).read_bytes() for p in request.paths.as_list()}
+    provider_before = (provider / "knowledge-provider.snapshot.json").read_bytes()
+    if changed_field != "none":
+        with pytest.raises((AnalysisCommitConflict, AnalysisCommitSafetyError)):
+            acknowledge_canvas_metadata(
+                vault_root=vault, request=update, source_registry=_registry_for_provider(provider),
+            )
+        assert (provider / "knowledge-provider.snapshot.json").read_bytes() == provider_before
+    else:
+        request_path = tmp_path / "metadata-request.json"
+        request_path.write_text(update.model_dump_json())
+        args = ["analysis", "acknowledge-canvas-metadata", "--request", str(request_path),
+                "--vault-root", str(vault)]
+        monkeypatch.setenv("SCHOLAR_WORKFLOW_HOME", str(tmp_path / "unknown-source"))
+        refused = CliRunner().invoke(main, args)
+        assert refused.exit_code == 7, refused.output
+        assert (provider / "knowledge-provider.snapshot.json").read_bytes() == provider_before
+        monkeypatch.setenv("SCHOLAR_WORKFLOW_HOME", str(tmp_path))
+        acknowledged = CliRunner().invoke(main, args)
+        assert acknowledged.exit_code == 0, acknowledged.output
+        result = json.loads(acknowledged.output)
+        applied = (provider / "knowledge-provider.snapshot.json").read_bytes()
+        replay = acknowledge_canvas_metadata(
+            vault_root=vault, request=update, source_registry=_registry_for_provider(provider),
+        )
+        assert replay == result
+        assert result["canonical_written"] is False
+        assert (provider / "knowledge-provider.snapshot.json").read_bytes() == applied
+        current = load_knowledge_provider_snapshot(provider)
+        next_request = AnalysisCommitRequest.model_validate(result["next_request"])
+        assert next_request.base_catalog_revision == current.catalog.revision
+        assert next_request.base_snapshot_revision == current.snapshot_revision
+        assert next_request.base_revisions == bases
+        assert next_request.document == update.document
+        cli_replay = CliRunner().invoke(main, args)
+        assert cli_replay.exit_code == 0, cli_replay.output
+        assert json.loads(cli_replay.output) == result
+        registered = next(a for a in current.artifacts if a.kind == "analysis_canvas")
+        assert registered.sha256 == bases[request.paths.canvas]
+        assert current.manifest.atomic_resources == snapshot.manifest.atomic_resources
+        assert current.relations == snapshot.relations
+        assert current.projections == snapshot.projections
+    assert {p: (vault / p).read_bytes() for p in request.paths.as_list()} == before
+
+
+@pytest.mark.parametrize("changed_field", ["metadata", "layout"])
+def test_existing_commit_does_not_bypass_provider_revision_drift(
+    tmp_path: Path, changed_field: str,
+) -> None:
+    from scholar_workflow.analysis.commit import plan_existing_analysis_update
+
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    provider, revision, snapshot_revision = _provider_state(
+        tmp_path, vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Note.md")],
+    )
+    document = _v4_document()
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+    first = commit_analysis_bundle(
+        vault_root=vault, state_root=state, request=request, bundle=bundle,
+        baseline=baseline, source_registry=_registry_for_provider(provider),
+    )
+    apply_knowledge_change_set(state_root=provider, change_set=first.change_set)
+    snapshot = load_knowledge_provider_snapshot(provider)
+    path = vault / request.paths.canvas
+    graph = json.loads(path.read_text())
+    if changed_field == "metadata":
+        graph["metadata"] = {"version": "1.0-1.0", "frontmatter": {}}
+    else:
+        for node in graph["nodes"]:
+            node["x"] += 128
+    path.write_text(json.dumps(graph))
+    payload = request.model_dump(mode="json")
+    payload.update({
+        "commit_id": "provider-drift", "batch_id": "provider-drift",
+        "base_revisions": {p: _digest((vault / p).read_bytes()) for p in request.paths.as_list()},
+        "base_catalog_revision": snapshot.catalog.revision,
+        "base_snapshot_revision": snapshot.snapshot_revision,
+    })
+    update_request = AnalysisCommitRequest.model_validate(payload)
+    plan = plan_existing_analysis_update(vault_root=vault, request=update_request)
+    assert plan.status == "ready"
+    before = {p: (vault / p).read_bytes() for p in request.paths.as_list()}
+    provider_before = (provider / "knowledge-provider.snapshot.json").read_bytes()
+    with pytest.raises(AnalysisCommitConflict, match="provider artifact revision changed"):
+        commit_analysis_bundle(
+            vault_root=vault, state_root=state, request=update_request, bundle=plan.proposed,
+            baseline=plan.baseline, source_registry=_registry_for_provider(provider),
+        )
+    assert {p: (vault / p).read_bytes() for p in request.paths.as_list()} == before
+    assert (provider / "knowledge-provider.snapshot.json").read_bytes() == provider_before
+
+
+def test_existing_commit_rejects_reflow_and_accepts_preserved_update(tmp_path: Path) -> None:
+    from scholar_workflow.analysis.commit import plan_existing_analysis_update
+    from scholar_workflow.analysis.rendering import AnalysisBundle
+
+    vault, state = _roots(tmp_path)
+    (vault / "field/resources/papers/commit").mkdir(parents=True)
+    provider, revision, snapshot_revision = _provider_state(
+        tmp_path, vault,
+        [("paper:commit", ResourceKind.PAPER, "field/resources/papers/commit/Note.md")],
+    )
+    document = _v4_document()
+    request = _v4_request(document, revision, base_snapshot_revision=snapshot_revision)
+    bundle, baseline = render_analysis_projection(document, note_stem=request.note_stem)
+    translated = deepcopy(bundle.canvas)
+    for node in translated["nodes"]:
+        node["x"] += 128
+    retained = AnalysisBundle(markdown=bundle.markdown, canvas=translated)
+    first = commit_analysis_bundle(
+        vault_root=vault, state_root=state, request=request, bundle=retained,
+        baseline=baseline, source_registry=_registry_for_provider(provider),
+    )
+    apply_knowledge_change_set(state_root=provider, change_set=first.change_set)
+    snapshot = load_knowledge_provider_snapshot(provider)
+    payload = document.model_dump(mode="json")
+    payload["claims"][0]["body"] = "Updated synthetic task description."
+    update = AnalysisDocument.model_validate(payload)
+    request = AnalysisCommitRequest.model_validate({
+        **request.model_dump(mode="json"), "commit_id": "preserved-update",
+        "batch_id": "preserved-update", "document": payload,
+        "base_revisions": {item.path: item.after_sha256 for item in first.files},
+        "base_catalog_revision": snapshot.catalog.revision,
+        "base_snapshot_revision": snapshot.snapshot_revision,
+    })
+    before = {path: (vault / path).read_bytes() for path in request.paths.as_list()}
+    fresh, fresh_baseline = render_analysis_projection(update, note_stem=request.note_stem)
+    with pytest.raises(AnalysisCommitConflict, match="discard the existing graph"):
+        commit_analysis_bundle(
+            vault_root=vault, state_root=state, request=request, bundle=fresh,
+            baseline=fresh_baseline, source_registry=_registry_for_provider(provider),
+        )
+    assert {p: (vault / p).read_bytes() for p in request.paths.as_list()} == before
+    plan = plan_existing_analysis_update(vault_root=vault, request=request)
+    assert plan.status == "ready"
+    committed = commit_analysis_bundle(
+        vault_root=vault, state_root=state, request=request, bundle=plan.proposed,
+        baseline=plan.baseline, source_registry=_registry_for_provider(provider),
+    )
+    apply_knowledge_change_set(state_root=provider, change_set=committed.change_set)
+    replay = commit_analysis_bundle(
+        vault_root=vault, state_root=state, request=request, bundle=plan.proposed,
+        baseline=plan.baseline, source_registry=_registry_for_provider(provider),
+    )
+    assert replay == committed
+    actual = json.loads((vault / request.paths.canvas).read_text())
+    assert [(n["x"], n["y"]) for n in actual["nodes"]] == [
+        (n["x"], n["y"]) for n in translated["nodes"]
+    ]
 
 
 def test_v4_commit_rejects_name_only_zotflow_reader_before_state_write(

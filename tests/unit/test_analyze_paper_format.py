@@ -15,7 +15,8 @@ def test_analyze_paper_references_versioned_format_and_conditional_batch_contrac
 
     assert "references/analysis-format.md" in skill
     assert "references/analysis-batch.md" in skill
-    assert "load only for multi-paper analysis" in skill
+    assert "load for multi-paper analysis or an existing-pair update" in skill
+    assert "scholar-workflow analysis stage-update" in skill
     assert FORMAT.is_file()
     assert BATCH.is_file()
 

@@ -29,11 +29,11 @@ runtime.
 
 1. Update the skill's `README.md` and `README.zh-CN.md` if behavior changed.
 2. Prepare and show the affected unit/contract test plan: synthetic inputs, commands, expected
-   results, impact, and visible artifacts. After user approval, run that plan. For integration
+   results, impact, and visible artifacts. Follow the global test rule when running it. For integration
    behavior, use one controlled object (one paper, one repository, or one `test` Vault sample)
    and focused boundary cases only where warranted. Do not repeat a full real-library batch or
-   formal Vault migration on every edit. Obtain approval for the required full unit/contract
-   suite before commit; an untested change is not ready to commit.
+   formal Vault migration on every edit. Explain the required full unit/contract suite before
+   commit; an untested change is not ready to commit. Testing does not authorize data migration.
 3. Review the eval suites (see `eval-loop.md`) — routing/safety/outcomes are mostly
    host-LLM behavior specs judged by review, not an automated pass/fail. Re-check the
    cases your change touches.

@@ -38,8 +38,8 @@ routing/safety/outcomes correctness; that is still a human-in-the-loop review.
 - **After a constraint / skill-layer rule edit** → safety.
 - **After a workflow change** → outcomes.
 - **Before any commit that touches `skills/`** → review all three, present the
-  `pytest tests/unit tests/contract` plan, and run it only after user approval
-  (schema + contract assertions). Do not commit as validated while approval is pending.
+  `pytest tests/unit tests/contract` plan, and follow the global test rule when running
+  schema and contract assertions. Do not commit an untested change as validated.
 
 ## Adding cases
 
@@ -61,8 +61,8 @@ violates is a release blocker — treat it as seriously as a failing test.
 
 ## Loop
 
-author/iterate → review evals (routing/safety/outcomes) → show test plan and obtain
-approval → run schema & contract tests → fix regressions → update CHANGELOG and the
+author/iterate → review evals (routing/safety/outcomes) → explain test plan under the
+global test rule → run schema & contract tests → fix regressions → update CHANGELOG and the
 coherent capability-batch version → commit.
 
 Keep this development loop small: synthetic cases and one controlled object prove each changed

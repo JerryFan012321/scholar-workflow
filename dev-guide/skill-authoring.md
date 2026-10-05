@@ -103,5 +103,6 @@ or migrate a formal Vault just to tune the skill. Those are operational or relea
 steps, not the development loop. When full-scope acceptance is required, run it after the
 implementation is stable against a current reviewed preview; never reuse a stale digest or skip
 a required gate to save time. This rule does not narrow a user's actual runtime batch request.
-Before any test run, show its inputs, procedure, expected results, impact and artifacts, and
-obtain the user's approval; preparing fixtures alone does not authorize execution.
+Before any test run, show its inputs, procedure, expected results, impact and artifacts.
+Approval follows the global test rule; ordinary deterministic tests do not require an
+additional approval gate. Live data mutations retain their independent authorization boundary.

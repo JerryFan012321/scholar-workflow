@@ -83,8 +83,13 @@ class AnalysisBatchStore:
             self._db.commit()
         self._db.execute("PRAGMA busy_timeout = 5000")
 
-    def ensure_batch(self, request: AnalysisBatchRequest) -> None:
+    def ensure_batch(
+        self, request: AnalysisBatchRequest, *, input_context: str | None = None,
+    ) -> None:
         fingerprint = _fingerprint(request)
+        if input_context is not None:
+            encoded = json.dumps([fingerprint, input_context], separators=(",", ":"))
+            fingerprint = "sha256:" + sha256(encoded.encode()).hexdigest()
         now = _now()
         self._db.execute(
             "INSERT OR IGNORE INTO analysis_batches VALUES (?, ?, ?, ?, ?)",
@@ -594,8 +599,9 @@ class AnalysisBatchRunner:
         request: AnalysisBatchRequest,
         *,
         repair: Repairer | None = None,
+        input_context: str | None = None,
     ) -> AnalysisBatchResult:
-        self.store.ensure_batch(request)
+        self.store.ensure_batch(request, input_context=input_context)
         results = [self._run_item(request.batch_id, item, repair) for item in request.items]
         succeeded = sum(
             result.state in {AnalysisState.VALIDATED, AnalysisState.REPAIRED}
