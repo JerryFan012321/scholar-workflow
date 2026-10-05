@@ -78,6 +78,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   the readable replay note is in the existing test package. This does not revise real quotations,
   certify human/source assessment, restore a cross-host provider or introduce another runtime build.
 
+## [0.40.2] - 2026-10-05
+
+### Fixed
+
+- **find-resource:** make the verified native-open recipe available in the runtime
+  reference: live local enclosure resolution, cmux's current or explicitly chosen
+  location, child-only refusal and non-invasive handoff. Preserve stable identity,
+  source bytes and tool permissions. Distinguish accepted launches, observed displays
+  and human usability; original PDFs are not synchronized Zotero annotation readers.
+  No Hub prerequisite, new launcher, Canvas changes or real-paper/experiment rerun.
+
 ## [0.40.1] - 2026-10-05
 
 ### Fixed

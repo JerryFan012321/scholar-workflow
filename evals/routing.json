@@ -27,6 +27,14 @@
       "expected_mode": "locate"
     },
     {
+      "id": "open-existing-paper-native-location",
+      "input": "找到我文库里这篇论文，在当前cmux工作区打开原PDF，不要导入或复制",
+      "expected_skill": "find-resource",
+      "must_not_trigger": "ingest-resource",
+      "must_not_write": true,
+      "comment": "既有定位/打开分支；workspace只路由，不要求Hub登记或重新分析"
+    },
+    {
       "id": "build-lineage",
       "input": "画出 NeRF 到 3DGS 的发展脉络",
       "expected_skill": "build-literature-tree"

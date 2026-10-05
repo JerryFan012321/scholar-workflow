@@ -2,6 +2,11 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "resource-native-open-reusable-recipe",
+      "description": "G17：find-resource安装版按需reference持有实时父子附件/enclosure定位、cmux当前/明确打开位置、child-only拒绝与非侵入交接。无Hub/Scholar绑定前置；独立区分接受、显示和人工便利性，原PDF不冒称数据库批注或同步。既有0.40.1单篇实机显示证据保留；0.40.2规则安装字节及人类便利性未核前pending，不通过重跑分析/实验来验收本说明。见planning/native-tool-runtime-contract.md。",
+      "status": "pending"
+    },
+    {
       "id": "project-context-candidate-public-preview",
       "description": "G16/G17：使用安装版project overview/validate-context的明确--context-file预览根JSON候选；沿用有界reader和稳定project_id，旧清单与候选不变，显示未应用状态，默认接口输出不变；无provider/Git/service/launch，非法文件名、symlink、重复JSON字段、身份错配和不安全reader拒绝。不通过私有模型、虚构项目或覆盖旧清单来预览。开发19新CLI测试及旧project/eval组合105通过，完整1695通过；source52ac731/runtimeaa1861d正常安装0.40.0后，单示例公开preview8项成功，4本地可定位/4外部未核验，真实Markdown与独立说明已保存，四项原件hash不变。未应用候选，人类便利性及外部reader点击尚未完成，保持pending。见planning/project-context-candidate-results.md。",
       "status": "pending"
