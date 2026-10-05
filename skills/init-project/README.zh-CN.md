@@ -50,6 +50,11 @@ python3 skills/init-project/scripts/init_project.py apply /path/to/project \
 只输出空模板，`project overview` 输出可读总览；两者不写文件、不要求 Hub。
 初始化本身不会猜测资料或复制外部知识，详见[项目资料契约](../../references/project-context.md)。
 
+明确需要更新资料清单时，先另存项目根的候选，例如 `project-context-candidate.json`，保留已有文件。
+运行 `scholar-workflow project overview --project-root /path/to/project --context-file project-context-candidate.json`
+可零写入预览；`validate-context` 支持相同选项。候选须匹配当前项目身份，输出明确标为未应用，
+不会替换生效清单或核实外部来源；文件名与安全边界见上述共享契约。覆盖批准是另一个步骤。
+
 - 本地标准命名是权威形式：使用 `docs/plan` 和 `docs/report`，不重复创建
   `docs/plans` 或 `docs/reports`。
 - 数据按 `dataset/<dataset-id>/` 聚合，数据准备源码进入 `src/utils/dataset_toolkit/`。

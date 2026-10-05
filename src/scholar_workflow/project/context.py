@@ -212,11 +212,13 @@ class ProjectOverview(_ContextModel):
     entries: list[ProjectOverviewEntry]
 
 
-def load_project_context(root: str | Path) -> ProjectContext:
-    """Load only project-context.json and the accepted project-layout.json."""
+def load_project_context(
+    root: str | Path, *, context_file: str = PROJECT_CONTEXT,
+) -> ProjectContext:
+    """Load one explicit root-level declaration and the accepted project identity."""
     try:
         layout = load_project_layout(root)
-        context = ProjectContext.model_validate(read_project_json(root, PROJECT_CONTEXT))
+        context = ProjectContext.model_validate(read_project_json(root, context_file))
     except (ProjectLayoutError, ValueError) as exc:
         raise ProjectContextError(str(exc)) from exc
     if context.project_id != layout.project_id:

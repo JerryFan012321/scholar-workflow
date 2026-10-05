@@ -7,6 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **analyze-paper / development ledger only:** record normal 0.39.0 hotfix publication and
+  installation, then one installed portable ownership replay into a new test directory with
+  isolated host state. Eight file hashes and stable identities are preserved; receipt replay
+  and destination re-export agree, and original source/registry/provider/PDF remain unchanged.
+  Native Markdown/Canvas backend load is observed; locked-screen cached captures are excluded
+  from GUI evidence. Reader clicks, new excerpt readability and scientific assessment remain
+  separate pending gates. No runtime changes or main merge.
+
 - **development ledger only:** installed 0.38.3 now paired-commits 70 complete source excerpts
   and explicit cross-page evidence labels in the existing single V-JEPA 2 test package.
   All claims and the complete Canvas graph are preserved; final conformance passes.
@@ -16,6 +24,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   portable Canvas declaration. Replay preserves receipt values and all six protected file hashes;
   the readable replay note is in the existing test package. This does not revise real quotations,
   certify human/source assessment, restore a cross-host provider or introduce another runtime build.
+
+## [0.40.0] - 2026-10-05
+
+### Added
+
+- **init-project / project materials:** `project overview` and `validate-context` accept
+  an explicit root-level `--context-file` candidate, using the existing bounded declaration
+  reader and project identity checks. They render a clearly unapplied preview without
+  replacing the active inventory, querying providers or launching tools. Default outputs
+  are unchanged. Candidate JSON adds a preview marker and selected filename; runtime skill
+  instructions use these public interfaces instead of importing private models.
+  Development validation, normal installation and human assessment are tracked separately.
 
 ## [0.39.0] - 2026-10-05
 

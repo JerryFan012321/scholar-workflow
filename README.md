@@ -50,6 +50,7 @@ scholar-workflow project context-template --project-root /path/to/project --lang
 scholar-workflow project validate-context --project-root /path/to/project
 scholar-workflow project overview --project-root /path/to/project
 scholar-workflow project overview --project-root /path/to/project --json
+scholar-workflow project overview --project-root /path/to/project --context-file project-context-candidate.json
 ```
 
 The default overview is Markdown on stdout. Save it beside the project root inventory only when
@@ -57,6 +58,8 @@ you want a document; relative links are rooted there. It reports missing/unsafe 
 does not follow symlinks, and leaves external resources unverified until checked in their owning
 application. It does not need plugin configuration, a running service or workspace registration.
 See [Project context contract](references/project-context.md) for fields and native reader links.
+The optional candidate selector is a read-only, explicitly unapplied preview of one root-level
+JSON declaration. It does not replace the active inventory or approve an overwrite.
 
 ### Inspect a knowledge folder without Hub (0.34.0)
 

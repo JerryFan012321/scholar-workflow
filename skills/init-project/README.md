@@ -56,6 +56,13 @@ readable Markdown. These commands do not write files or require a Hub. See the s
 [project context contract](../../references/project-context.md); initialization itself does not
 invent this inventory or copy external knowledge.
 
+Before an explicitly requested inventory update, save a separate root-level candidate such as
+`project-context-candidate.json`, preserving existing files. Preview it with
+`scholar-workflow project overview --project-root /path/to/project --context-file project-context-candidate.json`.
+`validate-context` accepts the same option. The candidate must match the project's identity;
+output clearly marks it as not applied, and neither command replaces the active inventory or
+verifies external sources. See the shared contract for supported filename and safety rules.
+
 - The local standard names are canonical: `docs/plan` and `docs/report` are not duplicated as
   `docs/plans` or `docs/reports`.
 - Data is grouped by dataset under `dataset/<dataset-id>/`; preparation code lives in
