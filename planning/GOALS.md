@@ -122,6 +122,12 @@ test已保存最短操作及失败诊断，详见native-tool-interaction-results
 不改已认可Canvas布局、不重跑分析/实验或新增runtime发布。详见source-coverage-review-results.md；
 G17与其他独立pending项保持。
 
+上述33项后续已通过安装版stage-update/commit-bundle及明确provider apply定点提交，当前
+pair零findings；所有106节点几何/非文本字段和105边精确保持，PDF/两截图不变。仅4条
+限定文字和对应证据更新，不重分析/布局/实验。当前13文件归属包零写入导出，仅受管三文件
+hash变、其他10不变；旧审阅报告保留历史输入。新摘录阅读与入口仍待人工，不以结构通过
+或来源补充宣称整个G17完成。详见source-coverage-review-results.md及test独立变化说明。
+
 ## 长期不变量（INV）
 
 已激活的不变量对任何实现、任何阶段都必须成立，违反即为回归。标为**目标态（未激活）**的条目记录

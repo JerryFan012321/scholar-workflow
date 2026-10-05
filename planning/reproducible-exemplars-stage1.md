@@ -18,6 +18,11 @@ conformance通过；四显式附件随13文件inventory在一个新目录、隔�
 阅读视图可见；原PDF及三分析文件不变，不重做格式、实验或业务操作。下一步安装版定点
 paired update，不新增runtime发布。报告显示不等于人工/科学验收，详见source-coverage-review-results.md。
 
+33项补证据后续已在当前同篇经安装版public paired update提交并登记；106节点全部几何/
+非文本字段、105边和editor metadata语义保持，69内容及1来源空缺不丢弃，PDF/两图不变。
+当前13文件复现输入重新导出，仅受管三文件hash变，其他10保持，不重复旧恢复和实验。
+新摘录/入口人工阅读仍pending，原生打开后台状态不是fresh画面证明；详见source-coverage-review-results.md。
+
 状态：0.32.3 已有完整 V-JEPA2 候选；安装版已创建模范项目和实验，并从新克隆目录实际重建。
 0.33.0 已把项目/实验模板和复现入口沉淀为正常安装的 init-project 能力，安装态新示例及新克隆重建通过。
 人工评鉴、完整 Source/Field 与外部工具全项证据仍未完成。本文是开发规格，不被运行期 skill 加载。

@@ -3,6 +3,23 @@
 > 交接文档，供下一个开发会话快速进入状态；与 `GOALS.md`（意图层）和
 > `../CHANGELOG.md`（变更史）配合阅读。最后更新：2026-10-05。
 
+## 2026-10-05 当前单篇定点补证据已提交
+
+installed0.40.1按上轮清单处理V-JEPA2的33项摘录/页覆盖/限定，保留其他35项与1项显式
+损失消融来源空缺。test“来源审阅-0.40.0/定点更新-0.40.1”保存独立输入、回执、变化说明。
+首次stage因4处新增高度重叠拒绝，原件不变；只精简Canvas摘要/为两个简短论点选充分单页
+出处，完整正文和必备证据不减少。新ID02经public stage-update validated、commit-bundle
+committed与apply-change-set登记成功，check-bundle零findings。36claim/69内容/106节点/105边，
+所有几何/非文本节点字段/连线/metadata语义精确保持；30节点只改来源或必要摘要。
+只有4条必要的限定文字变化（作者推测、闭环解释、混合样本、projected训练时间）；PDF及
+两截图字节保持。当前13文件reproduction-plan exportable，新摘要f8816c0d…，仅受管三文件变，
+其他10哈希保持，不重复旧恢复或实验。原生打开及后台新正文可核，截图旧画面/空白帧排除，
+实际fresh显示和新摘录/入口人工阅读仍pending；不冒称全项人工/科学验收或G17完成。
+更新前审阅报告已加历史范围说明，不再把旧33项写成当前未处理；详见source-coverage-review-results.md。
+无需新runtime版本/main合并/正式迁移；项目清单覆盖及原生便利性等独立pending保持。
+最后native getScreenshot明确报告Mac locked、自动解锁失败，fresh显示待人工解锁；不要把
+IOConsole状态或后台DOM当解锁证据，不重复更新。10项eval结构/JSON/diff留档检查通过。
+
 ## 2026-10-05 当前单篇来源覆盖审阅
 
 installed0.40.1只读核当前V-JEPA2的全部69条独立内容：35条限定支持、33条需要补足摘录/

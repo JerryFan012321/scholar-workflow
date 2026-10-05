@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **analyze-paper / installed exemplar evidence only:** apply the 33 targeted quotation,
+  location and qualification corrections through installed 0.40.1 paired staging/commit
+  and explicit provider registration. Record the initial overlap refusal and bounded
+  summary/source-link repair; preserve exact Canvas geometry, styling, edges and metadata,
+  69 records, the explicit source gap, original PDF and crops. Export the current 13-file
+  inventory without rerunning restoration or experiments. New quote/reader assessment
+  remains separate; no runtime release, formal migration or main merge.
 - **analyze-paper / development evidence only:** review all 69 existing content records
   in the single test paper: 35 bounded supports, 33 local quotation/page/qualification
   completions and one explicit source gap. Preserve all four source hashes and the accepted
