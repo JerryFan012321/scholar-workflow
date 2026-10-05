@@ -7,6 +7,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **development ledger only:** record read-only source review of eight points in the
+  first two method modules. Two excerpts need fuller method evidence; dataset/model
+  scaling and 3D-RoPE require the actual page-five locator. Preserve inference labels
+  and the projected full-resolution timing baseline. No analysis/Canvas changes or
+  new runtime release; retain prior valid experiment reexecution rather than rerun it.
 - **development ledger only:** acknowledge the user's satisfaction with the 0.39.0
   result without extending it to the unapplied 0.40.0 project inventory. Record two
   native-tool PDF region examples in the test Vault: complete table evidence and a
