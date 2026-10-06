@@ -104,6 +104,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   the readable replay note is in the existing test package. This does not revise real quotations,
   certify human/source assessment, restore a cross-host provider or introduce another runtime build.
 
+## [0.41.3] - 2026-10-06
+
+### Fixed
+
+- **analyze-paper:** add an explicit safe v5 companion-note route for claim, point
+  and selected-image backlinks, after native clicks exposed ambiguous same-named
+  notes. Preserve Markdown, source evidence, accepted geometry and legacy projection.
+  Canonical writes verify the route against the registered Source and containing Vault
+  before writing; reproduction reports moved-copy rebinding without changing files.
+  Keep Canvas images limited to experimental tables and key process diagrams.
+  Development tests and installed/native human acceptance remain separate.
+- **development tests:** quote colon-containing YAML flow-list identities and give
+  the legacy PDF HTTP fixture an explicit Local API locator, matching the existing
+  authority boundary. Preserve failure cases and verify actual locator use without
+  depending on the user's Zotero process; production behavior is unchanged.
+
 ## [0.41.2] - 2026-10-06
 
 ### Fixed

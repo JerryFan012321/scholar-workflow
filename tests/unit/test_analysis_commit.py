@@ -154,6 +154,50 @@ def test_v5_image_commit_and_replay_use_owned_real_png(tmp_path: Path) -> None:
         check_package(image.parent.parent, markdown="Commit分析.md", canvas="Commit解析树.canvas", sidecar="Commit分析.analysis.json")
 
 
+@pytest.mark.parametrize("case", ["matched", "other-source", "unresolved"])
+def test_v5_companion_binding_checks_actual_commit_before_any_writes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, case: str,
+) -> None:
+    from scholar_workflow.adapters.obsidian_registry import resolve_obsidian_reader
+
+    vault, state, provider, request, _, _, image = _image_commit_case(tmp_path)
+    payload = request.document.model_dump(mode="json")
+    path = vault.relative_to(tmp_path) / request.paths.markdown
+    payload["profile"]["canvas_note_path"] = (
+        path.as_posix() if case != "other-source" else "Other/Commit分析.md"
+    )
+    request = request.model_copy(update={"document": AnalysisDocument.model_validate(payload)})
+    bundle, baseline = render_analysis_projection(request.document, note_stem=request.note_stem)
+    config = tmp_path / "obsidian.json"
+    config.write_text(json.dumps({"vaults": {"0123456789abcdef": {"path": str(tmp_path)}}}))
+
+    def resolve(root: Path):
+        if case == "unresolved":
+            raise ZotFlowError("No registered containing Vault")
+        return resolve_obsidian_reader(root, config_path=config)
+
+    monkeypatch.setattr("scholar_workflow.analysis.commit.resolve_obsidian_reader", resolve)
+    provider_before = (provider / "knowledge-provider.snapshot.json").read_bytes()
+    image_before = image.read_bytes()
+    if case == "matched":
+        receipt = commit_analysis_bundle(
+            vault_root=vault, state_root=state, request=request, bundle=bundle, baseline=baseline,
+            source_registry=_registry_for_provider(provider),
+        )
+        assert receipt.state == "committed"
+        assert f"[[{path.as_posix()[:-3]}#^" in (vault / request.paths.canvas).read_text()
+    else:
+        with pytest.raises(AnalysisCommitSafetyError, match="companion"):
+            commit_analysis_bundle(
+                vault_root=vault, state_root=state, request=request, bundle=bundle, baseline=baseline,
+                source_registry=_registry_for_provider(provider),
+            )
+        assert not state.exists()
+        assert not any((vault / path).exists() for path in request.paths.as_list())
+        assert (provider / "knowledge-provider.snapshot.json").read_bytes() == provider_before
+    assert image.read_bytes() == image_before
+
+
 @pytest.mark.parametrize("case", ["missing", "changed", "wrong-dimensions", "wrong-owner", "undeclared", "symlink", "corrupt-png"])
 def test_v5_image_commit_refuses_invalid_dependencies_before_writes(tmp_path: Path, case: str) -> None:
     vault, state, provider, request, bundle, baseline, image = _image_commit_case(tmp_path)

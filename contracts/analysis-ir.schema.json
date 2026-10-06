@@ -59,6 +59,10 @@
         "framework": {"enum": ["legacy", "reference_tree", "reference_tree_v5"]},
         "markdown_quotes": {"type": "boolean", "default": false},
         "canvas_unique_sources": {"type": "boolean", "default": false},
+        "canvas_note_path": {
+          "type": "string", "minLength": 4, "maxLength": 512,
+          "pattern": "^(?!\\s)(?!.*(?:^|/)\\.{1,2}(?:/|$))[^\\\\:#^|\\[\\]\\u0000-\\u001f\\u007f/]+(?:/[^\\\\:#^|\\[\\]\\u0000-\\u001f\\u007f/]+)*\\.md$(?![\\s\\S])"
+        },
         "roles": {
           "type": "array",
           "uniqueItems": true,
@@ -557,6 +561,13 @@
           "evidence": {"$ref": "#/$defs/v3_traceable_evidence"}
         }}}
       }}}}}
+    },
+    {
+      "if": {"properties": {"profile": {"required": ["canvas_note_path"]}}},
+      "then": {"properties": {
+        "schema_version": {"const": 5},
+        "profile": {"required": ["framework"], "properties": {"framework": {"const": "reference_tree_v5"}}}
+      }}
     },
     {
       "if": {"properties": {"profile": {

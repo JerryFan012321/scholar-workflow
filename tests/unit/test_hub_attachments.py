@@ -110,7 +110,7 @@ def test_invalid_and_dangling_manifest_rows_become_diagnostics(tmp_path):
         """schema_version: 1
 assets:
   - asset_id: asset:bad-hash
-    owner_artifact_ids: [analysis:paper-one]
+    owner_artifact_ids: ["analysis:paper-one"]
     vault_path: attachments/paper/bad.png
     display_name: bad.png
     media_type: image/png
@@ -118,7 +118,7 @@ assets:
     sha256: nope
     role: embed
   - asset_id: asset:dangling
-    owner_artifact_ids: [analysis:missing]
+    owner_artifact_ids: ["analysis:missing"]
     vault_path: attachments/paper/dangling.png
     display_name: dangling.png
     media_type: image/png

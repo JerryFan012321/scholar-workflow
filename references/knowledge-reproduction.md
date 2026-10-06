@@ -79,6 +79,10 @@ Saved ZotFlow Vault IDs are host-local routing values. Each restored analysis re
 `binding-matched`, `rebinding-required` or `reader-unresolved` against the destination's
 non-secret Obsidian registry. Identity matching is not a plugin/local-PDF capability
 probe or proof that a window opened. A mismatch does not affect folder authorization.
+An analysis with an explicit `profile.canvas_note_path` also reports its saved and
+destination companion paths and `canvas_note_binding`. Moving a Source within the
+same Vault can require rebinding even when the Vault ID matches. Restoration retains
+the original bytes and does not automatically redirect these display links.
 Rebind through a normal paired `analysis stage-update`/`commit-bundle` with fresh
 base hashes and verified reader capability, never hand-edit one managed file.
 

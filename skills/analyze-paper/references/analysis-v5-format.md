@@ -115,6 +115,29 @@ update; a `focused` update must retain it. Adoption preserves node identities,
 geometry, styles, edges and unrelated human content. It does not reanalyze a paper
 or change its reader, framework or capacity. Verify installed support before use.
 
+## Exact companion-note routes
+
+From 0.41.3, optional `profile.canvas_note_path` is the paired Markdown's explicit Vault-relative
+`.md` path. The renderer uses it for every claim, point and image-card block backlink,
+with the existing visible alias unchanged. Its filename must equal `note_stem + ".md"`;
+absolute paths, URLs, traversal, link syntax and control characters are rejected.
+It is a display route, never object identity or authority to write another folder.
+
+For a new pair, resolve its actual companion position in the containing registered
+Obsidian Vault rather than trusting an ambiguous filename. Canonical commit compares
+the route with the authorized Source and requested Markdown before writing. A missing
+or mismatched containing-Vault registration refuses this explicit-route commit.
+Check installed support before supplying this field.
+
+Omission retains legacy link rendering and baseline serialization. An existing pair
+adopts or rebinds the route only through an explicit `whole` paired format update;
+focused updates retain it. Markdown, evidence, node identities, geometry and edges
+remain unchanged. A review copy uses its own explicit companion location and is not
+a canonical write. When copied to another position, the saved route may still point
+to the original: reproduction reports the required rebinding without rewriting files.
+Verify actual clicks reach the paired file **and** block; filename matching, static
+link resolution or a conformant graph alone is not reader acceptance.
+
 ## Selected Canvas source images
 
 An optional `canvas_image` on a factual claim or point supplements that same record

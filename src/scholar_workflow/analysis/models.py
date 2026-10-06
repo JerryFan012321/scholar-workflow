@@ -251,9 +251,26 @@ class AnalysisProfile(BaseModel):
     canvas_unique_sources: bool = Field(
         default=False, strict=True, exclude_if=lambda value: not value,
     )
+    canvas_note_path: str | None = Field(
+        default=None, min_length=4, max_length=512, exclude_if=lambda value: value is None,
+    )
+
+    @field_validator("canvas_note_path", mode="before")
+    @classmethod
+    def validate_canvas_note_path(cls, value: object) -> str:
+        if not isinstance(value, str) or value.strip() != value:
+            raise ValueError("Canvas companion path must be a plain relative Markdown path")
+        _validate_vault_path(value, suffix=".md")
+        if any(char in value for char in ":#^|[]") or any(
+            ord(char) < 32 or ord(char) == 127 for char in value
+        ):
+            raise ValueError("Canvas companion path cannot contain link syntax or control characters")
+        return value
 
     @model_validator(mode="after")
     def validate_roles(self) -> AnalysisProfile:
+        if self.canvas_note_path is not None and self.framework != "reference_tree_v5":
+            raise ValueError("Explicit Canvas companion paths require the v5 framework")
         if self.canvas_unique_sources and self.framework != "reference_tree_v5":
             raise ValueError("Unique Canvas sources require the v5 framework")
         if self.markdown_quotes and self.framework not in {"reference_tree", "reference_tree_v5"}:

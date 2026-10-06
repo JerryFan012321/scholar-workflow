@@ -2,6 +2,11 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "analysis-canvas-exact-companion-route",
+      "description": "v5显式安全Vault相对正文路径必须让claim/point/图卡反链打开配对正文的确切文件和块，不把同名或静态解析当点击通过。whole成对采用/重绑定，focused保留；旧默认序列化、正文、源身份、节点几何和连线不变。正式提交先核对注册Source实际正文位置；复制到新位置须报告重绑定，不自动改内容或扩大权限。0.41.2真实候选误跳旧同名文件，独立A/B鼠标点击已复现；新代码仅开发中，正常安装和产品点击未核验，保持pending。Canvas图片仍只实验数据表和关键流程图。见planning/canvas-companion-links-plan.md。",
+      "status": "pending"
+    },
+    {
       "id": "analysis-canvas-unique-source-targets",
       "description": "v5显式profile.canvas_unique_sources只去除同一节点完全相同的展示链接，保留全部独立span、完整正文摘录和正文来源链接；不同页/原生批注目标保留。旧默认/baseline不变，focused须保持，改变需explicit whole，几何/身份/样式/边守恒。16合成与完整1773通过；0.41.2正常安装后，同篇V-JEPA2公开stage独立比较→paired committed→provider apply，69内容/106节点/105边零问题，其他证据和显式空缺保留。13文件复现输入只三受管文件变化。当前Mac锁屏使新摘录显示/人工阅读仍pending，不把自动结果当G17完成；见planning/canvas-unique-sources-results.md。",
       "status": "pending"
