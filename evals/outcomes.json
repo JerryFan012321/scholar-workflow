@@ -3,7 +3,7 @@
   "cases": [
     {
       "id": "analysis-canvas-exact-companion-route",
-      "description": "v5显式安全Vault相对正文路径必须让claim/point/图卡反链打开配对正文的确切文件和块，不把同名或静态解析当点击通过。whole成对采用/重绑定，focused保留；旧默认序列化、正文、源身份、节点几何和连线不变。正式提交先核对注册Source实际正文位置；复制到新位置须报告重绑定，不自动改内容或扩大权限。0.41.2真实候选误跳旧同名文件，独立A/B鼠标点击已复现；新代码仅开发中，正常安装和产品点击未核验，保持pending。Canvas图片仍只实验数据表和关键流程图。见planning/canvas-companion-links-plan.md。",
+      "description": "v5显式安全Vault相对正文路径让claim/point/图卡反链打开配对正文的确切文件和块，不把同名或静态解析当点击通过。whole成对采用/重绑定，focused保留；正式提交先核对注册Source实际正文位置，复制到新位置报告重绑定，不扩大权限。0.41.2误跳由独立A/B鼠标复现；0.41.3已正常发布安装，1829完整回归通过。test单篇新候选public stage/check与独立守恒比较通过：正文、源身份、节点几何/样式/边不变，71反链用确切路径。图2/表2真实点击准确到本目录指定块，不是全部71链接逐一点击。人工图评鉴与canonical带图归属/正式路由采用仍未完成，保持pending。Canvas图片仍只实验数据表和关键流程图；见planning/canvas-companion-links-results.md。",
       "status": "pending"
     },
     {

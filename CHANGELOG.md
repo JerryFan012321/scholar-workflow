@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **analyze-paper / installed hotfix evidence only:** record normal 0.41.3 release
+  and installation, plus one noncanonical test paper's preserved paired route update.
+  Native figure/table cards render and actual clicks reach the exact new companion
+  blocks; all prose, evidence, images, geometry and edges remain unchanged. Keep
+  human image review, canonical image adoption and project overwrite authority pending.
+  No runtime change, main merge, formal migration, service switch or experiment rerun.
+
 - **analyze-paper / development evidence only:** record normal 0.41.2 hotfix
   installation and the single existing test paper's public paired quotation correction.
   Independent staged/committed comparisons preserve all node geometry, styles, edges

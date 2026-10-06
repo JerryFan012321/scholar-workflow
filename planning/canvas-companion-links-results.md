@@ -1,6 +1,28 @@
 # Canvas 图片范围与配对正文反链：开发核验结果
 
-2026-10-06。开发分支 `codex/hotfix-canvas-images-release`；0.41.3开发回归已完成，安装版仍0.41.2。
+2026-10-06。开发分支 `codex/hotfix-canvas-images-release`；0.41.3已正常发布安装并完成单篇候选原生反链核验。
+
+## 当前安装与单对象可见结果
+
+- source `ae3c5a1088db3c40eca8a65ca1d1277866a418ba`；runtime-only release
+  `2e8228fceb7f8f9b34fb28373778ea02b56f043d`，通过正常非force Git发布。
+- pipx固定runtime commit安装CLI0.41.3，实际site-packages模型与源码逐字匹配；
+  Codex marketplace正常upgrade/add安装0.41.3，缓存输出模板与源码逐字匹配，双manifest同步。
+  回退点为0.41.2 runtime `739e1204c35e2442d32123060cca0f57c06f7c63`，不假定旧缓存仍在。
+- 仅test Vault新建`Scholar Workflow 实验/Canvas图片验收-0.41.3`。复用旧候选完整IR与图片，
+  不重分析。首次平铺路径请求被exit2拒绝；仅将三个原输入复制成接口要求的论文目录结构，
+  不改校验、不登记Source。第二请求的安装态public stage为validated/零问题/canonical_written=false。
+- 独立核对：Markdown逐字相同，69内容、108节点、107边；节点ID/几何/样式/顺序及所有边保持，
+  71条正文反链改为新目录确切正文路径；source、quote、claims/points和四个附件逐字保持。
+  Canvas仅图2/表2，EK100段落图片只在Markdown。安装态check-bundle为conformant、零问题。
+- Obsidian原生显示图2与表2，真实点击两张图卡的正文反链准确到新文件的steps/finding-1块，
+  原生截图与打开位置均留档；已读取检查保存的两张显示截图，不以静态resolver代替鼠标操作。
+- 编辑器查看使Canvas物理hash从f9baea9b…变为462c6eec…；完整节点/边独立比较仍相同，
+  再次public check零问题。三文件sidecar不手改，非canonical审阅不做provider hash acknowledgement。
+- canonical三hash及原PDF匹配此前保护值，项目总览314a357b…保持；主checkout无关人工审阅文件不动。
+
+本轮没有重新点击PDF页入口、重新验证科学支持或重跑实验。图片人工裁剪/可读性/美观仍pending，
+完整带图canonical归属复现及项目覆盖授权仍待完成，G17继续active。以下保留开发时的历史状态。
 
 ## 用户格式规则
 
@@ -53,7 +75,7 @@ lock中的项目自身版本，不改变任何依赖。
   通过临时开发依赖运行原validator成功，未新增产品依赖。旧test_hub_attachments模块的
   两项既有import/UTC lint未顺手修复，不能把此结果称为全仓Ruff通过。
 
-## 尚未完成
+## 发布前历史状态与仍未完成边界
 
 未提交/发布/安装新构建；未手改受管Canvas、未动正式分析、图片asset声明、registry、provider、
 PDF或项目文件，未重分析/重跑实验。下一轮产品点击必须先按正常入口安装可识别hotfix，再
