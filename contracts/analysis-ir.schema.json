@@ -58,6 +58,7 @@
         "kind": {"enum": ["whole", "focused"]},
         "framework": {"enum": ["legacy", "reference_tree", "reference_tree_v5"]},
         "markdown_quotes": {"type": "boolean", "default": false},
+        "canvas_unique_sources": {"type": "boolean", "default": false},
         "roles": {
           "type": "array",
           "uniqueItems": true,
@@ -556,6 +557,18 @@
           "evidence": {"$ref": "#/$defs/v3_traceable_evidence"}
         }}}
       }}}}}
+    },
+    {
+      "if": {"properties": {"profile": {
+        "required": ["canvas_unique_sources"],
+        "properties": {"canvas_unique_sources": {"const": true}}
+      }}},
+      "then": {
+        "properties": {
+          "schema_version": {"const": 5},
+          "profile": {"properties": {"framework": {"const": "reference_tree_v5"}}}
+        }
+      }
     },
     {
       "if": {"properties": {"profile": {

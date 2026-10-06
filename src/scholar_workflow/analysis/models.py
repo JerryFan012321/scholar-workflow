@@ -248,9 +248,14 @@ class AnalysisProfile(BaseModel):
     roles: list[AnalysisRole] = Field(default_factory=list)
     framework: Literal["legacy", "reference_tree", "reference_tree_v5"] = "legacy"
     markdown_quotes: bool = Field(default=False, strict=True, exclude_if=lambda value: not value)
+    canvas_unique_sources: bool = Field(
+        default=False, strict=True, exclude_if=lambda value: not value,
+    )
 
     @model_validator(mode="after")
     def validate_roles(self) -> AnalysisProfile:
+        if self.canvas_unique_sources and self.framework != "reference_tree_v5":
+            raise ValueError("Unique Canvas sources require the v5 framework")
         if self.markdown_quotes and self.framework not in {"reference_tree", "reference_tree_v5"}:
             raise ValueError("Markdown quotations require the reference_tree framework")
         if len(self.roles) != len(set(self.roles)):

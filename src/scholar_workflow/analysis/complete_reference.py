@@ -203,13 +203,16 @@ def complete_claim_canvas_text(
     *,
     reader: AnalysisReader | None = None,
     label: str | None = None,
+    unique_sources: bool = False,
 ) -> str:
     label = label or complete_claim_label(claim, language)
     if claim.container:
         return f"**{label}**"
     statement = _claim_statement(claim, summary=True, label=label)
     backlink = "Analysis" if language == "en" else "正文"
-    evidence = reference_canvas_inline_evidence(claim.evidence, language, reader=reader)
+    evidence = reference_canvas_inline_evidence(
+        claim.evidence, language, reader=reader, unique_sources=unique_sources,
+    )
     return (
         f"**{label}**\n{statement}\n{evidence} ↩ [[{note_stem}#^claim-{claim.claim_id}|{backlink}]]"
     )
@@ -222,11 +225,14 @@ def complete_point_canvas_text(
     language: str,
     *,
     reader: AnalysisReader | None = None,
+    unique_sources: bool = False,
 ) -> str:
     label = complete_point_label(claim, point.point_id, language)
     statement = point.canvas_summary if point.canvas_summary is not None else point.text
     backlink = "Analysis" if language == "en" else "正文"
-    evidence = reference_canvas_inline_evidence(point.evidence, language, reader=reader)
+    evidence = reference_canvas_inline_evidence(
+        point.evidence, language, reader=reader, unique_sources=unique_sources,
+    )
     return (
         f"**{label}**\n{statement}\n"
         f"{evidence} ↩ [[{note_stem}#^{point_anchor(claim, point)}|{backlink}]]"
@@ -370,7 +376,8 @@ def template_tree(document: AnalysisDocument, note_stem: str) -> TemplateNode:
             "container" if claim.container else "claim",
             claim.role,
             text=complete_claim_canvas_text(
-                claim, note_stem, language, reader=document.reader, label=label
+                claim, note_stem, language, reader=document.reader, label=label,
+                unique_sources=document.profile.canvas_unique_sources,
             ),
             claim=claim,
         )
@@ -398,7 +405,8 @@ def template_tree(document: AnalysisDocument, note_stem: str) -> TemplateNode:
                     "point" if point else "empty-slot",
                     claim.role,
                     text=complete_point_canvas_text(
-                        claim, point, note_stem, language, reader=document.reader
+                        claim, point, note_stem, language, reader=document.reader,
+                        unique_sources=document.profile.canvas_unique_sources,
                     )
                     if point
                     else None,

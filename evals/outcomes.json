@@ -2,8 +2,13 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "analysis-canvas-unique-source-targets",
+      "description": "v5显式profile.canvas_unique_sources只去除同一节点完全相同的展示链接，保留所有独立span、完整正文摘录和正文来源链接；不同页与原生批注目标保留。默认旧包与baseline不变，focused须保持选项，改变需显式whole成对格式更新，节点身份/布局/样式/边不变。合成接口与兼容检查不代替安装态单篇科学/人工验收；当前真实V-JEPA2完整句修订未提交，安装后按独立比较再执行。见planning/canvas-unique-sources-plan.md。",
+      "status": "pending"
+    },
+    {
       "id": "analysis-canvas-selected-source-visuals",
-      "description": "用户规定：Canvas图片补充仅限实验数据表和关键流程图，分别贴近Experiments对应比较/消融和Method总览/实际模块；段落截图与逐字摘录留在Markdown。图片不替代五分支或具名可编辑子节点，保留题注/标签/单位/限定、核实原文入口、准确正文反链与显式附件归属，实际图仍须对齐、无交叉/遮挡且可读。开发树已有typed图卡、PNG/归属校验、旧布局保护与带图包导出/恢复的合成证据；这些不证明选区科学充分性或Obsidian实际显示。当前安装0.40.2不支持新字段、真实V-JEPA2样本尚未增图，安装态显示/点击及人工评鉴仍pending。见planning/canvas-selected-images-plan.md。",
+      "description": "用户规定：Canvas图片仅实验数据表和关键流程图，贴近对应Experiments/Method内容；段落截图与逐字摘录留在Markdown，不取代五分支具名可编辑节点。0.41.1已正常安装，单篇V-JEPA2非canonical候选图2/表2在Obsidian实际显示，正文反链和ZotFlow物理4/14页点击有独立留档；旧树/正文及canonical未因候选改变。图的裁剪充分性、美观仍待人工确认，新增图片资产尚未正式登记/提交，不能冒称完整带图归属复现或G17完成。见planning/canvas-selected-images-plan.md。",
       "status": "pending"
     },
     {
