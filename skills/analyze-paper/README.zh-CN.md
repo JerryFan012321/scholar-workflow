@@ -64,6 +64,9 @@ Vault Markdown 可跳到具体块。原文链接与 Canvas→正文反链同处�
 0.41.2起，v5可显式选择`profile.canvas_unique_sources: true`，让同一Canvas节点内
 完全相同的来源链接只显示一次；正文各段摘录及所有来源span仍保留。已有文档对须显式
 整篇格式更新才能启用，省略选项保留旧投影；接口见`references/analysis-v5-format.md`。
+0.41.3起，v5可选`profile.canvas_note_path`明确指定所属Vault内的配对正文位置，避免反链打开
+旧同名笔记。正式提交核对实际授权位置；移动副本后只报告重绑定需求，不静默改写。
+已有文档对须显式整篇格式更新采用，使用前确认安装版支持。
 旧分析不会自动改变；转换须显式请求整篇格式更新，不能只手改受管 Markdown。
 完整规范见 `references/analysis-format.md`。
 用户要求时，正文论点旁可加入原生PDF区域截图；不会因此自动把它们加入Canvas。

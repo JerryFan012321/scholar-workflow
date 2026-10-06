@@ -23,8 +23,8 @@ from scholar_workflow.analysis.reference_rendering import (
     _visible_height,
     reference_canvas_inline_evidence,
     reference_inline_evidence,
-    reference_source_quote_lines,
     reference_source_link,
+    reference_source_quote_lines,
 )
 from scholar_workflow.analysis.rendering import (
     AnalysisBundle,
@@ -357,6 +357,11 @@ def template_tree(document: AnalysisDocument, note_stem: str) -> TemplateNode:
     _safe_note_stem(note_stem)
     if document.schema_version != 5 or document.profile.framework != "reference_tree_v5":
         raise ValueError("Complete-reference projection requires IR v5")
+    backlink_target = note_stem
+    if note_path := document.profile.canvas_note_path:
+        if note_path.rsplit("/", 1)[-1] != note_stem + ".md":
+            raise ValueError("Canvas companion filename must match the paired Markdown")
+        backlink_target = note_path[:-3]
     language = document.language or "en"
     root = _node("root", document.paper_title, "root", None)
     selected = set(document.profile.roles)
@@ -376,7 +381,7 @@ def template_tree(document: AnalysisDocument, note_stem: str) -> TemplateNode:
             "container" if claim.container else "claim",
             claim.role,
             text=complete_claim_canvas_text(
-                claim, note_stem, language, reader=document.reader, label=label,
+                claim, backlink_target, language, reader=document.reader, label=label,
                 unique_sources=document.profile.canvas_unique_sources,
             ),
             claim=claim,
@@ -391,7 +396,7 @@ def template_tree(document: AnalysisDocument, note_stem: str) -> TemplateNode:
                 f"**{image.caption}**\n\n"
                 f"![{image.caption}|{width}x{height}](./{quote(image.image_path, safe='/')})\n\n"
                 f"{reference_source_link(image.source, language, compact=True, reader=document.reader)} "
-                f"↩ [[{note_stem}#^{anchor}|{backlink}]]"
+                f"↩ [[{backlink_target}#^{anchor}|{backlink}]]"
             )
             return _node(parent_path + "/image", image.caption, "image", claim.role, text=text)
 
@@ -405,7 +410,7 @@ def template_tree(document: AnalysisDocument, note_stem: str) -> TemplateNode:
                     "point" if point else "empty-slot",
                     claim.role,
                     text=complete_point_canvas_text(
-                        claim, point, note_stem, language, reader=document.reader,
+                        claim, point, backlink_target, language, reader=document.reader,
                         unique_sources=document.profile.canvas_unique_sources,
                     )
                     if point

@@ -108,6 +108,9 @@ corresponding-challenge or corresponding-contribution axis.
   One paper's Markdown, Canvas and sidecar remain together in its mapped paper folder;
   the Zotero PDF stays in Zotero. Existing pairs are not bulk regenerated or migrated
   merely because this output specification changed.
+- An Analysis/back-to-body link must open this pair's exact Markdown file and block,
+  not another same-named note. The v5 explicit companion-route interface is defined
+  in `analysis-v5-format.md`; a moved review copy needs its own verified route.
 
 Scope, evidence states, reader verification, paired conflict/CAS protection and source
 ownership retain the boundaries in `analysis-format.md` and the shared policies.

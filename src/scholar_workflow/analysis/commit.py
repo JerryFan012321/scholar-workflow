@@ -19,6 +19,7 @@ from pydantic import ValidationError
 
 from scholar_workflow.adapters.obsidian_registry import (
     ZotFlowError,
+    resolve_obsidian_reader,
 )
 from scholar_workflow.adapters.obsidian_registry import (
     resolve_obsidian_reader_vault_id as resolve_obsidian_vault_id,
@@ -30,7 +31,12 @@ from scholar_workflow.analysis.apply_changes import (
     _read_snapshot,
 )
 from scholar_workflow.analysis.conformance import validate_bundle
-from scholar_workflow.analysis.image_assets import ImageAssetError, document_images, image_manifest, verify_canvas_assets
+from scholar_workflow.analysis.image_assets import (
+    ImageAssetError,
+    document_images,
+    image_manifest,
+    verify_canvas_assets,
+)
 from scholar_workflow.analysis.models import (
     AnalysisBaseline,
     AnalysisCommitFile,
@@ -1235,6 +1241,20 @@ def _authoritative_paper_folder(
         ) from exc
 
 
+def _assert_canvas_note_binding(source_root: Path, request: AnalysisCommitRequest) -> None:
+    """Check a display route against the actual authorized companion location."""
+    saved = request.document.profile.canvas_note_path
+    if saved is None:
+        return
+    try:
+        binding = resolve_obsidian_reader(source_root)
+        actual = (source_root / request.paths.markdown).relative_to(binding.vault_root).as_posix()
+    except (ZotFlowError, ValueError) as exc:
+        raise AnalysisCommitSafetyError("Canvas companion Vault location is unavailable") from exc
+    if saved != actual:
+        raise AnalysisCommitSafetyError("Canvas companion path differs from the authorized Markdown")
+
+
 @contextmanager
 def _registered_v4_provider(
     registry: KnowledgeSourceRegistry | None,
@@ -1313,6 +1333,7 @@ def _registered_v4_provider(
                 raise AnalysisCommitSafetyError(
                     "IR v4 ZotFlow reader Vault ID differs from registered target Vault"
                 )
+        _assert_canvas_note_binding(registered_root, request)
         _assert_v4_source_manifest(root, source_id, request)
         yield parent / "knowledge-providers" / source_id, source_id
     except (FieldRegistryError, OSError) as exc:

@@ -265,6 +265,10 @@ def _merged_document(
 
     replaced_roles = set(update.profile.roles)
     if baseline.schema_version in {4, 5}:
+        if baseline.profile.canvas_note_path != update.profile.canvas_note_path:
+            raise AnalysisUpdateError(
+                "Canvas companion path changes require an explicit whole analysis update"
+            )
         if baseline.profile.canvas_unique_sources != update.profile.canvas_unique_sources:
             raise AnalysisUpdateError(
                 "Canvas source projection changes require an explicit whole analysis update"
@@ -300,6 +304,8 @@ def _merged_document(
                 kind=ProfileKind.WHOLE, framework=baseline.profile.framework,
                 markdown_quotes=baseline.profile.markdown_quotes,
                 canvas_unique_sources=baseline.profile.canvas_unique_sources,
+                **({"canvas_note_path": baseline.profile.canvas_note_path}
+                   if baseline.profile.canvas_note_path is not None else {}),
             )
             if baseline.profile.kind is ProfileKind.WHOLE
             else AnalysisProfile(
@@ -308,6 +314,8 @@ def _merged_document(
                 framework=baseline.profile.framework,
                 markdown_quotes=baseline.profile.markdown_quotes,
                 canvas_unique_sources=baseline.profile.canvas_unique_sources,
+                **({"canvas_note_path": baseline.profile.canvas_note_path}
+                   if baseline.profile.canvas_note_path is not None else {}),
             )
         )
         return AnalysisDocument(

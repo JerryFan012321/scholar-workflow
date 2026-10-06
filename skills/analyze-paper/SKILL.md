@@ -46,6 +46,8 @@ new template. Report an unsupported-version limitation rather than substituting 
    artifacts. The Markdown remains independently readable; the required Canvas expands the
    reference image's named subslots into separate editable nodes, each keeping its inline
    evidence, original-source link and exact Markdown-block backlink.
+   Resolve the pair's explicit companion-note route as defined in
+   `references/analysis-v5-format.md`; a same-named note is not proof of the correct target.
    The Markdown-only verbatim-excerpt contract is in `references/analysis-format.md`:
    prose excerpts retain complete sentences and enough source context to be independently readable,
    not just matching keywords or isolated labels;

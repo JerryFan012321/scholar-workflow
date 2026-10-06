@@ -7,6 +7,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **analyze-paper / development evidence only:** record normal 0.41.2 hotfix
+  installation and the single existing test paper's public paired quotation correction.
+  Independent staged/committed comparisons preserve all node geometry, styles, edges
+  and metadata; only two pre-existing duplicate Canvas targets are removed. The
+  current thirteen-file ownership export changes only the managed trio. A locked Mac
+  prevents actual excerpt display; exclude the stale screenshot and keep human review,
+  image-candidate assessment and project overwrite permission pending. No new runtime
+  build, main merge, formal migration, service switch, restoration or experiment rerun.
+
 - **exemplar navigation / development evidence only:** correct the existing single-test
   Source's home, usage and paper companion notes after preserving byte-exact originals.
   The installed 0.40.2 preview keeps external unverified states; independent identity,
@@ -94,6 +103,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   portable Canvas declaration. Replay preserves receipt values and all six protected file hashes;
   the readable replay note is in the existing test package. This does not revise real quotations,
   certify human/source assessment, restore a cross-host provider or introduce another runtime build.
+
+## [0.41.3] - 2026-10-06
+
+### Fixed
+
+- **analyze-paper:** add an explicit safe v5 companion-note route for claim, point
+  and selected-image backlinks, after native clicks exposed ambiguous same-named
+  notes. Preserve Markdown, source evidence, accepted geometry and legacy projection.
+  Canonical writes verify the route against the registered Source and containing Vault
+  before writing; reproduction reports moved-copy rebinding without changing files.
+  Keep Canvas images limited to experimental tables and key process diagrams.
+  Development tests and installed/native human acceptance remain separate.
+- **development tests:** quote colon-containing YAML flow-list identities and give
+  the legacy PDF HTTP fixture an explicit Local API locator, matching the existing
+  authority boundary. Preserve failure cases and verify actual locator use without
+  depending on the user's Zotero process; production behavior is unchanged.
 
 ## [0.41.2] - 2026-10-06
 

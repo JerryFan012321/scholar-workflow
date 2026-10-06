@@ -15,8 +15,8 @@ from scholar_workflow.analysis.apply_changes import (
     _vault_binding_for_root,
 )
 from scholar_workflow.analysis.commit import _read_target_regular
-from scholar_workflow.analysis.models import AnalysisBaseline
 from scholar_workflow.analysis.image_assets import ImageAssetError, verify_canvas_assets
+from scholar_workflow.analysis.models import AnalysisBaseline
 from scholar_workflow.analysis.package_check import check_package
 from scholar_workflow.knowledge.catalog_models import HubAsset, HubCatalog
 from scholar_workflow.knowledge.fields import (
@@ -324,18 +324,33 @@ def _source_checks(zotero, source_id, snapshot, baselines, contents):
 def _reader_checks(root, baselines):
     from scholar_workflow.adapters.obsidian_registry import ZotFlowError, resolve_obsidian_reader
     result = []
-    for artifact, (_, baseline) in sorted(baselines.items()):
+    for artifact, (baseline_path, baseline) in sorted(baselines.items()):
         reader = baseline.document.reader
-        if reader is None or reader.kind != "zotflow_library":
+        saved_note = baseline.document.profile.canvas_note_path
+        zotflow = reader is not None and reader.kind == "zotflow_library"
+        if not zotflow and saved_note is None:
             continue
+        current_note = None
         try:
-            current = resolve_obsidian_reader(root).vault_id
-            status = "binding-matched" if current == reader.vault_id else "rebinding-required"
-        except ZotFlowError:
+            binding = resolve_obsidian_reader(root)
+            current = binding.vault_id
+            status = "binding-matched" if not zotflow or current == reader.vault_id else "rebinding-required"
+            if saved_note is not None:
+                companion = Path(baseline_path).parent / (baseline.note_stem + ".md")
+                current_note = (root / companion).relative_to(binding.vault_root).as_posix()
+                if saved_note != current_note:
+                    status = "rebinding-required"
+        except (ZotFlowError, ValueError):
             current, status = None, "reader-unresolved"
-        result.append({"artifact_id": artifact, "saved_vault_id": reader.vault_id,
-                       "destination_vault_id": current, "status": status,
-                       "reader_launch_verified": False})
+        check = {"artifact_id": artifact, "saved_vault_id": reader.vault_id if zotflow else None,
+                 "destination_vault_id": current, "status": status,
+                 "reader_launch_verified": False}
+        if saved_note is not None:
+            check.update(saved_canvas_note_path=saved_note, destination_canvas_note_path=current_note,
+                         canvas_note_binding=("reader-unresolved" if current is None else
+                                              "binding-matched" if saved_note == current_note else
+                                              "rebinding-required"))
+        result.append(check)
     return result
 
 
