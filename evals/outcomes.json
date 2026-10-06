@@ -3,7 +3,7 @@
   "cases": [
     {
       "id": "analysis-canvas-unique-source-targets",
-      "description": "v5显式profile.canvas_unique_sources只去除同一节点完全相同的展示链接，保留所有独立span、完整正文摘录和正文来源链接；不同页与原生批注目标保留。默认旧包与baseline不变，focused须保持选项，改变需显式whole成对格式更新，节点身份/布局/样式/边不变。合成接口与兼容检查不代替安装态单篇科学/人工验收；当前真实V-JEPA2完整句修订未提交，安装后按独立比较再执行。见planning/canvas-unique-sources-plan.md。",
+      "description": "v5显式profile.canvas_unique_sources只去除同一节点完全相同的展示链接，保留全部独立span、完整正文摘录和正文来源链接；不同页/原生批注目标保留。旧默认/baseline不变，focused须保持，改变需explicit whole，几何/身份/样式/边守恒。16合成与完整1773通过；0.41.2正常安装后，同篇V-JEPA2公开stage独立比较→paired committed→provider apply，69内容/106节点/105边零问题，其他证据和显式空缺保留。13文件复现输入只三受管文件变化。当前Mac锁屏使新摘录显示/人工阅读仍pending，不把自动结果当G17完成；见planning/canvas-unique-sources-results.md。",
       "status": "pending"
     },
     {

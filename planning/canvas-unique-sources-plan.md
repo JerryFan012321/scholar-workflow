@@ -53,3 +53,8 @@ whole 格式更新；此更新不是重新分析、迁移或改变阅读器。
 - skill quick_validate和diff检查通过。routing触发词未改；现有摘录真实来源、CAS、
   清理与只读检查安全case保持；outcome新增同目标投影，人工/安装单对象项仍pending。
 - 上述为开发证据；正常发布安装、单篇stage独立比较/commit/apply与可见结果尚待。
+
+后续已正常发布安装0.41.2并完成同篇公开stage/commit/apply，独立比较通过，全部几何/边
+保持。当前13文件复现输入仅三受管文件变化；GUI因当前Mac锁屏未显示，旧截图排除，
+人工及项目权限仍pending。实际结果见canvas-unique-sources-results.md，旧待执行文字为
+开发冻结时的历史状态，不覆盖此结果；不重做仍有效的恢复或实验。

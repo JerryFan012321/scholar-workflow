@@ -7,6 +7,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **analyze-paper / development evidence only:** record normal 0.41.2 hotfix
+  installation and the single existing test paper's public paired quotation correction.
+  Independent staged/committed comparisons preserve all node geometry, styles, edges
+  and metadata; only two pre-existing duplicate Canvas targets are removed. The
+  current thirteen-file ownership export changes only the managed trio. A locked Mac
+  prevents actual excerpt display; exclude the stale screenshot and keep human review,
+  image-candidate assessment and project overwrite permission pending. No new runtime
+  build, main merge, formal migration, service switch, restoration or experiment rerun.
+
 - **exemplar navigation / development evidence only:** correct the existing single-test
   Source's home, usage and paper companion notes after preserving byte-exact originals.
   The installed 0.40.2 preview keeps external unverified states; independent identity,
