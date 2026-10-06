@@ -64,6 +64,10 @@ to understand its subject, conditions and qualifications, not isolated keywords 
 paraphrases and translations are not presented as exact quotes. The bounded quote capacity
 accommodates necessary context without imposing that capacity as a target length. Unverifiable wording
 is a source gap. Canvas does not repeat the quotations and retains the required editable tree.
+From 0.41.2, v5 can explicitly select `profile.canvas_unique_sources: true` to avoid
+repeating identical source links within a Canvas node while retaining separate Markdown
+excerpts and all source spans. Existing pairs require an explicit whole format update;
+omitting the option preserves the old projection. See `references/analysis-v5-format.md`.
 Older analyses remain unchanged; converting their format requires an explicit whole-analysis
 update, not a silent refresh. The detailed contract is `references/analysis-format.md`.
 On request, native PDF region screenshots can accompany Markdown claims; this does not

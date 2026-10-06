@@ -168,7 +168,8 @@ def reference_inline_evidence(
 
 
 def reference_canvas_inline_evidence(
-    evidence: Evidence, language: str, *, reader: AnalysisReader | None = None
+    evidence: Evidence, language: str, *, reader: AnalysisReader | None = None,
+    unique_sources: bool = False,
 ) -> str:
     """Keep an evidence signal and live source link without drowning the tree."""
     labels = (
@@ -190,10 +191,13 @@ def reference_canvas_inline_evidence(
     )
     result = f"〔{labels[evidence.kind]}〕"
     if evidence.source_spans:
-        result += " " + " ".join(
+        links = [
             reference_source_link(span, language, compact=True, reader=reader)
             for span in evidence.source_spans
-        )
+        ]
+        if unique_sources:
+            links = list(dict.fromkeys(links))
+        result += " " + " ".join(links)
     return result
 
 

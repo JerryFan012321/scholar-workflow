@@ -95,6 +95,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   the readable replay note is in the existing test package. This does not revise real quotations,
   certify human/source assessment, restore a cross-host provider or introduce another runtime build.
 
+## [0.41.2] - 2026-10-06
+
+### Fixed
+
+- **analyze-paper:** add an explicit v5 `profile.canvas_unique_sources` projection
+  for repeated same-target source links within a Canvas record. Retain independent
+  source spans and complete Markdown excerpts; preserve the default old projection
+  and baseline serialization. Focused updates retain the option; adopting it requires
+  an explicit whole paired format update and preserves existing graph identities,
+  geometry, styles and edges. Tables/key process diagrams remain the only Canvas
+  image supplements. Structural tests do not replace source or human assessment.
+
 ## [0.41.1] - 2026-10-05
 
 ### Fixed

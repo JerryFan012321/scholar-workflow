@@ -101,6 +101,20 @@ schema. Concision cannot remove a material qualification or add unsupported fact
   existing is not proof of success. Source fidelity and human visual assessment are
   separate, explicitly reported checks.
 
+## Unique Canvas source targets
+
+From 0.41.2, optional `profile.canvas_unique_sources: true` renders an identical
+source link only once within each claim/point node, retaining its first occurrence.
+All source spans, identities, hashes and independent Markdown excerpts/links remain
+in the IR and body. Different rendered page or native annotation targets stay
+distinct; this is not evidence deduplication or precise text-selection support.
+
+Omission or `false` preserves the earlier projection and baseline serialization.
+Existing pairs adopt the option only through an explicit `whole` paired format
+update; a `focused` update must retain it. Adoption preserves node identities,
+geometry, styles, edges and unrelated human content. It does not reanalyze a paper
+or change its reader, framework or capacity. Verify installed support before use.
+
 ## Selected Canvas source images
 
 An optional `canvas_image` on a factual claim or point supplements that same record
