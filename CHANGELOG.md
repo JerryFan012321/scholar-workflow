@@ -7,6 +7,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **analyze-paper / 0.41.7 installed review evidence:** record normal runtime
+  publication and pinned CLI/marketplace installation; all 244 plugin files and
+  102 installed Python modules match the released bytes. One public installed
+  update/check preserves the original V-JEPA 2 package and complete Canvas JSON,
+  changing only three Markdown excerpt captions and exact bold fragments.
+  Retain independent observer failures and distinguish serialization from graph
+  changes. The new noncanonical test-Vault copy still awaits human reading review;
+  do not merge main or claim the complete exemplar goal achieved.
+
 - **analyze-paper / installed hotfix evidence:** record approved 0.41.6 runtime
   publication and normal CLI/plugin installation with all 244 cached runtime files
   matching the release. One public installed stage validates the existing V-JEPA 2

@@ -1,10 +1,59 @@
 # 摘录直接证据强调：开发验证结果
 
 日期：2026-10-08。分支：`codex/hotfix-canvas-images-release`；初始开发基于`fbcf382`，
-后续已本地提交到`ac62b19842d29e5f070ed1788d37f773c015e398`。未发布安装。
-用户明确批准合成测试及必要回归；本轮没有Vault/Zotero写入、发布安装或真实论文重分析。
+后续实现提交到`ac62b19842d29e5f070ed1788d37f773c015e398`，发布准备source为
+`46880dc4802faf226f74d7577bf87312ea4abe89`。下方保留历史开发结果；当前发布/安装结果如下。
 
-## 0.41.7 发布安装获准，实际结果待执行
+## 0.41.7 真实发布、正常安装与单篇候选
+
+用户明确批准后，在独立干净clone运行既有make-release脚本，不手写release；15项发布
+版本/manifest/eval定向检查通过，行为代码不变，不重复1986完整回归。
+
+| 身份或操作 | 实际结果 |
+|---|---|
+| 源码 | `46880dc4802faf226f74d7577bf87312ea4abe89`，hotfix正常推送 |
+| runtime | `aeed349e8b71ae19b33635c94ac9df29f901662e`，release正常推送，main未合并 |
+| pipx | 正常install --force固定runtime；实际PATH产品0.41.7，direct_url commit匹配 |
+| Codex插件 | 正常marketplace upgrade jerry-plugins及add，实际0.41.7；全部244 runtime文件字节匹配 |
+| CLI源码字节 | 102个实际pipx Python模块均等于runtime Git |
+| 原稿核对 | 原Source/Field和Zotero Local API父/附件identity、version975、PDF hash均匹配已准备输入 |
+| installed stage-update | 一次completed/validated，零修复，canonical_written=false |
+| installed check-bundle | 命名副本conformant/零findings；IR5、36claims、69内容、108节点、107边 |
+| 独立守恒 | 完整选中分支14claims；只有3个quote_emphasis字段变化，原quote与其他IR字段相同；Markdown只改对应题注与粗体 |
+| 原件与图 | Canvas完整JSON相同；三图片字节相同；Source70文件/provider5文件/registry/PDF保持 |
+| 人工评鉴 | 三处新强调仍pending；旧Canvas/图片批准保持；不认证全篇科学支持或完整G17 |
+
+新候选位于test Vault的`Scholar Workflow 实验/摘录强调验收-0.41.7/V-JEPA 2`。
+完整命令argv、stdout/stderr、输入、选择、安装身份与独立保全JSON放在该候选`.review/`。
+不执行commit-bundle/provider apply，不重分析/裁图/实验/整库迁移或切换服务。
+旧Canvas正文反链保留原正式分析；此非canonical副本不冒充新owner/新根复现。
+
+独立观察器首次用下标访问可省略的空source_spans抛出KeyError，产品stage/check此前已成功。
+只修正观察器为空列表读取，仅读现成文件完成独立比较，未重stage/check、未改产品或输出。
+Canvas物理SHA由`6989e00a85713c84d31d58d76c40ebadfe02a5af54b9ef90aaaea343e5d9e610`
+变为`39c2bb8967a41cb73374c4cba14d05fd0f420220ea1501b35ff621bbe6a2591c`，完整JSON
+相等，差别仅重新序列化；不谎称字节相同，也不手改候选来消除hash差异。
+
+Obsidian接受新文档打开及preview请求，CLI状态返回该候选。一次顶层await观察表达式被
+CLI拒绝后改为普通调用；dev:screenshot实际捕获旧0.41.6文档，不作新GUI通过证据。
+保留截图和观察错误；停止重复窗口操作。会话明确提供新文件、搜索“粗体：”、三处观察
+效果及判断标准，用户明确确认前保持pending。
+
+最终构建来自上述source，而非旧ac62本地包。244runtime文件/16路径字节一致，开发层
+排除和已知个人路径/凭据模式扫描通过（非任意秘密的形式化保证），wheel110/sdist126成员
+源码一致。最终临时build产物不进入Git：
+
+| 文件 | SHA-256 |
+|---|---|
+| scholar-workflow-0.41.7-runtime.tar | 53d4232bdf1f087b057afb6504c04b015117a2ee6d2dc86a5930b51da946be5a |
+| packages/scholar_workflow-0.41.7-py3-none-any.whl | cb77cccb52a335aa0a479276631dab37af721cf0bd43923f7dee7f0c3514e28c |
+| packages/scholar_workflow-0.41.7.tar.gz | f3732765bd7168a49336284eae0753c1edfc32e16ab45dec3d6148cd42303bf7 |
+
+回退为正常pipx固定Git runtime`852f98376600fb0b8286c7976476c8e008710c38`重装0.41.6；
+Codex旧0.41.6安装记录/cache保留；不假定当前宿主支持任意旧版本选择，若需回退须先核实
+正常宿主入口，不手改缓存或为回退擅自更改远程release。
+
+## 0.41.7 发布安装获准（此前准备历史）
 
 用户已明确批准正式发布/正常安装及test单篇非canonical候选。范围见HANDOFF当前节；
 运行时代码及1986完整回归不变，仅补15项版本/manifest/eval检查。随后从已核原稿的
@@ -74,7 +123,7 @@ v5使用既有`markdown-source-quote-placement`诊断，v4使用`markdown-source
 人类编辑用例原先误期望ready，核对既有契约后改为严格要求conflict并守恒当前原件；
 没有为追求通过而放宽生产代码的冲突保护。
 
-## 尚未证明
+## 开发阶段尚未证明（历史；当前安装态结果见顶部）
 
 新能力仅本地提交，未发布、安装，未改既有V-JEPA 2文档包。普通合成段落的支持关系明确，
 但这不认证真实论文逐句来源或全篇科学支持。新强调在Obsidian里的可读性待后续正常

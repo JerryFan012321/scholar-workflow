@@ -1,5 +1,30 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-08 0.41.7 已发布安装，摘录候选已生成
+
+用户批准后，从source46880dc生成runtimeaeed349并正常推送release；pipx固定该runtime
+SHA安装、Codex正常marketplace upgrade/add安装0.41.7。实际CLI及两manifest版本一致，
+cache全部244runtime文件与发布Git字节相等，pipx102Python模块相等；未手改缓存、
+未合并main、原checkout的用户脏文件不变。当前receipt后续开发提交不改变已安装build。
+上一正常版本0.41.6 runtime852f98376600fb0b8286c7976476c8e008710c38可正常重装回退。
+
+只从原sidecar的完整实验/局限14claims派生三个quote_emphasis字段，用安装后公开
+stage-update一次：completed/validated/零修复/canonical_written=false；命名副本公开
+check-bundle conformant/零findings，完整36claims/69内容/108节点/107边。可见候选在
+test Vault的“Scholar Workflow 实验/摘录强调验收-0.41.7/V-JEPA 2”；没有commit/provider apply。
+独立比较：除三字段外IR及raw quote不变，Markdown只改三摘录题注/粗体；完整Canvas
+JSON（所有节点/边/几何/metadata/反链）相等，三图片字节保持；原Source70文件、provider5
+文件、registry和PDF hash保持。Canvas重新序列化改变物理hash，不是图内容/布局变化；
+未为强行字节相等手改产品输出。审阅Canvas仍反链到原正式正文，本候选不是新owner。
+
+观察器首次对可省略空source_spans索引发生KeyError；修正观察器后仅读已生成结果通过，
+不重stage/check或改变产品。GUI打开请求和preview状态已接受，但dev:screenshot捕获
+的是旧0.41.6页面，不能据此记新GUI或阅读验收通过；顶层await同样是CLI观察代码错误，
+非论文业务失败。停止重复UI操作，保留截图与失败记录。阅读评鉴在会话说明了对象、打开
+方式、三处效果和判断标准，仍待明确人工确认；旧Canvas/图片批准保持，G17未完成。
+下一步只收集这三处摘录阅读评鉴及尚缺项目/实验/原生工具便利性，不重复有效业务或扩范围。
+实际身份、输入、原始结果和保全JSON均在候选的`.review/`；详见quote-emphasis-test-results.md。
+
 ## 2026-10-08 0.41.7 发布安装及单篇候选获准
 
 用户明确“批准”：正式发布并正常安装0.41.7，随后仅在test Vault新建一个V-JEPA2

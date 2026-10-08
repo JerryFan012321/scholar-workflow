@@ -32,12 +32,14 @@
 | G16 | 以科研项目的完整资料上下文为中心：集中展现并显式关联项目代码、论文、分析笔记、实验档案与成果，内容留在各权威来源；人和 agent 不启动 Hub 也能读取、导航和调用。Project 持有薄关联清单，Knowledge 持有可复用正文与资料归属，Analysis 持有分析结果，Adapters 对接原生工具，Workflows 组合任务，CLI/agent/skill 是薄入口与结果契约；不再内置 Codex 任务控制产品 |
 | G17 | 构造稳定、可靠、易用且严格满足呈现契约的学术、知识库和实验 skills；第一阶段交付可复现的模范 Vault、模范项目和实验文件夹，以及可复用的外部工具交互。复现是运行期 skill 的明确能力，不只是开发记录：从明确输入经已安装产品入口得到符合版本化契约的产物；单篇样本、合成测试或规划完成不能冒称整个阶段完成。具体交付与证据见 `reproducible-exemplars-stage1.md` |
 
-G17 摘录证据强调增量（2026-10-08，开发未部署）：用户要求直接证据突出；现已明确批准
-0.41.7正式发布、正常安装与test中一篇非canonical候选，不合并main或覆盖原稿。通过独立
-quote_emphasis保留完整原句并仅在Markdown加粗支撑片段，推断依据明确区分。Canvas和
-旧默认保持，人类revision继续冲突停止。合成输入/手写预期先于实现，用户批准合成与必要
-回归，不写Vault/Zotero、不发布安装。开发结果及安装态/人工边界分别记录于
-quote-emphasis-test-results.md；不据此宣称全G17完成或重开此前Canvas批准。
+G17 摘录证据强调安装态（2026-10-08）：批准后source46880dc/runtimeaeed349正常发布、
+pipx及Codexmarketplace安装0.41.7；244cache文件及102Python模块等于发布字节。
+安装版公开stage-update一次零修复validated，命名新候选check conformant；完整36claims/
+69内容/108节点/107边。独立比较只有三source span强调字段及对应Markdown题注/粗体变化；
+完整原句、科学内容、Canvas JSON、三图和原Source/provider/registry/PDF保持。候选非canonical，
+没有正式覆盖或main合并。观察器空字段错误修正后仅读现成结果通过，不重做业务；原生截图
+捕获旧页，未冒称新GUI通过。三处强调阅读效果仍待人工；旧Canvas/图片批准不重开。
+详见quote-emphasis-test-results.md，不据此宣称完整G17完成。
 
 G17 正文图片安装态（2026-10-08）：用户批准后，0.41.6 source26a2284/runtime852f983
 已正常发布安装，CLI固定runtime且cache全部244文件一致。独立单篇公开stage一次validated，
