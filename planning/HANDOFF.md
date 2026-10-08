@@ -1,5 +1,19 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-08 0.41.6 已发布安装，单篇暂存验证通过
+
+source26a2284/runtime852f983已推送release，正常pipx及Codex市场add安装0.41.6。
+CLI固定runtime，cache全部244文件逐字节一致；main未合并，原checkout脏改动保持。
+独立输入后PATH stage-update一次validated/零修复/零canonical写入；命名展示副本check
+conformant，69内容108节点107边，完整Canvas JSON不变，IR仅正文图片开关变化。
+正文只加图2/表2两题注源页行，三图无重复且字节保持，22保护项未变。暂存通用文件名
+直接check被正确拒绝，命名副本保持三文件字节后通过；不改输出或再次stage。
+安装marketplace upgrade网络超时，正常add及全缓存核验成功，没有手改缓存。
+可见成果在test“Scholar Workflow 实验/正文图片验收-0.41.6/展示”，仅供新增Markdown
+阅读评鉴；Canvas仍保留待原位采用的原正文反链，不冒称新根复现。没有commit/provider apply。
+新增图片位置/题注可读性待明确人工评价；旧Canvas批准有效，完整G17和科学边界不变。
+没有重分析/裁图/实验/恢复/整库迁移/服务切换。见markdown-source-images-test-results.md。
+
 ## 2026-10-08 0.41.6 发布安装获准
 
 用户明确“允许”，批准当前正文图片hotfix正式发布、正常安装及V-JEPA2单对象安装态验证。

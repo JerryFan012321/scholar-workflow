@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Changed
+
+- **analyze-paper / installed hotfix evidence:** record approved 0.41.6 runtime
+  publication and normal CLI/plugin installation with all 244 cached runtime files
+  matching the release. One public installed stage validates the existing V-JEPA 2
+  input without canonical writes; preserve complete Canvas, prose, quotations and
+  owned image bytes, adding only two caption/source lines. Keep the new Markdown
+  reading assessment separate, prior Canvas approval valid and main unmerged.
+
 ## [0.41.6] - 2026-10-08
 
 ### Added

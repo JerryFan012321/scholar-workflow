@@ -1,5 +1,27 @@
 # 正文来源图片：实际开发验证结果
 
+## 0.41.6 实际发布、安装与单篇暂存
+
+收尾只改实际状态文档/eval描述：10项eval schema通过（0.02秒），diff检查通过；行为代码
+没有变化，未重复1896完整回归。Obsidian只读确认新展示稿存在，当前人阅读页保持原登记稿。
+
+用户明确批准后，source26a2284/runtime852f983推送至release，正常pipx固定runtime、
+Codex市场add得到0.41.6。CLI版本/direct_url/关键模块和cache全部244文件一致；main未合并。
+独立输入/预期先于执行：现有V-JEPA2 IR仅启用正文图开关，PATH公开stage一次validated，
+零修复/零canonical写入。命名展示副本check conformant、零findings、69内容108节点107边；
+独立比较完整Canvas JSON、IR其他字段与全部原文不变。Markdown只增图2/表2题注源页两行，
+三图各一次且byte/hash相同，15Source+7外部保护共22未变。成果及原始输入/回执/核对
+保存在test“Scholar Workflow 实验/正文图片验收-0.41.6”，不重跑分析、裁图或实验。
+
+实际失败与纠正：pipx upgrade拒绝URL（无该次变更），正常install固定SHA成功；
+marketplace upgrade网络clone超时，正常add成功并全字节核验；观察器误用论文名读取stage
+通用文件，修正观察路径；直接以通用analysis.md显示名check按门禁拒绝，命名副本保持
+暂存三文件字节后通过。未改变生成输出、代码、缓存或再次stage。
+
+展示仅供新增正文阅读评鉴，Canvas反链仍指待原位采用的原正文；未commit/provider apply，
+不冒称新根复现。旧Canvas批准保持，新增图片位置/题注可读性独立待人。完整G17、科学
+全项认证和其他工具便利性不由本单项完成。以下开发与未安装表述为历史。
+
 2026-10-08，`codex/hotfix-canvas-images-release`；基于已提交父版本`10f501b`的开发增量。
 计划与输入先于代码和测试，见[独立测试计划](markdown-source-images-test-plan.md)。
 不是新发布或安装态验收。
