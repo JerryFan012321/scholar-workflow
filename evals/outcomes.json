@@ -3,8 +3,8 @@
   "cases": [
     {
       "id": "knowledge-same-directory-rebinding-installed",
-      "description": "同路径/inode设备号恢复：安装版公开零写入预览冻结完整明确inventory、manifest、registry和provider，精确摘要确认仅改主机绑定与派生snapshot revision，保留所有内容/归属/回执；不同根/漂移/符号链接/中断/篡改由合成独立输入验证。开发通过不等于安装态通过，不代表新根复现、科学支持、阅读器显示或人工验收。当前26定向通过，正常0.41.4安装及单test Source恢复待完成；见planning/source-rebinding-plan.md。",
-      "status": "pending"
+      "description": "同路径/inode设备号恢复：26独立定向、完整1855回归通过，0.41.4正常安装source f659631/runtime992ae22，两cache manifest/CLI/契约/module字节一致。单test Source public零写入预览15文件后精确digest确认恢复；独立比较仅binding与派生snapshot revision改变，内容/manifest/catalog/归属/历史回执均保留。此pass只证明本入口及安装态单对象恢复，不代表新根复现、科学支持、阅读器显示、人工验收或G17完成；见planning/source-rebinding-results.md。",
+      "status": "pass"
     },
     {
       "id": "analysis-canvas-exact-companion-route",

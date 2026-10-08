@@ -241,12 +241,14 @@ def test_public_restore_cli_separates_human_summary_and_machine_record(destinati
         assert "已恢复归属" in published.output if language == "zh" else "Ownership restored" in published.output
 
 
-def changed_synthetic_document(destination, *, reader=None, evidence=None):
+def changed_synthetic_document(destination, *, reader=None, evidence=None, canvas_note_path=None):
     """Independent synthetic input, not a real paper re-analysis."""
     root, _, _, _, package, paths, *_ = destination
     portable = json.loads(package.read_text())["package"]
     baseline = AnalysisBaseline.model_validate_json((root / paths["sidecar"]).read_bytes())
     value = baseline.document.model_dump(mode="json")
+    if canvas_note_path is not None:
+        value["profile"]["canvas_note_path"] = canvas_note_path
     if reader is not None:
         value["reader"] = reader
     if evidence is not None:
@@ -283,6 +285,25 @@ def test_new_reader_id_is_pending_and_does_not_block_file_ownership(destination,
     assert result["readers"][0]["reader_launch_verified"] is False
     assert not result["reproduction_complete"]
     assert "a" * 16 in (root / destination[5]["sidecar"]).read_text()
+
+
+@pytest.mark.parametrize('moved', [False, True])
+def test_reader_companion_uses_owned_nested_markdown_path(destination, monkeypatch, moved):
+    from types import SimpleNamespace
+    root, registry, zotero, source_id, package, paths, *_ = destination
+    expected = (root / paths['markdown']).relative_to(root.parent).as_posix()
+    saved = 'old-source/' + paths['markdown'] if moved else expected
+    changed_synthetic_document(destination, canvas_note_path=saved)
+    monkeypatch.setattr('scholar_workflow.adapters.obsidian_registry.resolve_obsidian_reader',
+                        lambda _: SimpleNamespace(vault_id='b' * 16, vault_root=root.parent))
+    before = files(root)
+    plan = restore_plan(registry, zotero, source_id=source_id, package=package)
+    reader = plan['readers'][0]
+    assert reader['destination_canvas_note_path'] == expected
+    assert reader['saved_canvas_note_path'] == saved
+    assert reader['canvas_note_binding'] == ('rebinding-required' if moved else 'binding-matched')
+    assert not reader['reader_launch_verified']
+    assert files(root) == before
 
 
 def test_saved_evidence_hash_must_match_current_local_pdf(destination):

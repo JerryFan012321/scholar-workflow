@@ -111,6 +111,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   the readable replay note is in the existing test package. This does not revise real quotations,
   certify human/source assessment, restore a cross-host provider or introduce another runtime build.
 
+## [0.41.5] - 2026-10-08
+
+### Fixed
+
+- **analyze-paper / knowledge reproduction:** derive a restored Canvas's companion
+  display destination from its owned Markdown artifact path, not the resource identity
+  in the baseline tuple. Preserve nested paper folders in reader diagnostics, correctly
+  distinguishing matching and moved routes. No restoration/content rewrite, source
+  identity or permission change; actual display and clicks remain separate checks.
+
 ## [0.41.4] - 2026-10-08
 
 ### Fixed

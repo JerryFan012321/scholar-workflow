@@ -158,12 +158,15 @@ def test_reproduction_does_not_mark_moved_same_vault_companion_matched(tmp_path,
     document = AnalysisDocument.model_validate(with_target())
     _, baseline = render_analysis_projection(document, note_stem=NOTE_STEM)
     baselines = {document.artifact_id: (
-        "resources/papers/toy/analysis.baseline.json", baseline)}
+        "paper:synthetic-scalar-reader", baseline)}
+    snapshot = SimpleNamespace(artifacts=[SimpleNamespace(
+        artifact_id=document.artifact_id, kind="analysis_markdown",
+        vault_path="resources/papers/toy/Synthetic analysis.md")])
     monkeypatch.setattr(obsidian_registry, "resolve_obsidian_reader", lambda root:
         obsidian_registry.ObsidianReaderBinding(source_root=root, vault_root=vault,
             vault_id="0123456789abcdef"))
-    matched = _reader_checks(original, baselines)[0]
+    matched = _reader_checks(original, baselines, snapshot)[0]
     assert matched["canvas_note_binding"] == "binding-matched"
-    moved = _reader_checks(vault / "Copied/Source", baselines)[0]
+    moved = _reader_checks(vault / "Copied/Source", baselines, snapshot)[0]
     assert moved["canvas_note_binding"] == "rebinding-required"
     assert moved["reader_launch_verified"] is False

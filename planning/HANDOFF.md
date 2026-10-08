@@ -4,6 +4,15 @@
 
 ### 最新授权与执行
 
+最新进度：0.41.4已正常发布安装（f659631/992ae22），15文件合法binding-only恢复与单篇两图
+canonical/provider采用均完成；独立比较保持旧内容/布局和原PDF，完整15文件/6资产可导出。
+一次新根已精确copy并登记到隔离状态，尚未restore；预览暴露目标正文诊断漏paper子目录，
+先新增2实际RED合成nested-route用例后修复，仅从owned Markdown artifact取得目标路径。
+0.41.5补丁完整回归1857通过（11既有弃用警告，88.93秒），定向62通过、Ruff/diff通过。
+正常发布安装待执行，然后复用同一新根继续，不重新分析/裁剪/实验/人工评鉴。
+实际证据与旧观察器失败分别留在test既有审阅目录“复现/正式采用-20261008/0.41.4”。
+不合并main、不迁移其他集合、不切换服务；完整G17及其他人类便利性边界仍保持。
+
 用户明确“同意，继续吧”，批准受控目录重绑定 hotfix 的修复、正式发布安装和随后单样本采用。
 旧 blocked 为历史状态。复用当前 codex/hotfix-canvas-images-release worktree；目标版本 0.41.4。
 只恢复同路径、同 inode、内容与归属通过当前完整 inventory 校验的设备号变化；预览冻结 registry、
@@ -11,7 +20,7 @@ provider、manifest、文件 hash 和真实目录身份，精确 digest 确认�
 先独立合成边界验证，再完整 unit/contract；正式安装后仅 V-JEPA2 采用两图和一次新根复现。
 不弱化现有提交检查，不改科学内容、布局、原PDF或其他项目，不重新做已通过人工图片评鉴。
 
-当前开发进度：公开 rebind-plan/rebind 与运行期复现契约已实现，26 项独立定向合成用例通过；
+0.41.4发布前历史记录：公开 rebind-plan/rebind 与运行期复现契约已实现，26 项独立定向合成用例通过；
 此前相关回归76通过、补充后86通过。完整unit/contract1855通过（11弃用警告）；Ruff与diff
 通过。0.41.4正常发布安装待执行，真实Source尚未恢复。详见source-rebinding-results.md。
 
