@@ -8,7 +8,7 @@
     },
     {
       "id": "analysis-canvas-exact-companion-route",
-      "description": "v5显式安全Vault相对正文路径让claim/point/图卡反链打开配对正文的确切文件和块，不把同名或静态解析当点击通过。whole成对采用/重绑定，focused保留；正式提交先核对注册Source实际正文位置，复制到新位置报告重绑定，不扩大权限。0.41.2误跳由独立A/B鼠标复现；0.41.3已正常发布安装，1829完整回归通过。test单篇新候选public stage/check与独立守恒比较通过：正文、源身份、节点几何/样式/边不变，71反链用确切路径。图2/表2真实点击准确到本目录指定块，不是全部71链接逐一点击。人工图评鉴与canonical带图归属/正式路由采用仍未完成，保持pending。Canvas图片仍只实验数据表和关键流程图；见planning/canvas-companion-links-results.md。",
+      "description": "v5显式安全Vault相对正文路径让claim/point/图卡反链打开配对正文确切文件/块，不把静态解析当点击通过。whole成对采用/重绑定，focused保留；提交核对实际位置，复制到新位置报告重绑定，不扩大权限。0.41.2误跳由A/B鼠标复现；0.41.3候选图2/表2实际点击准确到本目录指定块，不代表全部71链接。用户图评鉴已通过；0.41.4 canonical/provider正式采用、0.41.5安装后同一隔离新根restore及paired route update已完成：71反链准确文件路径，108节点107边、正文/源/图/几何/样式/边守恒。Mac锁屏，新副本原生显示/两图实际点击尚未核，保持pending；不再索要旧图片批准。见planning/source-rebinding-results.md及canvas-companion-links-results.md。",
       "status": "pending"
     },
     {
@@ -18,8 +18,8 @@
     },
     {
       "id": "analysis-canvas-selected-source-visuals",
-      "description": "用户规定：Canvas图片仅实验数据表和关键流程图，贴近对应Experiments/Method内容；段落截图与逐字摘录留在Markdown，不取代五分支具名可编辑节点。0.41.1已正常安装，单篇V-JEPA2非canonical候选图2/表2在Obsidian实际显示，正文反链和ZotFlow物理4/14页点击有独立留档；旧树/正文及canonical未因候选改变。图的裁剪充分性、美观仍待人工确认，新增图片资产尚未正式登记/提交，不能冒称完整带图归属复现或G17完成。见planning/canvas-selected-images-plan.md。",
-      "status": "pending"
+      "description": "用户规定：Canvas图片仅实验数据表和关键流程图，贴近对应Experiments/Method内容；段落截图/逐字摘录留Markdown，不取代五分支可编辑节点。单篇V-JEPA2图2/表2已有原生显示与准确来源页/正文点击记录，用户明确图片通过。0.41.4正常安装后登记6资产并canonical paired commit/provider apply，15文件完整导出；0.41.5同一隔离新根restore保持15文件，再成对更新正文反链保持图片/正文/几何/边。此pass仅该用户规定与已审图片正式采用，不能冒称新副本原生点击、全篇科学支持或G17完成；Mac锁屏，新副本实际点击仍独立pending。见planning/source-rebinding-results.md及canvas-selected-images-plan.md。",
+      "status": "pass"
     },
     {
       "id": "resource-native-open-reusable-recipe",
@@ -28,12 +28,12 @@
     },
     {
       "id": "project-context-candidate-public-preview",
-      "description": "G16/G17：使用安装版project overview/validate-context的明确--context-file预览根JSON候选；沿用有界reader和稳定project_id，旧清单与候选不变，显示未应用状态，默认接口输出不变；无provider/Git/service/launch，非法文件名、symlink、重复JSON字段、身份错配和不安全reader拒绝。不通过私有模型、虚构项目或覆盖旧清单来预览。开发19新CLI测试及旧project/eval组合105通过，完整1695通过；source52ac731/runtimeaa1861d正常安装0.40.0后，单示例公开preview8项成功，4本地可定位/4外部未核验，真实Markdown与独立说明已保存，四项原件hash不变。未应用候选，人类便利性及外部reader点击尚未完成，保持pending。见planning/project-context-candidate-results.md。",
+      "description": "G16/G17：安装版project overview/validate-context用明确--context-file预览根JSON候选；有界reader/稳定project_id，旧清单与候选不变，显示未应用状态，默认接口输出不变；无provider/Git/service/launch，非法文件名/symlink/重复JSON/身份及reader不安全拒绝。19新CLI及旧组合105/完整1695通过；0.40.0已安装单例preview8项，4本地可定位/4外部未核。用户后明确图片通过/允许更新，0.41.3安装态采用已审8项候选并公开重建根总览，原代码/metrics保持，未重跑实验。当前已应用，不再以缺覆盖许可阻塞；人类便利性和外部reader点击仍未完成，保持pending。见planning/project-context-candidate-results.md及source-rebinding-results.md。",
       "status": "pending"
     },
     {
       "id": "knowledge-portable-provider-reproduction",
-      "description": "G17：从明确注册的Source导出完整资源/附属产物归属、Field、相对路径及文件hash，移除主机root绑定和旧回执，不扫描推断owner、不复制PDF或密钥；新目的地经明确preview/CAS恢复本机provider，保持稳定identity和正文/Canvas格式，并独立处理reader/source可用性。26导出与30恢复合成测试及完整1676项通过。0.39.0 source907c3f9/runtime63a29f1正常安装后，test新目录以隔离host状态模拟新主机：8文件hash、identity守恒，provider绑定新根且无旧回执，同摘要幂等，目的地再导出摘要一致，原件保护hash不变，最终三文件conformant。native正文/Canvas载入；reader身份匹配但实际点击与新摘录人工阅读未确认，全篇科学支持未认证，保持pending。未在另一台物理主机实测，不能用此单对象自动结果冒称G17全完成；见planning/hotfix-0.39.0-results.md。",
+      "description": "G17：明确Source导出完整归属/Field/相对路径/hash，移除主机root/旧回执；不扫描推断owner、不复制PDF/密钥，新目的地preview/CAS恢复provider，identity/格式保持，reader独立处理。0.39.0安装态8文件新根恢复与再导出摘要相同、原件保持已留证。0.41.4合法binding恢复后已审两图正式采用，完整15文件6资产导出；0.41.5正常安装、1857回归通过，同一隔离新根public restore保持15文件及原包摘要，再paired route update仅Canvas/sidecar变化，13其他文件/科学内容/原句/图片/布局/边/原Source/生产状态/PDF保持。更新后的包因新显示路由有合法新摘要。未在另一物理主机测试，Mac锁屏使新副本实际点击未核，全篇科学支持未认证，保持pending，不冒称G17完成。见planning/source-rebinding-results.md及hotfix-0.39.0-results.md。",
       "status": "pending"
     },
     {

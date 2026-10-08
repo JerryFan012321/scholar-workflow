@@ -46,4 +46,25 @@ provider/Source保持。恢复尚未执行，读者诊断漏了paper子目录。
 保留同Vault换目录必须重绑定断言；不回退到错误resource-ID路径或放宽生产检查。
 调整fixture时曾误引用AnalysisDocument不存在的resource_id，定向1 failed/61 passed；改为
 真实synthetic资源identity后62 passed（1.59秒）。完整复跑1857 passed/11既有弃用警告
-（88.93秒）；Ruff和diff检查通过。正常0.41.5发布安装待执行，无额外业务验证。
+（88.93秒）；Ruff和diff检查通过。
+
+## 0.41.5 安装及同一新目录复现
+
+source045085e/runtime65d0754正常发布并安装。244 runtime文件边界通过；首次路径扫描
+将4个解释跨机漂移的`/Users/…`占位示例误报，逐项核读后精确排除该字面示例，其他个人
+路径/密钥模式扫描通过，没有改产品文件或放过真实路径。SSH市场upgrade首次超时/early EOF，
+正常HTTPS重试成功；公开plugin add安装0.41.5。pipx direct_url固定提交、3个已安装模块及
+cache两manifest/skill/reference/两module共6项发布字节一致；未手改cache或全局Git配置。
+
+只复用此前唯一新目录：公开新restore-plan准确报告完整paper子目录路径，fresh digest
+4b395535dd0c098ce0dce7f9bb9524b031506fcb0db0ae44130dc188727dbd47获此前同范围批准执行。
+public restore仅初始化隔离provider，15文件字节不变，再导出摘要与原包相同；之后whole
+paired stage零修复validated，独立比较只有71正文反链的目录路由改变。public commit/apply
+完成，13非Canvas/sidecar文件保持；正文、来源、图片、节点几何/样式/边全部守恒，108节点
+107边，正式check conformant，当前15文件包可再次导出。最终摘要因合法反链更新而改变，
+不能宣称更新后仍与原包完全同hash。原Source/生产registry/provider及PDF保持。
+
+用户旧图片评鉴通过并持续有效。Mac锁屏，原生显示和两卡准确点击尚未复验；未使用旧截图
+或静态解析冒充本次实机结果。可读结果、安装记录、独立比较及全部CLI回执保留在test既有
+审阅目录“复现/正式采用-20261008/0.41.4”，名字保留创建时版本，实际恢复使用0.41.5。
+不重分析/裁剪/实验，不合并main/切换服务/迁移其他集合；科学空缺和完整G17边界保持。

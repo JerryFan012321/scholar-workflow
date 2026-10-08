@@ -7,6 +7,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **analyze-paper / development acceptance evidence only:** record normal 0.41.4
+  binding-only recovery and approved Figure 2/Table 2 canonical adoption, followed by
+  normal 0.41.5 release/install and one isolated new-root restoration. Preserve all
+  scientific content, quotations, image bytes, geometry and original files; only the
+  copied Canvas/sidecar companion route changes. Record 1857 passing regressions,
+  exact installed identities and standalone readable results. Keep fresh native
+  display/clicks pending while the Mac is locked; prior image approval remains valid.
+  No main merge, service switch, other collection migration or experiment rerun.
+
 - **analyze-paper / installed hotfix evidence only:** record normal 0.41.3 release
   and installation, plus one noncanonical test paper's preserved paired route update.
   Native figure/table cards render and actual clicks reach the exact new companion
