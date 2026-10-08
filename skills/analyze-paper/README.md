@@ -69,6 +69,15 @@ clause/sentence in Markdown while preserving the complete original `quote` and c
 Captions distinguish direct evidence from an inference's source basis. Canvas is unchanged;
 omitted emphasis preserves old output. Check installed support before adopting it through
 the paired update; the detailed rule is in `references/analysis-format.md`.
+Apply emphasis to the verified support for each new source-backed record, not just
+three examples; structural headings and unavailable evidence need no invented quote.
+In supporting runtimes, new analyses also set `profile.markdown_folded_quotes: true`:
+each excerpt is a native Obsidian quote callout, collapsed by default, with its
+source link visible in the title. Expand it to read the unchanged full passage and
+precise bold support. Statements, anchors and images stay outside the fold; Canvas
+is unchanged. Existing pairs adopt folding through a whole paired format update;
+omitted/false preserves old output. Check installed support and assess the actual
+reading interaction separately. See the same format contract for all details.
 From 0.41.2, v5 can explicitly select `profile.canvas_unique_sources: true` to avoid
 repeating identical source links within a Canvas node while retaining separate Markdown
 excerpts and all source spans. Existing pairs require an explicit whole format update;

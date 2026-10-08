@@ -53,6 +53,10 @@ new template. Report an unsupported-version limitation rather than substituting 
    not just matching keywords or isolated labels. Its direct-evidence emphasis contract
    keeps supporting source wording bold and context normal, distinguishing inference bases;
    check installed support before using that optional source-span field.
+   Apply the same rule to every supported record, not just selected examples, and use
+   its default-collapsed quote-callout format in supporting runtimes. Statements,
+   source links and images remain visible outside the fold; unresolved source support
+   stays an explicit gap. Existing pairs adopt folding through a whole paired update.
    Canvas keeps a concise projection without quotations.
    For selected source figures/tables, use the v5 Markdown image projection in
    `references/analysis-v5-format.md` when supported by the installed runtime;

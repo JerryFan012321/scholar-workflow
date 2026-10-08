@@ -58,6 +58,7 @@
         "kind": {"enum": ["whole", "focused"]},
         "framework": {"enum": ["legacy", "reference_tree", "reference_tree_v5"]},
         "markdown_quotes": {"type": "boolean", "default": false},
+        "markdown_folded_quotes": {"type": "boolean", "default": false},
         "markdown_source_images": {"type": "boolean", "default": false},
         "canvas_unique_sources": {"type": "boolean", "default": false},
         "canvas_note_path": {
@@ -613,6 +614,19 @@
           "profile": {"properties": {"framework": {"const": "reference_tree_v5"}}}
         }
       }
+    },
+    {
+      "if": {"properties": {"profile": {
+        "required": ["markdown_folded_quotes"],
+        "properties": {"markdown_folded_quotes": {"const": true}}
+      }}},
+      "then": {"properties": {
+        "schema_version": {"enum": [4, 5]},
+        "profile": {"required": ["framework", "markdown_quotes"], "properties": {
+          "framework": {"enum": ["reference_tree", "reference_tree_v5"]},
+          "markdown_quotes": {"const": true}
+        }}
+      }}
     },
     {
       "if": {"properties": {"profile": {

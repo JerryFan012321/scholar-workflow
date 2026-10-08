@@ -95,6 +95,12 @@ corresponding-challenge or corresponding-contribution axis.
   in Markdown only, with the same source-location link. Canvas retains source links
   and evidence, but does not repeat quotations or add quotation nodes. Quote text
   escaping, attribution and source verification follow `analysis-format.md`.
+  New Markdown excerpts use its uniform default-collapsed quote-callout contract:
+  the source link is visible while collapsed, the complete passage remains available,
+  and exact direct evidence/inference bases are emphasized for each supported record,
+  not just a sample subset. Statements, anchors and images stay outside the fold.
+  Check installed support; missing source/semantic review remains a gap, not permission
+  to invent bold support or call an unsupported format complete.
 - Use native editable JSON Canvas text nodes, fine straight square-routed arrowless
   connections, and the reference image's tree-like label treatment. An image, SVG,
   four/five dashboard cards or a flattened text outline is not an editable substitute.

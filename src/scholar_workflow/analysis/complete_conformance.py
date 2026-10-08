@@ -387,6 +387,7 @@ def validate_complete_bundle(
             document.language or "en",
             reader=document.reader,
             markdown_quotes=True,
+            markdown_folded_quotes=document.profile.markdown_folded_quotes,
             markdown_source_images=document.profile.markdown_source_images,
             label=claim_labels[claim.claim_id],
         )
@@ -419,7 +420,8 @@ def validate_complete_bundle(
         for anchor, evidence in records:
             statement = next(line for line in lines if line.endswith(f"^{anchor}"))
             quotes = reference_source_quote_lines(
-                evidence, document.language or "en", reader=document.reader
+                evidence, document.language or "en", reader=document.reader,
+                folded=document.profile.markdown_folded_quotes,
             )
             if quotes and statement + "\n" + "\n".join(quotes) not in markdown:
                 findings.append(
