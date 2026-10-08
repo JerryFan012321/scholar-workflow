@@ -92,6 +92,12 @@ From 0.39.0, export portable ownership with
 `knowledge restore-plan/restore`. See [replay contract](references/knowledge-reproduction.md)
 for exact inputs, non-overwrite boundaries and outstanding reader/source/human checks.
 
+For a device-number change at the **same registered path and inode**, 0.41.4 provides
+`knowledge rebind-plan --source-id SOURCE_ID --format json`, then
+`knowledge rebind --source-id SOURCE_ID --approved-digest HEX` after review. It changes
+only the host binding and derived snapshot revision, never content or ownership.
+Different directories and stale inputs refuse; see the same replay contract for recovery.
+
 After `knowledge preview`, choose exactly one candidate relative root. Run
 `scholar-workflow knowledge registration-plan /absolute/selected/folder --field-root .`,
 review its navigation and digest, then `knowledge register /absolute/selected/folder
