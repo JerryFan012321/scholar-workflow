@@ -50,7 +50,9 @@ new template. Report an unsupported-version limitation rather than substituting 
    `references/analysis-v5-format.md`; a same-named note is not proof of the correct target.
    The Markdown-only verbatim-excerpt contract is in `references/analysis-format.md`:
    prose excerpts retain complete sentences and enough source context to be independently readable,
-   not just matching keywords or isolated labels;
+   not just matching keywords or isolated labels. Its direct-evidence emphasis contract
+   keeps supporting source wording bold and context normal, distinguishing inference bases;
+   check installed support before using that optional source-span field.
    Canvas keeps a concise projection without quotations.
    For selected source figures/tables, use the v5 Markdown image projection in
    `references/analysis-v5-format.md` when supported by the installed runtime;

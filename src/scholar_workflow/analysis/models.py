@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from enum import StrEnum
+from itertools import pairwise
 from pathlib import PurePosixPath
 from typing import Annotated, Literal
 from uuid import UUID
@@ -170,6 +171,28 @@ class AnalysisState(StrEnum):
     FAILED = "failed"
 
 
+QuoteEmphasis = list[Annotated[str, Field(
+    strict=True, min_length=1, max_length=1600, pattern=r"^\S(?:[\s\S]*\S)?$"
+)]]
+
+
+def _validate_quote_emphasis(quote: str | None, fragments: list[str]) -> None:
+    """Validate literal spans, without certifying their scientific support."""
+    if not fragments:
+        return
+    if quote is None or not quote.strip():
+        raise ValueError("quote_emphasis requires a nonblank original quote")
+    intervals: list[tuple[int, int]] = []
+    for fragment in fragments:
+        start = quote.find(fragment)
+        if start < 0 or quote.find(fragment, start + 1) != -1:
+            raise ValueError("quote_emphasis fragments must occur exactly once in the original quote")
+        intervals.append((start, start + len(fragment)))
+    intervals.sort()
+    if any(left[1] > right[0] for left, right in pairwise(intervals)):
+        raise ValueError("quote_emphasis fragments must not overlap or repeat")
+
+
 class ZoteroPdfSpan(BaseModel):
     """Stable attachment identity and one verifiable PDF page or annotation."""
 
@@ -185,6 +208,14 @@ class ZoteroPdfSpan(BaseModel):
     annotation_key: str | None = Field(default=None, pattern=r"^[A-Z0-9]{8}$")
     section: str | None = Field(default=None, min_length=1, max_length=160)
     quote: str | None = Field(default=None, min_length=1, max_length=1600)
+    quote_emphasis: QuoteEmphasis = Field(
+        default_factory=list, max_length=8, exclude_if=lambda value: not value
+    )
+
+    @model_validator(mode="after")
+    def validate_quote_emphasis(self) -> ZoteroPdfSpan:
+        _validate_quote_emphasis(self.quote, self.quote_emphasis)
+        return self
 
 
 class VaultMarkdownSpan(BaseModel):
@@ -200,6 +231,14 @@ class VaultMarkdownSpan(BaseModel):
     quote: str | None = Field(
         default=None, min_length=1, max_length=1600, exclude_if=lambda value: value is None
     )
+    quote_emphasis: QuoteEmphasis = Field(
+        default_factory=list, max_length=8, exclude_if=lambda value: not value
+    )
+
+    @model_validator(mode="after")
+    def validate_quote_emphasis(self) -> VaultMarkdownSpan:
+        _validate_quote_emphasis(self.quote, self.quote_emphasis)
+        return self
 
     @field_validator("vault_path")
     @classmethod
@@ -230,6 +269,10 @@ class Evidence(BaseModel):
 
     @model_validator(mode="after")
     def validate_support(self) -> Evidence:
+        if any(span.quote_emphasis for span in self.source_spans) and self.kind not in {
+            EvidenceKind.AUTHOR_STATED, EvidenceKind.ANALYSIS_INFERENCE,
+        }:
+            raise ValueError("quote_emphasis requires author_stated or analysis_inference evidence")
         if self.kind is EvidenceKind.AUTHOR_STATED and not self.anchor:
             raise ValueError("author_stated evidence requires an anchor")
         if self.kind in {
@@ -501,6 +544,10 @@ class AnalysisDocument(BaseModel):
                 if any(re.search(r"!\[|<img\b", text, re.IGNORECASE) for text in projected):
                     raise ValueError("Canvas image embeds must use typed canvas_image; Markdown crops require a plain Canvas summary")
             for record in (claim, *claim.points):
+                if any(span.quote_emphasis for span in record.evidence.source_spans) and (
+                    not is_reference_tree or not self.profile.markdown_quotes
+                ):
+                    raise ValueError("quote_emphasis requires a v4/v5 Markdown quotation projection")
                 image = record.canvas_image
                 if image is None:
                     continue

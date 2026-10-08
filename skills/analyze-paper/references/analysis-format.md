@@ -203,6 +203,50 @@ Multiple excerpts use separate spans and source links. If the accessible source 
 verify the wording or its precise location, report an explicit source gap rather than guessing a
 quotation or recording a supported success. Availability-only statements need no invented quote.
 
+#### Direct-evidence emphasis (supporting runtimes)
+
+New source-backed Markdown statements emphasize the original clause or sentence that
+directly supports that particular claim/point, while leaving necessary surrounding
+context in normal weight. Keep conditions, negations, comparison scope and units with
+the supporting wording; do not reduce the excerpt to highlighted keywords or make a
+qualified result look unconditional. Whole-passage bold is appropriate only when the
+whole passage supplies that direct support. This is editorial emphasis, not a claim
+that the authors used bold or that formatting certifies scientific support.
+
+Keep `quote` as the unchanged, complete original passage. On the same source span,
+`quote_emphasis` declares up to eight literal substrings of that passage; each must
+occur exactly once, have no surrounding whitespace and not overlap another fragment.
+The renderer escapes source syntax before adding its own bold markers. Do not insert
+Markdown markers, translations or paraphrases into `quote` or the declared fragments.
+Both PDF and registered Markdown spans support the field in a supporting v4/v5 runtime
+with `markdown_quotes: true`. Omitted/empty emphasis keeps old serialized IR and output
+unchanged. An older installation rejects the new field; report unsupported capability
+rather than hand-patching a managed Markdown file or pretending it is installed.
+
+The author-stated caption is `Original excerpt (bold: direct evidence)` / `原文摘录（粗体：直接证据）`.
+For an analysis inference, highlight only its source observation and use
+`Original excerpt (bold: basis for inference)` / `原文摘录（粗体：推断依据）`;
+the inferred conclusion remains explicitly labeled analysis prose. Unavailable or
+non-applicable evidence has no invented highlighted support. The same excerpt's
+verified source link remains adjacent. Canvas receives neither the excerpt nor its
+emphasis and retains its complete existing content and geometry.
+
+For example, a synthetic source and its emphasized projection are:
+
+```text
+quote: Trials use a fixed camera pose. The proposed model achieves 72% success over 50 trials under this setup. Performance outside this setup has not been evaluated.
+quote_emphasis: ["The proposed model achieves 72% success over 50 trials under this setup."]
+```
+
+> Trials use a fixed camera pose. **The proposed model achieves 72% success over 50 trials under this setup.** Performance outside this setup has not been evaluated.
+
+Conformance binds the emitted emphasis, passage and placement to IR. Model validation
+also rejects absent, ambiguous or overlapping source fragments; JSON Schema checks
+their structure, not arbitrary substring equality. Actual source fidelity and support
+for the nearby statement remain separate source/semantic assessments. Existing-pair
+adoption uses the normal selected-section paired update and CAS/conflict protections;
+it never silently refreshes other papers or overwrites a human revision.
+
 The renderer escapes Markdown/HTML syntax to show source text literally. Conformance checks
 presence, attribution, link, and agreement with the supplied IR; it cannot prove verbatim fidelity
 or sentence/context sufficiency, which still require source review. A short fragment passing the

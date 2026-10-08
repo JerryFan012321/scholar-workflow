@@ -2,6 +2,11 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "analysis-direct-evidence-excerpt-emphasis",
+      "description": "G13/G17：正文原文摘录保留完整原句/上下文，在同点将真正支撑论点的原文分句/句子加粗；原始quote不写标记，quote_emphasis精确且唯一/非空/无重叠，限定、否定、数值和单位保持。作者直接证据与分析推断依据的题注明确不同，Canvas完整JSON保持。省略/空字段兼容旧基线；不存在/歧义/重叠/非法或不显示的强调拒绝，去掉/修改/移位强调不能conformant；human revision冲突停止成对更新。独立合成SOURCE/手写EXPECTED先于实现，开发测试记录见planning/quote-emphasis-test-results.md。新能力尚未发布安装或进行单篇安装态/人工阅读评鉴，保持pending；加粗不认证科学支持，不重开旧Canvas审批或冒称G17全部完成。",
+      "status": "pending"
+    },
+    {
       "id": "analysis-markdown-source-image-projection",
       "description": "G13/G17/INV54：v5显式profile.markdown_source_images让选中canvas_image在其Markdown记录旁自动显示、保留摘录/源页、复用已有同点或所属claim embed；不能用文件名/普通链接/代码/隐藏注释或其他point替代。缺图/改图/错位/题注或来源变化拒绝。Canvas完整JSON及旧默认序列化保持，focused保持开关、whole显式采用、已启用不能普通更新关闭。1896完整及69图片合成用例通过；用户批准后0.41.6 source26a2284/runtime852f983正常发布安装，CLI固定runtime、cache全部244文件一致。独立V-JEPA2 public stage一次validated零修复/零canonical写入，命名展示check conformant；69内容108节点107边、完整Canvas/IR其他内容保持，正文仅两题注源页增量，三图无重复、22保护项未变。新增Markdown图片位置/题注阅读效果尚待明确人工评价，故pending；不重开旧Canvas批准、不冒称正式采用或整个G17完成。见planning/markdown-source-images-test-results.md。",
       "status": "pending"

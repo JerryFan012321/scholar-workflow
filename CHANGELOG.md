@@ -14,6 +14,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   owned image bytes, adding only two caption/source lines. Keep the new Markdown
   reading assessment separate, prior Canvas approval valid and main unmerged.
 
+## [0.41.7] - 2026-10-08
+
+### Added
+
+- **analyze-paper / direct-evidence excerpt emphasis:** add optional exact
+  `source_span.quote_emphasis` fragments for Markdown-only bold support inside an
+  unchanged original passage. Distinguish author support from inference bases;
+  reject missing, ambiguous, overlapping or non-displaying fragments. Keep full
+  Canvas data, old empty/omitted serialization and human-conflict protections.
+  Independent synthetic input/expected output and unit/schema/update tests precede
+  implementation; 90 dedicated and 1986 full regression cases pass. Installed and
+  human reading assessments remain separate.
+
+### Changed
+
+- **analyze-paper / local hotfix preparation:** align package/module and both host
+  manifests at 0.41.7 for the verified excerpt-emphasis improvement; retain dependency
+  pins. Prepare runtime-only artifacts locally from committed source, without pushing,
+  installing, merging main or writing business content. Publication and one-paper
+  installed assessment await independent authorization.
+
 ## [0.41.6] - 2026-10-08
 
 ### Added

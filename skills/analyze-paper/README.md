@@ -64,6 +64,11 @@ to understand its subject, conditions and qualifications, not isolated keywords 
 paraphrases and translations are not presented as exact quotes. The bounded quote capacity
 accommodates necessary context without imposing that capacity as a target length. Unverifiable wording
 is a source gap. Canvas does not repeat the quotations and retains the required editable tree.
+In supporting runtimes, source-span `quote_emphasis` highlights the exact supporting
+clause/sentence in Markdown while preserving the complete original `quote` and context.
+Captions distinguish direct evidence from an inference's source basis. Canvas is unchanged;
+omitted emphasis preserves old output. Check installed support before adopting it through
+the paired update; the detailed rule is in `references/analysis-format.md`.
 From 0.41.2, v5 can explicitly select `profile.canvas_unique_sources: true` to avoid
 repeating identical source links within a Canvas node while retaining separate Markdown
 excerpts and all source spans. Existing pairs require an explicit whole format update;
