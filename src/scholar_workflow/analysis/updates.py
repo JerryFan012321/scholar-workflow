@@ -173,6 +173,7 @@ def create_baseline(
                 complete_claim_markdown_lines(
                     claim, language, reader=document.reader,
                     markdown_quotes=document.profile.markdown_quotes,
+                    markdown_source_images=document.profile.markdown_source_images,
                     label=label, heading_level=heading_level,
                 )
             )
@@ -258,6 +259,8 @@ def _merged_document(
         )
     if baseline.profile.markdown_quotes and not update.profile.markdown_quotes:
         raise AnalysisUpdateError("analysis updates cannot remove the enabled Markdown quotation format")
+    if baseline.profile.markdown_source_images and not update.profile.markdown_source_images:
+        raise AnalysisUpdateError("analysis updates cannot remove the enabled Markdown source image format")
     if update.profile.kind is ProfileKind.WHOLE:
         if baseline.schema_version in {4, 5} and update.reader is None:
             return update.model_copy(update={"reader": baseline.reader})
@@ -276,6 +279,10 @@ def _merged_document(
         if baseline.profile.markdown_quotes != update.profile.markdown_quotes:
             raise AnalysisUpdateError(
                 "Markdown quotation format changes require an explicit whole analysis update"
+            )
+        if baseline.profile.markdown_source_images != update.profile.markdown_source_images:
+            raise AnalysisUpdateError(
+                "Markdown source image format changes require an explicit whole analysis update"
             )
         for role in replaced_roles:
             existing_paths = {
@@ -303,6 +310,7 @@ def _merged_document(
             AnalysisProfile(
                 kind=ProfileKind.WHOLE, framework=baseline.profile.framework,
                 markdown_quotes=baseline.profile.markdown_quotes,
+                markdown_source_images=baseline.profile.markdown_source_images,
                 canvas_unique_sources=baseline.profile.canvas_unique_sources,
                 **({"canvas_note_path": baseline.profile.canvas_note_path}
                    if baseline.profile.canvas_note_path is not None else {}),
@@ -313,6 +321,7 @@ def _merged_document(
                 roles=[role for role in tree_roles if any(c.role is role for c in claims)],
                 framework=baseline.profile.framework,
                 markdown_quotes=baseline.profile.markdown_quotes,
+                markdown_source_images=baseline.profile.markdown_source_images,
                 canvas_unique_sources=baseline.profile.canvas_unique_sources,
                 **({"canvas_note_path": baseline.profile.canvas_note_path}
                    if baseline.profile.canvas_note_path is not None else {}),

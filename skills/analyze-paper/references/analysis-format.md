@@ -220,7 +220,11 @@ hand-edit just the Markdown to add quotations.
 
 When the user requests PDF evidence screenshots, place native-rendered region images
 beside the supported Markdown claim, retaining its source excerpt and page link.
-Use a relative image embed in that claim's IR `body` or the corresponding point's
+For key process diagrams and experimental tables already selected as `canvas_image`,
+use the supporting runtime's explicit v5 Markdown projection in `analysis-v5-format.md`;
+this deterministically renders the asset beside its own statement without changing
+scientific prose or Canvas. For Markdown-only paragraph crops, or earlier installed
+interfaces, use a relative image embed in that claim's IR `body` or the corresponding point's
 `text`, retaining a plain `canvas_summary` equal to its previously displayed concise
 statement. Point text remains a single paragraph: keep the inline image and its
 readable caption in that paragraph; do not add forbidden line breaks or create a

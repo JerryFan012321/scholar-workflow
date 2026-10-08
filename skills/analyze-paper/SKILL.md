@@ -52,6 +52,9 @@ new template. Report an unsupported-version limitation rather than substituting 
    prose excerpts retain complete sentences and enough source context to be independently readable,
    not just matching keywords or isolated labels;
    Canvas keeps a concise projection without quotations.
+   For selected source figures/tables, use the v5 Markdown image projection in
+   `references/analysis-v5-format.md` when supported by the installed runtime;
+   the complete body must show these images, not leave them only in Canvas.
    Keep machine claim markers out of v4 human Markdown and Canvas; use block anchors and the
    sidecar for identity. Keep the current reference image's five-branch hierarchy and its
    defined subheadings; unfilled template slots remain unfilled rather than becoming invented

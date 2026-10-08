@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Added
+
+- **analyze-paper / Markdown source-image conformance:** add an explicit v5
+  `profile.markdown_source_images` projection for selected process diagrams and
+  experimental tables beside their own statements and quotations. Reuse associated
+  embeds, retain caption/source links, and fail conformance on omitted, modified or
+  detached output. Preserve the complete Canvas and old default serialization;
+  focused updates retain the setting and enabled pairs cannot silently disable it.
+  Verify with 69 selected-image cases and 1896 passing full unit/contract tests.
+  Development changes only; no new release/install or real-Vault regeneration.
+
 ### Changed
 
 - **analyze-paper / output contract and acceptance records:** require selected key

@@ -9,10 +9,11 @@ from pathlib import Path
 import jsonschema
 import pytest
 from pydantic import ValidationError
+from referencing import Registry, Resource
 
 from scholar_workflow.analysis.conformance import validate_bundle
 from scholar_workflow.analysis.models import AnalysisDocument
-from scholar_workflow.analysis.rendering import render_analysis
+from scholar_workflow.analysis.rendering import AnalysisBundle, render_analysis
 from scholar_workflow.analysis.updates import create_baseline, plan_analysis_update
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -265,3 +266,247 @@ def test_new_image_layer_extends_the_retained_wide_last_column() -> None:
         assert {key: after[node_id][key] for key in ("x", "y", "width", "height")} == {
             key: node[key] for key in ("x", "y", "width", "height")
         }
+
+
+def _markdown_image_payload() -> dict:
+    data = _payload()
+    data["profile"]["markdown_source_images"] = True
+    return data
+
+
+@pytest.mark.parametrize("language", ["en", "zh"])
+def test_selected_images_render_beside_markdown_records_without_canvas_change(language: str) -> None:
+    data = _markdown_image_payload()
+    data["language"] = language
+    flow_caption = "Figure 1: centering flow" if language == "en" else "图1：居中流程"
+    table_caption = "Table 1: synthetic errors" if language == "en" else "表1：合成误差"
+    for claim in data["claims"]:
+        for point in claim.get("points", []):
+            if image := point.get("canvas_image"):
+                image["caption"] = flow_caption if image["kind"] == "process_diagram" else table_caption
+    plain_data = deepcopy(data)
+    plain_data["profile"].pop("markdown_source_images")
+    plain = render_analysis(AnalysisDocument.model_validate(plain_data), note_stem=NOTE)
+    document = AnalysisDocument.model_validate(data)
+    bundle = render_analysis(document, note_stem=NOTE)
+    assert bundle.canvas == plain.canvas
+    assert f"![{flow_caption}](attachments/flow.png)" in bundle.markdown
+    assert f"![{table_caption}](attachments/table.png)" in bundle.markdown
+    flow_block = bundle.markdown.split("^point-3-m-1-method", 1)[1].split("\n#", 1)[0]
+    table_block = bundle.markdown.split("^point-3-e-a-components", 1)[1].split("\n#", 1)[0]
+    assert r"Q\_METHOD" in flow_block and "attachments/flow.png" in flow_block
+    assert r"Q\_ABLATION" in table_block and "attachments/table.png" in table_block
+    assert "page=2" in flow_block and "page=3" in table_block
+    assert flow_caption in flow_block and table_caption in table_block
+    assert all(line in bundle.markdown for line in plain.markdown.splitlines() if line.strip())
+    assert validate_bundle(document, bundle, note_stem=NOTE).ok
+    schema = json.loads((ROOT / "contracts/analysis-ir.schema.json").read_text())
+    jsonschema.validate(document.model_dump(mode="json"), schema)
+
+
+def test_selected_claim_image_is_rendered_after_its_quote() -> None:
+    data = _markdown_image_payload()
+    claim = next(c for c in data["claims"] if c["claim_id"] == "e-c")
+    point = _image_point(data)
+    claim["evidence"] = deepcopy(point["evidence"])
+    claim["canvas_image"] = deepcopy(point["canvas_image"])
+    document = AnalysisDocument.model_validate(data)
+    bundle = render_analysis(document, note_stem=NOTE)
+    block = bundle.markdown.split("^claim-e-c", 1)[1].split("\n#", 1)[0]
+    assert block.index(r"Q\_ABLATION") < block.index("attachments/table.png")
+    assert "page=3" in block
+    assert validate_bundle(document, bundle, note_stem=NOTE).ok
+
+
+@pytest.mark.parametrize("mutation", ["remove", "wrong-file", "detached", "wrong-record", "caption", "source-link"])
+def test_markdown_image_omission_or_misplacement_fails_conformance(mutation: str) -> None:
+    document = AnalysisDocument.model_validate(_markdown_image_payload())
+    bundle = render_analysis(document, note_stem=NOTE)
+    image = "![Table 1: synthetic errors](attachments/table.png)"
+    assert image in bundle.markdown
+    markdown = bundle.markdown
+    if mutation == "wrong-file":
+        markdown = markdown.replace("attachments/table.png", "attachments/other.png")
+    elif mutation in {"caption", "source-link"}:
+        caption = "Table 1: synthetic errors · [Source · PDF page 3](zotero://open-pdf/library/items/SYNTH001?page=3)"
+        assert caption in markdown
+        markdown = markdown.replace(caption, "Wrong caption" if mutation == "caption" else caption.replace("page=3", "page=4"))
+    else:
+        markdown = markdown.replace(image, "")
+        if mutation == "detached":
+            markdown += "\n" + image + "\n"
+        elif mutation == "wrong-record":
+            markdown = markdown.replace("\n## Method", "\n" + image + "\n\n## Method")
+    changed = AnalysisBundle(markdown=markdown, canvas=bundle.canvas)
+    assert not validate_bundle(document, changed, note_stem=NOTE).ok
+
+
+@pytest.mark.parametrize("location", ["point", "claim"])
+@pytest.mark.parametrize("embed", [
+    "![Already selected](attachments/table.png)",
+    "![Already selected](./attachments/table.png)",
+    "![[attachments/table.png|Already selected]]",
+])
+def test_existing_associated_embed_is_not_duplicated(location: str, embed: str) -> None:
+    data = _markdown_image_payload()
+    point = _image_point(data)
+    if location == "point":
+        point["canvas_summary"] = point["text"]
+        point["text"] += " " + embed
+    else:
+        claim = next(c for c in data["claims"] if c["claim_id"] == "e-a")
+        claim.pop("container", None)
+        claim["body"] = "Complete labeled result. " + embed
+        claim["canvas_summary"] = "Complete labeled result."
+        claim["evidence"] = deepcopy(point["evidence"])
+    document = AnalysisDocument.model_validate(data)
+    bundle = render_analysis(document, note_stem=NOTE)
+    assert bundle.markdown.count("attachments/table.png") == 1
+    assert "Table 1: synthetic errors · [Source · PDF page 3]" in bundle.markdown
+    assert validate_bundle(document, bundle, note_stem=NOTE).ok
+
+
+@pytest.mark.parametrize("mention", [
+    "File: attachments/table.png",
+    "[Not an image](attachments/table.png)",
+    "`![Code sample](attachments/table.png)`",
+    r"\![Escaped sample](attachments/table.png)",
+    "<!-- ![Hidden sample](attachments/table.png) -->",
+])
+def test_mentions_or_code_cannot_satisfy_markdown_image_requirement(mention: str) -> None:
+    data = _markdown_image_payload()
+    point = _image_point(data)
+    point["canvas_summary"] = point["text"]
+    point["text"] += " " + mention
+    document = AnalysisDocument.model_validate(data)
+    bundle = render_analysis(document, note_stem=NOTE)
+    assert "![Table 1: synthetic errors](attachments/table.png)" in bundle.markdown
+    assert validate_bundle(document, bundle, note_stem=NOTE).ok
+
+
+def test_markdown_image_encoded_relative_path_deduplicates() -> None:
+    data = _markdown_image_payload()
+    point = _image_point(data)
+    point["canvas_image"]["image_path"] = "attachments/result table.png"
+    point["canvas_summary"] = point["text"]
+    point["text"] += " ![Table](attachments/result%20table.png)"
+    document = AnalysisDocument.model_validate(data)
+    bundle = render_analysis(document, note_stem=NOTE)
+    assert bundle.markdown.count("result%20table.png") == 1
+    assert validate_bundle(document, bundle, note_stem=NOTE).ok
+
+
+def test_image_in_another_point_does_not_satisfy_the_selected_record() -> None:
+    data = _markdown_image_payload()
+    other = next(c for c in data["claims"] if c["claim_id"] == "e-a")["points"][1]
+    other["canvas_summary"] = other["text"]
+    other["text"] += " ![Other point](attachments/table.png)"
+    document = AnalysisDocument.model_validate(data)
+    bundle = render_analysis(document, note_stem=NOTE)
+    block = bundle.markdown.split("^point-3-e-a-components", 1)[1].split("\n#", 1)[0]
+    assert "![Table 1: synthetic errors](attachments/table.png)" in block
+    assert validate_bundle(document, bundle, note_stem=NOTE).ok
+
+
+@pytest.mark.parametrize("fence", ["```", "~~~"])
+@pytest.mark.parametrize("longer_close", [False, True])
+def test_fenced_image_sample_does_not_count_as_a_displayed_image(fence: str, longer_close: bool) -> None:
+    data = _markdown_image_payload()
+    claim = next(c for c in data["claims"] if c["claim_id"] == "e-a")
+    claim.pop("container", None)
+    closing = fence + (fence[0] * 2 if longer_close else "")
+    claim["body"] = f"Code example only.\n\n{fence}markdown\n![Example](attachments/table.png)\n{closing}"
+    claim["canvas_summary"] = "Code example only."
+    claim["evidence"] = deepcopy(_image_point(data)["evidence"])
+    document = AnalysisDocument.model_validate(data)
+    bundle = render_analysis(document, note_stem=NOTE)
+    assert "![Table 1: synthetic errors](attachments/table.png)" in bundle.markdown
+    assert validate_bundle(document, bundle, note_stem=NOTE).ok
+
+
+def test_disabled_markdown_images_preserve_old_render_and_serialization() -> None:
+    data = _payload()
+    old = AnalysisDocument.model_validate(data)
+    data["profile"]["markdown_source_images"] = False
+    disabled = AnalysisDocument.model_validate(data)
+    assert disabled.model_dump(mode="json") == old.model_dump(mode="json")
+    assert render_analysis(disabled, note_stem=NOTE) == render_analysis(old, note_stem=NOTE)
+
+
+def test_markdown_image_setting_requires_v5() -> None:
+    data = _payload(with_images=False)
+    data["schema_version"] = 4
+    data["profile"].update(framework="reference_tree", markdown_source_images=True)
+    data["profile"]["roles"].remove("experiments")
+    data["claims"] = [c for c in data["claims"] if c["role"] != "experiments"]
+    with pytest.raises(ValidationError, match="v5"):
+        AnalysisDocument.model_validate(data)
+    schema = json.loads((ROOT / "contracts/analysis-ir.schema.json").read_text())
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(data, schema)
+
+
+@pytest.mark.parametrize("value", ["true", 1, None])
+def test_markdown_image_setting_is_strict_boolean(value: object) -> None:
+    data = _markdown_image_payload()
+    data["profile"]["markdown_source_images"] = value
+    with pytest.raises(ValidationError):
+        AnalysisDocument.model_validate(data)
+    schema = json.loads((ROOT / "contracts/analysis-ir.schema.json").read_text())
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(data, schema)
+
+
+def test_focused_update_keeps_unselected_markdown_images_and_canvas() -> None:
+    document = AnalysisDocument.model_validate(_markdown_image_payload())
+    current = render_analysis(document, note_stem=NOTE)
+    baseline = create_baseline(document, current, note_stem=NOTE)
+    data = document.model_dump(mode="json")
+    data["profile"].update(kind="focused", roles=["limitation"])
+    data["claims"] = [c for c in data["claims"] if c["role"] == "limitation"]
+    plan = plan_analysis_update(current=current, baseline=baseline, update=AnalysisDocument.model_validate(data), note_stem=NOTE)
+    assert plan.status == "ready"
+    assert plan.document.profile.markdown_source_images
+    assert plan.proposed == current
+
+
+def test_image_profile_baseline_round_trips_through_public_schema() -> None:
+    document = AnalysisDocument.model_validate(_markdown_image_payload())
+    bundle = render_analysis(document, note_stem=NOTE)
+    baseline = create_baseline(document, bundle, note_stem=NOTE)
+    ir_schema = json.loads((ROOT / "contracts/analysis-ir.schema.json").read_text())
+    baseline_schema = json.loads((ROOT / "contracts/analysis-baseline.schema.json").read_text())
+    validator = jsonschema.Draft202012Validator(
+        baseline_schema,
+        registry=Registry().with_resource(ir_schema["$id"], Resource.from_contents(ir_schema)),
+    )
+    validator.validate(baseline.model_dump(mode="json"))
+    assert type(baseline).model_validate_json(baseline.model_dump_json()) == baseline
+
+
+def test_whole_image_format_adoption_changes_markdown_only() -> None:
+    document = AnalysisDocument.model_validate(_payload())
+    current = render_analysis(document, note_stem=NOTE)
+    baseline = create_baseline(document, current, note_stem=NOTE)
+    plan = plan_analysis_update(current=current, baseline=baseline, update=AnalysisDocument.model_validate(_markdown_image_payload()), note_stem=NOTE)
+    assert plan.status == "ready"
+    assert plan.proposed.canvas == current.canvas
+    assert plan.document.profile.markdown_source_images
+    assert "![Table 1: synthetic errors](attachments/table.png)" in plan.proposed.markdown
+
+
+@pytest.mark.parametrize("baseline_enabled,kind", [(False, "focused"), (True, "focused"), (True, "whole")])
+def test_markdown_image_format_cannot_change_in_focus_or_be_removed(baseline_enabled: bool, kind: str) -> None:
+    from scholar_workflow.analysis.updates import AnalysisUpdateError
+
+    data = _payload()
+    data["profile"]["markdown_source_images"] = baseline_enabled
+    document = AnalysisDocument.model_validate(data)
+    current = render_analysis(document, note_stem=NOTE)
+    baseline = create_baseline(document, current, note_stem=NOTE)
+    data["profile"].update(kind=kind, markdown_source_images=not baseline_enabled)
+    if kind == "focused":
+        data["profile"]["roles"] = ["limitation"]
+        data["claims"] = [c for c in data["claims"] if c["role"] == "limitation"]
+    with pytest.raises(AnalysisUpdateError, match="Markdown.*image"):
+        plan_analysis_update(current=current, baseline=baseline, update=AnalysisDocument.model_validate(data), note_stem=NOTE)

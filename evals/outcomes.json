@@ -2,6 +2,11 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "analysis-markdown-source-image-projection",
+      "description": "G13/G17/INV54：v5显式profile.markdown_source_images让选中canvas_image在其Markdown记录旁自动显示、保留摘录/源页、复用已有同点或所属claim embed；不能用文件名/普通链接/代码/隐藏注释或其他point替代。缺图/改图/错位/题注或来源变化拒绝。Canvas完整JSON及旧默认序列化保持，focused保持开关、whole显式采用、已启用不能普通更新关闭。开发独立合成测试已有结果；当前0.41.5不支持新字段，未发布安装或新的业务采用，不以开发通过冒称安装态/人类阅读或整阶段完成。见planning/markdown-source-images-test-plan.md及markdown-source-images-test-results.md。",
+      "status": "pending"
+    },
+    {
       "id": "knowledge-same-directory-rebinding-installed",
       "description": "同路径/inode设备号恢复：26独立定向、完整1855回归通过，0.41.4正常安装source f659631/runtime992ae22，两cache manifest/CLI/契约/module字节一致。单test Source public零写入预览15文件后精确digest确认恢复；独立比较仅binding与派生snapshot revision改变，内容/manifest/catalog/归属/历史回执均保留。此pass只证明本入口及安装态单对象恢复，不代表新根复现、科学支持、阅读器显示、人工验收或G17完成；见planning/source-rebinding-results.md。",
       "status": "pass"

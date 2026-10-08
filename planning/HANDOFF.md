@@ -1,5 +1,21 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-08 正文图片生成门禁（开发验证完成，未发布）
+
+已完成的test单篇正文补图及旧Canvas评鉴保持，不重做业务。当前生成器会跳过
+`canvas_image`的Markdown投影，仅靠skill提示不能阻止正文漏图。只增加v5显式
+`profile.markdown_source_images: true`：选中的流程图/实验表在其正文记录旁生成图片、
+题注和源页链接；已有同点（或所属claim正文）的实际图片embed不重复。旧输入省略/false
+保持渲染与baseline序列化；focused保持开关，whole可显式采用但不可静默关闭已启用要求。
+不改Canvas图、事实、摘录、权限、资产归属或源图生成，不写真实Vault，不发布安装。
+
+已先独立合成输入/预期及RED用例，再最小实现/schema/更新边界与运行期reference。
+最终图片用例69项，含eval结构共79通过；受影响分析622通过，最终完整unit/contract
+1896通过（89.04秒，11既有弃用警告），skill quick_validate、Ruff/diff通过。
+测试范围见`planning/markdown-source-images-test-plan.md`，实际结果见
+`planning/markdown-source-images-test-results.md`。本轮没有业务写入或全库操作。
+当前实查已安装0.41.5不支持新开关，源码测试不冒充安装验收；新正文阅读体验仍待人确认。
+
 ## 2026-10-08 当前正文图片增量
 
 新副本原生图2/表2显示及两次准确正文块点击已实际通过，四张当前截图已保存在test。

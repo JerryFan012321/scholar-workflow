@@ -81,8 +81,9 @@ corresponding-challenge or corresponding-contribution axis.
   the body. Keep readable figure/table captions, necessary labels/conditions, original
   quotations and exact source-page links; an image does not replace that prose or
   evidence. Reuse already owned, verified assets rather than taking duplicate crops.
-  Use the installed IR body/point text with a plain, unchanged Canvas summary and the
-  existing paired update boundary in `analysis-format.md`; do not hand-edit Markdown.
+  Use the v5 Markdown source-image projection in `analysis-v5-format.md` when the
+  installed runtime supports it. Body-only paragraph crops retain the shared image
+  contract in `analysis-format.md`. Neither route authorizes a single-file patch.
 - Canvas preserves the parent-child relationships in the tree above. Repeated
   challenge/contribution/module instances and their supplied named subslots are
   separate editable nodes. A single grouped details card is not a substitute for

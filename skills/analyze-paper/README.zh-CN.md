@@ -73,6 +73,10 @@ Vault Markdown 可跳到具体块。原文链接与 Canvas→正文反链同处�
 Canvas图片仅限实验数据表和关键流程图，不替代可编辑树；详细规则唯一持于
 `references/analysis-output-template.md`。0.41.0起的v5可选`canvas_image`字段与冲突处理见
 `references/analysis-v5-format.md`；添加前核对实际安装版本，结构通过不证明原生显示或人工可读性。
+支持该字段的v5安装版可显式选择`profile.markdown_source_images: true`，在对应正文论点旁
+自动显示所选流程图/实验表、题注和原文页链接，不改变Canvas；已有同点图片复用，漏图或
+错位置不能通过校验。旧文档须显式整篇成对更新采用，不静默刷新；旧安装版会拒绝该字段，
+使用前阅读上述v5接口。
 图片与裁剪复现输入同处论文attachments目录，归属显式声明；0.40.1的复现包包含附件清单
 及校验过的文件，不只带走分析三文件。完整原句与页级原文入口仍保留。
 v4/v5 可通过 `reader` 显式选择已登记、核验 Vault 的 ZotFlow Library Reader；Markdown 和 Canvas 均可在

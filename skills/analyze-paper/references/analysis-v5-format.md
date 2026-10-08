@@ -155,7 +155,8 @@ source figure/table; matching metadata alone does not prove crop fidelity.
 
 The renderer adds a child text card with a note-relative image embed, caption,
 verified-source projection and exact record-block backlink; it does not replace
-any framework node, render quotations in Canvas or change Markdown. Image dimensions
+any framework node or render quotations in Canvas. Without the explicit Markdown
+projection below it retains the historical Markdown output. Image dimensions
 contribute to the card's measured size; all existing geometry gates remain.
 
 Canonical commit requires the image's ID, owner, paper-local path, media type, size
@@ -172,6 +173,33 @@ or proof that labels, units and qualifiers survive. Native display and human rev
 are separate. This optional interface is available from 0.41.0; check the actual
 installed version before use, since 0.40.2 rejects it. Existing safe layouts remain protected; an update
 that cannot fit its image returns a conflict proposal, not a silent relayout.
+
+## Markdown source-image projection
+
+New v5 analyses with selected key process figures or experimental tables explicitly
+set `profile.markdown_source_images: true` in a runtime supporting this field. Each
+selected `canvas_image` also renders beside its own Markdown claim/point, after the
+statement and original excerpt, with a relative embed, its caption and verified
+source-page link. Do not encode a duplicate image into the scientific text. This
+option changes no Canvas text, nodes, geometry, links or ownership.
+
+If the same image is already embedded in that point's text or its owning claim's
+body, reuse it and render only the caption/source line. Direct Markdown embeds and
+Obsidian `![[attachments/...]]` embeds are recognized, including `./` and URL-encoded
+relative targets. A filename mention, ordinary link, escaped example, code sample
+or hidden HTML comment is not a displayed image. A sibling point or detached gallery
+does not substitute for the selected record. Conformance requires the projected
+image and caption/link in their expected positions; omission, modification or
+relocation fails instead of becoming a successful batch item.
+
+Omission or `false` retains legacy rendering and baseline serialization. A focused
+update retains its baseline setting. An existing pair adopts this feature only
+through an explicitly requested whole paired format update; once enabled, an
+ordinary update cannot remove it. The asset inventory, PNG/hash/dimension checks,
+source verification, CAS and human assessment boundaries remain unchanged. Paragraph
+crops remain Markdown-only supplements governed by `analysis-format.md`; selecting
+this option does not put them in Canvas or initiate screenshot generation.
+Check actual installed support: earlier installations reject this profile field.
 
 ## Reader, ownership and old artifacts
 

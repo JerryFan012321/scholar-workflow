@@ -81,6 +81,12 @@ replacing the editable tree. The optional v5 `canvas_image` interface is availab
 0.41.0; its fields and conflict behavior are in `references/analysis-v5-format.md`.
 Check the actual installed version before adding images; structural checks do not
 prove native display or human readability.
+In supporting v5 runtimes, `profile.markdown_source_images: true` also projects
+selected figures/tables beside their Markdown statements, with caption and source
+link, without altering Canvas. Existing associated embeds are reused; missing or
+misplaced output fails conformance. Existing pairs adopt it through an explicit
+whole paired update, not a silent refresh. Older runtimes reject the field; see
+`references/analysis-v5-format.md` before use.
 Paper-local images and their crop replay input have explicit asset ownership;
 0.40.1 reproduction includes that manifest and its hash-checked files, not just the
 analysis trio. See the same format contract and shared reproduction contract.

@@ -8,7 +8,7 @@ import re
 import unicodedata
 from dataclasses import dataclass, field
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
 from scholar_workflow.analysis.models import (
     FIVE_TREE_ROLES,
@@ -104,6 +104,47 @@ _POINT_LABELS = {
 _MD_LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
 _WIKILINK = re.compile(r"\[\[[^\]|]+\|([^\]]+)\]\]")
 _IMAGE_EMBED = re.compile(r"(?m)^!\[[^\]\r\n]*\|([1-9][0-9]*)x([1-9][0-9]*)\]\(\./attachments/[^\r\n)]+\.png\)$")
+_MARKDOWN_IMAGE = re.compile(r"(?<!\\)!\[[^\]\r\n]*\]\(([^\r\n)]+)\)")
+_OBSIDIAN_IMAGE = re.compile(r"(?<!\\)!\[\[([^\]|\r\n]+)(?:\|[^\]\r\n]*)?\]\]")
+_FENCED_CODE = re.compile(
+    r"(?ms)^ {0,3}(?P<fence>(?P<marker>`|~)(?P=marker){2,})[^\n]*\n"
+    r".*?^ {0,3}(?P=fence)(?P=marker)*[ \t]*$"
+)
+_INLINE_CODE = re.compile(r"(?<!`)(`+)(?!`).*?(?<!`)\1(?!`)", re.DOTALL)
+_HTML_COMMENT = re.compile(r"<!--(?:.*?-->|.*\Z)", re.DOTALL)
+
+
+def _has_image_embed(text: str, image_path: str) -> bool:
+    """Recognize direct embeds, not mentions, links or escaped/code examples."""
+    text = _INLINE_CODE.sub("", _FENCED_CODE.sub("", _HTML_COMMENT.sub("", text)))
+    targets = [match[1] for match in _OBSIDIAN_IMAGE.finditer(text)]
+    for match in _MARKDOWN_IMAGE.finditer(text):
+        target = re.sub(r'''\s+(?:"[^"]*"|'[^']*')$''', "", match[1].strip())
+        targets.append(target[1:-1] if target.startswith("<") and target.endswith(">") else target)
+    return any(unquote(target).removeprefix("./") == image_path for target in targets)
+
+
+def markdown_source_image_lines(
+    claim: AnalysisClaim,
+    point: AnalysisPoint | None,
+    language: str,
+    *,
+    reader: AnalysisReader | None,
+    enabled: bool,
+) -> list[str]:
+    """Project the record's selected asset without altering its scientific text."""
+    image = (point if point is not None else claim).canvas_image
+    if not enabled or image is None:
+        return []
+    # Historical pairs may already place a point's image in its owning claim body.
+    associated_text = claim.body + ("\n" + point.text if point is not None else "")
+    lines = []
+    if not _has_image_embed(associated_text, image.image_path):
+        lines.extend(["", f"![{image.caption}]({quote(image.image_path, safe='/')})"])
+    lines.extend([
+        "", f"{image.caption} · {reference_source_link(image.source, language, reader=reader)}",
+    ])
+    return lines
 
 
 def canvas_visible_height(text: str, *, width: int) -> int:
@@ -246,6 +287,7 @@ def complete_claim_markdown_lines(
     heading_level: int = 4,
     reader: AnalysisReader | None = None,
     markdown_quotes: bool = True,
+    markdown_source_images: bool = False,
     label: str | None = None,
     include_points: bool = True,
 ) -> list[str]:
@@ -265,6 +307,9 @@ def complete_claim_markdown_lines(
         )
         if markdown_quotes:
             lines.extend(reference_source_quote_lines(claim.evidence, language, reader=reader))
+        lines.extend(markdown_source_image_lines(
+            claim, None, language, reader=reader, enabled=markdown_source_images,
+        ))
     if include_points:
         points = {point.point_id: point for point in complete_points(claim)}
         slots = _SLOTS.get(_slot_prefix(claim.outline_path or "") or "", tuple(points))
@@ -278,6 +323,9 @@ def complete_claim_markdown_lines(
                     lines.extend(
                         reference_source_quote_lines(point.evidence, language, reader=reader)
                     )
+                lines.extend(markdown_source_image_lines(
+                    claim, point, language, reader=reader, enabled=markdown_source_images,
+                ))
     return lines
 
 
@@ -562,6 +610,10 @@ def _render_markdown(document: AnalysisDocument, tree: TemplateNode) -> str:
             lines.extend(
                 reference_source_quote_lines(node.point.evidence, language, reader=document.reader)
             )
+            lines.extend(markdown_source_image_lines(
+                node.claim, node.point, language, reader=document.reader,
+                enabled=document.profile.markdown_source_images,
+            ))
         elif node.claim is not None and node.kind != "empty-slot":
             lines.extend(
                 complete_claim_markdown_lines(
@@ -570,6 +622,7 @@ def _render_markdown(document: AnalysisDocument, tree: TemplateNode) -> str:
                     heading_level=level,
                     reader=document.reader,
                     markdown_quotes=document.profile.markdown_quotes,
+                    markdown_source_images=document.profile.markdown_source_images,
                     label=node.label,
                     include_points=False,
                 )
