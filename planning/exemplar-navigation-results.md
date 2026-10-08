@@ -1,4 +1,41 @@
-# Current exemplar navigation audit — 2026-10-05
+# Exemplar navigation audit
+
+## Current correction — 2026-10-08
+
+Installed 0.41.5 exports the single existing test Source with fifteen explicit files
+and six assets. The home, usage and paper companion notes still described image
+adoption and project materials as pending. Preserve their exact pre-edit copies
+outside the Source, then correct only those three plain notes. This does not edit
+the managed analysis, Canvas, sidecar or assets, register anything, switch native
+views, reanalyse, recrop, restore or rerun an experiment.
+
+The independent input freezes the full before-export inventory and seven protected
+files before edits. The read-only observer passes: exactly three allowed note hashes
+change, the other twelve files remain byte-identical, registry/provider revisions
+and all seven protections remain unchanged, and the three original copies match
+their frozen hashes. Obsidian's actual note bytes match disk and all fourteen cached
+navigation links resolve. The package digest changes from `771c4755…` to `81c5e7d6…`
+only because these notes changed; do not mix the old export with current bytes.
+
+The first observer had already passed the file checks, but misparsed Obsidian's
+`=> ` response prefix. Correct only that reader and run the read-only observation;
+the complete result passes without repeating any business write. The independent
+input, originals, observer and separate result are in the existing test review's
+`导航说明修订-20261008/`, outside the Source inventory and outside Git.
+
+The current analysis contains Figure 2, Table 2 and the EK100 limitation crop.
+Canvas retains only the approved diagram and experimental table. Eight project
+references are already active, while external availability remains honestly
+unverified in the public project overview. Historical candidates remain available
+but are not default content or package members. New Markdown image/excerpt reading
+and other human usability remain pending; old Canvas/image approval is not reopened.
+No new runtime release/install, service switch, main merge or whole-stage approval.
+
+The documentation-only closeout passes ten eval-structure tests (0.01s) and Git
+diff whitespace checks. The unchanged implementation retains its prior 1896-test
+full regression result; this closeout does not repeat it or imply a new installation.
+
+## Historical audit — 2026-10-05
 
 ## Scope and independent expected result
 

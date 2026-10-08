@@ -18,6 +18,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **exemplar navigation / current evidence only:** align the three plain test-Source
+  entry notes with adopted Markdown images, the two approved Canvas images and the
+  active project inventory. Installed 0.41.5 still exports fifteen files; the other
+  twelve files, seven protected objects and knowledge identity remain unchanged.
+  Preserve exact originals and historical candidates; fourteen native navigation
+  links resolve. No regeneration, replay, new release/install or human-review claim.
+
 - **analyze-paper / output contract and acceptance records:** require selected key
   source figures and result tables beside their supporting Markdown analysis as well
   as Canvas. Reuse existing owned assets and installed paired-update interfaces;
