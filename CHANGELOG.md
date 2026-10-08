@@ -5,7 +5,51 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.41.6] - 2026-10-08
+
+### Added
+
+- **analyze-paper / Markdown source-image conformance:** add an explicit v5
+  `profile.markdown_source_images` projection for selected process diagrams and
+  experimental tables beside their own statements and quotations. Reuse associated
+  embeds, retain caption/source links, and fail conformance on omitted, modified or
+  detached output. Preserve the complete Canvas and old default serialization;
+  focused updates retain the setting and enabled pairs cannot silently disable it.
+  Verify with 69 selected-image cases and 1896 passing full unit/contract tests.
+  Ship as an approved standalone hotfix; installed acceptance remains separate from
+  development checks. No bulk real-Vault regeneration.
+
 ### Changed
+
+- **analyze-paper / local hotfix preparation:** align package, module and both host
+  versions at 0.41.6 for the already verified Markdown image fix; keep dependency
+  pins unchanged. Prepare and inspect committed runtime-only build artifacts locally.
+  Explicit user authorization now covers formal runtime publication, normal installation
+  and one V-JEPA 2 installed acceptance. Do not merge main or rerun approved business
+  work; record actual deployment results only after observing them.
+
+- **exemplar navigation / current evidence only:** align the three plain test-Source
+  entry notes with adopted Markdown images, the two approved Canvas images and the
+  active project inventory. Installed 0.41.5 still exports fifteen files; the other
+  twelve files, seven protected objects and knowledge identity remain unchanged.
+  Preserve exact originals and historical candidates; fourteen native navigation
+  links resolve. No regeneration, replay, new release/install or human-review claim.
+
+- **analyze-paper / output contract and acceptance records:** require selected key
+  source figures and result tables beside their supporting Markdown analysis as well
+  as Canvas. Reuse existing owned assets and installed paired-update interfaces;
+  preserve prose, quotations, sources and the complete accepted Canvas. Record fresh
+  native display/two exact companion clicks and explicit editor-only hash receipts.
+  No runtime change, new release, reanalysis, crop generation or additional replay.
+
+- **analyze-paper / development acceptance evidence only:** record normal 0.41.4
+  binding-only recovery and approved Figure 2/Table 2 canonical adoption, followed by
+  normal 0.41.5 release/install and one isolated new-root restoration. Preserve all
+  scientific content, quotations, image bytes, geometry and original files; only the
+  copied Canvas/sidecar companion route changes. Record 1857 passing regressions,
+  exact installed identities and standalone readable results. Keep fresh native
+  display/clicks pending while the Mac is locked; prior image approval remains valid.
+  No main merge, service switch, other collection migration or experiment rerun.
 
 - **analyze-paper / installed hotfix evidence only:** record normal 0.41.3 release
   and installation, plus one noncanonical test paper's preserved paired route update.

@@ -248,6 +248,9 @@ class AnalysisProfile(BaseModel):
     roles: list[AnalysisRole] = Field(default_factory=list)
     framework: Literal["legacy", "reference_tree", "reference_tree_v5"] = "legacy"
     markdown_quotes: bool = Field(default=False, strict=True, exclude_if=lambda value: not value)
+    markdown_source_images: bool = Field(
+        default=False, strict=True, exclude_if=lambda value: not value,
+    )
     canvas_unique_sources: bool = Field(
         default=False, strict=True, exclude_if=lambda value: not value,
     )
@@ -269,6 +272,8 @@ class AnalysisProfile(BaseModel):
 
     @model_validator(mode="after")
     def validate_roles(self) -> AnalysisProfile:
+        if self.markdown_source_images and self.framework != "reference_tree_v5":
+            raise ValueError("Markdown source images require the v5 framework")
         if self.canvas_note_path is not None and self.framework != "reference_tree_v5":
             raise ValueError("Explicit Canvas companion paths require the v5 framework")
         if self.canvas_unique_sources and self.framework != "reference_tree_v5":

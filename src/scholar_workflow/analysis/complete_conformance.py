@@ -11,8 +11,8 @@ from collections import defaultdict, deque
 from itertools import combinations, pairwise
 from typing import Any
 
-from scholar_workflow.analysis.models import AnalysisDocument, ConformanceFinding, ConformanceReport
 from scholar_workflow.analysis.complete_reference import canvas_image_width, canvas_visible_height
+from scholar_workflow.analysis.models import AnalysisDocument, ConformanceFinding, ConformanceReport
 from scholar_workflow.analysis.reference_rendering import (
     reference_source_quote_lines,
 )
@@ -369,7 +369,7 @@ def validate_complete_bundle(
                 _finding(
                     "markdown-managed-content-mismatch",
                     "markdown",
-                    "Managed prose, quotes, links or block anchors are missing, modified or misplaced.",
+                    "Managed prose, quotes, images, captions, links or block anchors are missing, modified or misplaced.",
                 )
             )
             break
@@ -387,6 +387,7 @@ def validate_complete_bundle(
             document.language or "en",
             reader=document.reader,
             markdown_quotes=True,
+            markdown_source_images=document.profile.markdown_source_images,
             label=claim_labels[claim.claim_id],
         )
         for line in lines:
@@ -397,7 +398,7 @@ def validate_complete_bundle(
                     _finding(
                         "markdown-claim-content-mismatch",
                         f"markdown/claims/{claim.claim_id}",
-                        "Claim or point content, attribution, original excerpt or source link differs from IR.",
+                        "Claim or point content, attribution, original excerpt, selected image or source link differs from IR.",
                     )
                 )
                 break
