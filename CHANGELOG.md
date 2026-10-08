@@ -5,6 +5,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.41.6] - 2026-10-08
+
 ### Added
 
 - **analyze-paper / Markdown source-image conformance:** add an explicit v5
@@ -14,15 +16,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   detached output. Preserve the complete Canvas and old default serialization;
   focused updates retain the setting and enabled pairs cannot silently disable it.
   Verify with 69 selected-image cases and 1896 passing full unit/contract tests.
-  Development changes only; no new release/install or real-Vault regeneration.
+  Ship as an approved standalone hotfix; installed acceptance remains separate from
+  development checks. No bulk real-Vault regeneration.
 
 ### Changed
 
 - **analyze-paper / local hotfix preparation:** align package, module and both host
   versions at 0.41.6 for the already verified Markdown image fix; keep dependency
   pins unchanged. Prepare and inspect committed runtime-only build artifacts locally.
-  Formal publication, installation and the installed single-paper acceptance still
-  require their own authorization; the current installed product remains 0.41.5.
+  Explicit user authorization now covers formal runtime publication, normal installation
+  and one V-JEPA 2 installed acceptance. Do not merge main or rerun approved business
+  work; record actual deployment results only after observing them.
 
 - **exemplar navigation / current evidence only:** align the three plain test-Source
   entry notes with adopted Markdown images, the two approved Canvas images and the
