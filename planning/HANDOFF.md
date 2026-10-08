@@ -1,5 +1,66 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-08 用户批准后的实际更新
+
+### 最新授权与执行
+
+用户明确“同意，继续吧”，批准受控目录重绑定 hotfix 的修复、正式发布安装和随后单样本采用。
+旧 blocked 为历史状态。复用当前 codex/hotfix-canvas-images-release worktree；目标版本 0.41.4。
+只恢复同路径、同 inode、内容与归属通过当前完整 inventory 校验的设备号变化；预览冻结 registry、
+provider、manifest、文件 hash 和真实目录身份，精确 digest 确认后只 CAS 改主机绑定与恢复记录。
+先独立合成边界验证，再完整 unit/contract；正式安装后仅 V-JEPA2 采用两图和一次新根复现。
+不弱化现有提交检查，不改科学内容、布局、原PDF或其他项目，不重新做已通过人工图片评鉴。
+
+当前开发进度：公开 rebind-plan/rebind 与运行期复现契约已实现，26 项独立定向合成用例通过；
+此前相关回归76通过、补充后86通过。完整unit/contract1855通过（11弃用警告）；Ruff与diff
+通过。0.41.4正常发布安装待执行，真实Source尚未恢复。详见source-rebinding-results.md。
+
+以下为批准前的历史阻塞与0.41.3部分采用记录，不代表当前仍缺少授权：
+历史执行状态：blocked。目录身份拒绝及受控重绑定/新hotfix授权未收到的同一条件曾连续三轮存在；当时20项保护文件、provider和项目8项入口保持，无live handle，安全替代入口已核查耗尽。完整G17未完成，图片评鉴和项目覆盖已获批，不再索要这些旧确认。
+用户明确“图片通过，允许更新”，图片人工评鉴通过、项目两文件覆盖获批；旧人工/权限阻塞已解除，不再询问同一确认。
+installed0.41.3复核原21项输入、项目原件和当前Local API附件/PDF hash保持；保留恢复原件，原4项资产保持，仅新增图2和独立Canvas图片复现输入，6项资产逐项hash/大小符合声明。
+project-context.json已精确采用既有8项候选；根项目资料.md由安装版public overview重建，非候选。代码/metrics字节未变，未重跑实验。
+正式commit-bundle退出7：Source路径/inode保持26829969，但当前device16777230与provider登记16777232不同。公开reproduction-plan亦拒绝旧绑定。原Markdown/Canvas/sidecar/provider保持字节，20项其他保护文件不变，原包public check通过。没有手改provider、绕过目录身份或覆盖Canvas，未产生新commit回执。
+当前新增技术阻断是安装版缺少受控目录重绑定入口；本轮为部分交付而非完整G17。待修复合法重绑定后复用既有stage完成正式提交/provider apply与最终一次新根带图复现；不重复论文分析、裁剪、有效实验或已通过人工评鉴。
+实际结果在test既有Canvas图片验收-0.41.3/复现/正式采用-20261008/结果.md，含批准、恢复原件、资产、项目和独立核对。未新发布/安装/合并main，未迁移其他集合。
+
+## 历史阻塞记录（2026-10-07，已由上述用户答复解除）
+
+2026-10-07用户恢复目标，get_goal实际为active，按规则重新开始阻塞审核，不沿用旧三轮计数。
+本次仅复核：21保护hash和live CAS未变，stage终态validated；项目生效6项/候选8项及原两hash
+保持。人工图片与覆盖许可仍未收到，项目AGENTS明确AskFirst覆盖；无新交付或live执行handle。
+本轮no progress，目标未完成。续行不是批准，不重测、重stage或新建重复候选。
+恢复后第二轮再次核对同一保护集合/live CAS及项目原件，全部不变、确认仍未收到；
+本轮同为no progress，无新安全步骤或live handle，保持active直至阻塞审核阈值满足。
+恢复后第三轮仍无直接确认，21保护hash/live CAS和项目原件不变、stage已终态。
+三轮均no progress，现已满足新一轮阻塞阈值；执行重新标为blocked，完整G17未完成。
+停止自动续行及重复复核，等待图片人工结论与项目两文件覆盖许可后再核对并恢复。
+
+### 上次阻塞记录
+
+当前四类证据核对、正式带图准备、本次只读复核三次目标续行均未收到图片人工评鉴或项目
+两文件覆盖许可。前两轮有实质证据/stage进展，本轮为no progress而非verified wait；
+stage已终态validated，没有待轮询的执行handle。复核21保护hash、live CAS及项目原两hash
+不变，生效6项/候选8项保持。全部安全准备已完成，下一必要动作依赖人的确认，执行标为
+blocked（G17未完成），不通过继续重测、增版本或另造替代对象绕开。收到用户答复后重新
+核对对应当前字节/CAS再恢复；完整四类交付与后续单次正式带图复现仍保留。
+
+## 2026-10-06 当前四类交付核对与正式带图准备
+
+installed0.41.3按独立输入从Local API当前附件重放图2/表2，尺寸与PNG完整字节相同，
+原页/crop已目视核对，原PDF及候选三hash保持。项目及旧new-root replay的10输入、源码/
+recipe/成果字节一致，public validate均1/3/1/1，未重跑实验。候选8项有效但生效仍6项，
+未覆盖；当前已登记Source exportable13文件，不冒称最新带图归属restore。四类核对表已在
+test既有审阅目录，详见stage1-current-state-audit.md。图片人工评鉴与项目两文件覆盖许可
+已在会话询问、未收到答复；loss定量消融证据空缺继续明确保留。G17 active，未新发布/安装/
+合并/正式迁移。本轮是证据进展，不是第一阶段完成。
+
+后续同一审阅目录新增“复现/正式纳入准备”：真实canonical基线+live CAS的installed stage
+一次validated，独立比较69内容/正文/摘录/原106节点与105边保持，仅两图两边和71确切反链；
+21保护输入hash保持。6行assets候选只保留4旧行并新增图2/新复现输入，未apply/commit。
+两次observer拒绝已分离修正，未改生产或重stage。人工图片和项目覆盖仍pending，采用前须
+fresh CAS；不以自动续行替代答复，不重跑已有业务，详见stage1-current-state-audit.md。
+
 ## 2026-10-06 同名正文反链的独立复现与窄修复
 
 最新：0.41.3已正常发布安装，source ae3c5a1/runtime2e8228f；1829完整回归通过。

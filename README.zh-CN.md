@@ -76,6 +76,12 @@ scholar-workflow knowledge open SOURCE_ID '相对目录/解析树.canvas' --lang
 复制并显式附着 Source 后用 `knowledge restore-plan/restore` 恢复缺失 provider。
 输入、拒绝覆盖及阅读器/来源/人工待验收边界见[复现契约](references/knowledge-reproduction.md)。
 
+0.41.4 起，原登记路径与 inode 相同、仅设备号变化时，可先运行
+`knowledge rebind-plan --source-id SOURCE_ID --format json`，审阅后再用
+`knowledge rebind --source-id SOURCE_ID --approved-digest 确认摘要 --language zh`。
+它只恢复主机绑定和派生 snapshot revision，不改正文或归属；不同目录和过期输入拒绝。
+中断续行与明确限制仍以同一复现契约为准。
+
 预览后选择一个候选相对目录（单个子目录为 `.`），运行：
 
 ```bash

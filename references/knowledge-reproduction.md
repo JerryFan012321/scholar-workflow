@@ -73,6 +73,40 @@ summary; it does not provide the complete replay input.
    request returns its receipt, not a new execution. Conflicts retain the journal and
    existing values for explicit recovery, without reverting concurrent edits.
 
+## Same-directory device-number recovery (0.41.4)
+
+If an existing provider refuses its registered root after a host device-number
+change, first inspect a zero-write plan:
+
+```bash
+scholar-workflow knowledge rebind-plan --source-id SOURCE_ID --format json
+scholar-workflow knowledge rebind --source-id SOURCE_ID --approved-digest HEX
+```
+
+This is not moving a Source or restoring another directory. The registered Source
+must be enabled and writable, with exactly the saved normalized path and inode.
+Only its device number may differ. The plan freezes registry/provider bytes, current
+root identity, portable manifests (including absence) and the complete explicit file
+inventory. Managed analysis and declared asset hashes must already match their
+authority; other navigated notes are frozen from this inspection, not certified
+against an unavailable historical copy. Missing, unsafe or inconsistent members,
+different roots and changes after preview refuse recovery.
+
+Review that exact plan and confirm its digest locally; `--yes` is only for an already
+reviewed digest. Recovery CAS-updates only the host provider binding and its derived
+snapshot revision, with a durable recovery journal. Catalog revision, ownership,
+relations, receipts, Source/Field IDs, source files and manifests stay unchanged.
+It does not adopt changed analysis content, add undeclared owners or initialize a
+missing provider. A current binding returns `unchanged` without a new journal.
+
+After interruption retry the same digest: a prepared journal permits continuation
+only while the full read set still matches, and a completed request returns the
+same receipt. Conflicts preserve the journal and concurrent edits; never manually
+edit provider state or roll back another writer. After recovery obtain fresh provider
+CAS for any pending paired update; if its operation context was frozen, use a new
+batch with the existing reviewed IR rather than reanalyzing the paper. Reader links,
+scientific/source assessment, human acceptance and verified backup remain separate.
+
 ## Reader and completion handoff
 
 Saved ZotFlow Vault IDs are host-local routing values. Each restored analysis reports

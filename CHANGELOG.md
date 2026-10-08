@@ -111,6 +111,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   the readable replay note is in the existing test package. This does not revise real quotations,
   certify human/source assessment, restore a cross-host provider or introduce another runtime build.
 
+## [0.41.4] - 2026-10-08
+
+### Fixed
+
+- **analyze-paper / knowledge reproduction:** provide zero-write `rebind-plan` and
+  digest-confirmed `rebind` for a changed host device number at the same registered
+  path and inode. Freeze the complete explicit file/manifest inventory and registry;
+  CAS changes only the existing provider binding and derived snapshot revision.
+  Preserve ownership, catalog, receipts and all content; refuse different directories,
+  symlinks, drift and journal tampering, with bounded interruption recovery. Ordinary
+  analysis commit/export checks remain intact. Runtime instructions distinguish this
+  recovery from migration, reader rebinding, scientific/human assessment and backup.
+
 ## [0.41.3] - 2026-10-06
 
 ### Fixed

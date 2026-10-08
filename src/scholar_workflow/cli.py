@@ -3351,6 +3351,62 @@ def _reproduction_restore_options(command):
     return click.option("--language", type=click.Choice(["en", "zh"]), default="en")(command)
 
 
+def _rebind_result(result, fmt, language, *, committed):
+    if fmt == "json":
+        click.echo(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+    zh = language == "zh"
+    click.echo("# 原目录绑定恢复\n" if zh else "# Same-directory binding recovery\n")
+    if result["status"] == "unchanged":
+        click.echo("目录绑定有效，无需改变；正文、Canvas 和便携清单未改。" if zh else
+                   "Directory binding is current; prose, Canvas and portable manifests unchanged.")
+    elif committed:
+        click.echo("目录绑定已恢复；正文、Canvas 和便携清单未改。" if zh else
+                   "Directory binding restored; prose, Canvas and portable manifests unchanged.")
+    else:
+        click.echo("原路径和 inode 已匹配；只恢复主机设备号，不接纳内容改动。" if zh else
+                   "Original path and inode match; recover only the host device number, not content edits.")
+        click.echo(("已核文件：" if zh else "Checked files: ") + str(len(result["files"])))
+        click.echo("尚未写入。" if zh else "Nothing written.")
+    click.echo(("确认摘要：" if zh else "Confirmation digest: ") + result["approved_digest"])
+    click.echo("不是已验证备份，不证明原文科学支持、阅读器打开或人工评鉴。" if zh else
+               "Not a verified backup or proof of scientific support, reader launches or human assessment.")
+
+
+@knowledge.command(name="rebind-plan")
+@click.option("--source-id", required=True)
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["en", "zh"]), default="en")
+def knowledge_rebind_plan(source_id, fmt, language):
+    """Zero-write preview of same-path/inode device-number recovery."""
+    from scholar_workflow.workflows.knowledge_rebinding import rebind_plan
+    try:
+        result = rebind_plan(_local_field_service().registry, source_id=source_id)
+    except (RuntimeError, OSError, ValueError, TypeError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    _rebind_result(result, fmt, language, committed=False)
+
+
+@knowledge.command(name="rebind")
+@click.option("--source-id", required=True)
+@click.option("--approved-digest", required=True)
+@click.option("--yes", is_flag=True)
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["en", "zh"]), default="en")
+def knowledge_rebind(source_id, approved_digest, yes, fmt, language):
+    """Restore only the reviewed same-directory host binding, with CAS and recovery."""
+    from scholar_workflow.workflows.knowledge_rebinding import rebind
+    if not yes:
+        click.confirm("恢复已审阅的原目录绑定？" if language == "zh" else
+                      "Restore the reviewed original-directory binding?", abort=True, err=True)
+    try:
+        result = rebind(_local_field_service().registry, source_id=source_id,
+                        approved_digest=approved_digest)
+    except (RuntimeError, OSError, ValueError, TypeError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    _rebind_result(result, fmt, language, committed=True)
+
+
 def _reproduction_restore_summary(result, fmt, language, *, committed):
     if fmt == "json":
         click.echo(json.dumps(result, ensure_ascii=False, indent=2))

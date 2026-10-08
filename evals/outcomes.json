@@ -2,6 +2,11 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "knowledge-same-directory-rebinding-installed",
+      "description": "同路径/inode设备号恢复：安装版公开零写入预览冻结完整明确inventory、manifest、registry和provider，精确摘要确认仅改主机绑定与派生snapshot revision，保留所有内容/归属/回执；不同根/漂移/符号链接/中断/篡改由合成独立输入验证。开发通过不等于安装态通过，不代表新根复现、科学支持、阅读器显示或人工验收。当前26定向通过，正常0.41.4安装及单test Source恢复待完成；见planning/source-rebinding-plan.md。",
+      "status": "pending"
+    },
+    {
       "id": "analysis-canvas-exact-companion-route",
       "description": "v5显式安全Vault相对正文路径让claim/point/图卡反链打开配对正文的确切文件和块，不把同名或静态解析当点击通过。whole成对采用/重绑定，focused保留；正式提交先核对注册Source实际正文位置，复制到新位置报告重绑定，不扩大权限。0.41.2误跳由独立A/B鼠标复现；0.41.3已正常发布安装，1829完整回归通过。test单篇新候选public stage/check与独立守恒比较通过：正文、源身份、节点几何/样式/边不变，71反链用确切路径。图2/表2真实点击准确到本目录指定块，不是全部71链接逐一点击。人工图评鉴与canonical带图归属/正式路由采用仍未完成，保持pending。Canvas图片仍只实验数据表和关键流程图；见planning/canvas-companion-links-results.md。",
       "status": "pending"
