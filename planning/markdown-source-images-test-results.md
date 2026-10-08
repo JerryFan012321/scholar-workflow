@@ -47,3 +47,14 @@ rtk uv run --with pytest pytest -q tests/unit tests/contract --tb=short
 新开关的安装态单对象验证仍待后续正式hotfix安装；新增正文图片的人类阅读体验待明确确认。
 开发全绿不代表外部阅读器、科学来源或G17整阶段完成。新源码规则由skill的v5 reference持有，
 不是把开发测试步骤塞进执行skill。
+
+## 0.41.6 本地版本与打包准备
+
+仅元数据增量，正文图片实现、依赖和此前1896完整回归所覆盖的行为不变。四处版本与
+uv.lock本包版本统一0.41.6，`rtk uv lock --check`通过（24 packages，3ms）。
+独立范围先写入上述测试计划的本地打包节，再执行既有manifest/runtime版本、69图片
+契约和10 eval结构用例：84 passed，1.45秒；diff空白检查通过。未重复完整回归或业务。
+
+本地归档与sdist/wheel将从此次干净已提交源码按既有release manifest构建；新建的
+`dist/0.41.6-local.*/`仅存忽略的构建产物与独立实际结果，不进入Git或runtime归档。
+这些静态构建结果不能替代正常安装，正式发布与安装仍待许可；PATH产品保持0.41.5。

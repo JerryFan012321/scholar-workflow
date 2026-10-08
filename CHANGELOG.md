@@ -18,6 +18,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **analyze-paper / local hotfix preparation:** align package, module and both host
+  versions at 0.41.6 for the already verified Markdown image fix; keep dependency
+  pins unchanged. Prepare and inspect committed runtime-only build artifacts locally.
+  Formal publication, installation and the installed single-paper acceptance still
+  require their own authorization; the current installed product remains 0.41.5.
+
 - **exemplar navigation / current evidence only:** align the three plain test-Source
   entry notes with adopted Markdown images, the two approved Canvas images and the
   active project inventory. Installed 0.41.5 still exports fifteen files; the other

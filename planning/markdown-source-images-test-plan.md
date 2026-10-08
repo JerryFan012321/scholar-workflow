@@ -28,3 +28,21 @@ Zotero、外部编辑器、provider、安装缓存和原PDF均不修改，不运
   这些不是安装态、人类可读性或科学来源的新认证；旧人工批准不重新索要。
 - 提交前一次完整`pytest tests/unit tests/contract`，用已有合成fixture、mock provider与
   pytest隔离目录做跨模块回归，不运行真实外部应用、文库、Field迁移或科研实验。
+
+## 0.41.6 本地打包增量
+
+输入：上述已验证的补图实现与既有模板；只改pyproject、模块版本、两个host manifest及
+uv.lock中的本包版本，不改依赖或分析代码。预期四处版本均0.41.6，锁文件与声明一致。
+
+1. 执行既有manifest/runtime版本、69图片契约及10 eval结构用例，预期全部通过；此前
+   1896完整回归的代码未变，不把真实业务再次用作开发测试。
+2. 本地提交后，以既有make-release.sh的精确runtime路径清单导出归档，展开到新空目录。
+   不运行切换/清空worktree的发布步骤，不移动主线或远程release，不手工提交release分支。
+3. 检查归档仅含该清单的提交字节；根开发规则、planning/dev-guide/tests/evals、锁文件、
+   配置/状态/缓存与个人路径/凭据均不进入。合法相对运行期引用可保留。
+4. 在该runtime快照正常build sdist和wheel；只静态检查包METADATA、入口、模块/契约、
+   版本与selected-image实现字节，不执行论文输入或调用外部应用。
+5. 记录source SHA、归档/构建hash与实际命令结果。安装PATH和cache保持0.41.5。
+
+本地包不等于正式发布、安装或实机验收。获准后仍按既有release脚本/正常安装流程执行，
+新开关实机验证仅现有V-JEPA2单对象；源图、内容、Canvas及实验不重新生成。
