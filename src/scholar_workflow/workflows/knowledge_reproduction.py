@@ -321,10 +321,12 @@ def _source_checks(zotero, source_id, snapshot, baselines, contents):
     return {"papers": papers, "attachments": attachments, "vault_blocks": blocks}
 
 
-def _reader_checks(root, baselines):
+def _reader_checks(root, baselines, snapshot):
     from scholar_workflow.adapters.obsidian_registry import ZotFlowError, resolve_obsidian_reader
     result = []
-    for artifact, (baseline_path, baseline) in sorted(baselines.items()):
+    markdown_paths = {a.artifact_id: a.vault_path for a in snapshot.artifacts
+                      if a.kind == "analysis_markdown"}
+    for artifact, (_, baseline) in sorted(baselines.items()):
         reader = baseline.document.reader
         saved_note = baseline.document.profile.canvas_note_path
         zotflow = reader is not None and reader.kind == "zotflow_library"
@@ -336,8 +338,7 @@ def _reader_checks(root, baselines):
             current = binding.vault_id
             status = "binding-matched" if not zotflow or current == reader.vault_id else "rebinding-required"
             if saved_note is not None:
-                companion = Path(baseline_path).parent / (baseline.note_stem + ".md")
-                current_note = (root / companion).relative_to(binding.vault_root).as_posix()
+                current_note = (root / markdown_paths[artifact]).relative_to(binding.vault_root).as_posix()
                 if saved_note != current_note:
                     status = "rebinding-required"
         except (ZotFlowError, ValueError):
@@ -401,7 +402,7 @@ def restore_plan(registry: KnowledgeSourceRegistry, zotero, *, source_id: str, p
             if expected_readers != sorted(portable["reader_rebind_required"]):
                 raise FieldRegistryError("Portable reader inventory differs from saved analyses")
             sources = _source_checks(zotero, source_id, snapshot, baselines, contents)
-            readers = _reader_checks(root, baselines)
+            readers = _reader_checks(root, baselines, snapshot)
             after = snapshot.model_dump(mode="json")
             after.update(snapshot_revision="", vault_binding=binding.model_dump(mode="json"))
             after = KnowledgeProviderSnapshot.model_validate(after).model_dump(mode="json")
@@ -413,7 +414,7 @@ def restore_plan(registry: KnowledgeSourceRegistry, zotero, *, source_id: str, p
                     or any(_read_target_regular(root, root_fd, path) != data for path, data in contents.items())
                     or any(_read(state_fd, name)[0] != data for name, data in manifests.items())
                     or _source_checks(zotero, source_id, snapshot, baselines, contents) != sources
-                    or _reader_checks(root, baselines) != readers):
+                    or _reader_checks(root, baselines, snapshot) != readers):
                 raise FieldRegistryError("Reproduction authority or files changed during inspection")
             current_state = _open_directory_chain(root / ".scholar-workflow")
             try:
