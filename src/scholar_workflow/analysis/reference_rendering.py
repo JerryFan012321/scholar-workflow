@@ -232,6 +232,42 @@ def reference_points(claim: AnalysisClaim) -> list[AnalysisPoint]:
     )
 
 
+def _literal_quote(text: str) -> str:
+    return re.sub(r"([\\`*_{}\[\]()#+.!|~^$-])", r"\\\1", escape(text, quote=False))
+
+
+def _emphasized_quote_lines(quote: str, fragments: list[str]) -> list[str]:
+    """Escape original text before applying renderer-owned emphasis markers."""
+    intervals = sorted((quote.index(part), quote.index(part) + len(part)) for part in fragments)
+    merged: list[tuple[int, int]] = []
+    for start, end in intervals:
+        if merged and start == merged[-1][1]:
+            merged[-1] = (merged[-1][0], end)
+        else:
+            merged.append((start, end))
+    result: list[str] = []
+    offset = 0
+    for raw, line in zip(quote.splitlines(keepends=True), quote.splitlines(), strict=True):
+        cursor = 0
+        pieces: list[str] = []
+        for start, end in merged:
+            left, right = max(0, start - offset), min(len(line), end - offset)
+            if left >= right:
+                continue
+            # Markdown strong delimiters cannot begin or end with whitespace.
+            segment = line[left:right]
+            left += len(segment) - len(segment.lstrip())
+            right -= len(segment) - len(segment.rstrip())
+            if left >= right:
+                continue
+            pieces.extend((_literal_quote(line[cursor:left]), "**" + _literal_quote(line[left:right]) + "**"))
+            cursor = right
+        pieces.append(_literal_quote(line[cursor:]))
+        result.append("".join(pieces))
+        offset += len(raw)
+    return result
+
+
 def reference_source_quote_lines(
     evidence: Evidence,
     language: str,
@@ -244,19 +280,24 @@ def reference_source_quote_lines(
     Source authenticity is checked separately; rendering does not verify a quote.
     Escape source syntax so quotations cannot create links, HTML, or block identities.
     """
-    label = "原文摘录" if language == "zh" else "Original excerpt"
     lines: list[str] = []
     for span in evidence.source_spans:
         if span.quote is None:
             continue
+        label = "原文摘录" if language == "zh" else "Original excerpt"
+        if span.quote_emphasis:
+            inferred = evidence.kind is EvidenceKind.ANALYSIS_INFERENCE
+            label += (
+                "（粗体：推断依据）" if inferred else "（粗体：直接证据）"
+            ) if language == "zh" else (
+                " (bold: basis for inference)" if inferred else " (bold: direct evidence)"
+            )
         lines.extend([
             "",
             f"{indent}> **{label}** · {reference_source_link(span, language, reader=reader)}",
             f"{indent}>",
         ])
-        for line in span.quote.splitlines():
-            literal = re.sub(r"([\\`*_{}\[\]()#+.!|~^$-])", r"\\\1", escape(line, quote=False))
-            lines.append(f"{indent}> {literal}")
+        lines.extend(f"{indent}> {line}" for line in _emphasized_quote_lines(span.quote, span.quote_emphasis))
     return lines
 
 
