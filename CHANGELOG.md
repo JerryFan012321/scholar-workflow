@@ -32,8 +32,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 - **analyze-paper / local hotfix preparation:** align package/module and both host
   manifests at 0.41.7 for the verified excerpt-emphasis improvement; retain dependency
   pins. Prepare runtime-only artifacts locally from committed source, without pushing,
-  installing, merging main or writing business content. Publication and one-paper
-  installed assessment await independent authorization.
+  installing, merging main or writing business content during preparation. Explicit
+  user authorization now covers formal runtime publication, normal CLI/plugin
+  installation and one noncanonical V-JEPA 2 review candidate. Preserve source
+  passages, scientific prose and complete Canvas; keep actual deployment and human
+  assessment evidence separate, with main unmerged.
 
 ## [0.41.6] - 2026-10-08
 
