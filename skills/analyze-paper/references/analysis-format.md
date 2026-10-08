@@ -220,8 +220,14 @@ hand-edit just the Markdown to add quotations.
 
 When the user requests PDF evidence screenshots, place native-rendered region images
 beside the supported Markdown claim, retaining its source excerpt and page link.
-Use a relative image embed in that claim's IR `body` and an explicit `canvas_summary`
-containing the unchanged concise claim; images do not enter Canvas by implication.
+Use a relative image embed in that claim's IR `body` or the corresponding point's
+`text`, retaining a plain `canvas_summary` equal to its previously displayed concise
+statement. Point text remains a single paragraph: keep the inline image and its
+readable caption in that paragraph; do not add forbidden line breaks or create a
+new factual claim just to carry the image. Claim bodies may use separate paragraphs.
+Check for an existing embed before adding one so the same source region is not
+duplicated in the body. Images do not enter Canvas by implication; its separately
+selected `canvas_image` interface and five-branch geometry remain unchanged.
 Keep the full caption/headers or complete relevant paragraph, not just isolated
 matching words. Preserve the source image; do not redraw, alter scientific content,
 or claim that a crop displays Zotero database annotations.

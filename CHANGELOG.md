@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **analyze-paper / output contract and acceptance records:** require selected key
+  source figures and result tables beside their supporting Markdown analysis as well
+  as Canvas. Reuse existing owned assets and installed paired-update interfaces;
+  preserve prose, quotations, sources and the complete accepted Canvas. Record fresh
+  native display/two exact companion clicks and explicit editor-only hash receipts.
+  No runtime change, new release, reanalysis, crop generation or additional replay.
+
 - **analyze-paper / development acceptance evidence only:** record normal 0.41.4
   binding-only recovery and approved Figure 2/Table 2 canonical adoption, followed by
   normal 0.41.5 release/install and one isolated new-root restoration. Preserve all

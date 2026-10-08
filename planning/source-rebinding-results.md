@@ -68,3 +68,30 @@ paired stage零修复validated，独立比较只有71正文反链的目录路由
 或静态解析冒充本次实机结果。可读结果、安装记录、独立比较及全部CLI回执保留在test既有
 审阅目录“复现/正式采用-20261008/0.41.4”，名字保留创建时版本，实际恢复使用0.41.5。
 不重分析/裁剪/实验，不合并main/切换服务/迁移其他集合；科学空缺和完整G17边界保持。
+
+## 当前原生检查与正文图片增量（2026-10-08）
+
+解锁后通过正常安装的knowledge open打开唯一新副本。在Obsidian实际放大图2、表2，图片
+完整显示；两个实际正文点击分别进入该新副本的steps和finding-1准确块。四张当次截图与
+独立结果在同一test审阅目录。此结果是两个抽样点击，不是71链接实点或新的科学/图片审批。
+
+原生打开后编辑器重编码两个已开的Canvas；完整解析JSON各自与批准暂存图精确相等，
+各自14其他文件保持。公开acknowledge-canvas-metadata通过实际base/CAS及旧规范编码hash
+证明，分别只登记provider的新物理hash，没有写Vault文件；两份15文件包再次导出通过。
+最初观察脚本两次断言失败在写入口前：暂存编码hash误当提交编码hash、原目录编辑器保存
+触发原字节保护。不改图/放宽CAS；独立计划与回执分开保留。
+
+用户进一步要求正文也有图片。正文已有表2及EK100局限截图，仅缺图2；复用既有资产，在
+Method Overview的steps文字插入说明和相对图片，plain canvas_summary保持原步骤。
+installed0.41.5公开stage一次validated/零修复，独立比较Markdown删除唯一插入字符串后
+与旧文精确相同、完整Canvas JSON相等、全部IR除等价summary及该文字外相同。随后公开
+paired commit/provider apply及最终check conformant，108节点107边、69内容、15文件可导出，
+12非trio文件保持。没有新产品代码、版本、图crop、业务重分析或新restore；独立副本不同步。
+原生正文打开被接受，用户正在切换文件，停止自动输入；新正文阅读体验待人，不使用其他
+文件画面作显示证据。输出模板已在仓库补充，尚未新发布。详见markdown-source-images-plan.md。
+
+正文打开后Canvas编辑器又执行一次纯重编码，最终只读导出按物理hash拒绝；完整图与新stage
+精确相等、其他14文件不变。现有公开metadata acknowledgement以fresh CAS确认此次保存后
+再导出15文件成功，Vault零写入，没有重新stage/commit。最终包摘要771c4755。
+中英文point图片的两项新增合成守恒用例及v5/eval schema组合40 passed（0.82秒）；
+skill quick_validate、Ruff/diff通过，未重复完整回归或业务验证。

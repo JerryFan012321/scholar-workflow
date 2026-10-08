@@ -8,8 +8,8 @@
     },
     {
       "id": "analysis-canvas-exact-companion-route",
-      "description": "v5显式安全Vault相对正文路径让claim/point/图卡反链打开配对正文确切文件/块，不把静态解析当点击通过。whole成对采用/重绑定，focused保留；提交核对实际位置，复制到新位置报告重绑定，不扩大权限。0.41.2误跳由A/B鼠标复现；0.41.3候选图2/表2实际点击准确到本目录指定块，不代表全部71链接。用户图评鉴已通过；0.41.4 canonical/provider正式采用、0.41.5安装后同一隔离新根restore及paired route update已完成：71反链准确文件路径，108节点107边、正文/源/图/几何/样式/边守恒。Mac锁屏，新副本原生显示/两图实际点击尚未核，保持pending；不再索要旧图片批准。见planning/source-rebinding-results.md及canvas-companion-links-results.md。",
-      "status": "pending"
+      "description": "v5显式安全Vault相对正文路径让claim/point/图卡反链打开配对正文确切文件/块，不把静态解析当点击通过。whole成对采用/重绑定，focused保留；提交核对实际位置，复制到新位置报告重绑定，不扩大权限。0.41.2误跳由A/B鼠标复现；0.41.3候选两图点击准确。0.41.4 canonical/provider采用及0.41.5正常安装后唯一新根restore/paired route update完成，71反链静态精确，108节点107边。解锁后新副本两图原生显示及两次实际点击分别到新正文steps/finding-1准确块，四张当次截图留证；此pass为已实现契约、静态全链接及两原生样本，不是71实点、全文科学或G17完成。编辑器仅重编码已由公开CAS acknowledgement登记。旧图片人工批准不重开。见planning/source-rebinding-results.md及canvas-companion-links-results.md。",
+      "status": "pass"
     },
     {
       "id": "analysis-canvas-unique-source-targets",
@@ -18,7 +18,12 @@
     },
     {
       "id": "analysis-canvas-selected-source-visuals",
-      "description": "用户规定：Canvas图片仅实验数据表和关键流程图，贴近对应Experiments/Method内容；段落截图/逐字摘录留Markdown，不取代五分支可编辑节点。单篇V-JEPA2图2/表2已有原生显示与准确来源页/正文点击记录，用户明确图片通过。0.41.4正常安装后登记6资产并canonical paired commit/provider apply，15文件完整导出；0.41.5同一隔离新根restore保持15文件，再成对更新正文反链保持图片/正文/几何/边。此pass仅该用户规定与已审图片正式采用，不能冒称新副本原生点击、全篇科学支持或G17完成；Mac锁屏，新副本实际点击仍独立pending。见planning/source-rebinding-results.md及canvas-selected-images-plan.md。",
+      "description": "用户规定：Canvas图片仅实验数据表和关键流程图，贴近对应Experiments/Method内容；段落截图/逐字摘录留Markdown，不取代五分支可编辑节点。V-JEPA2图2/表2原生显示、来源页/正文点击与人工图片审批已有记录。0.41.4登记6资产并canonical paired commit/provider apply；0.41.5同一新根restore和paired route update完成，15文件可导出。解锁后两图新副本实际显示及两次准确正文块点击通过。此pass只覆盖图片契约、已审图采用与两个实机样本，不认证全篇科学或G17完成。随后原目录正文补图2，完整Canvas/图片字节保持，新增正文阅读体验独立待人。见planning/source-rebinding-results.md及canvas-selected-images-plan.md。",
+      "status": "pass"
+    },
+    {
+      "id": "analysis-markdown-owned-source-images",
+      "description": "正文须在对应分析旁展示所选关键流程图与实验表，复用归属资产并保留摘录、条件与来源；Canvas仍仅所选表/流程图。正常安装0.41.5已有IR point.text图片及plain summary能力，单test V-JEPA2原正文只补图2，已有表2/局限图保持。独立输入先于public stage；零修复validated、Markdown移除唯一增量后逐字相同、完整Canvas JSON和其余IR保持。paired commit/provider apply、最终conformance及15文件导出通过，12非trio文件保持。此pass仅安装态成对呈现/守恒，不代表新正文图人类阅读评鉴、全篇科学认证或新版本发布；实际打开已接受，用户切换文件后停止自动UI，待人查看Method Overview steps。见planning/markdown-source-images-plan.md及source-rebinding-results.md。",
       "status": "pass"
     },
     {
@@ -33,7 +38,7 @@
     },
     {
       "id": "knowledge-portable-provider-reproduction",
-      "description": "G17：明确Source导出完整归属/Field/相对路径/hash，移除主机root/旧回执；不扫描推断owner、不复制PDF/密钥，新目的地preview/CAS恢复provider，identity/格式保持，reader独立处理。0.39.0安装态8文件新根恢复与再导出摘要相同、原件保持已留证。0.41.4合法binding恢复后已审两图正式采用，完整15文件6资产导出；0.41.5正常安装、1857回归通过，同一隔离新根public restore保持15文件及原包摘要，再paired route update仅Canvas/sidecar变化，13其他文件/科学内容/原句/图片/布局/边/原Source/生产状态/PDF保持。更新后的包因新显示路由有合法新摘要。未在另一物理主机测试，Mac锁屏使新副本实际点击未核，全篇科学支持未认证，保持pending，不冒称G17完成。见planning/source-rebinding-results.md及hotfix-0.39.0-results.md。",
+      "description": "G17：明确Source导出完整归属/Field/相对路径/hash，移除主机root/旧回执；不扫描推断owner、不复制PDF/密钥，新目的地preview/CAS恢复provider，identity/格式保持，reader独立处理。0.39.0安装态8文件新根恢复/同摘要再导出留证。0.41.4合法binding恢复和两图正式采用后导出15文件6资产；0.41.5正常安装/1857回归，同一隔离新根restore保持15文件及原包摘要，再paired route update仅Canvas/sidecar路由变化。解锁后新副本两图显示及两正文块实点通过；编辑器重编码已公开acknowledgement确认，完整图和14其他文件保持，两目录15文件可再导出，摘要变化明确。原目录后续单正文图增量不隐式同步副本。未在另一物理主机测试，全篇科学支持未认证，整阶段保持pending，不用局部pass冒称G17完成。见planning/source-rebinding-results.md及hotfix-0.39.0-results.md。",
       "status": "pending"
     },
     {

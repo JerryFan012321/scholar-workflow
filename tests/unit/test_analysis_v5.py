@@ -206,6 +206,28 @@ def test_requested_markdown_image_preserves_the_entire_canvas_projection() -> No
     assert validate_bundle(document, after, note_stem=NOTE_STEM).ok
 
 
+@pytest.mark.parametrize("language", ["en", "zh"])
+def test_point_source_image_changes_only_markdown_not_the_canvas(language: str) -> None:
+    payload = _payload()
+    payload["language"] = language
+    before = render_analysis(AnalysisDocument.model_validate(payload), note_stem=NOTE_STEM)
+    point = next(
+        point
+        for claim in payload["claims"] if claim["claim_id"] == "m-1"
+        for point in claim["points"] if point["point_id"] == "method"
+    )
+    caption = "Figure 1: synthetic process" if language == "en" else "图 1：合成流程"
+    addition = f" {caption}. ![{caption}](attachments/synthetic-process.png)"
+    point["canvas_summary"] = point["text"]
+    point["text"] += addition
+    document = AnalysisDocument.model_validate(payload)
+    after = render_analysis(document, note_stem=NOTE_STEM)
+    assert after.markdown.count(addition) == 1
+    assert after.markdown.replace(addition, "") == before.markdown
+    assert after.canvas == before.canvas
+    assert validate_bundle(document, after, note_stem=NOTE_STEM).ok
+
+
 def _node_id(path: str) -> str:
     # Standard, externally specified node identity, not a renderer snapshot.
     return sha256(f"{ARTIFACT_ID}\n{path}".encode()).hexdigest()[:16]
