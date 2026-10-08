@@ -17,6 +17,10 @@ protection retain `analysis-format.md` and the shared source/storage policies.
 - `profile.markdown_quotes: true`. Supported author claims/inferences include a
   short original-language excerpt and a verified source span; only Markdown renders
   the excerpt. Structural projection cannot prove that the source contains it.
+- New presentation explicitly selects `profile.markdown_folded_quotes: true` in
+  supporting runtimes. It uniformly folds all supplied excerpts without changing
+  original text, exact emphasis, reader links or Canvas. The full display/adoption
+  contract is in `analysis-format.md`; old omitted/false inputs remain compatible.
 - `whole` roles normalize to Abstract, Introduction, Method, Experiments, Limitation.
   A branch can have no supported facts; preserve its structure without inventing them.
 - `focused` names the selected branches and supplies their complete replacement.

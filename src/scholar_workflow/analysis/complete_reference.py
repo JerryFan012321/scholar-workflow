@@ -287,6 +287,7 @@ def complete_claim_markdown_lines(
     heading_level: int = 4,
     reader: AnalysisReader | None = None,
     markdown_quotes: bool = True,
+    markdown_folded_quotes: bool = False,
     markdown_source_images: bool = False,
     label: str | None = None,
     include_points: bool = True,
@@ -306,7 +307,9 @@ def complete_claim_markdown_lines(
             ]
         )
         if markdown_quotes:
-            lines.extend(reference_source_quote_lines(claim.evidence, language, reader=reader))
+            lines.extend(reference_source_quote_lines(
+                claim.evidence, language, reader=reader, folded=markdown_folded_quotes,
+            ))
         lines.extend(markdown_source_image_lines(
             claim, None, language, reader=reader, enabled=markdown_source_images,
         ))
@@ -321,7 +324,9 @@ def complete_claim_markdown_lines(
                 lines.extend(["", _point_markdown_line(claim, point, language, reader=reader)])
                 if markdown_quotes:
                     lines.extend(
-                        reference_source_quote_lines(point.evidence, language, reader=reader)
+                        reference_source_quote_lines(
+                            point.evidence, language, reader=reader, folded=markdown_folded_quotes,
+                        )
                     )
                 lines.extend(markdown_source_image_lines(
                     claim, point, language, reader=reader, enabled=markdown_source_images,
@@ -608,7 +613,10 @@ def _render_markdown(document: AnalysisDocument, tree: TemplateNode) -> str:
                 ]
             )
             lines.extend(
-                reference_source_quote_lines(node.point.evidence, language, reader=document.reader)
+                reference_source_quote_lines(
+                    node.point.evidence, language, reader=document.reader,
+                    folded=document.profile.markdown_folded_quotes,
+                )
             )
             lines.extend(markdown_source_image_lines(
                 node.claim, node.point, language, reader=document.reader,
@@ -622,6 +630,7 @@ def _render_markdown(document: AnalysisDocument, tree: TemplateNode) -> str:
                     heading_level=level,
                     reader=document.reader,
                     markdown_quotes=document.profile.markdown_quotes,
+                    markdown_folded_quotes=document.profile.markdown_folded_quotes,
                     markdown_source_images=document.profile.markdown_source_images,
                     label=node.label,
                     include_points=False,

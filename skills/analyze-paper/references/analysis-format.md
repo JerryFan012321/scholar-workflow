@@ -231,6 +231,15 @@ non-applicable evidence has no invented highlighted support. The same excerpt's
 verified source link remains adjacent. Canvas receives neither the excerpt nor its
 emphasis and retains its complete existing content and geometry.
 
+Apply this presentation to every source-backed claim/point in a new analysis, not
+only a few sample excerpts. A structural heading/container needs no quotation or
+emphasis; an availability-only record cannot invent support. Multiple source spans
+may provide context, but at least one verified supporting passage must identify
+the exact direct evidence or inference basis for its own record. A missing or
+uncertain support relationship remains an explicit source/semantic gap, not an
+unexplained formatting exception or a fully reviewed success. Do not make the
+whole passage bold merely to satisfy a coverage count.
+
 For example, a synthetic source and its emphasized projection are:
 
 ```text
@@ -259,6 +268,41 @@ new-analysis default. A focused update retains its baseline's setting; adopting 
 an existing pair needs an explicitly requested whole-analysis format update with current source
 verification and the usual paired CAS/conflict protections. Never bulk refresh older papers or
 hand-edit just the Markdown to add quotations.
+
+#### Foldable excerpts (supporting runtimes)
+
+New analyses also explicitly select `profile.markdown_folded_quotes: true` when the
+installed runtime supports it. This requires `markdown_quotes: true` and the v4/v5
+reference-tree interface. All supplied excerpts in that document, including
+point-local and inference-basis excerpts, use Obsidian's native default-collapsed
+quote callout. Each span gets its own block; do not merge different sources:
+
+```markdown
+> [!quote]- Original excerpt (bold: direct evidence) · [Source · PDF page 4](zotero://open-pdf/library/items/<attachment-key>?page=4)
+>
+> <complete unchanged source context with **the exact supporting wording** emphasized>
+```
+
+The caption follows the analysis language and retains the direct-evidence/inference
+distinction above. It describes bold only when the span actually declares emphasis.
+The title and source link stay visible when collapsed; expanding reveals the full
+original passage and its exact emphasis. The statement, inline evidence, original
+source link and block anchor remain outside the callout. V4 list-point callouts
+remain indented under their own point; v5 preserves its separate named subslots.
+Images and their captions remain outside the folded quotation. No HTML wrapper,
+custom CSS or extra plugin is needed. Folding changes no quote, source identity,
+reader projection, Canvas content/geometry or ownership.
+
+Omission or `false` preserves legacy output and serialized baselines; this is
+compatibility, not the new-analysis presentation. Adopting folding on an existing
+pair requires an explicit whole paired format update. Focused updates retain their
+baseline setting and cannot enable it for a few branches; an ordinary update
+cannot turn an adopted folded format off. Conformance rejects missing/changed
+callouts, wrong source links or blocks moved away from their own statement.
+Keep paired CAS/human-conflict protections and verify installed support before use;
+an older runtime rejects the field rather than justifying a hand-patched Markdown.
+Actual collapse/expand, title-link clicks and reading comfort remain separate human
+assessments in the installed Obsidian product.
 
 ### Requested source-region images
 
@@ -349,7 +393,7 @@ sw_analysis_language: en
 #### <claim title>
 <complete explanation> 〔Author-stated · §1〕 [Source · PDF page 4](zotero://open-pdf/library/items/<attachment-key>?page=4) ^claim-<claim-id>
 
-> **Original excerpt** · [Source · PDF page 4](zotero://open-pdf/library/items/<attachment-key>?page=4)
+> [!quote]- Original excerpt · [Source · PDF page 4](zotero://open-pdf/library/items/<attachment-key>?page=4)
 >
 > <short verbatim excerpt, in the original source language>
 
@@ -376,7 +420,7 @@ hyphens. No `sw-analysis-claim` HTML comments or opaque Scholar-specific marker 
 human Markdown or Canvas node text. Native Obsidian `^claim-…` / `^point-…` block IDs still appear
 in Markdown source to support exact backlinks; the IR and sidecar own claim identity and Canvas
 node mapping. V1–v3 legacy files retain their historical
-marker contract and are not silently rewritten. A point's original excerpt is a blockquote
+marker contract and are not silently rewritten. A point's original excerpt is a quote callout
 indented under that list item, not another point or a Canvas node. In Chinese output the caption
 is `原文摘录`; an English original excerpt remains English.
 

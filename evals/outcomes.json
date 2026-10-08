@@ -2,8 +2,13 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "analysis-uniform-folded-source-excerpts",
+      "description": "G13/G17/INV54：新正文显式markdown_folded_quotes=true，全部已提供的claim/point摘录统一用Obsidian默认折叠quote callout；题注与同来源链接折叠时可见，展开后完整原句/上下文及精确强调保持。论点、锚点和图片不藏入折叠块，Canvas完整JSON不变。v4列表子项缩进、v5独立子槽位、PDF/Markdown/ZotFlow链接、多来源和字面转义均保留；缺失/展开或删除折叠标志/错链/移位拒绝。旧省略/false字节兼容，whole显式采用、focused保留、不静默关闭，human conflict仍停止。独立合成输入及手写预期先于实现，测试记录见planning/folded-quotes-test-results.md。未部署、未写Vault；安装态展开/收起和人工阅读仍pending，完整真实强调覆盖与科学支持独立，不冒称G17完成。",
+      "status": "pending"
+    },
+    {
       "id": "analysis-direct-evidence-excerpt-emphasis",
-      "description": "G13/G17：正文原文摘录保留完整原句/上下文，在同点将真正支撑论点的原文分句/句子加粗；原始quote不写标记，quote_emphasis精确且唯一/非空/无重叠，限定、否定、数值和单位保持。作者直接证据与分析推断依据的题注明确不同，Canvas完整JSON保持。省略/空字段兼容旧基线；不存在/歧义/重叠/非法或不显示的强调拒绝，去掉/修改/移位强调不能conformant；human revision冲突停止成对更新。独立合成SOURCE/手写EXPECTED先于实现，开发测试记录见planning/quote-emphasis-test-results.md。新能力尚未发布安装或进行单篇安装态/人工阅读评鉴，保持pending；加粗不认证科学支持，不重开旧Canvas审批或冒称G17全部完成。",
+      "description": "G13/G17：正文原文摘录保留完整原句/上下文，在同点将真正支撑论点的原文分句/句子加粗；原始quote不写标记，quote_emphasis精确且唯一/非空/无重叠，限定、否定、数值和单位保持。作者直接证据与分析推断依据的题注明确不同，Canvas完整JSON保持。省略/空字段兼容旧基线；不存在/歧义/重叠/非法或不显示的强调拒绝，去掉/修改/移位强调不能conformant；human revision冲突停止成对更新。独立合成SOURCE/手写EXPECTED先于实现，90专项/1986完整通过，0.41.7已正常发布安装并生成单篇非canonical候选；实际只三处强调，不是69记录/98摘录全部采用。新增规范要求每条有来源支持的记录呈现已核实支撑，不机械全段加粗。完整覆盖/人工阅读及科学支持仍pending；不重开旧Canvas审批或冒称G17全部完成。见planning/quote-emphasis-test-results.md。",
       "status": "pending"
     },
     {

@@ -532,7 +532,7 @@ wheels = [
 
 [[package]]
 name = "scholar-workflow"
-version = "0.41.7"
+version = "0.41.8"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },

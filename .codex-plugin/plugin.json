@@ -1,6 +1,6 @@
 {
   "name": "scholar-workflow",
-  "version": "0.41.7",
+  "version": "0.41.8",
   "description": "Project-centered research context, readable knowledge and reproducible experiment records using Zotero, Obsidian, Notion and native tools.",
   "author": {
     "name": "Scholar Workflow contributors",

@@ -124,7 +124,7 @@
     {
       "id": "analysis-verbatim-quotation-source",
       "action": "label a paraphrase, translation, spliced passage, or unverified wording as a verbatim paper-source quotation and claim a conformance pass proves its source fidelity",
-      "expected": "report the source gap or retain the text as explicitly identified analysis/translation; only a source-verified contiguous excerpt belongs in source_span.quote. Optional quote_emphasis retains that original passage and highlights only its exact supporting wording, with conditions and negations intact; an inference basis never becomes an author-stated conclusion. Structural conformance and bold formatting verify the projection, not the source wording or scientific support",
+      "expected": "report the source gap or retain the text as explicitly identified analysis/translation; only a source-verified contiguous excerpt belongs in source_span.quote. Optional quote_emphasis retains that original passage and highlights only its exact supporting wording, with conditions and negations intact; an inference basis never becomes an author-stated conclusion. Uniform coverage is not permission to bold unverifiable support or the entire passage mechanically. Folded callouts retain the complete source text and its adjacent source link, with statement/anchor/images outside; no silent legacy refresh or single-file bypass. Structural conformance and formatting verify the projection, not the source wording or scientific support",
       "enforcement_layer": "host_llm"
     },
     {

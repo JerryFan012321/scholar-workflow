@@ -274,6 +274,7 @@ def reference_source_quote_lines(
     *,
     reader: AnalysisReader | None = None,
     indent: str = "",
+    folded: bool = False,
 ) -> list[str]:
     """Render supplied verbatim excerpts as literal Markdown, never as Canvas text.
 
@@ -294,7 +295,11 @@ def reference_source_quote_lines(
             )
         lines.extend([
             "",
-            f"{indent}> **{label}** · {reference_source_link(span, language, reader=reader)}",
+            (
+                f"{indent}> [!quote]- {label} · {reference_source_link(span, language, reader=reader)}"
+                if folded else
+                f"{indent}> **{label}** · {reference_source_link(span, language, reader=reader)}"
+            ),
             f"{indent}>",
         ])
         lines.extend(f"{indent}> {line}" for line in _emphasized_quote_lines(span.quote, span.quote_emphasis))
@@ -308,13 +313,16 @@ def reference_claim_markdown_lines(
     heading_level: int = 4,
     reader: AnalysisReader | None = None,
     markdown_quotes: bool = False,
+    markdown_folded_quotes: bool = False,
 ) -> list[str]:
     lines = [
         f"{'#' * heading_level} {claim.title}",
         f"{claim.body} {reference_inline_evidence(claim.evidence, language, reader=reader)} ^claim-{claim.claim_id}",
     ]
     if markdown_quotes:
-        lines.extend(reference_source_quote_lines(claim.evidence, language, reader=reader))
+        lines.extend(reference_source_quote_lines(
+            claim.evidence, language, reader=reader, folded=markdown_folded_quotes,
+        ))
     for point in reference_points(claim):
         label = reference_point_label(point.point_id, language)
         lines.extend(
@@ -329,7 +337,7 @@ def reference_claim_markdown_lines(
         )
         if markdown_quotes:
             lines.extend(reference_source_quote_lines(
-                point.evidence, language, reader=reader, indent="  "
+                point.evidence, language, reader=reader, indent="  ", folded=markdown_folded_quotes,
             ))
     return lines
 
@@ -436,6 +444,7 @@ def _render_markdown(document: AnalysisDocument) -> str:
                                     *reference_claim_markdown_lines(
                                         claim, language, heading_level=5, reader=document.reader,
                                         markdown_quotes=document.profile.markdown_quotes,
+                                        markdown_folded_quotes=document.profile.markdown_folded_quotes,
                                     ),
                                 ]
                             )
@@ -448,6 +457,7 @@ def _render_markdown(document: AnalysisDocument) -> str:
                             "", *reference_claim_markdown_lines(
                                 claim, language, reader=document.reader,
                                 markdown_quotes=document.profile.markdown_quotes,
+                                markdown_folded_quotes=document.profile.markdown_folded_quotes,
                             )
                         ])
     return "\n".join(lines).rstrip() + "\n"

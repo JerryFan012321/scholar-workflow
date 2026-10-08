@@ -5,7 +5,33 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.41.8] - 2026-10-08
+
+### Added
+
+- **analyze-paper / foldable Markdown excerpts:** add explicit
+  `profile.markdown_folded_quotes` for uniform native default-collapsed Obsidian
+  quote callouts. Retain complete original passages, exact emphasis, visible title
+  source links and external statement anchors/images; preserve the complete Canvas.
+  Keep omitted/false serialization compatible, adopt through a whole paired update,
+  retain the choice in focused updates and reject tampered or detached output.
+  Independent synthetic inputs/expected output precede implementation; 49 dedicated,
+  286 targeted and 2035 full unit/contract tests pass. This remains
+  development-only, not installed-product or human reading acceptance.
+
 ### Changed
+
+- **analyze-paper / local hotfix preparation:** align package/module, lock metadata
+  and both host manifests at 0.41.8. Build and inspect a local runtime-only candidate
+  from committed source; formal publication, normal installation and the single
+  noncanonical review candidate remain separate authorized steps. Preserve 0.41.7
+  as the current installed version, with no main merge or business-data writes.
+
+- **analyze-paper / uniform evidence presentation:** clarify per-record verified
+  direct-support/inference-basis emphasis, not a three-example-only treatment or
+  mechanical whole-passage bold. Align runtime format, skill, bilingual instructions
+  and pending outcomes; retain source/semantic gaps and previous Canvas approval.
+  The unfinished image preference is not inferred, and no business data is changed.
 
 - **analyze-paper / 0.41.7 installed review evidence:** record normal runtime
   publication and pinned CLI/marketplace installation; all 244 plugin files and

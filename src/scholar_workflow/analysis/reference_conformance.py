@@ -211,7 +211,10 @@ def validate_reference_tree_bundle(
                 )
             )
         if document.profile.markdown_quotes:
-            quote_lines = reference_source_quote_lines(claim.evidence, language, reader=document.reader)
+            quote_lines = reference_source_quote_lines(
+                claim.evidence, language, reader=document.reader,
+                folded=document.profile.markdown_folded_quotes,
+            )
             if quote_lines and claim_suffix + "\n" + "\n".join(quote_lines) + "\n" not in block:
                 findings.append(_finding(
                     "markdown-source-quote-mismatch", claim_path,
@@ -234,7 +237,8 @@ def validate_reference_tree_bundle(
                 )
             if document.profile.markdown_quotes:
                 quote_lines = reference_source_quote_lines(
-                    point.evidence, language, reader=document.reader, indent="  "
+                    point.evidence, language, reader=document.reader, indent="  ",
+                    folded=document.profile.markdown_folded_quotes,
                 )
                 if quote_lines and point_line + "\n" + "\n".join(quote_lines) + "\n" not in block:
                     findings.append(_finding(
