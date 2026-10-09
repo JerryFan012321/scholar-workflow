@@ -1,5 +1,28 @@
 # 正式归属只读解析：独立测试计划
 
+## 0.42.0正常安装态：单对象执行前说明
+
+2026-10-09用户明确批准发布安装及只读验收。输入固定为当前主机已登记的test Source、
+其“模范知识目录-0.36.0”根Field/provider、一个既有模范项目和V-JEPA 2三项Obsidian引用；不改变清单
+以凑结果，不重新登记、分析、裁图、运行实验或迁移。先正常安装固定release SHA，
+检查公开版本/帮助、模块及两个manifest，逐文件与发布Git字节比较。
+
+在项目根之外运行显式pipx CLI的`project overview --resolve-knowledge`，各一次人类文本
+和JSON。手写预期：8项清单保持，4个本地项目文件available；资料笔记、分析Markdown、
+Canvas三个Obsidian对象均resolved，文件与primary owner文件available，归入同一Source/
+Field和论文primary ID；Zotero附件仍unverified，不能冒称已查询阅读器或科学支持。
+registry当前只有一个启用Source，若实际声明冲突/变化则保留实际失败，禁止修改后假称通过。
+
+独立观察器在执行前后对所选Source文件、该Source provider状态、registry、项目两份
+声明及4个显式文件比较路径集合/hash。观察器为完整性核对可读取这些文件字节，不解释
+论文正文；产品命令本身只读声明、检查文件路径。不得扫描其他Vault或重做整库业务。
+原始stdout/JSON、安装身份及观察结果仅保存为开发侧忽略目录的验收产物；不写Vault/
+项目/provider或Zotero。人类可读展示副本将项目相对链接明确重定位到原项目，知识入口
+继续使用现有稳定Obsidian协议；没有新增关系或正文owner。
+
+会话明确展示对象、打开方法、预期效果与判断标准，等待人类导航评鉴；旧Canvas/图片/
+折叠摘录认可不重新审批。安装/自动结果通过不等于整个G17完成。
+
 日期：2026-10-09；分支 `codex/hotfix-knowledge-ownership`，基于0.41.8源码71a9f7b。
 状态：输入与预期先于实现准备；用户2026-10-09批准后执行合成范围，57专项与138必要
 回归通过，规范修正后195项联合复跑通过。独立结果见knowledge-ownership-test-results.md。

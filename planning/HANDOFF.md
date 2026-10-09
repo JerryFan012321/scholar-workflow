@@ -1,5 +1,24 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-09 0.42.0已发布安装，单对象自动验收通过
+
+实际source9886f9043e5e974c7085d25155cb3c168de539e5；runtime
+67a221680b92822558502f36924b2e862f1ae8d5。独立clone按既有脚本生成246文件runtime及
+wheel/sdist，source/runtime/archive/包字节一致。正常快进推送hotfix和release，远程main
+仍ccb60b793d9fd5db6032499bf2ca2c8dda3f1183，没有合并；原checkout/其他worktree未改。
+pipx固定runtime安装Python3.14.5；Codex正常升级jerry-plugins/add安装0.42.0，无缓存手改。
+实际CLI、两manifest一致，插件246文件和CLI104模块/3静态文件逐字节等于发布内容，
+direct_url的commit/requested_revision均为上述runtime。旧0.41.8正常回退点保持。
+
+安装态显式CLI对一个模范项目各执行一次人类/JSON总览。8项资料保留、4个项目文件可
+定位，V-JEPA 2的资料笔记/分析/Canvas均resolved至同一正式论文包；reader仍未核验。
+Source70文件、provider5文件、registry及项目6声明/文件合计82项路径/hash前后保持。
+不重分析/实验、不写Vault/项目/provider/Zotero、不迁移或切服务。可读展示和机器证据在
+忽略的dist/0.42.0-release.7IZTrJ；面板打开请求queued，不能冒称实际阅读器已展示。
+会话已明确评鉴对象/操作/效果/标准，人工导航仍待用户确认；旧Canvas/图片/折叠认可保持。
+检查器三次观察错误已留证并纠正，没有改产品或独立业务预期。详见独立结果报告。
+本记录提交不改变已发布build source；不同ID的同论文登记查重、Field引用写入与G17仍未完成。
+
 ## 2026-10-09 0.42.0正式hotfix发布安装获准
 
 用户明确“ok，同时重读根目录agent.md”，确认上一会话提出的0.42.0发布、正常安装及

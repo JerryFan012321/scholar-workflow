@@ -3,7 +3,7 @@
   "cases": [
     {
       "id": "project-registered-knowledge-ownership",
-      "description": "G2/G16/G17：可选project overview --resolve-knowledge只读组合已有registry/Field/provider声明，按同一稳定ID分别报告唯一归属或conflict/incomplete/not_found、目标和primary owner文件状态、未核验阅读器；不读正文、不启动工具、不创建state/锁/副本，默认输出和清单schema保持。根祖先及对象symlink不跟随，声明重复键/读中变化/binding不符不能resolved。独立手写预期和合成输入先于实现；2026-10-09获批57专项及138必要回归通过，两项lint最小修正后195项联合复跑通过。0.42.0四处版本及lock准备后2092完整unit/contract通过，11既有警告；Ruff和开发公开版本/帮助一致。未访问真实Vault/Zotero；发布安装和人类清单便利性尚未验收，故整项仍pending。不同ID的同论文查重、Field引用写入和owner迁移不属本切片，不能冒称完整归属或G17完成。见planning/knowledge-ownership-test-results.md。",
+      "description": "G2/G16/G17：可选project overview --resolve-knowledge只读组合已有registry/Field/provider声明，按同一稳定ID分别报告唯一归属或conflict/incomplete/not_found、目标和primary owner文件状态、未核验阅读器；不读正文、不启动工具、不创建state/锁/副本，默认输出和清单schema保持。根祖先及对象symlink不跟随，声明重复键/读中变化/binding不符不能resolved。独立手写预期和合成输入先于实现；2026-10-09获批57专项及138必要回归通过，两项lint最小修正后195项联合复跑通过。0.42.0版本准备2092完整unit/contract通过，11既有警告；196 wheel用例在Python3.14.5通过。用户批准后source9886f90/runtime67a2216正常发布及pipx/Codex安装，246缓存文件和104模块/3静态文件与发布字节相等。安装CLI单模范项目8项总览保留，4本地available、3个V-JEPA2知识引用resolved至同一正式论文包，阅读器仍unverified；范围内82文件路径/hash不变，没有正文写入或重跑实验。人类导航便利性未确认，故整项仍pending。不同ID的同论文查重、Field引用写入和owner迁移不属本切片，不能冒称完整归属或G17完成。见planning/knowledge-ownership-test-results.md。",
       "status": "pending"
     },
     {

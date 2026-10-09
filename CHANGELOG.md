@@ -25,6 +25,12 @@ Independent hotfix release; main integration and human navigation acceptance rem
 
 ### Changed
 
+- **release / 0.42.0 installed evidence:** publish the approved independent hotfix
+  from source `9886f90` as runtime `67a2216`; install normally through a pinned pipx
+  spec and Codex marketplace. All 246 plugin runtime files and 104 Python modules
+  plus three static files match the release bytes. One read-only project overview
+  resolves three V-JEPA 2 references to one primary package while retaining all 82
+  scoped original files. Human navigation remains pending; main is not merged.
 - **release / installed acceptance:** prepare the approved runtime-only hotfix for
   normal CLI and marketplace installation from a fixed source commit. Keep the
   previous runtime available for rollback and restrict installed acceptance to one

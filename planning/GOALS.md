@@ -37,15 +37,17 @@ G2/G16/G17 归属切片（2026-10-09）：一个正式单元一个主归属，�
 独立codex/hotfix-knowledge-ownership基于0.41.8实现可选只读声明核验，knowledge核心
 仅持结果模型、workflow复用既有provider校验，默认overview和项目清单schema保持。
 独立合成预期/输入先于实现，57专项与138必要回归通过，规范修正后195项联合复跑通过；
-Ruff通过。实际结果见knowledge-ownership-test-results.md。尚未发布安装、写真实资料或迁移；只核验同一
+Ruff通过。实际结果见knowledge-ownership-test-results.md。0.42.0已正常发布安装，不写真实资料或迁移；只核验同一
 稳定ID的声明，不能宣称不同ID的同论文已查重。跨Source登记查重及Field引用写入仍待实现。
 按版本规则准备0.42.0后，2092项完整unit/contract回归通过（11既有警告，97.00秒）；
-四处版本/lock/公开开发CLI入口一致，本地包构建与发布/安装仍分别判断。
-本地确定source809ebf7、runtimeaeffdea已生成246文件runtime tar及wheel/sdist，
-104模块/3静态文件逐字节一致，包公开入口通过。远程及正常安装仍0.41.8；新包未推送安装，
-不以本地uv包检查代替正式产品与人工导航验收。
+四处版本/lock/公开开发CLI入口一致。先完成source809ebf7/runtimeaeffdea本地候选检查；
+用户批准后以仅更新记录的确定source9886f90重建并发布runtime67a2216，246文件runtime
+及104模块/3静态包内容逐字节一致。正常pipx固定SHA和Codex marketplace安装均0.42.0；
+安装字节与发布内容完全相等，不用本地uv包检查替代实际产品身份。
 按实际安装解释器补齐Python3.14.5的196项wheel定向复验，通过且不触及正常venv；
-原0.41.8固定runtime回退身份已复核。候选仍未发布安装，整项与G17保持未完成。
+原0.41.8固定runtime回退身份已复核。安装CLI单项目8项总览通过：4本地文件可定位，
+3个V-JEPA2知识引用同一正式论文包；范围内82文件路径/hash不变，未启动阅读器。
+人工导航仍待明确确认，不重审旧Canvas/图片/折叠体验；整项与G17保持未完成。
 详见ownership-and-reuse-review.md和knowledge-ownership-test-plan.md；不冒称完整G17。
 
 G17 折叠摘录人工评鉴（2026-10-09）：用户明确“折叠摘录很好用，通过”，使用体验
