@@ -65,6 +65,14 @@ Canonical rule for where every object lives. Applies to all skills and agents.
 13. Project overview Markdown is a rebuildable navigation view, not a new authoritative
     store. Reading project context does not require Hub, a cmux workspace, a new homepage
     or Scholar-managed Codex tasks; native tools retain their own content and configuration.
+14. One formal knowledge unit has one declared primary placement. Its reusable paper
+    analysis, Canvas, Scholar reading notes, and evidence images belong to the paper
+    package; the original PDF and formal annotations remain in Zotero. Multiple Fields
+    and projects may reference the same unit without creating another owner. Field
+    syntheses and project-specific decisions are independently owned content, not
+    duplicate general paper analyses. Reference removal never removes the unit; owner
+    relocation and independent copying remain explicit, separate operations. Registered
+    declaration checks are derived views, not a second ownership registry.
 
 ## PDF handling
 

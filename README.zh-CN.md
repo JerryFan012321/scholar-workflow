@@ -49,6 +49,11 @@ scholar-workflow project overview --project-root /path/to/project --context-file
 [项目资料契约](references/project-context.md)。
 可选候选文件参数只预览项目根一个 JSON 声明，明确标为未应用；不会替换生效清单或批准覆盖。
 
+0.42.0 起，`project overview --resolve-knowledge` 按已登记声明核验所选知识对象，分别说明正式归属、
+文件可用性和仍未核验的阅读入口。不搬动内容、不建立同步，默认输出保持。
+正常安装后先核对 `scholar-workflow --version` 和 `project overview --help` 再使用新选项。
+合成验证已完成；安装态与人工导航评鉴仍分别判断，不能用源码测试替代。
+
 ### 不依赖 Hub 的知识文件夹预览（0.34.0）
 
 运行 `scholar-workflow knowledge preview /所选文件夹绝对路径 --language zh`。

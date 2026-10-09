@@ -6,12 +6,14 @@ import json
 import os
 import re
 import stat
+from collections.abc import Mapping
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, Literal
 from urllib.parse import parse_qsl, quote, urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from scholar_workflow.knowledge.ownership import KnowledgeOwnershipResolution
 from scholar_workflow.project.layout import (
     ProjectLayoutError,
     is_project_id,
@@ -297,7 +299,74 @@ def _markdown_text(value: str) -> str:
     return re.sub(r"([`*_{}\[\]()#+.!|])", r"\\\1", value)
 
 
-def render_project_overview(result: ProjectOverview) -> str:
+def _ownership_lines(check: KnowledgeOwnershipResolution, *, chinese: bool) -> list[str]:
+    """Keep declaration, path, and reader states separate and human-readable."""
+    statuses = {
+        "resolved": "Formal ownership located (declarations checked only)",
+        "not_found": "No matching object in the checked declarations",
+        "conflict": "Conflicting formal ownership; no location was selected",
+        "incomplete": "Ownership could not be fully checked",
+    }
+    file_states = {
+        "available": "Local file exists (path checked only)", "missing": "File missing",
+        "unsafe": "Unsafe path; not followed", "not_checked": "Path not checked",
+    }
+    if chinese:
+        statuses = {
+            "resolved": "已定位正式归属（仅核查声明）",
+            "not_found": "已检查声明中没有匹配对象",
+            "conflict": "正式归属冲突；未选择任何位置",
+            "incomplete": "无法完整核验归属",
+        }
+        file_states = {
+            "available": "本地文件存在（仅核查路径）", "missing": "文件缺失",
+            "unsafe": "路径不安全；未跟随", "not_checked": "尚未核查路径",
+        }
+    owner_label, file_label = ("归属", "文件") if chinese else ("Ownership", "File")
+    location_label = "存放" if chinese else "Location"
+    lines = [f"{owner_label}: {statuses[check.status]}", ""]
+    for location in check.locations:
+        lines.extend([
+            (f"{location_label}: {_markdown_text(location.field_title)} / "
+             f"{_markdown_text(location.relative_path)}"), "",
+            f"{file_label}: {file_states[location.file_state]}", "",
+        ])
+    for owner in check.owner_candidates:
+        if check.status != "conflict" and any(
+            location.object_id == owner.object_id and location.source_id == owner.source_id
+            for location in check.locations
+        ):
+            continue
+        if check.status == "conflict":
+            label = "主归属候选" if chinese else "Primary ownership candidate"
+        else:
+            label = "主归属" if chinese else "Primary ownership"
+        state_label = "主归属文件" if chinese else "Primary owner file"
+        lines.extend([
+            f"{label}: {_markdown_text(owner.field_title)} / {_markdown_text(owner.owner_path)}", "",
+            f"{state_label}: {file_states[owner.file_state]}", "",
+        ])
+    if check.issues:
+        lines.extend([
+            "有登记声明禁用、不可读、不一致或读中变化；未据此确认唯一归属。" if chinese else
+            "Registered declarations are disabled, unavailable, inconsistent, or changed during checking; "
+            "unique ownership was not confirmed.", "",
+            "请先检查知识源登记及其声明后重试；不要用同名文件或审阅副本替代正式对象。" if chinese else
+            "Inspect the Source registration and declarations before retrying; "
+            "do not substitute a similarly named file or review copy.", "",
+        ])
+    lines.extend([
+        "阅读器: 未核验；阅读链接仍来自项目清单，归属定位不证明阅读器可用。" if chinese else
+        "Reader: Not verified; links still come from the project inventory. "
+        "Ownership resolution does not prove reader availability.", "",
+    ])
+    return lines
+
+
+def render_project_overview(
+    result: ProjectOverview,
+    *, knowledge_ownership: Mapping[str, KnowledgeOwnershipResolution] | None = None,
+) -> str:
     """Render human-oriented Markdown without absolute paths, IDs, hashes, or raw metadata."""
     chinese = result.language == "zh"
     groups: tuple[tuple[EntryKind, str, str], ...] = (
@@ -350,6 +419,12 @@ def render_project_overview(result: ProjectOverview) -> str:
             punctuation = "。" if chinese else ". "
             lines.extend([
                 f"### {label}", "", f"{purpose_label}: {_markdown_text(entry.purpose)}", "",
-                f"{status_label}: {state_labels[entry.state]}{punctuation}{_markdown_text(diagnostic)}", "",
             ])
+            check = knowledge_ownership.get(entry.entry_id) if knowledge_ownership is not None else None
+            if check is None:
+                lines.extend([
+                    f"{status_label}: {state_labels[entry.state]}{punctuation}{_markdown_text(diagnostic)}", "",
+                ])
+            else:
+                lines.extend(_ownership_lines(check, chinese=chinese))
     return "\n".join(lines).rstrip() + "\n"

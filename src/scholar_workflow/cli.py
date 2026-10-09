@@ -362,8 +362,17 @@ def project_validate_context(project_root: Path, context_file: str | None) -> No
     "--context-file", metavar="NAME",
     help="Preview one root-level JSON candidate without replacing project-context.json.",
 )
+@click.option(
+    "--resolve-knowledge", is_flag=True,
+    help="Read registered Knowledge declarations to check formal ownership; never launch readers.",
+)
+@click.option(
+    "--knowledge-registry", type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Explicit Source registry for --resolve-knowledge; defaults to the installed host registry.",
+)
 def project_overview(
     project_root: Path, as_json: bool, language: str | None, context_file: str | None,
+    resolve_knowledge: bool = False, knowledge_registry: Path | None = None,
 ) -> None:
     """Read declared code, papers, notes and results; print Markdown by default."""
     from scholar_workflow.project.context import (
@@ -372,6 +381,8 @@ def project_overview(
         render_project_overview,
     )
 
+    if knowledge_registry is not None and not resolve_knowledge:
+        raise InputError("--knowledge-registry requires --resolve-knowledge")
     try:
         context = (
             load_project_context(project_root, context_file=context_file)
@@ -382,8 +393,23 @@ def project_overview(
         raise InputError(str(exc)) from None
     if language is not None:
         overview = overview.model_copy(update={"language": language})
+    knowledge_ownership = None
+    if resolve_knowledge:
+        from scholar_workflow.workflows.knowledge_ownership import resolve_project_knowledge
+
+        registry_path = knowledge_registry or (
+            Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME)).expanduser()
+            / "hub" / "sources.json"
+        )
+        if not registry_path.is_file():
+            raise InputError("Knowledge Source registry is unavailable; no state was created")
+        knowledge_ownership = resolve_project_knowledge(overview, registry_path)
     if as_json:
         payload = overview.model_dump(mode="json")
+        if knowledge_ownership is not None:
+            payload["knowledge_ownership"] = {
+                key: value.model_dump(mode="json") for key, value in knowledge_ownership.items()
+            }
         if context_file is not None:
             payload.update(preview=True, context_file=context_file)
         click.echo(json.dumps(payload, ensure_ascii=False, indent=2))
@@ -393,7 +419,7 @@ def project_overview(
                 "> 候选预览：尚未替换项目资料清单。\n" if overview.language == "zh" else
                 "> Candidate preview: the project inventory has not been replaced.\n"
             )
-        click.echo(render_project_overview(overview), nl=False)
+        click.echo(render_project_overview(overview, knowledge_ownership=knowledge_ownership), nl=False)
 
 
 @main.command()
