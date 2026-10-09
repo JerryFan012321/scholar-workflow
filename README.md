@@ -61,6 +61,13 @@ See [Project context contract](references/project-context.md) for fields and nat
 The optional candidate selector is a read-only, explicitly unapplied preview of one root-level
 JSON declaration. It does not replace the active inventory or approve an overwrite.
 
+From 0.42.0, `project overview --resolve-knowledge` checks selected Knowledge IDs against
+registered declarations and reports ownership, file availability, and unverified
+readers separately. It does not move content or add synchronization; default output
+stays unchanged. After normal installation, verify `scholar-workflow --version` and
+`project overview --help` before using the new option. Synthetic validation is complete;
+installed-product and human navigation acceptance remain separate.
+
 ### Inspect a knowledge folder without Hub (0.34.0)
 
 Run `scholar-workflow knowledge preview /absolute/selected/folder --language en`.

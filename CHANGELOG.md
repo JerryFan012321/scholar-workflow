@@ -3,7 +3,33 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
-## [Unreleased]
+## [0.42.0] - 2026-10-09
+
+Local candidate preparation; publication and normal installation are separate steps.
+
+### Added
+
+- **project context / registered knowledge ownership:** add an opt-in,
+  read-only `project overview --resolve-knowledge` composition of existing Source,
+  Field, and provider declarations. Separate stable-ID uniqueness, target and
+  primary-owner path states, and unverified readers; retain default overview and
+  inventory schemas. Reject ambiguous or changing declarations and symlink paths
+  without creating state, locks, copies, or reader sessions. Independent synthetic
+  inputs and expectations preceded implementation; 57 synthetic cases and 138
+  targeted regressions passed, with all 195 passing again after two lint repairs.
+  Version preparation then passed all 2,092 unit/contract tests (11 existing
+  deprecation warnings), Ruff, lock consistency, and the public development CLI identity.
+  Release, normal installation, and human navigation acceptance remain pending.
+
+### Changed
+
+- **knowledge / unit ownership:** document one formal primary placement with many
+  references, distinct Field syntheses and project-specific material, and no implicit
+  moves, synchronization, or cascading deletion. Keep registration deduplication and
+  Field reference writes outside this initial lookup slice.
+- **analyze-paper / human acceptance record:** retain the user's explicit acceptance
+  of folded-excerpt usability. This narrow acceptance does not certify all source
+  support, adopt the review candidate, or complete the exemplar goal.
 
 ## [0.41.8] - 2026-10-08
 

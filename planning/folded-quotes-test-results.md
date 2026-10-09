@@ -1,5 +1,24 @@
 # 正文摘录折叠：开发验证结果
 
+## 人工评鉴确认：2026-10-09
+
+用户明确“折叠摘录很好用，通过”。据此记录0.41.8候选的折叠摘录使用体验通过，
+保留既有Canvas/图片批准；不再把这项体验反复列为待确认。
+该确认不等于所有页级链接逐一点击、完整科学支持认证或canonical成对采用。
+本轮未重新生成或测试，也未修改候选、原稿、provider、安装或服务。
+
+## 已有安装态结果：0.41.8
+
+从上一工作区的已留证记录继承：source71a9f7b、runtime1a85790正常发布，pipx固定runtime
+安装及Codex marketplace升级/add完成；244插件runtime文件及102pipx模块匹配发布Git。
+test Vault单篇非canonical候选一次public stage validated、check conformant/零findings；
+69记录98完整摘录默认折叠，68记录97摘录113精确片段强调。原正文、来源、图片和完整
+Canvas JSON保留，canonical三文件不变，没有commit/provider apply或main合并。
+候选原生展开/收起有观察记录，使用体验现获上述明确确认；完整科学支持另行判断。
+继承这些有效结果，不重新运行业务；下文未部署、待人工等措辞保留为发布前历史。
+
+## 以下为发布前历史
+
 日期：2026-10-08。工作分支：`codex/hotfix-canvas-images-release`。
 源码增量基于已提交的0.41.7；实现阶段没有发布或安装。用户实际安装仍保留0.41.7。
 

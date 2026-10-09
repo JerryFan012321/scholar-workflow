@@ -2,8 +2,18 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "project-registered-knowledge-ownership",
+      "description": "G2/G16/G17：可选project overview --resolve-knowledge只读组合已有registry/Field/provider声明，按同一稳定ID分别报告唯一归属或conflict/incomplete/not_found、目标和primary owner文件状态、未核验阅读器；不读正文、不启动工具、不创建state/锁/副本，默认输出和清单schema保持。根祖先及对象symlink不跟随，声明重复键/读中变化/binding不符不能resolved。独立手写预期和合成输入先于实现；2026-10-09获批57专项及138必要回归通过，两项lint最小修正后195项联合复跑通过。0.42.0四处版本及lock准备后2092完整unit/contract通过，11既有警告；Ruff和开发公开版本/帮助一致。未访问真实Vault/Zotero；发布安装和人类清单便利性尚未验收，故整项仍pending。不同ID的同论文查重、Field引用写入和owner迁移不属本切片，不能冒称完整归属或G17完成。见planning/knowledge-ownership-test-results.md。",
+      "status": "pending"
+    },
+    {
+      "id": "analysis-folded-excerpts-human-usability",
+      "description": "G13/G17：用户2026-10-09明确折叠摘录很好用、通过；仅将0.41.8单篇非canonical候选的默认折叠/展开阅读体验记为pass，保留已有Canvas/图片批准，不重复有效业务。该人工确认不认证完整来源支持、所有页级链接实点、canonical采用或整个G17。见planning/folded-quotes-test-results.md。",
+      "status": "pass"
+    },
+    {
       "id": "analysis-uniform-folded-source-excerpts",
-      "description": "G13/G17/INV54：新正文显式markdown_folded_quotes=true，全部已提供的claim/point摘录统一用Obsidian默认折叠quote callout；题注与同来源链接折叠时可见，展开后完整原句/上下文及精确强调保持。论点、锚点和图片不藏入折叠块，Canvas完整JSON不变。v4列表子项缩进、v5独立子槽位、PDF/Markdown/ZotFlow链接、多来源和字面转义均保留；缺失/展开或删除折叠标志/错链/移位拒绝。旧省略/false字节兼容，whole显式采用、focused保留、不静默关闭，human conflict仍停止。独立合成输入及手写预期先于实现，测试记录见planning/folded-quotes-test-results.md。未部署、未写Vault；安装态展开/收起和人工阅读仍pending，完整真实强调覆盖与科学支持独立，不冒称G17完成。",
+      "description": "G13/G17/INV54：新正文显式markdown_folded_quotes=true，全部已提供的claim/point摘录统一用Obsidian默认折叠quote callout；题注与同来源链接折叠时可见，展开后完整原句/上下文及精确强调保持。论点、锚点和图片不藏入折叠块，Canvas完整JSON不变。v4列表子项缩进、v5独立子槽位、PDF/Markdown/ZotFlow链接、多来源和字面转义均保留；缺失/展开或删除折叠标志/错链/移位拒绝。旧省略/false字节兼容，whole显式采用、focused保留、不静默关闭，human conflict仍停止。独立合成输入及手写预期先于实现，49专项/286定向/2035回归通过；0.41.8正常发布安装，单篇非canonical候选69记录98摘录统一折叠且完整Canvas保持。用户折叠使用体验已明确通过并由独立case留证；完整支持覆盖、各链接实点及canonical采用未据此认证，整项保持pending，不冒称G17完成。见planning/folded-quotes-test-results.md。",
       "status": "pending"
     },
     {

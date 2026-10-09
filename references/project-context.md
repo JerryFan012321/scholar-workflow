@@ -93,8 +93,8 @@ the active inventory has not been replaced. Candidate JSON retains the usual ove
 fields and adds `preview: true` and `context_file`; default JSON is unchanged.
 Preview success is not approval, application, source verification or human acceptance.
 
-No Scholar config, Hub, cmux destination, Codex model, service port, or host registry
-is required. `--language` changes only the returned presentation, not the manifest.
+The default commands require no Scholar config, Hub, cmux destination, Codex model,
+service port, or host registry. `--language` changes only the returned presentation, not the manifest.
 The `--json` mode keeps typed references and diagnostics for machine use.
 
 Default Markdown is human-oriented: project goal, selected material, purpose, and
@@ -102,6 +102,57 @@ honest state. It omits machine IDs, hashes, and absolute root paths. Project fil
 links are relative to the project root: when saving this overview, save it at that
 root or explicitly rebase the links for a different destination. Do not promise that
 terminal stdout alone provides an interactive reading surface.
+
+## Optional registered ownership check
+
+Available from 0.42.0. Verify the normally installed version and its
+`project overview --help` before using these options:
+
+```text
+scholar-workflow project overview --project-root <project> --resolve-knowledge
+scholar-workflow project overview --project-root <project> --resolve-knowledge --knowledge-registry <sources.json> --json
+```
+
+`--resolve-knowledge` checks selected `obsidian` object IDs against the existing
+registered Source/Field and provider declarations. The default registry is the
+existing `hub/sources.json` beneath `SCHOLAR_WORKFLOW_HOME`; this legacy path does
+not require a Hub service. `--knowledge-registry` explicitly selects another state
+domain and requires `--resolve-knowledge`. No registry, lock, directory, or copy is
+created. An unavailable registry path is an input error.
+
+This initial check covers primary Markdown, declared supporting documents, and
+provider artifacts, including analysis Canvas and sidecars. Asset ownership remains
+in the existing `assets.yml` contract; this command does not inspect image relations
+or add Field references.
+
+The check reads bounded declarations only and inspects the selected files and their
+primary owner files without reading their bodies. It rejects symlink traversal in
+declarations, registered roots, and object paths. It observes declarations again to
+detect changes during inspection, without claiming a filesystem-wide atomic snapshot.
+Disabled, unreadable, inconsistent, or changed registered Sources prevent confirmation
+of uniqueness; a known duplicate primary remains a conflict. It does not scan disk,
+infer identity from filenames, query Zotero, or launch readers.
+
+JSON adds `knowledge_ownership`, keyed by project `entry_id`, while retaining the
+existing entries, refs, and states. Each check has `object_id`, `status`, `locations`,
+`owner_candidates`, `issues`, and `reader_state: unverified`. Locations keep Source,
+Field, object and primary owner identities, Source-relative paths, and `file_state`.
+Human Markdown separates declaration ownership, selected file state, primary owner
+file state, and the unverified reader, without exposing machine IDs or absolute roots.
+
+| Ownership status | Meaning |
+|---|---|
+| `resolved` | The selected stable ID and its primary owner have unique checked declarations. |
+| `not_found` | No matching ID appears in the completely checked declarations. |
+| `conflict` | Multiple locations or primary owners are declared; none is selected. |
+| `incomplete` | Some declarations cannot be checked; uniqueness is not asserted. |
+
+File states are `available`, `missing`, `unsafe`, or `not_checked`. A missing file
+does not erase its declared identity; an available analysis does not hide a missing
+primary owner. Declaration resolution does not verify body metadata, scientific
+support, reader URI correctness, or whether different IDs refer to the same paper.
+Cross-Source registration deduplication and Field reference writes are separate,
+undelivered operations, not side effects of this read-only check.
 
 ## State and failure meaning
 

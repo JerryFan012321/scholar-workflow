@@ -1,5 +1,47 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-09 0.42.0本地发布准备（未发布安装）
+
+上一轮57专项及138必要回归已通过；不是等待测试批准。继续当前独立hotfix，把同一
+归属查询能力按项目版本规则准备为0.42.0，仅同步四处版本与本包lock，不扩展功能。
+先说明并执行现有unit/contract全集的合成发布回归，保存失败/修正及结果；不重跑
+论文分析、实验或整库业务。离线本地构建须来自干净的确定源码提交，并按既有脚本
+在独立构建clone生成runtime-only产物；审查版本、文件边界和源码字节。当前安装不变。
+不推送release/远程tag、不安装、不切服务、不写真实资料或合并main。真实安装态及
+人类清单导航仍未通过；完整归属查重/Field引用能力及G17不冒称完成。
+独立输入/预期与本地构建范围见knowledge-ownership-test-plan.md，结果实际完成后记录。
+实际发布前unit/contract全集2092 passed、11既有弃用警告，97.00秒；Ruff、lock24包、
+diff及开发公开版本/帮助入口核对通过。此环境仍只是源码开发.venv，不是正常安装。
+接着本地提交本切片并从确定source生成隔离runtime包；构建成功前不宣称有安装包。
+
+## 2026-10-09 正式归属只读解析开发切片
+
+新独立工作区knowledge-ownership，分支codex/hotfix-knowledge-ownership，基于已发布
+0.41.8源码71a9f7b；原canvas-images-release工作区的未提交记录和用户checkout不动。
+用户已确认折叠摘录使用体验通过，候选仍非canonical，全篇科学支持与G17另行判断。
+此前只读实例和下一能力边界见ownership-and-reuse-review.md。
+
+本切片由knowledge/持纯归属结果模型，workflows/复用已登记Source与既有provider校验，
+通过project overview的显式
+选项显示归属、文件和阅读器三个不同状态；不要求启动Hub，不读Zotero/Obsidian秘密，
+不更改原清单schema或默认无外部读取行为。先准备独立合成输入/手写预期和测试文件，
+后实现。用户2026-10-09批准后，仅执行57项合成用例及138项必要回归；不写真实Vault/
+项目/provider、不迁移、不发布安装或合并main。
+跨Source写入查重及Field引用仍是后续切片，不能据本实现假称已交付。
+运行前静态审阅发现并修正了绝对根的中间symlink检查以及分析主owner缺失/unsafe未在
+人类正文显示两项遗漏；不是测试失败。57专项4.35秒、138回归1.51秒全部通过。
+Ruff首次报告ISC004/TRY004两项，最小修正字符串括号及非法YAML键的解析异常；不改
+归属策略或人类输出。修正后Ruff通过，195项联合复跑1.88秒全部通过。
+公共可选接口与诚实状态见references/project-context.md，独立输入/预期和范围见
+knowledge-ownership-test-plan.md。当前安装仍0.41.8，本开发切片未部署。
+后续只读独立审阅补齐根Field `.`、artifact-only sidecar和目录/FIFO输入，内容读取守卫
+由后缀检查改为精确声明白名单，默认Markdown用手写golden；57项已实测通过。
+独立结果见knowledge-ownership-test-results.md；合成输入/正文读取及写入守卫保持。
+测试过程仅创建离线开发.venv及pytest临时输入，不是插件安装。安装态单对象和人类
+导航体验仍未验证；跨Source查重、Field引用写入与整个G17仍未完成。下一步需明确正常
+hotfix发布/安装的范围，不能用源码测试替代产品验收。全局当前规则已取消测试方案二次审批，
+仍须事先说明范围；发布、安装、服务切换及真实业务写入授权分别判断。
+
 ## 2026-10-08 0.41.8本地hotfix准备
 
 上一轮49折叠专项、286定向及2035完整unit/contract通过，是实现进展，不是人工评鉴。
