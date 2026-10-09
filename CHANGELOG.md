@@ -5,7 +5,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [0.42.0] - 2026-10-09
 
-Local candidate preparation; publication and normal installation are separate steps.
+Independent hotfix release; main integration and human navigation acceptance remain separate.
 
 ### Added
 
@@ -19,12 +19,16 @@ Local candidate preparation; publication and normal installation are separate st
   targeted regressions passed, with all 195 passing again after two lint repairs.
   Version preparation then passed all 2,092 unit/contract tests (11 existing
   deprecation warnings), Ruff, lock consistency, and the public development CLI identity.
-  Release, normal installation, and human navigation acceptance remain pending.
+  Human navigation acceptance is separate from these automated checks.
   Record local artifact checks and 196 targeted wheel-based cases under Python
   3.14; these are compatibility evidence, not normal installation or human acceptance.
 
 ### Changed
 
+- **release / installed acceptance:** prepare the approved runtime-only hotfix for
+  normal CLI and marketplace installation from a fixed source commit. Keep the
+  previous runtime available for rollback and restrict installed acceptance to one
+  read-only project overview; no main merge, content migration, or reader automation.
 - **knowledge / unit ownership:** document one formal primary placement with many
   references, distinct Field syntheses and project-specific material, and no implicit
   moves, synchronization, or cascading deletion. Keep registration deduplication and
