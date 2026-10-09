@@ -41,6 +41,11 @@ Ruff通过。实际结果见knowledge-ownership-test-results.md。尚未发布�
 稳定ID的声明，不能宣称不同ID的同论文已查重。跨Source登记查重及Field引用写入仍待实现。
 按版本规则准备0.42.0后，2092项完整unit/contract回归通过（11既有警告，97.00秒）；
 四处版本/lock/公开开发CLI入口一致，本地包构建与发布/安装仍分别判断。
+本地确定source809ebf7、runtimeaeffdea已生成246文件runtime tar及wheel/sdist，
+104模块/3静态文件逐字节一致，包公开入口通过。远程及正常安装仍0.41.8；新包未推送安装，
+不以本地uv包检查代替正式产品与人工导航验收。
+按实际安装解释器补齐Python3.14.5的196项wheel定向复验，通过且不触及正常venv；
+原0.41.8固定runtime回退身份已复核。候选仍未发布安装，整项与G17保持未完成。
 详见ownership-and-reuse-review.md和knowledge-ownership-test-plan.md；不冒称完整G17。
 
 G17 折叠摘录人工评鉴（2026-10-09）：用户明确“折叠摘录很好用，通过”，使用体验

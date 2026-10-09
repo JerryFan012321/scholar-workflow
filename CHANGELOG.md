@@ -20,6 +20,8 @@ Local candidate preparation; publication and normal installation are separate st
   Version preparation then passed all 2,092 unit/contract tests (11 existing
   deprecation warnings), Ruff, lock consistency, and the public development CLI identity.
   Release, normal installation, and human navigation acceptance remain pending.
+  Record local artifact checks and 196 targeted wheel-based cases under Python
+  3.14; these are compatibility evidence, not normal installation or human acceptance.
 
 ### Changed
 

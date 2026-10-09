@@ -14,6 +14,24 @@
 diff及开发公开版本/帮助入口核对通过。此环境仍只是源码开发.venv，不是正常安装。
 接着本地提交本切片并从确定source生成隔离runtime包；构建成功前不宣称有安装包。
 
+本地构建现已完成：source809ebf78a28233050eb4662b6ae5de2708565729；独立构建clone
+的runtime为`aeffdea8ca2a1f99eafc2f47df248bc9d0d94127`。
+构建目录dist/0.42.0-local.SSlrbj，runtime tar/wheel/sdist均已生成；246 runtime文件、
+104 Python模块和3静态文件与确定source逐字节一致，版本/包入口通过，无开发层或
+指定私密模式泄漏。wheel仅在隔离uv构建环境检查，不算正常安装或人工验收。
+只读远程核验仍为1a85790740dee9735112d57e7f19346259a2a21a（0.41.8），独立runtime
+是其后继；没有推送。显式pipx CLI及Codex cache manifest仍0.41.8。可用旧runtime
+作为正常回退版本，不改缓存。完整证据见knowledge-ownership-test-results.md。
+下一步需要明确授权0.42.0正常发布/安装及单项目零写入总览；不迁移、不改正文、不合并main。
+
+本地收尾：重新核验三产物hash保持；pipx direct_url的commit/requested_revision均为
+上述1a85790，正常安装使用Python3.14。固定wheel在独立uv3.14.5环境复验原195项及
+runtime-version共196通过（3.87秒），实际导入来自隔离site-packages，不是开发src
+或正常pipx；不修改正常venv。pipx reinstall会复用旧spec，没有--spec选项，未来更换
+固定runtime需用已核实的正常install --force入口；本轮只读help，没有执行安装。
+记录收尾提交不重做论文、实验或包构建；已验证候选继续固定source809ebf7/runtimeaeffdea，
+不能把记录更新后的HEAD冒充其build source。发布安装仍需明确答复，测试无新审批门禁。
+
 ## 2026-10-09 正式归属只读解析开发切片
 
 新独立工作区knowledge-ownership，分支codex/hotfix-knowledge-ownership，基于已发布

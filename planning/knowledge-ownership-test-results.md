@@ -109,5 +109,75 @@ rtk proxy uv run --offline scholar-workflow --version
 rtk proxy uv run --offline scholar-workflow project overview --help
 ```
 
-后续本地构建必须固定source SHA并沿用既有runtime manifest。包身份、hash及边界检查
-只在真实生成后记录；不提前称已构建、已推送或已安装。main和真实资料保持。
+记录更新后的runtime-version及eval-schema11项再次通过（0.06秒）；这11项是全集中的
+重复核对，不另计新增用例。首次RTK多路径diff参数转发报bad revision后改用raw proxy；
+首次临时构建目录的父目录尚不存在，创建明确dist目录后成功。二者是操作观察错误，
+不是产品测试失败；未因此重复论文或实验业务。
+
+## 本地发布产物（已构建，未推送安装）
+
+| 身份 | 实际值 |
+|---|---|
+| 版本 | 0.42.0 |
+| 分支 | codex/hotfix-knowledge-ownership |
+| 确定source SHA | 809ebf78a28233050eb4662b6ae5de2708565729 |
+| 隔离clone的runtime SHA | aeffdea8ca2a1f99eafc2f47df248bc9d0d94127 |
+| 当前远程release/上一正式版本 | 1a85790740dee9735112d57e7f19346259a2a21a / 0.41.8 |
+| 本地目录 | dist/0.42.0-local.SSlrbj |
+
+先本地提交24个明确文件、确认干净source，再在上述独立clone读取真实远程release历史，
+按既有make-release.sh生成本地runtime。旧release为新runtime祖先，源worktree的
+release/main引用未因构建改变，未推送或创建远程tag。产物记录随后更新，仍以表中的
+固定source构建，不用记录文件的新工作区状态冒充其source SHA。
+
+| 包检查 | 实际结果 |
+|---|---|
+| runtime archive | 246文件、16个顶层入口，与固定source所有对应文件逐字节相等 |
+| runtime开发边界 | 无planning/dev-guide/tests/evals/AGENT/CLAUDE |
+| 新模块 | ownership模型和workflow均已进入runtime及Python包 |
+| wheel/sdist内容 | 104 Python模块＋3静态文件与固定source逐字节相等 |
+| 身份与入口 | 四处版本、wheel METADATA和console entry point一致；包`--version`为0.42.0 |
+| 包帮助与导入 | 两归属选项显示；归属两模块导入成功，实际模块来自隔离uv wheel环境，不是源码或pipx |
+| 私密模式扫描 | 指定个人根、临时路径及令牌模式无匹配；不据此宣称检出所有可能秘密 |
+| 正常安装核验 | 显式pipx CLI与Codex cache manifest仍0.41.8，未修改 |
+
+首次宽泛`sk-`模式匹配历史说明中的`ask-collection-before-write`，核对为误报；增加
+词边界后无匹配，没有为去掉误报修改产品文档。隔离构建的verify-package.py只读
+核对Git、tar、wheel、sdist，预期固定于源码SHA与runtime manifest；没有产品写入。
+
+| 产物（相对本地目录） | SHA-256 |
+|---|---|
+| scholar-workflow-0.42.0-runtime.tar | 7f930a482cce08e37391e95ef471ee4ec366924f670e7f317e657c532f094c6e |
+| packages/scholar_workflow-0.42.0-py3-none-any.whl | 7e0ffdf3f2ce1bf2729c5f188a326de3461898834e46970e57c882d54379fc13 |
+| packages/scholar_workflow-0.42.0.tar.gz | 0f9368d5d25e0b912b5bd053a043d303aab753680975c12f9a29c575833bccdb |
+
+安装包检查仅用`uv --offline --no-project --with <wheel>`的隔离环境和公开version/help/
+module import，不是正常插件安装，不启动Hub、Obsidian、Zotero、Codex或cmux。
+下一步须明确正常推送/安装授权，之后只读当前V-JEPA2及一个模范项目并展示导航结果；
+人类评鉴在会话另行明确对象、操作及标准。main及真实正文不变，已有Canvas/图片/
+折叠体验通过结果保留，完整G17仍未完成。
+
+## 实际解释器兼容与回退身份收尾
+
+正常pipx使用Python3.14，其0.41.8 direct_url仅提取vcs身份字段后核对：
+commit_id与requested_revision均为`1a85790740dee9735112d57e7f19346259a2a21a`。
+三个0.42.0产物重新计算SHA-256，与上表完全一致，没有重新构建或换包。
+
+固定同一wheel在独立uv环境选择Python3.14.5，复验原57专项＋138必要回归＋1条
+runtime-version，共196 passed，3.87秒。它们是2092全集中的已有用例，不加算测试数量。
+公开模块路径核对确认来自隔离wheel site-packages，不是开发源码，也不是正常pipx。
+普通venv、插件缓存、真实资料和服务不变。离线uv曾提示rpds候选需要registry下载，
+随后使用离线可用依赖完成隔离环境；未改为联网，不把该提示当产品测试失败。
+
+```bash
+rtk proxy uv run --offline --no-project --python <normal-python-executable> --with <fixed-0.42.0-wheel> --with pytest python -m pytest tests/contract/test_knowledge_ownership.py tests/unit/test_project_context.py tests/contract/test_project_context.py tests/contract/test_project_context_cli.py tests/contract/test_project_context_candidate_cli.py tests/contract/test_knowledge_contract.py tests/contract/test_knowledge_registration_cli.py tests/unit/test_evals_schema.py tests/contract/test_runtime_version.py -q --tb=short
+```
+
+只读本机pipx帮助确认：reinstall复用原spec，不能用它隐式切换固定Git runtime；
+install支持--force和VCS spec。未来经授权的正常更新/回退以明确runtime SHA作为spec，
+不用临时venv、手改cache或源码PATH代替。这是入口核实，安装和回退命令本轮都未执行。
+Codex仍走README中的正常marketplace/add入口；执行前按当时真实CLI能力核实，
+不承诺未核实的SHA pin参数或修改既有marketplace注册。本轮没有调用Codex更新。
+
+收尾记录在本地提交；不改变固定候选source/runtime，不推送、不安装、不合并main。
+记录commit的HEAD与809ebf7不同不能被当作候选build source；后者由包字节校验固定。
