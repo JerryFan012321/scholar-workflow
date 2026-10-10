@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import quote, unquote
 
+from scholar_workflow.analysis.canvas_geometry import square_tree_is_clear
 from scholar_workflow.analysis.models import (
     FIVE_TREE_ROLES,
     AnalysisClaim,
@@ -646,14 +647,47 @@ def _render_markdown(document: AnalysisDocument, tree: TemplateNode) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def _compact_tree_columns(layers: dict[int, list[TemplateNode]]) -> None:
+    """Do not let terminal cards inflate unrelated routes when compression is safe."""
+    columns = {0: 0}
+    for depth in range(1, len(layers)):
+        columns[depth] = columns[depth - 1] + max(
+            node.width for node in layers[depth - 1] if node.children
+        ) + 64
+    original = [(node, node.x) for layer in layers.values() for node in layer]
+    if all(node.x == columns[depth] for depth, layer in layers.items() for node in layer):
+        return
+    for depth, layer in layers.items():
+        for node in layer:
+            node.x = columns[depth]
+    nodes = {
+        node.path: {"x": node.x, "y": node.y, "width": node.width, "height": node.height}
+        for node, _ in original
+    }
+    edges = [
+        {"fromNode": node.path, "toNode": child.path}
+        for node, _ in original
+        for child in node.children
+    ]
+    width = max(node["x"] + node["width"] for node in nodes.values())
+    height = max(node["y"] + node["height"] for node in nodes.values()) - min(
+        node["y"] for node in nodes.values()
+    )
+    if max(width / height, height / width) > 2 or not square_tree_is_clear(nodes, edges):
+        for node, x in original:
+            node.x = x
+
+
 def _layout_tree(root: TemplateNode, *, expanded: bool = False) -> None:
     """Keep all five sections on one trunk; do not mirror or make dashboards."""
     heights: dict[str, int] = {}
     layer_widths: dict[int, int] = {}
+    layers: dict[int, list[TemplateNode]] = {}
     sibling_gap = 8
     branch_gap = 32
 
     def measure(node: TemplateNode, depth: int) -> int:
+        layers.setdefault(depth, []).append(node)
         layer_widths[depth] = max(layer_widths.get(depth, 0), node.width)
         gap = branch_gap if node.kind == "root" else sibling_gap
         height = sum(measure(child, depth + 1) for child in node.children)
@@ -703,6 +737,8 @@ def _layout_tree(root: TemplateNode, *, expanded: bool = False) -> None:
             for depth in range(1, len(layer_widths)):
                 layer_x[depth] = layer_x[depth - 1] + layer_widths[depth - 1] + gutter
             place(root, 0, 0)
+
+    _compact_tree_columns(layers)
 
     # A sparse focused result can be one chain rather than a branching tree.
     # Stagger its boxes, not their contents or sizes, to avoid a long thin strip.

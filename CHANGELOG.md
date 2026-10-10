@@ -5,10 +5,47 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.43.2] - 2026-10-10
+
+Independent hotfix for compact paper-tree routes and project-document output
+contracts. Native/human assessment and main integration remain separate.
+
+### Fixed
+
+- **analyze-paper:** avoid letting wide terminal cards inflate unrelated parent
+  connections in newly rendered v5 trees. Keep aligned columns, text, sizes, vertical
+  bands and links unchanged; retain the existing layout if compression would break
+  aspect, overlap or routed-edge safety. Share the unchanged geometric predicates
+  with conformance rather than weakening its checks. Existing pairs are not redrawn.
+
+### Changed
+
+- **review-experiments / organize-project:** require a compact multi-experiment
+  overview table with names, recorded execution times, purposes, configuration
+  variables and source-linked results. Show few variables inline; inspect captured
+  configs and summarize key differences when the full set would make the table wide.
+  Preserve unknown settings, failures and the existing record authority.
+  Independently evaluate few-variable, captured many-variable and unresolved-config
+  tables using one synthetic project's isolated inputs; native-reader and human
+  assessment remain unverified.
+- **organize-project / review-experiments:** require VS Code as the primary project
+  document surface, with one declared preview engine, portable readable navigation
+  and actual native/human acceptance. Document built-in Mermaid support and optional
+  Draw.io editing without installing extensions or replacing paper Canvas formats.
+- **human presentation:** require short practical tree routes within the complete
+  framework, alignment, non-crossing, readable-size and accepted-layout constraints.
+  Existing accepted artifacts remain unchanged.
+
 ## [0.43.1] - 2026-10-10
 
 Independent hotfix for selected Field paper-unit attachment coverage. Normal
 installation, native assessment and main integration remain separate.
+
+### Changed
+
+- **release verification:** record the approved fixed-commit 0.43.1 pipx/Codex
+  installation and one selected test Field's complete declared attachment inventory.
+  Preserve old failure records, native/human assessment and main integration boundaries.
 
 ### Fixed
 

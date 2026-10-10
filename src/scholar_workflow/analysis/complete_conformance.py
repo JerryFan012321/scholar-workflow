@@ -11,6 +11,17 @@ from collections import defaultdict, deque
 from itertools import combinations, pairwise
 from typing import Any
 
+from scholar_workflow.analysis.canvas_geometry import (
+    Segment,
+    nodes_overlap,
+    square_segments,
+)
+from scholar_workflow.analysis.canvas_geometry import (
+    segment_hits_node as _segment_hits_node,
+)
+from scholar_workflow.analysis.canvas_geometry import (
+    segments_touch as _segments_touch,
+)
 from scholar_workflow.analysis.complete_reference import canvas_image_width, canvas_visible_height
 from scholar_workflow.analysis.models import AnalysisDocument, ConformanceFinding, ConformanceReport
 from scholar_workflow.analysis.reference_rendering import (
@@ -27,26 +38,10 @@ from scholar_workflow.canvas import CanvasValidationError, validate_canvas_paylo
 _HEADING = re.compile(r"(?m)^#{1,6} [^\r\n]*$")
 _DETACHED = re.compile(r"(?im)^#{1,6}\s+(?:evidence|证据)(?:\s*[:：].*)?\s*$")
 _DETACHED_FIELD = re.compile(r"(?im)^\s*[-*]\s*\*\*(?:evidence|证据)[:：]\*\*")
-Point = tuple[float, float]
-Segment = tuple[Point, Point]
 
 
 def _finding(code: str, path: str, message: str) -> ConformanceFinding:
     return ConformanceFinding(code=code, path=path, message=message)
-
-
-def square_segments(edge: dict[str, Any], nodes: dict[str, Any]) -> list[Segment]:
-    """Advanced Canvas right-to-left, arrowless square route (getZPath).
-
-    Endpoint side centers and median X match the installed plugin's route; this
-    intentionally does not infer routes for other styles/sides.
-    """
-    source, target = nodes[edge["fromNode"]], nodes[edge["toNode"]]
-    start = (source["x"] + source["width"], source["y"] + source["height"] / 2)
-    end = (target["x"], target["y"] + target["height"] / 2)
-    middle = (start[0] + end[0]) / 2
-    points = (start, (middle, start[1]), (middle, end[1]), end)
-    return [(a, b) for a, b in pairwise(points) if a != b]
 
 
 def _human_segments(edge: dict[str, Any], nodes: dict[str, Any]) -> list[Segment] | None:
@@ -110,29 +105,6 @@ def _human_segments(edge: dict[str, Any], nodes: dict[str, Any]) -> list[Segment
     return [(a, b) for a, b in pairwise(points) if a != b]
 
 
-def _segments_touch(left: Segment, right: Segment) -> bool:
-    a, b = left
-    c, d = right
-    horizontal_left, horizontal_right = a[1] == b[1], c[1] == d[1]
-    if horizontal_left == horizontal_right:
-        fixed, moving = (1, 0) if horizontal_left else (0, 1)
-        return a[fixed] == c[fixed] and max(
-            min(a[moving], b[moving]), min(c[moving], d[moving])
-        ) <= min(max(a[moving], b[moving]), max(c[moving], d[moving]))
-    if not horizontal_left:
-        a, b, c, d = c, d, a, b
-    return min(a[0], b[0]) <= c[0] <= max(a[0], b[0]) and min(c[1], d[1]) <= a[1] <= max(c[1], d[1])
-
-
-def _segment_hits_node(segment: Segment, node: dict[str, Any]) -> bool:
-    a, b = segment
-    x0, x1 = node["x"], node["x"] + node["width"]
-    y0, y1 = node["y"], node["y"] + node["height"]
-    if a[1] == b[1]:
-        return y0 <= a[1] <= y1 and max(min(a[0], b[0]), x0) <= min(max(a[0], b[0]), x1)
-    return x0 <= a[0] <= x1 and max(min(a[1], b[1]), y0) <= min(max(a[1], b[1]), y1)
-
-
 def geometry_findings(canvas: dict[str, Any], expected: dict[str, Any]) -> list[ConformanceFinding]:
     """Check actual managed geometry, including preserved manual layout."""
     findings: list[ConformanceFinding] = []
@@ -170,12 +142,7 @@ def geometry_findings(canvas: dict[str, Any], expected: dict[str, Any]) -> list[
     for left, right in combinations(visible_nodes.values(), 2):
         if left["id"] not in managed and right["id"] not in managed:
             continue
-        if (
-            left["x"] < right["x"] + right["width"]
-            and right["x"] < left["x"] + left["width"]
-            and left["y"] < right["y"] + right["height"]
-            and right["y"] < left["y"] + left["height"]
-        ):
+        if nodes_overlap(left, right):
             findings.append(
                 _finding(
                     "overlapping-canvas-nodes",

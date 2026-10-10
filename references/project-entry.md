@@ -5,6 +5,8 @@ short `project overview` inventory or a public README. This is a human document,
 not another registry, synchronization service or execution interface. Shared
 presentation and storage rules remain in `human-presentation.md` and
 `storage-policy.md`; selected material references follow `project-context.md`.
+VS Code is the primary reader: load `vscode-project-docs.md` for the required
+reading, diagram and navigation surface, optional extensions and native acceptance.
 
 ## Ownership and delivery
 
@@ -73,7 +75,9 @@ retain individual entry links even when a compact table groups the history.
 Missing, remote-only or conflicted artifacts remain visible.
 
 Use `experiment-review.md` for metric evidence and comparison semantics, and the
-existing experiment-record contract for lifecycle. An existing detailed review
+existing experiment-record contract for lifecycle. For multiple experiments, put
+its comparison overview table here, or link the detailed review with a compact
+derived table of the selected results. An existing detailed review
 may carry comparison conditions/history if this section links it and makes every
 selected entry discoverable. Do not choose a best/latest/first result implicitly.
 Same-Run retries are not independent experiments. Recorded success is not proof
@@ -85,8 +89,8 @@ explicit; a local copy, hash or promotion is not verified backup.
 Give direct entries for selected code and configuration, with each module's
 responsibility, inputs/outputs or interfaces, and the evidence available for them.
 Include editable, bounded module/dataflow diagrams where relationships are
-supported. Mermaid in Markdown may be used with a capable VS Code preview;
-state any renderer requirement rather than assuming it is installed. Identify
+supported. Mermaid in Markdown may use a capable built-in VS Code preview;
+declare and verify the reader capabilities rather than assuming activation. Identify
 each view's scope and keep file links alongside it rather than relying on diagram
 click handlers. Use compact aligned views instead of one sprawling graph.
 
@@ -134,5 +138,6 @@ structurally complete. Evidence can remain partial if its limitations are clear.
 State inspected and uninspected scope, files changed and outstanding decisions.
 For human assessment, give the exact candidate location, how to open it in VS Code,
 which code/experiment/paper/plan links to try and what clarity/rendering to judge.
+An Obsidian or browser preview does not satisfy this project-document assessment.
 Until explicitly accepted, navigation and appearance remain pending human assessment;
 schema validation or a printable link does not certify them.
