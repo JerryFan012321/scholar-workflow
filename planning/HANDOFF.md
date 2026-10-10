@@ -1,5 +1,22 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-10 0.43.1附件修复已正常发布安装，单Field覆盖复验通过
+
+用户明确授权后提交source bed3bddc4c87cc0e9a9093194ebe9380efe33416；runtime为
+8c4832b0e6ad8e44224460af6dc51a1d4cbec61f，直接父3275a80，hotfix/release原子
+正常fast-forward推送，无force/main合并。初构建误用陈旧本地release，候选仅留独立clone，
+取回远端基线后由原脚本重建；最终262文件与source allowlist/mode/blob全等。35分析
+保护文件不变，wheel/sdist111包文件全等。正常pipx固定SHA及Codex marketplace/plugin
+更新均0.43.1；cache初核误含30项安装器.git元数据，保留它们后262运行文件全等，
+cache HEAD正确，pipx111包文件全等。未切换服务、改缓存或依赖源码环境验收。
+2525完整功能回归保留，本轮版本/manifest/schema/资产必要95pass；16skill/Ruff/diff通过。
+已完整读取安装skill及必读refs，公开CLI在test既有单Field查询一篇/十文件，其中六附件
+归属/角色/路径完整，4安全原生URI静态正确，其他类型明确unsupported。77保护文件
+集合/字节不变，2673字节样张与stdout全等；旧0.43漏列结果保留。实际样张与复验仅在
+test上层组合审阅目录。完整发行结果见field-paper-assets-release-test-results.md。
+PROJECT/实验报告、清单点击便利性及新版外观仍待人工；原论文/Canvas/折叠体验不重审。
+正式采用/迁移、main合并、服务切换与G17整体仍未完成，不将本修复冒称第一阶段完成。
+
 ## 2026-10-10 用户授权附件修复0.43.1 hotfix提交、发布和正常安装
 
 用户直接“授权”解除新hotfix发布安装等待；只处理已有附件清单修复和运行期说明，

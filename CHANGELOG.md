@@ -10,6 +10,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 Independent hotfix for selected Field paper-unit attachment coverage. Normal
 installation, native assessment and main integration remain separate.
 
+### Changed
+
+- **release verification:** record the approved fixed-commit 0.43.1 pipx/Codex
+  installation and one selected test Field's complete declared attachment inventory.
+  Preserve old failure records, native/human assessment and main integration boundaries.
+
 ### Fixed
 
 - **build-literature-tree:** include explicitly owned provider/portable assets in

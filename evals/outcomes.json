@@ -3,7 +3,7 @@
   "cases": [
     {
       "id": "knowledge-paper-unit-supplemental-asset-navigation",
-      "description": "G2/G16/G17：论文清单沿明确provider artifact→paper合并catalog与可选便携assets声明，四角色/sidecar及跨Source附件不遗漏；共享去重，owner集合顺序无关，冲突ID/path双方不作为确定文件输出。缺失/不安全/无效/变化清单保留诊断及独立有效条目，稳定缺失可选manifest不失败。只读声明和文件metadata，不读/hash附件正文，不改owner/registry/论文/实验或普通list。独立预期先行，红测及first-wins边界修正后完整2525项合成unit/contract通过（含39资产项）；记录在planning/field-paper-assets-test-results.md。仍未发布安装或复验真实test单元六项附件，原生与人工及G17整体保持pending。",
+      "description": "G2/G16/G17：论文清单沿明确provider artifact→paper合并catalog与可选便携assets声明，四角色/sidecar及跨Source附件不遗漏；共享去重，owner集合顺序无关，冲突ID/path双方不作为确定文件输出。缺失/不安全/无效/变化清单保留诊断及独立有效条目，稳定缺失可选manifest不失败。只读声明和文件metadata，不读/hash附件正文，不改owner/registry/论文/实验或普通list。独立预期先行，红测及first-wins边界修正后完整2525项合成unit/contract通过（含39资产项）；记录在planning/field-paper-assets-test-results.md。用户授权后，0.43.1 source bed3bdd/runtime8c4832已正常发布和pipx/Codex安装，本轮95必要检查通过；实际test单Field一篇/十文件含六附件，四URI静态对应，77保护文件不变，2673字节样张全等。图片/JSON明确不支持直接打开，真实点击、人工及G17整体保持pending；见planning/field-paper-assets-release-test-results.md。",
       "status": "pending"
     },
     {
@@ -18,7 +18,7 @@
     },
     {
       "id": "knowledge-selected-field-paper-unit-navigation",
-      "description": "G2/G16/G17：knowledge list显式paper-units及Source/Field选择只读组合本地paper owner与qualified references；analysis/Canvas沿owner归一，全部用途和已声明文件保留，同名不同身份不合并。缺失、非paper、未知、冲突、reader不可用分别可见，安全且唯一归属/reader的文件才给原生Obsidian链接；无应用打开或正文/状态写入。默认list、固定01-Paperlist及旧树保持。独立预期先行，2026-10-10为41新项及562定向联合通过；首轮3项独立观察器/全局incomplete预期错误与I001分别留证。实际机器ID标题仅在人类renderer使用可读角色，JSON/人工标题保持。样张为实际合成Click stdout，安装态、真实导航和人工可读性仍待验，保持pending。见planning/field-paper-units-test-results.md与field-paper-units-demo.md。",
+      "description": "G2/G16/G17：knowledge list显式paper-units及Source/Field选择只读组合本地paper owner与qualified references；analysis/Canvas沿owner归一，全部用途和已声明文件保留，同名不同身份不合并。缺失、非paper、未知、冲突、reader不可用分别可见，安全且唯一归属/reader的文件才给原生Obsidian链接；无应用打开或正文/状态写入。默认list、固定01-Paperlist及旧树保持。独立预期先行，2026-10-10为41新项及562定向联合通过；首轮3项独立观察器/全局incomplete预期错误与I001分别留证。实际机器ID标题仅在人类renderer使用可读角色，JSON/人工标题保持。原合成Click stdout保留；后续正常安装0.43.0的单Field查询定位到六附件漏列，旧失败不覆盖。0.43.1安装态已补齐一论文/十文件，77保护文件不变、四原生URI静态对应；原生点击和人工可读性仍待验，保持pending。见planning/field-paper-units-test-results.md与field-paper-units-demo.md。",
       "status": "pending"
     },
     {
