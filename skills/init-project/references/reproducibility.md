@@ -4,20 +4,18 @@ Load for an explicitly requested reproducible project or experiment package. Ord
 initialization does not add an example, launch a process, or invent research material.
 Layout, record lifecycle and external-material ownership remain in the existing
 `skeleton-manifest.md`, `experiment-records.md`, and shared project-context contract.
+Load `${CLAUDE_PLUGIN_ROOT}/references/reproduction-delivery.md` for the shared
+six-part handoff; the following requirements are project/experiment-specific.
 
 ## Required package
 
 - Portable project identity and explicit layout selection; no host paths or credentials.
 - Committed source, machine-neutral resolved recipe and environment, selected dataset identity
   and hashes; separately record real Target and Attempt observations.
-- Frozen non-secret inputs, installed product version, public commands, declared prerequisites
-  and expected output/format. Preserve actual failures and unavailable inputs.
 - An independently readable report stating purpose, input/split, method, parameters,
   comparisons, results and affected code. Logs, hashes and machine receipts are separate files.
 - Rebuild in a new root without copying old outputs. State whether identity is preserved
   (same-project clone) or a genuinely independent new project is initialized.
-- Separate automatic checks and human assessment. Replay demonstrates this package, not
-  scientific validity, external app usability, or independent backup.
 
 ## Installed portable example
 

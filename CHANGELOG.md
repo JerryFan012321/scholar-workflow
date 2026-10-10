@@ -3,6 +3,101 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.43.0] - 2026-10-10
+
+Independent hotfix release; main integration and native/human acceptance remain
+separate. The development-only paper-layout proposal is not a runtime default.
+
+### Changed
+
+- **human presentation:** prioritize state, plan and results in internal PROJECT;
+  lead experiment reviews with plain-language conclusions and supported visuals.
+  Keep relevant navigation in the body and machine audit detail supplementary.
+  These are runtime output-contract changes, not paper Canvas changes.
+
+### Added
+
+- **development / paper layout review:** add isolated, content-preserving Canvas
+  proposals and offline previews for one existing paper. Retain failed spacing and
+  overlapping-frame observations; the corrected proposal translates whole sections,
+  uses five native frames and enlarges only four insufficient text boxes. Keep all
+  original content, links and assets. No runtime renderer, installed behavior or
+  canonical analysis changes; native editing and human appearance remain pending.
+  Check identified section frames against the original tree before any proposal
+  writes: containment, title space, foreign content, overlap and clear separation.
+  Preserve ordinary user-group semantics; this development check is not full
+  analysis conformance or scientific verification.
+
+- **reproduction / shared delivery:** put the requested six-part exemplar handoff
+  in one runtime reference, linked by the existing paper and project reproduction
+  instructions. Reuse object-specific formats and receipts; add no manifest, state
+  store, generation path or inferred execution/migration permission.
+
+- **knowledge / selected Field paper units:** add an opt-in read-only navigation
+  view to `knowledge list`, grouping existing local owners and explicit references
+  without title-based identity, copies or a second inventory. Retain all purposes,
+  declared related files and unavailable/conflicted states; expose native document
+  links only with safe files, unique ownership and reader mapping. Preserve default
+  list behavior and the fixed legacy paper ledger. Independent expectations precede
+  tests; preserve declared machine titles in JSON while using readable supporting
+  link labels. Normal installation and human/native navigation remain separate.
+
+- **runtime documentation:** scope the legacy literature managed-block/Mermaid
+  restriction to its own writer, consistent with opt-in stdout views. Replace a
+  non-shipping planning link and personal acceptance assignments in both root
+  READMEs with native-tool guidance and general per-Field boundaries; mark Hub as
+  compatibility-only. No output template or tool action changes.
+
+- **organize-project / internal project entry:** add a separate runtime skill and
+  shared PROJECT result contract for current state, source-supported module views,
+  direct selected code/paper/archive navigation and one detailed plan authority.
+  Keep public README, human content, explicit associations and source archives
+  unchanged by default. No new CLI, schema, state store, initializer side effect
+  or execution. Independent synthetic expectations precede behavioral evaluation;
+  installed triggering and native navigation/appearance remain separate.
+
+- **review-experiments / experiment review:** add a read-only skill and shared
+  human report contract using existing Run/Attempt/Artifact archives. Require explicit
+  result selection, source-linked conditions/results/history, local metric identity
+  checks and honest unknown/conflict/replay semantics; no new CLI, metric schema,
+  state store or experiment execution. Independent synthetic expectations and inputs
+  precede evaluation; installed and human usability acceptance remain separate.
+
+- **build-literature-tree / evolution preview:** add a separate versioned,
+  zero-write contribution/evolution contract and `literature-preview`. Preserve
+  legacy technical/challenge trees. Reuse qualified paper identities, distinguish
+  main/branch eligibility from local and pending placement, retain overlapping
+  novelty types and complete evidence-linked tradeoffs. Separate parent membership
+  from scientific relations and unverified from explicitly not-reported statements.
+  The compact vertical Mermaid preview is not the final evolution figure; source
+  verification, final editable carrier and human appearance acceptance remain
+  incomplete. No original paper or experiment execution is repeated.
+
+- **knowledge / Field references:** add explicit portable Field schema 2 selections
+  with qualified Source/object identities and purpose. Preserve schema-1 serialization,
+  existing local navigation authorization, reproduction metadata and legacy migration
+  references. Add opt-in `knowledge list --resolve-references` ownership/file diagnostics
+  without copying content, creating owners or opening readers. Add digest-bound
+  `knowledge reference-plan/reference` for single-reference addition/removal, preserving
+  YAML comments and unrelated Fields. Bind the full declaration/file-metadata read set,
+  use bounded nonblocking CAS under existing locks, allow offline-target removal,
+  and distinguish uncertain durability from pre-write refusal. Human navigation
+  acceptance remains separate from publication and normal installation.
+
+### Fixed
+
+- **knowledge / paper registration:** verify canonical Zotero library/item ownership
+  across all explicitly registered Sources. Bind declaration hashes and identities,
+  acquire provider locks in stable order, and recheck recovery, each publication
+  member and completed replay. Refuse unverifiable legacy identities or missing
+  inventories; preserve distinct proven libraries with the same item key.
+- **knowledge / new Source initialization:** compose the existing registration CLI
+  with a digest-bound, recoverable empty-provider/Field/host-registry transaction.
+  Freeze generated IDs, validate journal publication semantics and locked directory
+  identity, and preserve concurrent edits. Existing Source attachment and Field
+  append never recreate a lost inventory. No paper formats or business collections
+  are changed by these fixes.
+
 ## [0.42.0] - 2026-10-09
 
 Independent hotfix release; main integration and human navigation acceptance remain separate.
@@ -25,6 +120,12 @@ Independent hotfix release; main integration and human navigation acceptance rem
 
 ### Changed
 
+- **release / 0.42.0 installed evidence:** publish the approved independent hotfix
+  from source `9886f90` as runtime `67a2216`; install normally through a pinned pipx
+  spec and Codex marketplace. All 246 plugin runtime files and 104 Python modules
+  plus three static files match the release bytes. One read-only project overview
+  resolves three V-JEPA 2 references to one primary package while retaining all 82
+  scoped original files. Human navigation remains pending; main is not merged.
 - **release / installed acceptance:** prepare the approved runtime-only hotfix for
   normal CLI and marketplace installation from a fixed source commit. Keep the
   previous runtime available for rollback and restrict installed acceptance to one

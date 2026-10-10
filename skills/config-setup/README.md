@@ -11,6 +11,15 @@ on a fresh install — so you can set things up by asking, without hand-writing 
   and Fields use the independent `knowledge` CLI instead. Preview, review the exact
   single-Field plan, then register with its current digest; see
   [knowledge registration](../../references/knowledge-registration.md). No Hub is needed.
+  A genuinely new Source explicitly initializes an empty provider; attaching an
+  existing Source never treats a missing inventory as empty. Interrupted creation
+  retries use the original reviewed command and digest.
+  Schema-2 Field references reuse existing objects without another owner or copy.
+  `knowledge list --resolve-references` optionally checks their declared ownership
+  and file states; readers remain unverified. The development-only
+  `knowledge reference-plan/reference` pair previews and confirms one reference
+  addition/removal; only the referencing manifest changes, not its target. These
+  commands have not yet shipped in the normally installed 0.42.0 package.
 - **Change a value** — `scholar-workflow config set KEY VALUE` sets one dotted key
   (e.g. `notion.enabled`, `link_service.port`), preserving comments in the file.
 - **Inspect** — `config show` (effective values), `config show --raw` (file as written),

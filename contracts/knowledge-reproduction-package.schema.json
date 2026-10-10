@@ -99,6 +99,11 @@
           },
           "title": "Navigation",
           "type": "array"
+        },
+        "references": {
+          "items": {"$ref": "#/$defs/FieldResourceReference"},
+          "maxItems": 512,
+          "type": "array"
         }
       },
       "required": [
@@ -135,9 +140,16 @@
     },
     "FieldManifest": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {"properties": {"schema_version": {"const": 1}}},
+          "then": {"properties": {"fields": {"items": {"not": {"required": ["references"]}}}}}
+        }
+      ],
       "properties": {
         "schema_version": {
           "default": 1,
+          "enum": [1, 2],
           "title": "Schema Version",
           "type": "integer"
         },
@@ -158,6 +170,25 @@
         "fields"
       ],
       "title": "FieldManifest",
+      "type": "object"
+    },
+    "FieldResourceReference": {
+      "additionalProperties": false,
+      "properties": {
+        "reference_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._:-]{1,127}$", "not": {"pattern": "[\\u0000-\\u001f]"}},
+        "target": {"$ref": "#/$defs/FieldReferenceTarget"},
+        "purpose": {"type": "string", "minLength": 1, "maxLength": 2000, "pattern": "^[^\\s\\u0000-\\u001f](?:[^\\u0000-\\u001f]*[^\\s\\u0000-\\u001f])?$", "not": {"pattern": "[\\u0000-\\u001f]"}}
+      },
+      "required": ["reference_id", "target", "purpose"],
+      "type": "object"
+    },
+    "FieldReferenceTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {"type": "string", "pattern": "^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$", "not": {"pattern": "[\\u0000-\\u001f]"}},
+        "object_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$", "not": {"pattern": "[\\u0000-\\u001f]"}}
+      },
+      "required": ["source_id", "object_id"],
       "type": "object"
     }
   }

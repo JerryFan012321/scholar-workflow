@@ -1,0 +1,357 @@
+{
+  "$defs": {
+    "EvolutionContribution": {
+      "additionalProperties": false,
+      "properties": {
+        "contribution_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "title": "Contribution Id",
+          "type": "string"
+        },
+        "paper_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "title": "Paper Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+          "title": "Title",
+          "type": "string"
+        },
+        "novelty_types": {
+          "items": {
+            "maximum": 4,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxItems": 4,
+          "title": "Novelty Types",
+          "type": "array"
+        },
+        "placement": {
+          "enum": [
+            "main",
+            "branch",
+            "local",
+            "pending"
+          ],
+          "title": "Placement",
+          "type": "string"
+        },
+        "parent_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Parent Id"
+        },
+        "classification": {
+          "$ref": "#/$defs/EvolutionStatement"
+        }
+      },
+      "required": [
+        "contribution_id",
+        "paper_id",
+        "title",
+        "novelty_types",
+        "placement",
+        "parent_id",
+        "classification"
+      ],
+      "title": "EvolutionContribution",
+      "type": "object"
+    },
+    "EvolutionPaper": {
+      "additionalProperties": false,
+      "properties": {
+        "paper_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "title": "Paper Id",
+          "type": "string"
+        },
+        "source_id": {
+          "pattern": "^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
+          "title": "Source Id",
+          "type": "string"
+        },
+        "object_id": {
+          "maxLength": 240,
+          "minLength": 1,
+          "pattern": "^[^\\s\\x00-\\x1f\\x7f]+$",
+          "title": "Object Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+          "title": "Title",
+          "type": "string"
+        },
+        "note_path": {
+          "maxLength": 512,
+          "minLength": 4,
+          "title": "Note Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "paper_id",
+        "source_id",
+        "object_id",
+        "title",
+        "note_path"
+      ],
+      "title": "EvolutionPaper",
+      "type": "object"
+    },
+    "EvolutionRelation": {
+      "additionalProperties": false,
+      "properties": {
+        "relation_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "title": "Relation Id",
+          "type": "string"
+        },
+        "from_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "title": "From Id",
+          "type": "string"
+        },
+        "to_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "title": "To Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "extends",
+            "alternative",
+            "component",
+            "comparison"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "change": {
+          "$ref": "#/$defs/EvolutionStatement"
+        },
+        "reason": {
+          "$ref": "#/$defs/EvolutionStatement"
+        },
+        "benefit": {
+          "$ref": "#/$defs/EvolutionStatement"
+        },
+        "cost": {
+          "$ref": "#/$defs/EvolutionStatement"
+        },
+        "conditions": {
+          "$ref": "#/$defs/EvolutionStatement"
+        }
+      },
+      "required": [
+        "relation_id",
+        "from_id",
+        "to_id",
+        "kind",
+        "change",
+        "reason",
+        "benefit",
+        "cost",
+        "conditions"
+      ],
+      "title": "EvolutionRelation",
+      "type": "object"
+    },
+    "EvolutionStatement": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+          "title": "Text",
+          "type": "string"
+        },
+        "basis": {
+          "enum": [
+            "author_statement",
+            "experimental_result",
+            "analysis_inference",
+            "not_reported",
+            "unverified"
+          ],
+          "title": "Basis",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/PdfEvidence"
+          },
+          "maxItems": 32,
+          "title": "Evidence",
+          "type": "array"
+        }
+      },
+      "required": [
+        "text",
+        "basis",
+        "evidence"
+      ],
+      "title": "EvolutionStatement",
+      "type": "object"
+    },
+    "PdfEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "paper_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "title": "Paper Id",
+          "type": "string"
+        },
+        "library_type": {
+          "enum": [
+            "personal",
+            "group"
+          ],
+          "title": "Library Type",
+          "type": "string"
+        },
+        "library_id": {
+          "pattern": "^[1-9][0-9]*$",
+          "title": "Library Id",
+          "type": "string"
+        },
+        "attachment_key": {
+          "pattern": "^[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}$",
+          "title": "Attachment Key",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "page_index": {
+          "minimum": 0,
+          "title": "Page Index",
+          "type": "integer"
+        },
+        "section": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+          "title": "Section",
+          "type": "string"
+        }
+      },
+      "required": [
+        "paper_id",
+        "library_type",
+        "library_id",
+        "attachment_key",
+        "content_hash",
+        "page_index",
+        "section"
+      ],
+      "title": "PdfEvidence",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "topic": {
+      "maxLength": 4000,
+      "minLength": 1,
+      "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+      "title": "Topic",
+      "type": "string"
+    },
+    "corpus_scope": {
+      "maxLength": 4000,
+      "minLength": 1,
+      "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+      "title": "Corpus Scope",
+      "type": "string"
+    },
+    "language": {
+      "enum": [
+        "en",
+        "zh"
+      ],
+      "title": "Language",
+      "type": "string"
+    },
+    "synthetic": {
+      "title": "Synthetic",
+      "type": "boolean"
+    },
+    "papers": {
+      "items": {
+        "$ref": "#/$defs/EvolutionPaper"
+      },
+      "maxItems": 512,
+      "title": "Papers",
+      "type": "array"
+    },
+    "contributions": {
+      "items": {
+        "$ref": "#/$defs/EvolutionContribution"
+      },
+      "maxItems": 2048,
+      "title": "Contributions",
+      "type": "array"
+    },
+    "relations": {
+      "items": {
+        "$ref": "#/$defs/EvolutionRelation"
+      },
+      "maxItems": 4096,
+      "title": "Relations",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "topic",
+    "corpus_scope",
+    "language",
+    "synthetic",
+    "papers",
+    "contributions",
+    "relations"
+  ],
+  "title": "LiteratureEvolution",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "literature-evolution.schema.json",
+  "description": "Version 1 contribution/evolution preview. Cross-reference uniqueness, placement eligibility and parent graph semantics are additionally checked by validate_evolution; schema validation alone does not verify scientific support."
+}

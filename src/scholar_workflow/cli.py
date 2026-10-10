@@ -899,6 +899,46 @@ def project_tree_cmd(input_file, dry_run: bool) -> None:
     click.echo(json.dumps({"root": root, **stats}, ensure_ascii=False))
 
 
+@main.command(name="literature-preview")
+@click.option("--input", "input_file", type=click.File("r", encoding="utf-8"), default="-",
+              help="Contribution/evolution JSON; default stdin. Preview only; no source reads.")
+@click.option("--format", "output_format", type=click.Choice(["md", "json"]), default="md")
+def literature_preview_cmd(input_file, output_format: str) -> None:
+    """Validate and preview contributions and technical tradeoffs without writing files."""
+    from pydantic import ValidationError
+
+    from scholar_workflow.knowledge.literature_evolution import (
+        render_evolution,
+        validate_evolution,
+    )
+
+    def unique_keys(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate JSON object key")
+            result[key] = value
+        return result
+
+    try:
+        raw = input_file.read(8 * 1024 * 1024 + 1)
+        if len(raw.encode("utf-8")) > 8 * 1024 * 1024:
+            raise ValueError("literature input exceeds 8 MiB")
+        doc = validate_evolution(json.loads(raw, object_pairs_hook=unique_keys))
+        result = (
+            json.dumps(doc, ensure_ascii=False, indent=2)
+            if output_format == "json" else render_evolution(doc)
+        )
+    except ValidationError as exc:
+        error = exc.errors(include_input=False, include_url=False)[0]
+        location = ".".join(map(str, error["loc"])) or "document"
+        raise InputError(f"invalid literature input at {location}: {error['msg']}") from None
+    except (ValueError, UnicodeError, RecursionError) as exc:
+        message = "invalid or excessively nested JSON" if isinstance(exc, RecursionError) else str(exc)
+        raise InputError(message) from None
+    click.echo(result, nl=not result.endswith("\n"))
+
+
 @main.command(name="project-literature-tree")
 @click.option("--input", "input_file", type=click.File("r"), default="-",
               help="JSON with {root, filename, doc, paperlist_only?}; default stdin. doc conforms to literature-tree.schema.json.")
@@ -3236,6 +3276,59 @@ def _local_field_service():
     return FieldService(KnowledgeSourceRegistry(state_root / "hub" / "sources.json"))
 
 
+def _reference_selection_options(command):
+    for name in ("source-id", "field-id", "reference-id"):
+        command = click.option("--" + name, required=True)(command)
+    for name in ("target-source-id", "object-id", "purpose"):
+        command = click.option("--" + name)(command)
+    return click.option("--operation", type=click.Choice(["add", "remove"]), required=True)(command)
+
+
+@knowledge.command(name="reference-plan")
+@_reference_selection_options
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["en", "zh"]), default="en")
+def knowledge_reference_plan(fmt: str, language: str, **selection) -> None:
+    """Preview one contextual reference change; write no state or source content."""
+    from scholar_workflow.workflows.field_references import reference_plan, reference_plan_markdown
+
+    try:
+        plan = reference_plan(_local_field_service().registry, **selection)
+    except (RuntimeError, OSError, ValueError, TypeError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    click.echo(json.dumps(plan, ensure_ascii=False, indent=2) if fmt == "json" else
+               reference_plan_markdown(plan, language=language))
+
+
+@knowledge.command(name="reference")
+@_reference_selection_options
+@click.option("--approved-digest", required=True)
+@click.option("--yes", is_flag=True)
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["en", "zh"]), default="en")
+def knowledge_reference(approved_digest: str, yes: bool, fmt: str, language: str, **selection) -> None:
+    """Apply the reviewed single-manifest delta without changing its target."""
+    from scholar_workflow.knowledge.fields import FieldRegistryCommitUncertain
+    from scholar_workflow.workflows.field_references import change_reference
+
+    if not yes:
+        click.confirm("应用已审阅的引用变更？" if language == "zh" else
+                      "Apply the reviewed reference change?", abort=True, err=True)
+    try:
+        result = change_reference(_local_field_service().registry, approved_digest=approved_digest, **selection)
+    except FieldRegistryCommitUncertain as exc:
+        raise PartialCompletionError(str(exc)) from None
+    except (RuntimeError, OSError, ValueError, TypeError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    if fmt == "json":
+        click.echo(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        click.echo(("无需改变。" if language == "zh" else "Unchanged.") if result["status"] == "unchanged" else
+                   ("已更新领域引用。" if language == "zh" else "Field reference updated."))
+        click.echo("原文、解析树及目标归属不变；未复制或删除资料。" if language == "zh" else
+                   "Source content, Canvas and target ownership remain unchanged; no resource was copied or deleted.")
+
+
 def _paper_selection_options(command):
     for name in ("source-id", "field-id", "item-key", "attachment-key", "segment"):
         command = click.option("--" + name, required=True)(command)
@@ -3522,17 +3615,17 @@ def knowledge_registration_plan(root: Path, field_root: str | None,
 def knowledge_register(root: Path, field_root: str | None, existing_source: bool,
                        approved_digest: str, yes: bool, fmt: str, language: str) -> None:
     """Register only the reviewed scope; reject changed bytes and legacy cutovers."""
-    from scholar_workflow.knowledge.fields import FieldRegistryError
-    from scholar_workflow.knowledge.registration import fields_markdown, register
+    from scholar_workflow.knowledge.registration import fields_markdown
+    from scholar_workflow.workflows.register_source import register_source
 
     if not yes:
         click.confirm("确认登记已审阅的目录？" if language == "zh" else
                       "Register the reviewed folder scope?", abort=True, err=True)
     try:
         service = _local_field_service()
-        manifest = register(service, root, field_root=field_root,
-                            existing_source=existing_source, approved_digest=approved_digest)
-    except (FieldRegistryError, OSError, ValueError) as exc:
+        manifest = register_source(service, root, field_root=field_root,
+                                   existing_source=existing_source, approved_digest=approved_digest)
+    except (RuntimeError, OSError, ValueError) as exc:
         raise SafetyRefusalError(str(exc)) from None
     if fmt == "json":
         click.echo(json.dumps({"schema_version": 1, "status": "registered",
@@ -3546,15 +3639,41 @@ def knowledge_register(root: Path, field_root: str | None, existing_source: bool
 
 
 @knowledge.command(name="list")
+@click.option("--resolve-references", is_flag=True,
+              help="Read registered provider declarations to check selected Field references.")
+@click.option("--paper-units", is_flag=True,
+              help="Show declared paper packages for one explicitly selected Source and Field.")
+@click.option("--source-id")
+@click.option("--field-id")
 @click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
 @click.option("--language", type=click.Choice(["en", "zh"]), default="en")
-def knowledge_list(fmt: str, language: str) -> None:
+def knowledge_list(resolve_references: bool, paper_units: bool, source_id: str | None,
+                   field_id: str | None, fmt: str, language: str) -> None:
     """Read the single existing registry and portable navigation manifests."""
     from scholar_workflow.knowledge.fields import FieldRegistryError
     from scholar_workflow.knowledge.registration import fields_markdown
 
+    if paper_units and (not source_id or not field_id):
+        raise InputError("--paper-units requires both --source-id and --field-id")
+    if not paper_units and (source_id is not None or field_id is not None):
+        raise InputError("--source-id and --field-id require --paper-units")
+    if paper_units and resolve_references:
+        raise InputError("--paper-units cannot be combined with --resolve-references")
     try:
-        fields = _local_field_service().list_fields()
+        service = _local_field_service()
+        if paper_units:
+            from scholar_workflow.knowledge.presentation import paper_units_markdown
+            from scholar_workflow.workflows.field_paper_units import field_paper_units
+
+            payload = field_paper_units(service.registry.path, source_id=source_id, field_id=field_id)
+            click.echo(json.dumps(payload, ensure_ascii=False, indent=2) if fmt == "json" else
+                       paper_units_markdown(payload, language=language))
+            return
+        fields = service.list_fields()
+        if resolve_references:
+            from scholar_workflow.workflows.knowledge_ownership import annotate_field_references
+
+            fields = annotate_field_references(fields, service.registry.path)
     except (FieldRegistryError, OSError, ValueError) as exc:
         raise SafetyRefusalError(str(exc)) from None
     click.echo(json.dumps({"schema_version": 1, "fields": fields}, ensure_ascii=False, indent=2)

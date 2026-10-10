@@ -4,14 +4,15 @@ Use only when the user requests an exemplar or reproducible/replayable package.
 The required five-branch output and evidence contract remain owned by the analysis
 template and selected version. This reference adds operational inputs and receipts,
 not a prescribed research or reasoning sequence.
+Load `${CLAUDE_PLUGIN_ROOT}/references/reproduction-delivery.md` for the shared
+six-part package handoff; this reference owns only paper-specific details.
 
 ## Required companion material
 
 Place the selected paper's readable analysis, editable Canvas and machine sidecar
 together with a non-secret CLI request and a short replay note. The request records
 the actual versioned IR, profile, language, source spans and chosen capacity. The
-replay note records the installed plugin/CLI version, input and source hashes,
-expected file names, invoked public command, actual conformance result and outstanding
+replay note follows the shared handoff and links to the actual conformance and
 source/visual checks. Keep machine details outside the analysis prose.
 
 PDFs remain in Zotero; do not redistribute private attachments, keys, complete

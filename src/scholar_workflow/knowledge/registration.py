@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from scholar_workflow.knowledge.fields import FieldManifest, FieldRegistryError, FieldService
-from scholar_workflow.knowledge.presentation import _text
+from scholar_workflow.knowledge.presentation import _text, references_markdown
 
 
 @dataclass(frozen=True)
@@ -53,6 +53,7 @@ def registration_plan(
         "manifest_base_hash": preview.manifest_base_hash,
         "registry_base_hash": preview.registry_base_hash,
         "source_id": preview.source_id if preview.existing_manifest else None,
+        "inventory_initialization": None if preview.existing_manifest else "new-empty-provider",
         "fields": fields,
         "existing_fields": [row.model_dump(mode="json") for row in preview.registered_fields],
         "conflicts": preview.conflicts,
@@ -95,7 +96,11 @@ def plan_markdown(payload: dict, *, language: str) -> str:
               "Attach the existing portable Source; preserve all Field identities and its manifest.")
              if payload["mode"] == "existing-source" else
              ("只登记以下单个领域；不创建首页，不登记兄弟目录。" if zh else
-              "Register only the selected Field; no new homepage or sibling registration."), ""]
+             "Register only the selected Field; no new homepage or sibling registration."), ""]
+    if payload.get("inventory_initialization") == "new-empty-provider":
+        lines += [("同时创建绑定此目录的空资源清单；不收编现有正文或论文。" if zh else
+                   "Also create an explicitly empty resource provider bound to this folder; "
+                   "do not adopt existing prose or paper owners."), ""]
     for field in payload["fields"]:
         lines += [f"## {_text(field['title'])}", "",
                   f"- {'相对目录' if zh else 'Relative root'}: {_text(field['relative_root'])}",
@@ -104,6 +109,7 @@ def plan_markdown(payload: dict, *, language: str) -> str:
             lines += [f"### {_text(group['label'])}", ""]
             lines += [f"- {_text(item)}" for item in group["items"]]
             lines.append("")
+        lines += references_markdown(field.get("references", []), language=language)
     lines += ["## 约束与事务诊断" if zh else "## Constraints and transaction diagnostics", ""]
     findings = payload["conflicts"] + payload["transaction_reasons"]
     lines += [f"- {_text(item)}" for item in findings] if findings else ["无。" if zh else "None."]
@@ -129,4 +135,5 @@ def fields_markdown(fields: list[dict], *, language: str) -> str:
             lines += [f"### {_text(group['label'])}", ""]
             lines += [f"- {_text(item)}" for item in group["items"]]
             lines.append("")
+        lines += references_markdown(field.get("references", []), language=language)
     return "\n".join(lines)

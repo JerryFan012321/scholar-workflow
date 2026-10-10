@@ -20,7 +20,7 @@ Local API。主题召回由 Local API 全字段/全文 quicksearch 加宿主模�
 
 - **Knowledge System** 以人类可读 Markdown 为正文。论文、重要技术文档和 Blog 是原子资源；
   分析、Canvas 和附件是显式归属的附属产物。新生成的全文分析采用原图的 Abstract、
-  Introduction、Method、Limitation 完整框架；旧任务／输入／分步流程／输出／边界格式仅供
+  Introduction、Method、Experiments、Limitation 完整框架；旧任务／输入／分步流程／输出／边界格式仅供
   历史内容兼容读取。证据与对应论点或逐点陈述放在一起。
 - **Project System** 保存稳定 `project_id`、宿主中立的源码/config profile，以及彼此分离的
   Run、Attempt、Target、成果 promotion 和备份记录。没有独立校验过的第二份副本就不能称为备份完成。
@@ -29,6 +29,31 @@ Local API。主题召回由 Local API 全字段/全文 quicksearch 加宿主模�
 
 项目引用不改变资料原有归属。显式复制是另一种操作：副本获得目标身份并独立演化；两者均不建立
 隐藏同步、跨域覆盖或级联删除。
+
+0.43.0 起，schema 2 的领域清单可以保留指向既有知识对象的引用及用途。
+`knowledge list --resolve-references` 可选显示声明归属和文件诊断，不打开阅读器或创建副本。
+schema 1 保持原样；`knowledge reference-plan/reference` 提供单条增删预览与确认，
+只改引用方清单，不改目标内容。人工导航评鉴与命令契约验证分开，详见
+[知识目录登记契约](references/knowledge-registration.md)。
+
+0.43.0 另可用 `knowledge list --paper-units --source-id SOURCE_UUID --field-id FIELD_UUID`
+组合单个领域已有论文包的资料、分析、Canvas 和笔记入口，提供安全的 Obsidian 链接及
+缺失诊断。不替换旧论文表、不复制正文、不写文件，详见
+[论文单元导航](skills/build-literature-tree/references/field-paper-units.md)。
+
+0.43.0 的 `literature-preview --input evolution.json --format md|json` 可零写入预览逐贡献
+novelty、位置归属及带证据入口的技术取舍，不读原资料；
+最终可编辑演进图、真实科学内容和外观人工评鉴分别待验，见
+[演进预览契约](skills/build-literature-tree/references/evolution-preview.md)。
+
+0.43.0 新增 `review-experiments` skill，把选定 Run/Attempt/Artifact 整理为可读、
+带来源链接的比较，不运行实验、不新增结果数据库。明确要比较的 Run、结果 Attempt
+和指标即可；失败、重放和缺失证据仍保留。详见[实验复核](skills/review-experiments/README.zh-CN.md)。
+
+0.43.0 新增 `organize-project` skill，用内部 PROJECT.md 展示最新情况、带源码依据的
+模块图、代码/实验/论文直接入口，以及 PROJECT 或 SCHEDULE 中唯一维护的详细计划。
+README 仍负责对外展示；此能力独立于初始化和简短资料清单，
+详见[内部项目入口](skills/organize-project/README.zh-CN.md)。
 
 ### 项目资料总览（0.31.0 hotfix；待人工评鉴）
 
@@ -105,6 +130,8 @@ scholar-workflow knowledge list --language zh
 `knowledge paper-plan/register-paper` 使用已登记 Source/Field，先核 Zotero 身份，再按
 摘要创建新的资料笔记、归属和导航；中断只能条件续行。它不接管旧包，也不代表科学验收。
 目前使用前必须确认安装版本已提供这些命令。
+0.43.0 按规范 Zotero 身份核对所有显式登记 Source 的论文主归属，清单缺失时拒绝猜空。
+新 Source 经明确登记初始化空清单，挂接旧 Source 不自动补造；恢复方式见上述契约。
 
 ```bash
 scholar-workflow analysis check-bundle /论文目录绝对路径 \
@@ -254,8 +281,9 @@ sandbox 保存在服务端策略；Hub 不扫描 `$PATH`。CLI 配置后需 `hub
 cmux 目的地失效时重新选择活跃 workspace，不影响正文阅读。任务没有目标时先登记，不会任取列表
 第一项；模型目录不可用时只提供已确认的本机模型。任务配置变更遇到运行中任务时先等待完成或明确取消。
 
-以上新入口在开发树实现，当前验收状态见 `planning/hub-paper-task-test-plan.md`；
-未完成独立测试与单篇界面验收前，不视为已安装版本的已验证能力。
+以上是保留的历史 Hub 兼容入口，不是当前以项目资料为中心的工作流。打开请求被接受
+不等于已目视看到阅读器。无需 Hub 的原生论文打开方式见
+[资料定位契约](skills/find-resource/references/resource-location.md)。
 
 要让其他 PDF 阅读器查看 Zotero 批注，可显式生成一份独立副本：
 
@@ -334,6 +362,8 @@ snapshot 不是 verified backup；真正备份仍需要独立介质和恢复演�
 | env-setup | 搭建并查阅个人 API-key / SSH 服务器 env-records 台账 |
 | agent-collaboration | 在 Claude Code、Codex 或其他可用 agent 之间双向协调边界清楚的任务 |
 | init-project | 初始化宿主中立、由 Git 管理且不带自定义 agent/hook 的研究项目骨架 |
+| organize-project | 内部 PROJECT、模块图、资料入口与唯一计划（0.43.0起） |
+| review-experiments | 只读整理与比较选定实验档案（0.43.0起） |
 | config-setup | 初始化、查询和更新插件配置 |
 | project-backlog | 维护本仓库的持久化工作项队列 |
 
@@ -431,6 +461,7 @@ scholar-workflow`)。你的 `config.yml` 与凭证在仓库之外,更新不受�
 - *"同步 Obsidian 索引和 Notion"* → sync-projections
 - *"让 Claude Code 和 Codex 分工完成这次迁移并整合"* → agent-collaboration
 - *"用标准骨架初始化这个项目"* → init-project
+- *"根据这些选定资料，整理一份内部 PROJECT 预览"* → organize-project
 
 各 skill 自己的 `README`(在 `skills/<名>/` 下)详述其选项与配置。推荐清单是临时的;你
 留下的论文走常规 find/ingest 管线,不经判重不入库。
@@ -442,11 +473,10 @@ scholar-workflow`)。你的 `config.yml` 与凭证在仓库之外,更新不受�
 - **Zotero 10.0.2 实机已跑通:** Local API 已完成 probe、search、collections、持久写授权、
   条目创建、imported PDF 上传、精确 DOI 复用与附件复用。同一 ingest payload 重跑会返回原
   item/attachment，不重复上传。
-- **Hub v3：0.30.0 hotfix，人工产品验收待完成:** 已取代 v0.28.1 binding 模型；
-  cmux 只表示打开位置，可信 folder/project Target 决定
-  文件与 cwd；受管 lifecycle 使用动态端口和自证 discovery，不依赖固定 23128 或源码目录。
-- **真实数据继续逐 Field 门禁:** 首个 Source 是当前科研技术文档 Vault，首个 Field 是世界模型，
-  JEPA/V-JEPA 是验收样本。该 Field 必须先展示 preview 并获确认；其他 Vault/项目保持不动。
+- **历史 Hub 仅保留兼容:** 动态服务和旧路由继续受安全边界保护，但不再是内容工作的前置条件。
+  原生工具自行持有配置与生命周期；cmux 只选择打开位置，不授予文件权限。
+- **真实数据继续逐 Field 门禁:** 明确选择已登记 Source/Field，在迁移改写前审议当前 preview；
+  其他 Vault/项目保持不动，单个样本验收不批准其他 Field 或整库迁移。
 - **ZotFlow 可用性只诊断、不自动修复:** 版本不兼容、本机 storage 模式关闭、CLI 无法证明或本机
   PDF 不存在时，Hub 只禁用 ZotFlow 动作并说明原因；不会自动升级 Obsidian、卸载插件或通过
   Zotero Web API/WebDAV 下载 PDF 来补齐本机文件。

@@ -1,4 +1,4 @@
-"""Compose registered declarations into read-only project ownership checks.
+"""Compose registered declarations into read-only project and Field ownership checks.
 
 This workflow reuses the existing provider validator without moving its legacy
 storage or making Knowledge core depend on analysis. It creates no state, locks,
@@ -19,6 +19,7 @@ from scholar_workflow.analysis.apply_changes import KnowledgeProviderSnapshot
 from scholar_workflow.knowledge.fields import (
     FieldManifest,
     FieldRegistryError,
+    FieldResourceReference,
     KnowledgeSourceRegistry,
     KnowledgeSourceRegistryDocument,
     _open_directory_chain,
@@ -141,7 +142,7 @@ def _yaml_mapping(loader: _UniqueYaml, node: yaml.MappingNode) -> dict:
 _UniqueYaml.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _yaml_mapping)
 
 
-def _file_state(root: Path, relative_path: str) -> str:
+def _file_observation(root: Path, relative_path: str) -> tuple[str, tuple[int, ...] | None]:
     """Check a declared file without reading its body or following a symlink."""
     descriptor: int | None = None
     parent: int | None = None
@@ -149,30 +150,34 @@ def _file_state(root: Path, relative_path: str) -> str:
         path = PurePosixPath(relative_path)
         if (path.is_absolute() or relative_path != path.as_posix() or "\\" in relative_path
                 or any(part in {".", ".."} or part.startswith(".") for part in path.parts)):
-            return "unsafe"
+            return "unsafe", None
         parent = _open_checked_chain(root, path.parts[:-1])
         descriptor = os.open(path.name, _READ_FLAGS, dir_fd=parent)
         info = os.fstat(descriptor)
         named = os.stat(path.name, dir_fd=parent, follow_symlinks=False)
         if not stat.S_ISREG(info.st_mode) or _identity(info) != _identity(named):
-            return "unsafe"
+            return "unsafe", None
         current_parent = _open_checked_chain(root, path.parts[:-1])
         try:
             current = os.stat(path.name, dir_fd=current_parent, follow_symlinks=False)
             if _identity(info) != _identity(current):
-                return "unsafe"
+                return "unsafe", None
         finally:
             os.close(current_parent)
-        return "available"
+        return "available", _identity(info)
     except FileNotFoundError:
-        return "missing"
+        return "missing", None
     except (OSError, ValueError):
-        return "unsafe"
+        return "unsafe", None
     finally:
         if descriptor is not None:
             os.close(descriptor)
         if parent is not None:
             os.close(parent)
+
+
+def _file_state(root: Path, relative_path: str) -> str:
+    return _file_observation(root, relative_path)[0]
 
 
 def _placements(
@@ -208,20 +213,21 @@ def _placements(
     return result
 
 
-def resolve_project_knowledge(
-    overview: ProjectOverview, registry_path: Path,
-) -> dict[str, KnowledgeOwnershipResolution]:
-    """Check selected Obsidian identities only; no filesystem discovery or writes."""
-    entries = [entry for entry in overview.entries if isinstance(entry.ref, ExternalResourceRef)
-               and entry.ref.provider == "obsidian"]
-    if not entries:
-        return {}
-    wanted = {entry.ref.resource_id for entry in entries}
+def _resolve_objects(
+    wanted: set[str], registry_path: Path, *, observation: dict | None = None,
+    field_selection: tuple[str, str] | None = None, inventory: dict | None = None,
+) -> tuple[dict[str, KnowledgeOwnershipResolution], set[str]]:
+    """Observe declared owners globally; a caller's selection is not a placement."""
+    if not wanted and field_selection is None:
+        return {}, set()
     locations: list[KnowledgeOwnerLocation] = []
     issues: list[KnowledgeOwnershipIssue] = []
     reads: list[tuple[str | None, _Declaration]] = []
     bindings: list[tuple[str, Path, tuple[int, int]]] = []
     roots: dict[str, Path] = {}
+    manifests: dict[str, FieldManifest] = {}
+    snapshots: dict[str, KnowledgeProviderSnapshot] = {}
+    provider_bindings: list[dict] = []
     registry = KnowledgeSourceRegistry(registry_path)
 
     def issue(source_id: str | None, code: str) -> None:
@@ -249,6 +255,10 @@ def resolve_project_knowledge(
             if manifest.source_id != source.source_id:
                 raise ValueError("Field manifest belongs to another Source")
             provider_relative = f"knowledge-providers/{source.source_id}/{_SNAPSHOT}"
+            if observation is not None or inventory is not None:
+                provider_root = registry.path.parent / "knowledge-providers" / source.source_id
+                provider_bindings.append({"source_id": source.source_id,
+                                          "identity": list(_root_identity(provider_root))})
             provider_read = _read_declaration(registry.path.parent, provider_relative, 16 * 1024 * 1024)
             snapshot = KnowledgeProviderSnapshot.model_validate(_json(provider_read.content))
             binding = snapshot.vault_binding
@@ -261,14 +271,54 @@ def resolve_project_knowledge(
                 raise ValueError("Source root changed during reading")
             locations.extend(_placements(source.source_id, manifest, snapshot))
             roots[source.source_id] = root
+            manifests[source.source_id] = manifest
+            snapshots[source.source_id] = snapshot
             bindings.append((source.source_id, root, current_identity))
             reads.extend(((source.source_id, field_read), (source.source_id, provider_read)))
         except (OSError, ValueError, KeyError, RecursionError, FieldRegistryError, yaml.YAMLError):
             issue(source.source_id, "source_declaration_unavailable")
 
+    selected_owners: set[tuple[str, str]] = set()
+    selected_field = None
+    if field_selection is not None:
+        source_id, field_id = field_selection
+        if not any(source.source_id == source_id for source in document.sources):
+            raise FieldRegistryError("Selected Source is not registered or its registry is unavailable")
+        if source_id not in roots:
+            raise FieldRegistryError("Selected Source declarations are unavailable")
+        selected_field = next((field for field in manifests[source_id].fields
+                               if field.field_id == field_id), None)
+        if selected_field is None:
+            raise FieldRegistryError("Selected Field is not registered in the selected Source")
+        paper_ids = {resource.resource_id for resource in snapshots[source_id].manifest.atomic_resources
+                     if resource.kind == "paper"}
+        selected_owners = {(source_id, row.owner_id) for row in locations
+                           if row.source_id == source_id and row.field_id == field_id
+                           and row.object_id == row.owner_id and row.owner_id in paper_ids}
+        reference_ids = {reference.target.object_id for reference in selected_field.references}
+        reference_results = {object_id: resolve_declared_ownership(object_id, locations, issues)
+                             for object_id in reference_ids}
+        for reference in selected_field.references:
+            result = _qualified_result(reference, reference_results, set(roots))
+            if result.status == "resolved":
+                owner = result.owner_candidates[0]
+                if any(resource.resource_id == owner.owner_id and resource.kind == "paper"
+                       for resource in snapshots[owner.source_id].manifest.atomic_resources):
+                    selected_owners.add((owner.source_id, owner.owner_id))
+        wanted = wanted | reference_ids | {row.object_id for row in locations
+                                           if (row.source_id, row.owner_id) in selected_owners}
+
     inspected = wanted | {row.owner_id for row in locations if row.object_id in wanted}
-    locations = [row.model_copy(update={"file_state": _file_state(roots[row.source_id], row.relative_path)})
-                 if row.object_id in inspected else row for row in locations]
+    files = []
+    inspected_locations = []
+    for row in locations:
+        if row.object_id in inspected:
+            state, identity = _file_observation(roots[row.source_id], row.relative_path)
+            files.append({"source_id": row.source_id, "relative_path": row.relative_path,
+                          "state": state, "identity": list(identity) if identity else None})
+            row = row.model_copy(update={"file_state": state})
+        inspected_locations.append(row)
+    locations = inspected_locations
     # Observe declarations again; no shared or exclusive write lock is created.
     for source_id, read in reads:
         try:
@@ -284,5 +334,88 @@ def resolve_project_knowledge(
                 issue(source_id, "source_binding_changed")
         except OSError:
             issue(source_id, "source_binding_changed")
-    return {entry.entry_id: resolve_declared_ownership(entry.ref.resource_id, locations, issues)
-            for entry in entries}
+    if observation is not None:
+        observation.update({
+            "declarations": [{"source_id": source_id, "root": str(read.root),
+                              "relative_path": read.relative_path, "limit": read.limit,
+                              "identity": list(read.identity),
+                              "hash": "sha256:" + hashlib.sha256(read.content).hexdigest()}
+                             for source_id, read in reads],
+            "roots": [{"source_id": source_id, "root": str(root), "identity": list(identity)}
+                      for source_id, root, identity in bindings],
+            "providers": provider_bindings, "files": files,
+        })
+    if inventory is not None:
+        inventory.update({"roots": roots, "manifests": manifests, "snapshots": snapshots,
+                          "locations": locations, "issues": issues, "reads": reads,
+                          "bindings": bindings, "providers": provider_bindings, "files": files,
+                          "selected_field": selected_field, "selected_owners": selected_owners})
+    return ({object_id: resolve_declared_ownership(object_id, locations, issues)
+             for object_id in wanted}, set(roots))
+
+
+def resolve_project_knowledge(
+    overview: ProjectOverview, registry_path: Path,
+) -> dict[str, KnowledgeOwnershipResolution]:
+    """Keep the existing project entry-keyed interface and no-write behavior."""
+    entries = [entry for entry in overview.entries if isinstance(entry.ref, ExternalResourceRef)
+               and entry.ref.provider == "obsidian"]
+    results, _ = _resolve_objects({entry.ref.resource_id for entry in entries}, registry_path)
+    return {entry.entry_id: results[entry.ref.resource_id] for entry in entries}
+
+
+def resolve_field_references(
+    manifest: FieldManifest, registry_path: Path,
+) -> dict[str, dict[str, KnowledgeOwnershipResolution]]:
+    """Resolve explicit selections without treating them as owners or permissions.
+
+    A qualified Source cannot hide a duplicate declaration elsewhere. Missing
+    targets remain present, and reader verification stays independent.
+    """
+    fields = [field for field in manifest.fields if field.references]
+    results, available = _resolve_objects(
+        {row.target.object_id for field in fields for row in field.references}, registry_path,
+    )
+    output: dict[str, dict[str, KnowledgeOwnershipResolution]] = {}
+    for field in fields:
+        rows = {}
+        for reference in field.references:
+            rows[reference.reference_id] = _qualified_result(reference, results, available)
+        output[field.field_id] = rows
+    return output
+
+
+def _qualified_result(reference, results, available) -> KnowledgeOwnershipResolution:
+    result = results[reference.target.object_id]
+    source_id = reference.target.source_id
+    code = None
+    if source_id not in available:
+        code = "reference_target_unavailable"
+    elif result.locations and any(row.source_id != source_id for row in result.locations):
+        code = "reference_target_mismatch"
+    if code is not None:
+        return result.model_copy(update={
+            "status": "conflict" if result.status == "conflict" else "incomplete",
+            "issues": [*result.issues, KnowledgeOwnershipIssue(source_id=source_id, code=code)],
+        })
+    return result
+
+
+def annotate_field_references(fields: list[dict], registry_path: Path) -> list[dict]:
+    """Add diagnostics to a list projection, inspecting providers only on request."""
+    selections = [[FieldResourceReference.model_validate(row) for row in field.get("references", [])]
+                  for field in fields]
+    results, available = _resolve_objects(
+        {row.target.object_id for rows in selections for row in rows}, registry_path,
+    )
+    output = []
+    for field, references in zip(fields, selections, strict=True):
+        if not references:
+            output.append(field)
+            continue
+        output.append({**field, "references": [
+            {**reference.model_dump(mode="json"), "resolution":
+             _qualified_result(reference, results, available).model_dump(mode="json")}
+            for reference in references
+        ]})
+    return output
