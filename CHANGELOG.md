@@ -10,6 +10,10 @@ separate. The development-only paper-layout proposal is not a runtime default.
 
 ### Changed
 
+- **release verification:** record the approved 0.43.0 hotfix publication and
+  normal fixed-commit pipx/Codex installation, with exact runtime/package checks.
+  Keep native assessment, main integration and existing services separate.
+
 - **human presentation:** prioritize state, plan and results in internal PROJECT;
   lead experiment reviews with plain-language conclusions and supported visuals.
   Keep relevant navigation in the body and machine audit detail supplementary.
