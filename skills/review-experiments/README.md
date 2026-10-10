@@ -19,5 +19,14 @@ artifacts. Missing units/protocols do not silently inherit another Run's metadat
 Remote-only results remain unavailable without a separate acquisition request.
 No common metric JSON schema or significance claim is invented.
 
+Multi-experiment reviews include a compact table of names, recorded execution
+times, purposes, configuration variables and results. Few variables appear inline;
+many use key differences plus inspected captured-config links. The table retains
+unverified settings and missing/failed results rather than substituting guesses.
+
+Saved project reports must display their figures and support local navigation in
+VS Code. Use the [project reader contract](../../references/vscode-project-docs.md);
+another reader's successful display does not establish VS Code acceptance.
+
 See [the report contract](../../references/experiment-review.md). Available from
 0.43.0; native reading and human usefulness assessment remain separate from installation.

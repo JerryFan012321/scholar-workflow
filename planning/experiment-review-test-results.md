@@ -1,5 +1,48 @@
 # 实验复核开发评价结果
 
+## 2026-10-10 多变量与未解析配置补充检查
+
+只复制原项目为两个一次性合成raw根，先冻结根外EXPECTED，独立执行者只读两根及
+runtime skill/必读refs，各返回五节报告。没有修改skill来适配预期，没有运行配方、
+解析器、产品命令、网络或GUI，也不把会话报告写入Vault。
+
+- A：Run.config合法绑定各自inputs/resolved-config.json；十字段差异完整显示，
+  其中choice是标记、另九项为模型/训练设置。主表突出少量关键值并链接快照，详细表
+  列choice、层宽、激活、dropout、优化器、学习率、weight_decay、batch_size、epochs、
+  augmentation。记录目的来自原报告/notes；三项后来变化的当前configs值另表呈现，
+  没有拿当前dropout/学习率/轮数替代快照，没有单因素因果结论。
+- B：配置hash合法但unresolved，缺失共同include及各自override共三文件；目的未记录，
+  模型/训练参数未知。报告保留所选0.80/0.85比例及全部四执行历史，不建立有效配置
+  效果差值/排名，不借用A参数或执行配置以补全。
+- 两例时间、primary选择、失败缺值非0、replay非独立重复、来源链接及合成未执行边界
+  均保留。原33文件、A的35文件、B的33文件在评审后逐文件manifest摘要全等。
+
+raw目录仅用于可丢弃的开发输入，不是持续审阅资料。目录分别为
+/tmp/scholar-experiment-config-cases.rIQOWv/case-a和case-b，根外EXPECTED记录输入构造、
+十字段/共享条件及全量hash算法；完整agent报告在本轮会话留证。原项目文件集digest为
+04db630b0f43b0766e6f2689e2d613eb2c32cbf5cbf62e46b7b1b1d2fbbeedd8，A为
+8c7ee0909849fd03b369de4651ee18a7cebf445a8022fc2083cdd18b93fa17d2，B为
+65cabd652ac13a41714e670023cb80ac4925335e5de672dd31ea8fcb1f052f31。
+这两项限定行为评价符合预期，不是普遍鲁棒、真实科学或VS Code/人工可读性认证。
+
+## 2026-10-10 对比表规范的单项目正向检查
+
+沿用原合成项目，不生成新的业务数据；先按raw记录在EXPECTED补充时间、缺失目的、
+配置值及行级来源预期，再由未读取预期/旧结果的独立agent使用当前开发版skill。
+报告仅在会话返回，未保存候选、运行配方或打开应用。本节是开发行为评价，不是安装态。
+
+| 检查对象 | 实际返回 | 结论 |
+|---|---|---|
+| 主表字段与选择 | 两行primary，均有名称、记录时间、目的、配置值、指标及执行/config/report来源链接 | 符合本例预期。 |
+| 时间 | baseline为2026-10-09 UTC 10:03–10:04；variant为11:01–11:02 | 未用配方创建/成果保存时间替代。 |
+| 目的与配置 | 目的均未记录；choice=baseline/variant直接显示，共同seed=7单独说明；两config已读并核对配方摘要 | 未把审阅目标编造成实验目的，未冒称真实运行配置。 |
+| 结果与执行历史 | 比例0.80/0.85，描述性差值5个百分点；另表四Attempt，失败无分数，replay不计独立重复 | 符合原事实与本次表格规范。 |
+| 输入与权限 | project目录对HEAD无diff或未跟踪文件；两config摘要、两metrics摘要/340字节与声明一致 | 原33文件未改；没有安装/发布/GUI/Vault操作。 |
+
+报告保留五节、合成/未执行与备份未验证说明。其完整原文已在本轮独立agent会话留证。
+本例仅覆盖少变量和缺失目的；多变量展开、已记录目的、真实VS Code导航/外观及人工
+评鉴不据此放行。既有四隔离负例不重跑，旧结果不覆盖；整体outcome继续pending。
+
 ## 范围与当前结论
 
 2026-10-09，独立`codex/hotfix-knowledge-ownership`开发树。

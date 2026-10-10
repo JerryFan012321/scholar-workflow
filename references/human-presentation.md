@@ -47,6 +47,19 @@ geometry, table columns, filenames, and edit behavior.
 - Preserve human-authored content on update. When a human edit conflicts with a
   managed projection, show the conflict rather than silently replacing it.
 
+## Compact tree connections
+
+Tree connections must be as short as practicable within the owning format's full
+framework, aligned hierarchy, non-crossing/no-occlusion rules, readable text and
+click space. Among compliant layouts, prefer shorter actual routed connections
+and fewer unnecessary bends or detours. Avoid inflated parent-child gaps and long
+empty-space traversals; a permitted shared trunk can serve siblings. Endpoint
+distance alone does not measure a route with bends. Compactness never authorizes
+missing nodes/links, unreadable shrinking, changed semantics, or violation of the
+format's endpoint/arrow rules. Preserve safe accepted human layout during updates;
+offer a separately scoped layout change when needed. This is an output requirement,
+not a claim that an existing renderer proves a global shortest layout.
+
 ## Surface-specific ownership
 
 | Surface | Detailed contract |

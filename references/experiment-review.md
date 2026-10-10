@@ -5,6 +5,9 @@ embedded or linked from a private PROJECT.md. Run/Attempt/Artifact records retai
 their existing authority. README.md remains the external presentation document;
 reviewing or saving a report does not authorize publishing internal project facts.
 Record lifecycle rules remain in `skills/init-project/references/experiment-records.md`.
+Saved project-local reports use VS Code as their primary reader. Load
+`vscode-project-docs.md` for its reading/figure/navigation requirements; this does
+not apply the six-section PROJECT format to the five-section report below.
 
 ## Required human result
 
@@ -16,8 +19,8 @@ the main results before detailed comparison conditions and verification records.
 1. **Summary and scope:** selected project, Runs, result Attempts, requested metrics
    and comparison goal; the useful conclusion first, plus complete/partial status.
    Label synthetic, unexecuted or unverified inputs explicitly.
-2. **Run results:** one row per selected Run/result selection showing the source
-   Attempt, metric and unit, artifact/source link, evidence availability/integrity,
+2. **Run results:** the comparison overview table defined below, with one row per
+   selected Run/result selection, its source Attempt, evidence availability/integrity
    and comparable/not-established status. Retain missing and conflicted rows.
    If more than one result per Run is requested, label them separately rather than
    collapsing them into an unspecified Run score.
@@ -39,6 +42,41 @@ review may use host-supported absolute local links; a saved portable report uses
 relative links, not workstation-specific paths. Link recipes, resolved configs,
 reports and metric files beside their uses. Full hashes and machine identity dumps
 do not belong in the main prose; concise integrity states identify what was checked.
+
+## Comparison overview table
+
+Make multiple experiments directly comparable in a Markdown table near the results,
+not only in separate narrative descriptions. Include experiment name, recorded
+execution time, purpose, configuration/independent variables, and result. Give each
+row direct links to its selected execution and supporting configuration/result files.
+Use readable names; keep machine identities in the linked records.
+
+- **Time:** use the selected Attempt's recorded start/end and timezone when available;
+  label which time is shown. An inspection date, recipe creation date or file mtime
+  is not an execution time. Missing times or purposes say not recorded; distinguish
+  a proposed purpose from one stated in the experiment record.
+- **Few independent variables:** show their names and actual values directly in
+  compact cells or dedicated columns. Explain shared conditions once, with sources;
+  do not bury the comparison variable behind a config link.
+- **Many independent variables:** show the key differences and link each row to its
+  captured resolved configuration. Read the referenced configuration and identify
+  the relevant values/differences; a link alone is not configuration verification.
+  Choose the compact form by actual table readability, not an arbitrary fixed count.
+  Detailed differences may use a linked supplementary table.
+- **Configuration authority:** use the configuration captured for that Run/Attempt,
+  with the existing record's integrity checks. A mutable working-tree config is not
+  a substitute. If only an unresolved config/recipe exists, label it and link it;
+  leave runtime-effective values unverified. Do not execute config code or invent
+  values to resolve includes, overrides or missing snapshots.
+- **Result:** show the requested value with unit and outcome, linking the metric,
+  report and useful figure beside it. Failed, missing, remote-only or conflicted
+  results remain visible with their reason, not a fabricated zero. Multiple selected
+  results from one Run remain explicitly identified, not silently averaged.
+
+Keep the overview narrow enough to read in VS Code. Split detailed conditions or
+metric groups into clearly keyed tables when necessary without losing selected
+rows or source links. This table is a derived view, not a second configuration,
+schedule or result authority; the comparison and Attempt-history rules still apply.
 
 ## Visuals and plain language
 

@@ -17,6 +17,11 @@ links explain their relevance; verification details remain supplementary. Missin
 evidence and untested reader links stay visible. Module diagrams are editable and
 source-supported; retries are not independent experiments.
 
+VS Code is the primary reader for PROJECT, its plan and project reports. Use its
+capable built-in Markdown/Mermaid preview; optional extensions and native checks are
+described in [the reader contract](../../references/vscode-project-docs.md).
+An Obsidian preview is not a substitute for VS Code assessment.
+
 Default output is a conversation preview. Explicitly request a destination to
 save a candidate, or a bounded update to an existing document. Human content and
 unresolved plan conflicts are preserved. This does not run code, initialize a

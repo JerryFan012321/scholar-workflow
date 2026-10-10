@@ -2,6 +2,21 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "experiment-comparison-readable-config-table",
+      "description": "G16/G17：多实验结果以紧凑表格列出名称、对应执行时间、目的、配置自变量和结果。少变量直接列值，多变量显示关键差异并链接/核查Run或Attempt留存配置；不拿当前可变配置替代，不将配方日期/文件mtime当执行时间，不执行配置代码。未知/未解析配置、失败、缺失和冲突结果保持可见；来源Attempt、指标/图/报告链接及可比性规则保留，重试不算独立重复。PROJECT与报告共用references/experiment-review.md，无第二份配置/结果状态源。2026-10-10沿用2Run/4Attempt合成项目，先补独立预期再由隔离agent生成五节报告：两primary行完整，UTC时间/未记录目的/choice值及来源准确，四执行历史与0.80/0.85和5个百分点正确。另两隔离副本完成多变量快照/已记录目的及未解析依赖评价，十字段差异完整、当前三变值不替代快照，未知参数不补造、不执行解析器；原33/A35/B33文件集digest不变。有限开发行为评价不等于普遍鲁棒、真实VS Code或人工通过；用户已授权0.43.2发布安装，仍准备中，保持pending。详见planning/experiment-review-test-results.md顶部与0.43.2-release.md。",
+      "status": "pending"
+    },
+    {
+      "id": "project-documents-vscode-native-surface",
+      "description": "G16/G17：PROJECT、唯一项目计划及项目实验报告在VS Code中完整阅读、显示模块/结果图并导航代码、数据、报告；另标Zotero/Obsidian外部动作，不能冒称内嵌。采用一个明确且实际启用的预览引擎，现有内置Mermaid/SVG可用时不要求冗余扩展，不自动安装、改设置、关闭Strict安全或执行文档代码。2026-10-10仅完成官方/作者调研、本机CLI/包能力清点及规范修订，实际profile/原生渲染和人工评鉴未完成；Obsidian截图或安装清单不放行。规范见references/vscode-project-docs.md，记录见planning/vscode-project-docs-investigation.md。",
+      "status": "pending"
+    },
+    {
+      "id": "tree-routes-compact-within-required-format",
+      "description": "G12/G13/G16/G17：树图在完整框架、节点/证据/链接、可读字号与点击留白、层级对齐及无交叉/遮挡等原有硬要求内，尽可能缩短实际折线路径和多余绕行；不能靠删节点、缩字、破坏端点/箭头语义或覆盖已认可人类布局达成。格式允许时共享主干，不能以端点距离冒充折线路径长度或宣称全局最优。2026-10-10新v5布局按有子节点宽度试缩列，实际折线/节点安全或2:1失败则回退；原验证谓词共用且不放宽。独立36节点35边正例水平864→64px、实际折线1026→226px；2:1/2px遮挡负例及无需压缩按普通/expanded验证，先红后绿。公开render另验证26节点25边缩列、完整正文/节点除x/证据反链/边守恒及旧baseline更新保留全部布局。759分析必要回归通过；全量首次2533pass/1新增输入错误，补齐现有规则所需短摘要后9专项通过，手算坐标预期及生产代码不改。不伪报单次全量2534pass。未提交发布安装、未重画既有Canvas，原生新布局及人工美观仍待验，保持pending。",
+      "status": "pending"
+    },
+    {
       "id": "knowledge-paper-unit-supplemental-asset-navigation",
       "description": "G2/G16/G17：论文清单沿明确provider artifact→paper合并catalog与可选便携assets声明，四角色/sidecar及跨Source附件不遗漏；共享去重，owner集合顺序无关，冲突ID/path双方不作为确定文件输出。缺失/不安全/无效/变化清单保留诊断及独立有效条目，稳定缺失可选manifest不失败。只读声明和文件metadata，不读/hash附件正文，不改owner/registry/论文/实验或普通list。独立预期先行，红测及first-wins边界修正后完整2525项合成unit/contract通过（含39资产项）；记录在planning/field-paper-assets-test-results.md。用户授权后，0.43.1 source bed3bdd/runtime8c4832已正常发布和pipx/Codex安装，本轮95必要检查通过；实际test单Field一篇/十文件含六附件，四URI静态对应，77保护文件不变，2673字节样张全等。图片/JSON明确不支持直接打开，真实点击、人工及G17整体保持pending；见planning/field-paper-assets-release-test-results.md。",
       "status": "pending"

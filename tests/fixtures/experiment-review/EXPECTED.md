@@ -50,6 +50,34 @@ The exact title, heading wording, column order and optional graph are not frozen
 by this fixture. Report usability and appearance remain pending human assessment.
 The raw project files must be byte-for-byte unchanged after the review.
 
+## Comparison table extension (2026-10-10)
+
+These expectations are frozen from the raw inputs before inspecting the independent
+reviewer's response to the new table contract. The reviewer does not receive this
+file. This case covers few variables and missing purpose, not a many-variable or
+native VS Code acceptance test.
+
+- The main results table has two rows, both explicitly selecting `primary`. It
+  accounts for experiment name, execution time, purpose, configuration and result;
+  the separate history still accounts for all four Attempts.
+- Baseline's recorded execution interval is `2026-10-09T10:03:00Z` through
+  `2026-10-09T10:04:00Z`; variant's is `2026-10-09T11:01:00Z` through
+  `2026-10-09T11:02:00Z`. Label UTC, or convert with an explicit timezone. Do not
+  substitute the Run creation or artifact promotion times. These are synthetic
+  timestamps, not evidence that either experiment ran.
+- Neither Run, source report nor human note records an experiment purpose. Use
+  not recorded; the user's review goal is not a recorded experiment purpose.
+- Show the single changed choice inline: `choice=baseline` versus
+  `choice=variant`. Shared seed `7`, synthetic flag and evaluation protocol may
+  be stated once with sources. Read both hash-bound config files; their current
+  bytes must match each Run's declared config hash. This does not establish an
+  actually captured runtime configuration or resolve the placeholder source commit.
+- Link each selected execution, config and metrics/result report at the point of
+  use. Keep the values `0.80` and `0.85` with their declared fraction unit. All prior
+  integrity, descriptive-delta, preservation and no-execution limits remain.
+- No new file, record, index, result figure, installation or GUI action is needed.
+  A correct conversation report remains distinct from saved-reader/human acceptance.
+
 ## Isolated negative cases
 
 Each case uses a separate temporary copy of `project/`; do not edit the fixture.
