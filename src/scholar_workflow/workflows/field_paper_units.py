@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import hashlib
+from collections import Counter
 from pathlib import Path, PurePosixPath
 from urllib.parse import quote, urlencode
 
+import yaml
+
 from scholar_workflow.adapters import obsidian_registry
+from scholar_workflow.knowledge.catalog_models import HubAsset
 from scholar_workflow.knowledge.fields import FieldRegistryError
 from scholar_workflow.knowledge.ownership import (
     KnowledgeOwnershipIssue,
@@ -19,7 +23,107 @@ from scholar_workflow.workflows.knowledge_ownership import (
     _read_declaration,
     _resolve_objects,
     _root_identity,
+    _UniqueYaml,
 )
+
+_ASSETS = ".scholar-workflow/assets.yml"
+_ASSET_LIMIT = 2 * 1024 * 1024
+
+
+def _source_assets(inventory: dict) -> tuple[dict, list[dict]]:
+    """Merge explicit attachments without promoting them to Knowledge owners."""
+    assets, issues = {}, []
+    inventory["asset_reads"] = {}
+    for source_id in sorted({source for source, _owner in inventory["selected_owners"]}):
+        snapshot = inventory["snapshots"][source_id]
+        root = inventory["roots"][source_id]
+        portable = []
+
+        def issue(code="asset_declaration_invalid", source_id=source_id):
+            issues.append({"source_id": source_id, "code": code})
+
+        try:
+            read = _read_declaration(root, _ASSETS, _ASSET_LIMIT)
+        except FileNotFoundError:
+            inventory["asset_reads"][source_id] = None
+        except (OSError, ValueError):
+            issue("asset_declaration_unavailable")
+        else:
+            inventory["asset_reads"][source_id] = read
+            try:
+                data = yaml.load(read.content, Loader=_UniqueYaml)
+                if (not isinstance(data, dict) or set(data) != {"schema_version", "assets"}
+                        or type(data["schema_version"]) is not int or data["schema_version"] != 1
+                        or not isinstance(data["assets"], list)):
+                    raise ValueError("Invalid asset declaration shape")
+                for row in data["assets"]:
+                    try:
+                        portable.append(HubAsset.model_validate(row))
+                    except ValueError:
+                        issue()
+            except (ValueError, RecursionError, yaml.YAMLError):
+                issue()
+        owners = {row.artifact_id for row in snapshot.artifacts}
+        occupied_ids = {row.object_id for row in inventory["locations"]
+                        if row.source_id == source_id}
+        occupied_paths = {row.relative_path for row in inventory["locations"]
+                          if row.source_id == source_id}
+        repeated_ids = {value for value, count in Counter(row.asset_id for row in portable).items()
+                        if count > 1}
+        repeated_paths = {value for value, count in Counter(row.vault_path for row in portable).items()
+                          if count > 1}
+        rows = [row.model_copy(update={"owner_artifact_ids": sorted(row.owner_artifact_ids)})
+                for row in [*snapshot.catalog.assets, *portable]]
+        variants = {}
+        path_ids: dict[str, set[str]] = {}
+        for row in rows:
+            if row.asset_id in variants and variants[row.asset_id] != row:
+                repeated_ids.add(row.asset_id)
+            variants[row.asset_id] = row
+            path_ids.setdefault(row.vault_path, set()).add(row.asset_id)
+        repeated_paths.update(path for path, ids in path_ids.items() if len(ids) > 1)
+        merged = {}
+        for row in rows:
+            if (set(row.owner_artifact_ids) - owners or row.asset_id in occupied_ids
+                    or row.vault_path in occupied_paths
+                    or row.asset_id in repeated_ids or row.vault_path in repeated_paths):
+                issue()
+                continue
+            merged[row.asset_id] = row
+        assets[source_id] = [merged[key] for key in sorted(merged)]
+    return assets, issues
+
+
+def _asset_changes(inventory: dict) -> list[dict]:
+    """Also detect a declaration appearing after an optional absent observation."""
+    issues = []
+    for source_id, read in inventory["asset_reads"].items():
+        try:
+            current = _read_declaration(inventory["roots"][source_id], _ASSETS, _ASSET_LIMIT)
+            if read is None or current.identity != read.identity or current.content != read.content:
+                raise ValueError("Asset declaration changed")
+        except FileNotFoundError:
+            if read is None:
+                continue
+        except (OSError, ValueError):
+            pass
+        else:
+            continue
+        issues.append({"source_id": source_id, "code": "asset_declaration_changed"})
+    return issues
+
+
+def _file_ownership_resolved(row: dict, source_id: str, owner_id: str, results: dict) -> bool:
+    if results[owner_id].status != "resolved":
+        return False
+    if row["kind"] != "asset":
+        return results[row["object_id"]].status == "resolved"
+    # Shared assets may also have owners outside this selection. The selected
+    # paper's explicit producer artifacts must resolve in this Source, not by name.
+    producers = [results[value] for value in row["owner_artifact_ids"] if value in results
+                 and any(location.source_id == source_id and location.owner_id == owner_id
+                         for location in results[value].locations)]
+    return bool(producers) and all(value.status == "resolved" for value in producers)
 
 
 def _authority_changes(inventory: dict) -> list[KnowledgeOwnershipIssue]:
@@ -115,7 +219,7 @@ def _reader_changes(inventory: dict, readers: dict) -> list[dict]:
     return issues
 
 
-def _declared_files(snapshot, owner_id: str) -> list[dict]:
+def _declared_files(snapshot, owner_id: str, assets: list[HubAsset]) -> list[dict]:
     """Use primary, supporting and artifact declarations, never nearby filenames."""
     owner = next(row for row in snapshot.manifest.atomic_resources if row.resource_id == owner_id)
     files = [{"object_id": owner.resource_id, "kind": "paper", "title": owner.title,
@@ -128,6 +232,11 @@ def _declared_files(snapshot, owner_id: str) -> list[dict]:
                   "title": PurePosixPath(row.vault_path).name, "relative_path": row.vault_path}
                  for row in snapshot.artifacts
                  if row.resource_id == owner_id and row.artifact_id not in declared)
+    producers = {row.artifact_id for row in snapshot.artifacts if row.resource_id == owner_id}
+    files.extend({"object_id": row.asset_id, "kind": "asset", "title": row.display_name,
+                  "relative_path": row.vault_path, "owner_artifact_ids": row.owner_artifact_ids,
+                  "asset_role": row.role.value}
+                 for row in assets if producers.intersection(row.owner_artifact_ids))
     return files
 
 
@@ -148,10 +257,17 @@ def field_paper_units(
     )
     inventory["registry_parent"] = Path(registry_path).parent
     field = inventory["selected_field"]
+    assets, asset_issues = _source_assets(inventory)
     readers, reader_issues = _readers(inventory, results, reader_config_path)
     observations = {(row["source_id"], row["relative_path"]): row for row in inventory["files"]}
-    declared = {key: _declared_files(inventory["snapshots"][key[0]], key[1])
+    declared = {key: _declared_files(inventory["snapshots"][key[0]], key[1], assets[key[0]])
                 for key in sorted(inventory["selected_owners"])}
+    for (owner_source, _owner_id), files in declared.items():
+        for row in files:
+            key = (owner_source, row["relative_path"])
+            if key not in observations:
+                state, identity = _file_observation(inventory["roots"][owner_source], key[1])
+                observations[key] = {"state": state, "identity": list(identity) if identity else None}
     file_views = {}
     file_states = {}
     changes = []
@@ -166,12 +282,14 @@ def field_paper_units(
                 list(identity) if identity else None) != observed["identity"]
             uri = None
             if changed:
-                changes.append(KnowledgeOwnershipIssue(source_id=owner_source, code="file_changed"))
+                if row["kind"] == "asset":
+                    asset_issues.append({"source_id": owner_source, "code": "asset_file_changed"})
+                else:
+                    changes.append(KnowledgeOwnershipIssue(source_id=owner_source, code="file_changed"))
                 state = "unsafe" if state == "available" else state
             if state != "available":
                 open_state = "file_unavailable"
-            elif (results[owner_id].status != "resolved"
-                  or results[row["object_id"]].status != "resolved"):
+            elif not _file_ownership_resolved(row, owner_source, owner_id, results):
                 open_state = "ownership_unresolved"
             elif PurePosixPath(relative).suffix.lower() not in {".md", ".canvas"}:
                 open_state = "unsupported_type"
@@ -199,7 +317,10 @@ def field_paper_units(
             state, identity = _file_observation(inventory["roots"][owner_source], row["relative_path"])
             if (state != observed["state"] or (list(identity) if identity else None)
                     != observed["identity"]):
-                changes.append(KnowledgeOwnershipIssue(source_id=owner_source, code="file_changed"))
+                if row["kind"] == "asset":
+                    asset_issues.append({"source_id": owner_source, "code": "asset_file_changed"})
+                else:
+                    changes.append(KnowledgeOwnershipIssue(source_id=owner_source, code="file_changed"))
                 row.update(file_state="unsafe" if state == "available" else state,
                            uri=None, open_state="file_unavailable")
                 file_states[(owner_source, row["object_id"])] = row["file_state"]
@@ -212,6 +333,8 @@ def field_paper_units(
                 if row["open_state"] == "ready":
                     row.update(uri=None, open_state="reader_unavailable")
     changes.extend(_authority_changes(inventory))
+    asset_issues.extend(_asset_changes(inventory))
+    incomplete_assets = {row["source_id"] for row in asset_issues}
     issues = list({(row.source_id, row.code): row
                    for row in [*inventory["issues"], *changes]}.values())
     locations = [row.model_copy(update={"file_state": file_states.get(
@@ -244,17 +367,18 @@ def field_paper_units(
                      and row.object_id == owner_id and row.owner_id == owner_id)
         files = file_views[(owner_source, owner_id)]
         for row in files:
-            if (results[owner_id].status != "resolved"
-                    or results[row["object_id"]].status != "resolved"):
+            if (not _file_ownership_resolved(row, owner_source, owner_id, results)
+                    or row["kind"] == "asset" and owner_source in incomplete_assets):
                 row["uri"] = None
-                if row["file_state"] == "available":
+                if (row["file_state"] == "available"
+                        and (row["kind"] != "asset" or row["open_state"] != "unsupported_type")):
                     row["open_state"] = "ownership_unresolved"
         units.append({"source_id": owner_source, "resource_id": owner_id,
                       "title": files[0]["title"], "field_title": owner.field_title,
                       **selection, "ownership": results[owner_id].model_dump(mode="json"),
                       "files": files})
     all_issues = list({(row["source_id"], row["code"]): row for row in [
-        *(issue.model_dump(mode="json") for issue in issues), *reader_issues,
+        *(issue.model_dump(mode="json") for issue in issues), *reader_issues, *asset_issues,
     ]}.values())
     partial = bool(unresolved or all_issues or any(
         row["open_state"] not in {"ready", "unsupported_type"}

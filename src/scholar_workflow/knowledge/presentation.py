@@ -151,6 +151,10 @@ def paper_units_markdown(payload: dict, *, language: str) -> str:
                      "source_declaration_unavailable": "有来源声明不可用",
                      "declaration_changed": "声明在查询期间变化", "source_binding_changed": "来源目录绑定变化",
                      "provider_binding_changed": "资料声明目录绑定变化", "file_changed": "文件在查询期间变化",
+                     "asset_declaration_invalid": "附件声明存在无效条目或冲突，清单不完整",
+                     "asset_declaration_unavailable": "附件声明不可安全读取，清单不完整",
+                     "asset_declaration_changed": "附件声明在查询期间变化，请重新查询",
+                     "asset_file_changed": "附件文件在查询期间变化，请重新查询",
                      "reader_unavailable": "阅读器登记不可用或不唯一", "reader_changed": "阅读器登记或绑定变化"}
                     if zh else
                     {"registry_unavailable": "Source registry unavailable", "source_disabled": "A Source is disabled or unreadable",
@@ -159,6 +163,10 @@ def paper_units_markdown(payload: dict, *, language: str) -> str:
                      "source_binding_changed": "A Source directory binding changed",
                      "provider_binding_changed": "A provider directory binding changed",
                      "file_changed": "A file changed during inspection",
+                     "asset_declaration_invalid": "Asset declarations contain invalid or conflicting entries; inventory is incomplete",
+                     "asset_declaration_unavailable": "Asset declarations cannot be read safely; inventory is incomplete",
+                     "asset_declaration_changed": "Asset declarations changed during inspection; query again",
+                     "asset_file_changed": "An asset file changed during inspection; query again",
                      "reader_unavailable": "Reader registration is unavailable or ambiguous",
                      "reader_changed": "Reader registration or binding changed"})
     if payload["issues"]:

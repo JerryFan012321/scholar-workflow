@@ -16,10 +16,10 @@ on a fresh install — so you can set things up by asking, without hand-writing 
   retries use the original reviewed command and digest.
   Schema-2 Field references reuse existing objects without another owner or copy.
   `knowledge list --resolve-references` optionally checks their declared ownership
-  and file states; readers remain unverified. The development-only
+  and file states; readers remain unverified. The
   `knowledge reference-plan/reference` pair previews and confirms one reference
   addition/removal; only the referencing manifest changes, not its target. These
-  commands have not yet shipped in the normally installed 0.42.0 package.
+  commands are available from 0.43.0.
 - **Change a value** — `scholar-workflow config set KEY VALUE` sets one dotted key
   (e.g. `notion.enabled`, `link_service.port`), preserving comments in the file.
 - **Inspect** — `config show` (effective values), `config show --raw` (file as written),

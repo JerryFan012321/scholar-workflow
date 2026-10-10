@@ -1,20 +1,22 @@
 # build-literature-tree
 
-## 既有论文单元导航——仅开发树
+## 既有论文单元导航
 
 `knowledge list --paper-units --source-id SOURCE_UUID --field-id FIELD_UUID --language zh`
 只组合选定领域的本地论文及显式引用，复用论文包，保留全部用途和资料、分析、Canvas、
 笔记入口与缺失/冲突诊断。有安全且唯一的阅读器映射时提供 Obsidian 直接链接，列清单本身
 不打开应用、不写文件。它不刷新 Zotero 书目，也不替换固定 `01-Paperlist.md`。
-**正常安装的 0.42.0 尚无此模式**；详见[导航契约](references/field-paper-units.md)。
-安装态、原生阅读和人工可读性分别待验。
+此模式自 **0.43.0** 提供；详见[导航契约](references/field-paper-units.md)。
+安装、原生阅读和人工可读性分别判断。
+补充文件仅按 provider 或便携附件清单中的明确关系纳入；缺失、不安全和冲突均保留诊断。
+列清单不读取附件内容，也不把已记录的哈希当作本次完整性核验。
 
-## 逐贡献演进预览——仅开发树
+## 逐贡献演进预览
 
-未发布的开发树新增 `literature-preview --input evolution.json --format md|json`：
+自 0.43.0 提供 `literature-preview --input evolution.json --format md|json`：
 校验四类 novelty、主/支/局部位置，显示紧凑纵向归属概览及带原文页级入口的完整技术取舍。
 复用论文身份，不复制论文正文；不读取配置、登记库或原文件，不写任何内容。
-**正常安装的 0.42.0 尚无此命令**。真实科学支持、最终可编辑图和外观人工评鉴分别待验；
+真实科学支持、最终可编辑图和外观人工评鉴分别待验；
 详见[预览契约](references/evolution-preview.md)。
 
 ## 现有概念分类视图
