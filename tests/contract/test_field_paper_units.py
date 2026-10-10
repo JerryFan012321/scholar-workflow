@@ -229,7 +229,10 @@ def _query_guard(corpus: PaperUnitCorpus, *, legacy_headers: bool = False,
             # guard. It does not grant access to its directory or other JSON.
             with _inspection_guard(scope, project=corpus.reader_config.parent,
                                    context_file=corpus.reader_config.name,
-                                   header_paths=headers if legacy_headers else ()):
+                                   header_paths=headers if legacy_headers else (),
+                                   extra_declaration_paths=tuple(
+                                       root / ".scholar-workflow/assets.yml"
+                                       for root in scope.source_roots.values())):
                 yield workflow, patch
     finally:
         assert _filesystem(scope.temporary) == before

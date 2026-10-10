@@ -13,8 +13,8 @@
   创建中断后，用原登记命令与已审阅摘要恢复。
   schema 2 的领域引用复用既有对象，不创建第二份归属或副本。
   `knowledge list --resolve-references` 可选核验其声明归属和文件状态，阅读器仍未核验；
-  开发树中的 `knowledge reference-plan/reference` 可预览并确认单条引用增删，
-  只改引用方清单，不改目标内容；尚未随正常安装的 0.42.0 发布。
+  `knowledge reference-plan/reference` 自 0.43.0 提供，可预览并确认单条引用增删，
+  只改引用方清单，不改目标内容。
 - **修改某项** —— `scholar-workflow config set KEY VALUE` 设置单个点分键
   （如 `notion.enabled`、`link_service.port`），并保留文件中的注释。
 - **查看** —— `config show`（生效值）、`config show --raw`（文件原文）、

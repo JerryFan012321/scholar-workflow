@@ -226,9 +226,11 @@ def _plain(value):
 
 @contextmanager
 def _inspection_guard(scope: SyntheticScope, *, project: Path | None = None,
-                      context_file: str | None = None, header_paths: tuple[Path, ...] = ()):
+                      context_file: str | None = None, header_paths: tuple[Path, ...] = (),
+                      extra_declaration_paths: tuple[Path, ...] = ()):
     """Permit exact declarations and optional bounded headers; deny other bodies/writes."""
     allowed_paths = {scope.registry.path.absolute()}
+    allowed_paths.update(path.absolute() for path in extra_declaration_paths)
     allowed_headers = {path.absolute() for path in header_paths}
     header_bytes: dict[Path, int] = {}
     for source_id, root in scope.source_roots.items():

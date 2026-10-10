@@ -1,6 +1,6 @@
 # build-literature-tree
 
-## Existing paper-unit navigation — development only
+## Existing paper-unit navigation
 
 For a selected registered Field, `knowledge list --paper-units --source-id SOURCE_UUID
 --field-id FIELD_UUID --language en` groups its local papers and explicit contextual
@@ -8,17 +8,20 @@ references into existing paper packages. It retains all purposes and declared
 information/analysis/Canvas/note entries, including missing or conflicted states.
 Safe reader-mapped Markdown/Canvas entries have direct Obsidian links; no app opens
 while listing. This is not a bibliography refresh or a replacement for the fixed
-`01-Paperlist.md`. It writes nothing and is **not in installed 0.42.0**. See
-[the navigation contract](references/field-paper-units.md). Installed/native and
-human readability acceptance remain separate.
+`01-Paperlist.md`. It writes nothing and is available from **0.43.0**. See
+[the navigation contract](references/field-paper-units.md). Installation, native
+navigation and human readability acceptance remain separate.
+Supplemental files are included only through explicit provider/portable asset
+relations. Missing, unsafe or conflicting assets remain diagnosed; listing does
+not read attachment contents or verify their recorded hashes.
 
-## Contribution/evolution preview — development only
+## Contribution/evolution preview
 
-The unreleased development tree also provides `literature-preview --input evolution.json
---format md|json`. It validates explicit contribution-level novelty types and placement,
+The `literature-preview --input evolution.json --format md|json` command is available
+from 0.43.0. It validates explicit contribution-level novelty types and placement,
 then shows a compact vertical membership overview and complete evidence-linked technical
 tradeoffs. It reuses paper identities without copying notes. It reads no configuration,
-registry or original content and writes nothing. This is **not in installed 0.42.0**;
+registry or original content and writes nothing;
 real scientific support, the final editable figure and human appearance acceptance remain
 separate. See [the preview contract](references/evolution-preview.md).
 

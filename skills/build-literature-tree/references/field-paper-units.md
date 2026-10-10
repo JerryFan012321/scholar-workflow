@@ -28,6 +28,21 @@ or Canvas resolves through its owner. Repeated references merge into one paper
 unit while retaining every selection purpose. Equal display titles do not merge
 different identities, and neighboring files do not establish a relation.
 
+Portable asset coverage is available from 0.43.1. Supplemental files come from the
+provider's declared assets and the owning Source's
+optional `.scholar-workflow/assets.yml` (schema 1), through explicit
+`owner_artifact_ids` to the paper's provider artifacts, including sidecars. Preserve
+the existing asset identity and role; an asset does not become a primary owner or
+Field reference. Multi-owner assets appear once per paper and may be shared by
+explicitly declared papers. Consistent provider/portable declarations merge;
+conflicting identities or paths are diagnosed, never selected by first occurrence.
+Stable absence of the optional manifest means no additional portable assets, not
+a missing library. Invalid or changing declarations make the inventory partial;
+independently valid declarations and the paper's document navigation remain visible.
+Only selected paper owners' Sources supply asset declarations, including external
+owners selected by qualified references. Legacy Source-level attachment paths remain
+valid declarations; directory proximity or Markdown embeds never establish ownership.
+
 ## Human result
 
 Show the selected Field and read-only scope, followed by a compact table with:
@@ -81,6 +96,11 @@ Generating the list does not open any app, execute code, read paper bodies,
 download PDFs or write a registry, lock, manifest, managed block or note.
 Zotero remains the authority for bibliography/PDFs/formal annotations; this local
 package view does not invent a PDF locator or refresh that bibliography.
+Attachment inspection observes regular-file metadata and rechecks declarations and
+named files at completion, without reading or hashing attachment bytes. Declared
+size/hash are not integrity verification. Only safely owned Markdown/Canvas assets
+can use the existing native open capability; images, data and other file types stay
+listed with an explicit unsupported-open reason, not a fabricated link.
 
 Completion of this read-only view proves only the observed inventory/diagnostics
 and formatting. Source support, installed behavior, link-click convenience and

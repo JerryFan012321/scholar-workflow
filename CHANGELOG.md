@@ -3,6 +3,24 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [Unreleased]
+
+## [0.43.1] - 2026-10-10
+
+Independent hotfix for selected Field paper-unit attachment coverage. Normal
+installation, native assessment and main integration remain separate.
+
+### Fixed
+
+- **build-literature-tree:** include explicitly owned provider/portable assets in
+  the selected Field paper-unit list, retain missing/unsafe file diagnostics and
+  reject inconsistent declarations without reading attachment bodies or changing
+  paper ownership. Preserve normal list, document navigation and source content.
+- **runtime documentation:** correct obsolete development-only labels for the
+  Field paper-unit navigation, contribution preview and Field reference commands
+  released in 0.43.0. Preserve their read-only/write boundaries and separate native,
+  scientific and human acceptance requirements. No command or format changes.
+
 ## [0.43.0] - 2026-10-10
 
 Independent hotfix release; main integration and native/human acceptance remain

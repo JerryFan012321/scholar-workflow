@@ -2,6 +2,11 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "knowledge-paper-unit-supplemental-asset-navigation",
+      "description": "G2/G16/G17：论文清单沿明确provider artifact→paper合并catalog与可选便携assets声明，四角色/sidecar及跨Source附件不遗漏；共享去重，owner集合顺序无关，冲突ID/path双方不作为确定文件输出。缺失/不安全/无效/变化清单保留诊断及独立有效条目，稳定缺失可选manifest不失败。只读声明和文件metadata，不读/hash附件正文，不改owner/registry/论文/实验或普通list。独立预期先行，红测及first-wins边界修正后完整2525项合成unit/contract通过（含39资产项）；记录在planning/field-paper-assets-test-results.md。仍未发布安装或复验真实test单元六项附件，原生与人工及G17整体保持pending。",
+      "status": "pending"
+    },
+    {
       "id": "human-docs-priority-plain-language-and-figures",
       "description": "G12/G13/G16/G17：2026-10-10用户重新指出呈现问题。PROJECT正文按现状、计划、结果、代码、资料、归属排序，相关文件说明用途；机器ID/哈希转储留辅助记录且所选入口不丢。实验先普通语言结论、有依据图和数值，再条件/历史/限制；合成值不冒充科学收益，缺图明确。test现有合成输入另存版式候选，原件不覆盖。独立计划先于检查；静态事实与安装态、原生导航、人工美观分开。论文五分支及完整子槽/证据反链/图片要求不取消，具体图形调整对象待确认。见planning/presentation-readability-test-plan.md；人工及安装态仍pending。",
       "status": "pending"

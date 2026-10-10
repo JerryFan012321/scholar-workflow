@@ -1,5 +1,41 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-10 用户授权附件修复0.43.1 hotfix提交、发布和正常安装
+
+用户直接“授权”解除新hotfix发布安装等待；只处理已有附件清单修复和运行期说明，
+不合并main、不改论文正文/Canvas、不切换服务、不迁移正式资料。四版本面及lock同步
+0.43.1；2525完整功能回归继续作为当前功能代码证据，本轮补版本/manifest/schema及
+附件契约检查、runtime-only包边界与安装字节核对。发布安装后只复验test既有单Field
+V-JEPA2的六附件，保留旧0.43覆盖失败结果，不重跑论文或实验。计划唯一见
+field-paper-assets-release-test-plan.md；当前仅开始准备，尚未声称发布安装或人工通过。
+
+## 2026-10-10 单Field附件覆盖开发修复，安装态仍待
+
+基于上一轮已确认的六资产漏列，只修论文清单，不改正文/Canvas/登记/业务资料。
+独立资产预期及fixture先行；初红24fail/43pass，首修67pass；独立复核补出
+跨声明first-wins与owner顺序问题，新增红4fail/74pass后最小修正78pass。
+读取限精确受控assets声明，所有角色/sidecar沿producer归属，共享去重、跨Source
+隔离，缺失/不安全保留，冲突双方排除；声明及文件完成重检撤销不可靠URI。
+新增首读/完成重检替换分支，完整unit/contract共2525pass/11既有warnings（107.65秒）。
+结果唯一记录在field-paper-assets-test-results.md；未发布安装，不源码跑真实Vault。
+五个Python变更离线Ruff通过（首次在线下载TLS失败与两lint修正保留），
+runtime契约/中英说明及Unreleased同步。0.43原四文件stdout与覆盖失败记录保持，
+下一安装态复验仍只选test既有单Field/单论文。新提交/发布/安装、main合并、服务
+切换与正式迁移均未执行；旧论文体验不重复评鉴，完整G17未完成。
+
+## 2026-10-10 单Field安装态论文导航部分通过，资产覆盖缺口已定位
+
+上一轮仅展示两份待人工候选，没有新增通过证据。本轮正常安装0.43.0对test已登记
+模范Source/Field完成MD/JSON只读查询，一论文/四provider文件及三原生URI静态对应；
+样张末尾LF漏存已修，1547字节与stdout全等。107定向合成回归通过，初次pytest缺失
+exit2保留。Source70/provider5/登记2共77文件集合/大小/hash保持，不重分析/重跑/打开。
+进一步读取同Source assets声明发现六项明确关联附件未列出；完整文件覆盖记未通过，
+不能以provider四对象通过替代。下一可执行切片是先准备独立合成assets输入/负例，
+再补此声明读取与诊断；不扫描同名/邻居、不改原分析或默认Canvas。实际stdout、
+预期、结果和机器记录仅在test上层审阅目录“论文清单/复现记录”。五份runtime过时
+开发态说明最小修正已验证，尚未提交/发布/安装；不改缓存/main/服务。原生与人工
+仍待确认，已认可旧论文体验保持，G17未完成。
+
 ## 2026-10-10 0.43.0已发布安装，单项目候选独立检查通过、人工待验
 
 source6dfb9d4/runtime3275a80正常fast-forward推送；main仍ccb60b7。

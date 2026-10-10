@@ -116,8 +116,7 @@ reference resolution itself reads declarations and file metadata, not paper bodi
 
 ### Add or remove one reference
 
-The development implementation provides `knowledge reference-plan` and
-`knowledge reference`; it is not yet in the normally installed 0.42.0 package.
+`knowledge reference-plan` and `knowledge reference` are available from 0.43.0.
 Select the referencing Source/Field and an explicit existing object; never infer
 ownership from a title or a similarly named file.
 
