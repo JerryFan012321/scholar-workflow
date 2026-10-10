@@ -1,6 +1,21 @@
 # HANDOFF — 从这里接着干
 
-## 2026-10-10 用户授权0.43.2提交、发布和正常安装（进行中）
+## 2026-10-10 0.43.2已正常发布安装，单对象安装检查通过
+
+功能source5b6b1d1555f9c67c70fe0b78c820add5eff32490，runtime
+f4e480e93973c42b825a96387277c62b4a7da6f3，父为旧8c4832b0；hotfix/release
+正常原子fast-forward推送。原脚本独立clone构建264文件与source mode/blob全等，
+wheel/sdist112包文件全等。正常pipx固定runtime及Codex marketplace/plugin安装均
+0.43.2；CLI/模块/distribution、direct_url、双manifest、cache HEAD与文件全等，
+16skill可达。2534完整回归及独立少/多/未解析配置评价结果保留。
+实际pipx公开Python接口单个合成v5内存检查exit0：26节点25边，宽1368px、Overview
+子节点64px间距，正文/反链/边保留，旧1432列的baseline更新完整保留。无Vault/业务/
+GUI写入，不把此检查冒充公开CLI工作流或人工通过。真实VS Code及新Canvas美观待验。
+main仍ccb60b793d9fd5db6032499bf2ca2c8dda3f1183；原dirty工作树未动，旧0.43.1
+回退保留，未合并main/切服务/重画论文/迁移。详见0.43.2-release.md；后续回执提交
+不改变以上功能source/runtime，G17整体未完成。下列“准备中”各节保留为历史过程。
+
+## 2026-10-10 用户授权0.43.2提交、发布和正常安装（先行计划）
 
 用户明确授权当前Canvas短连线、VS Code阅读规范及多实验表格这一批hotfix。
 继续使用codex/hotfix-knowledge-ownership，不合并main、不切换服务、不改Vault。

@@ -5,6 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Changed
+
+- **Development release receipt:** record the approved 0.43.2 publication, normal
+  pipx/Codex installation, byte-for-byte identity checks and one installed synthetic
+  rendering check. No runtime behavior changes or rebuild; native/human assessment
+  and main integration remain pending.
+
 ## [0.43.2] - 2026-10-10
 
 Independent hotfix for compact paper-tree routes and project-document output
