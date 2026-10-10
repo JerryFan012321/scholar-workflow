@@ -12,8 +12,9 @@ from scholar_workflow.knowledge.fields import (
     FieldService,
     KnowledgeSourceRegistry,
 )
-from scholar_workflow.knowledge.registration import register, registration_plan
+from scholar_workflow.knowledge.registration import registration_plan
 from scholar_workflow.workflows.register_paper import paper_plan, register_paper
+from scholar_workflow.workflows.register_source import register_source
 
 
 class LocalPaper:
@@ -41,8 +42,8 @@ def scope(tmp_path):
     registry = KnowledgeSourceRegistry(tmp_path / "state/hub/sources.json")
     service = FieldService(registry)
     plan = registration_plan(service, root, field_root=".", existing_source=False)
-    manifest = register(service, root, field_root=".", existing_source=False,
-                        approved_digest=plan.payload["approved_digest"])
+    manifest = register_source(service, root, field_root=".", existing_source=False,
+                               approved_digest=plan.payload["approved_digest"])
     pdf = tmp_path / "local.pdf"
     pdf.write_bytes(b"%PDF-1.7 synthetic fixture\n")
     selection = {"source_id": manifest.source_id, "field_id": manifest.fields[0].field_id,
@@ -54,10 +55,14 @@ def scope(tmp_path):
 def test_zero_write_plan_register_and_replay(scope):
     root, registry, zotero, selection = scope
     initial = {p: p.read_bytes() for p in root.rglob("*") if p.is_file()}
+    provider_path = (registry.path.parent / "knowledge-providers" / selection["source_id"]
+                     / "knowledge-provider.snapshot.json")
+    provider_before = provider_path.read_bytes()
     proposal = paper_plan(registry, zotero, **selection)
     assert proposal == paper_plan(registry, zotero, **selection)
     assert {p: p.read_bytes() for p in root.rglob("*") if p.is_file()} == initial
-    assert not (registry.path.parent / "knowledge-providers").exists()
+    assert provider_path.read_bytes() == provider_before
+    assert json.loads(provider_before)["manifest"]["atomic_resources"] == []
     result = register_paper(registry, zotero, approved_digest=proposal["approved_digest"], **selection)
     assert result["status"] == "registered" and not result["analysis_committed"]
     assert (root / result["owner_path"]).read_text() == proposal["note"]
@@ -93,6 +98,9 @@ def test_interruption_resumes_only_exact_transaction(scope, member):
 
 def test_human_edit_after_interruption_is_never_overwritten(scope):
     root, registry, zotero, selection = scope
+    provider = (registry.path.parent / "knowledge-providers" / selection["source_id"]
+                / "knowledge-provider.snapshot.json")
+    provider_before = provider.read_bytes()
     proposal = paper_plan(registry, zotero, **selection)
 
     def stop(phase):
@@ -106,8 +114,8 @@ def test_human_edit_after_interruption_is_never_overwritten(scope):
     with pytest.raises(FieldRegistryError, match="conflict"):
         register_paper(registry, zotero, approved_digest=proposal["approved_digest"], **selection)
     assert note.read_text() == "Human changed this note\n"
-    assert not (registry.path.parent / "knowledge-providers" / selection["source_id"]
-                / "knowledge-provider.snapshot.json").exists()
+    assert provider.read_bytes() == provider_before
+    assert json.loads(provider_before)["manifest"]["atomic_resources"] == []
 
 
 @pytest.mark.parametrize("change", ["title", "pdf", "manifest", "disabled", "capability", "directory"])
@@ -182,13 +190,14 @@ def test_malformed_journal_refuses_without_publishing(scope, record):
     root, registry, zotero, selection = scope
     proposal = paper_plan(registry, zotero, **selection)
     provider = registry.path.parent / "knowledge-providers" / selection["source_id"]
-    provider.mkdir(parents=True)
+    provider_before = (provider / "knowledge-provider.snapshot.json").read_bytes()
     journal = provider / f"paper-registration-{proposal['approved_digest']}.json"
     journal.write_text(json.dumps(record))
     with pytest.raises(FieldRegistryError, match="journal"):
         register_paper(registry, zotero, approved_digest=proposal["approved_digest"], **selection)
     assert not (root / proposal["owner_path"]).exists()
-    assert not (provider / "knowledge-provider.snapshot.json").exists()
+    assert (provider / "knowledge-provider.snapshot.json").read_bytes() == provider_before
+    assert json.loads(provider_before)["manifest"]["atomic_resources"] == []
     assert json.loads(journal.read_text()) == record
 
 

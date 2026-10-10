@@ -1,0 +1,3 @@
+SYNTHETIC INPUT ONLY: no command was executed.
+Declared failure: tools/do-not-run.sh could not be located from synthetic-outside-project/.
+Recorded exit code: 2. No metric or output artifact was produced in this scenario.

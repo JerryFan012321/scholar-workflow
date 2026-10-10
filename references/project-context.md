@@ -22,6 +22,11 @@ No mandatory homepage is generated. A person may maintain an existing README/not
 or request the read-only overview on demand. Do not scan directories to fill entries,
 infer paper identity from similar titles, or invent results to make an index complete.
 
+For an explicitly requested rich internal `PROJECT.md`, use `organize-project` and
+`project-entry.md`. It adds a human document with current state, module diagrams,
+selected archive links and one plan, not another inventory or an initializer side
+effect. The short `overview` command does not render that document.
+
 ## Portable inventory
 
 The inventory contains `schema_version`, matching `project_id`, `title`, `summary`,
@@ -151,8 +156,9 @@ File states are `available`, `missing`, `unsafe`, or `not_checked`. A missing fi
 does not erase its declared identity; an available analysis does not hide a missing
 primary owner. Declaration resolution does not verify body metadata, scientific
 support, reader URI correctness, or whether different IDs refer to the same paper.
-Cross-Source registration deduplication and Field reference writes are separate,
-undelivered operations, not side effects of this read-only check.
+Cross-Source registration deduplication and Field reference writes are separate
+operations under `paper-registration.md` and `knowledge-registration.md`, never
+side effects of this read-only check. Check the installed version's supported entries.
 
 ## State and failure meaning
 

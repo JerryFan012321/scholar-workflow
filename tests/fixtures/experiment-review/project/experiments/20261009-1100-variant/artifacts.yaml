@@ -1,0 +1,18 @@
+# Synthetic local-copy declaration. No promotion command was executed.
+schema_version: 1
+run_id: 20261009-1100-variant
+artifacts:
+  - artifact_id: art_2222222222222222
+    role: metrics
+    retention: local-required
+    source_attempt_id: primary
+    relative_path: artifacts/metrics.json
+    size: 340
+    sha256: ca5c153ee6b37214d90ea91c7e164d21d2916c8f6000ae5576c7ce54926d6250
+    remote_source: null
+    promoted_at: '2026-10-09T11:03:00Z'
+    backup:
+      state: not-verified
+      verified_at: null
+      location: null
+      sha256: null

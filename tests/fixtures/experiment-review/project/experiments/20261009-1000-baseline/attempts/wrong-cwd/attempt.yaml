@@ -1,0 +1,23 @@
+# Synthetic observation only; there was no process or real path failure.
+schema_version: 1
+attempt_id: wrong-cwd
+run_id: 20261009-1000-baseline
+target_id: synthetic-local
+target_profile_sha256: 9e4dd2c895bbb0a918242845d8cabdcf387ec64503ef39a24a25494f0e60c748
+status: failed
+started_at: '2026-10-09T10:01:00Z'
+finished_at: '2026-10-09T10:02:00Z'
+exit_code: 2
+actual:
+  working_directory: synthetic-outside-project
+  output_location: null
+  log_location: experiments/20261009-1000-baseline/attempts/wrong-cwd/stderr.log
+  hostname: synthetic-host-unverified
+  os: null
+  gpu: null
+  driver: null
+  cuda: null
+  python: null
+  commit: null
+  recipe_hash: null
+output_inventory: null

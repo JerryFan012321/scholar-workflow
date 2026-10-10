@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 
-
 SOURCE_ROOT = Path(__file__).resolve().parents[2] / "src" / "scholar_workflow"
 LEGACY_MODULES = (
     ("hub.fields", "knowledge.fields", "FieldService", "_safe_relative"),
@@ -44,14 +43,14 @@ def _imports(path: Path) -> set[str]:
     return imported
 
 
-@pytest.mark.parametrize("relative", ("models.py", "catalog_models.py", "fields.py", "obsidian_contract.py"))
+@pytest.mark.parametrize("relative", (
+    "models.py", "catalog_models.py", "fields.py", "obsidian_contract.py", "literature_evolution.py",
+))
 def test_knowledge_core_does_not_import_hub_or_analysis(relative: str) -> None:
     imported = _imports(SOURCE_ROOT / "knowledge" / relative)
     assert not any(
-        name == "scholar_workflow.hub"
-        or name.startswith("scholar_workflow.hub.")
-        or name == "scholar_workflow.analysis"
-        or name.startswith("scholar_workflow.analysis.")
+        name in {"scholar_workflow.hub", "scholar_workflow.analysis"}
+        or name.startswith(("scholar_workflow.hub.", "scholar_workflow.analysis."))
         for name in imported
     )
 

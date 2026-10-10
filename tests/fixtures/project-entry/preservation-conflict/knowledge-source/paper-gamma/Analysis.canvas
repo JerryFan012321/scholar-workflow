@@ -1,0 +1,33 @@
+{
+  "nodes": [
+    {
+      "id": "a1b2c3d4e5f60003",
+      "type": "text",
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 200,
+      "text": "Synthetic gamma Canvas input\n\nEditable text for project navigation only. This is not a formal paper-analysis tree."
+    },
+    {
+      "id": "a1b2c3d4e5f61003",
+      "type": "text",
+      "x": 460,
+      "y": 0,
+      "width": 360,
+      "height": 200,
+      "text": "Source and analysis are separate files.\n\nReader not queried. Scientific support and template conformance are not certified."
+    }
+  ],
+  "edges": [
+    {
+      "id": "a1b2c3d4e5f62003",
+      "fromNode": "a1b2c3d4e5f60003",
+      "fromSide": "right",
+      "toNode": "a1b2c3d4e5f61003",
+      "toSide": "left",
+      "fromEnd": "none",
+      "toEnd": "none"
+    }
+  ]
+}

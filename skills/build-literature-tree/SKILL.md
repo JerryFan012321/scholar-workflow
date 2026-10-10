@@ -7,6 +7,17 @@ description: Build an Obsidian literature tree and flat paper ledger for a resea
 
 ## Output contract
 
+For a navigable list of existing paper packages in one selected Field, read
+`references/field-paper-units.md`. Its opt-in read-only list preserves qualified
+ownership and all file/purpose diagnostics; it does not replace `01-Paperlist.md`.
+
+For a contribution-level evolution view (four novelty types, main/branch/local
+placement, and evidence-backed technical tradeoffs), read
+`references/evolution-preview.md` and use its separate zero-write preview interface.
+The following topology and write path remain the legacy concept-classification view;
+membership alone is not technical inheritance. Do not send evolution input to that
+legacy writer or create duplicate paper companions to assemble a view.
+
 - **Technical tree:** `task → pipeline/representation → module (optional) → paper`.
 - **Challenge tree:** `challenge → insight → paper`.
 - Internal nodes are concepts; paper leaves reference `resource_id`.
@@ -67,8 +78,9 @@ node's anchor, optional summary, and paper subset. The ledger and trees cross-li
 - Preserve the topology, filename, heading, anchor, and backlink contracts above.
 - `01-Paperlist.md` is per topic. A `resource_id` may appear in multiple nodes,
   trees, or topic folders; do not impose one-node/one-tree uniqueness (INV25).
-- Render only Obsidian managed blocks and inline Mermaid; no PNG, draw.io, HTML, or
-  Notion output in this skill.
+- The legacy concept-tree/ledger writer renders only Obsidian managed blocks and
+  inline Mermaid, not PNG, draw.io, HTML or Notion. The optional read-only modes use
+  their own referenced stdout Markdown/JSON contracts.
 - Metadata never comes from PDF body text. DOI remains an identity field and is not a
   rendered column.
 - Writes are limited to managed blocks and new companion-note content; never overwrite
@@ -79,6 +91,8 @@ node's anchor, optional summary, and paper subset. The ledger and trees cross-li
 
 ## References
 
+- `references/field-paper-units.md` — only for navigating existing Field paper units.
+- `references/evolution-preview.md` — only for contribution/evolution previews.
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md`

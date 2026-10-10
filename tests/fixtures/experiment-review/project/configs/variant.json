@@ -1,0 +1,6 @@
+{
+  "synthetic": true,
+  "choice": "variant",
+  "evaluation_protocol": "synthetic-eval-v1",
+  "seed": 7
+}

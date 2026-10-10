@@ -57,6 +57,10 @@ For a selected root-level candidate, `project overview` or `validate-context` ac
 `--context-file NAME` to preview it without replacing the active inventory; follow the
 shared contract for filenames, identity, preview state and separate overwrite approval.
 
+An explicitly requested rich internal PROJECT is the separate `organize-project`
+capability, not an added initializer step. Its result contract is
+`${CLAUDE_PLUGIN_ROOT}/references/project-entry.md`; load it only for that request.
+
 ## References
 
 For an explicitly requested reproducible project/experiment package, load

@@ -1,0 +1,29 @@
+{
+  "choice": "complete-inline",
+  "dataset": {
+    "dataset_id": "synthetic-project-entry",
+    "version": "1",
+    "split": "fixed-fixture",
+    "sample_ids": [
+      "fixture-row"
+    ]
+  },
+  "environment": {
+    "state": "not-executed",
+    "dependencies": []
+  },
+  "target": {
+    "schema_version": 1,
+    "target_id": "synthetic-local",
+    "kind": "local",
+    "server_alias": null,
+    "project_root": ".",
+    "output_root": "experiments",
+    "executor": {
+      "kind": "shell"
+    },
+    "environment_bindings": {
+      "configuration": "config.json"
+    }
+  }
+}

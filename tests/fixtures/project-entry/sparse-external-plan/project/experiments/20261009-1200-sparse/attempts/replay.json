@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "attempt_id": "replay",
+  "run_id": "20261009-1200-sparse",
+  "target_id": "synthetic-local",
+  "target_profile_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "status": "succeeded",
+  "started_at": "2026-10-09T12:05:00Z",
+  "finished_at": "2026-10-09T12:06:00Z",
+  "exit_code": 0,
+  "actual": {
+    "working_directory": ".",
+    "output_location": null,
+    "log_location": null,
+    "hostname": null,
+    "os": null,
+    "gpu": null,
+    "driver": null,
+    "cuda": null,
+    "python": null,
+    "commit": null,
+    "recipe_hash": null
+  },
+  "output_inventory": null
+}

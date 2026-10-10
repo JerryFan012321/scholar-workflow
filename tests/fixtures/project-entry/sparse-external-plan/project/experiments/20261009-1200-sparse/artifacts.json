@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "run_id": "20261009-1200-sparse",
+  "artifacts": [
+    {
+      "artifact_id": "art_3333333333333333",
+      "role": "report",
+      "retention": "local-required",
+      "source_attempt_id": "success",
+      "relative_path": "artifacts/missing-report.md",
+      "size": 128,
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "remote_source": null,
+      "promoted_at": "2026-10-09T12:07:00Z",
+      "backup": {
+        "state": "not-verified",
+        "verified_at": null,
+        "location": null,
+        "sha256": null
+      }
+    }
+  ]
+}

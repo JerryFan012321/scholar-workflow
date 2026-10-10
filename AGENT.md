@@ -4,7 +4,7 @@
 
 ```
 5 Agents: intake / lineage / knowledge / feed / audit（任务级自足单元，skill 可跨 agent 复用；无固定单向 handoff，显式跨 agent 协作由宿主 LLM 或 agent-collaboration 编排）
-14 Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / analyze-paper / env-setup / agent-collaboration / init-project / config-setup / project-backlog（agent-collaboration 为所有宿主/agent 共享；其余四者用户直呼）
+16 Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / analyze-paper / env-setup / agent-collaboration / init-project / organize-project / config-setup / project-backlog / review-experiments（agent-collaboration 为所有宿主/agent 共享；其余独立入口用户直呼）
 2 Host manifests: .claude-plugin/plugin.json / .codex-plugin/plugin.json（同名、同版本；共享 skills/hooks，MCP 配置保持等价）
 确定性 CLI: src/scholar_workflow/ + bin/(scholar-workflow, zotero-annotations.py, recommend-papers.py)
 Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入(create/import/元数据)均经 `scholar-workflow zotero` 命令;主题召回用 Local API 全字段/全文 quicksearch 后由宿主模型排序,不自建向量库;任何组件都不得直接读取或写入 zotero.sqlite
@@ -317,6 +317,8 @@ Agent 之间没有固定 handoff 图。默认完成自己的任务并把结果�
 | （所有宿主与 agent 共享） | 跨 agent 双向协作、任务委派与接力 | agent-collaboration |
 | （无 agent，用户直呼） | 环境台账 | env-setup |
 | （无 agent，用户直呼） | 宿主中立的 Git 项目骨架初始化 | init-project |
+| （无 agent，用户直呼） | 内部 PROJECT 资料入口、模块图与唯一计划 | organize-project |
+| （无 agent，用户直呼） | 已选实验档案的只读整理与比较 | review-experiments |
 | （无 agent，用户直呼） | 插件配置（config.yml 读写 + 初始化） | config-setup |
 | （无 agent，用户直呼） | 项目工作队列（planning/BACKLOG.md） | project-backlog |
 

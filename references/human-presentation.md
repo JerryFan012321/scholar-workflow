@@ -19,6 +19,20 @@ geometry, table columns, filenames, and edit behavior.
   relation records belong in thin metadata or separate machine files, not repeated
   as visible prose. Legacy managed-block delimiters may remain for safe updates but
   are not analysis content or a substitute for a readable body.
+- Write as a useful document, not a validation log. Do not expose artifact IDs,
+  full hash dumps, internal claim markers or repeated machine status labels in
+  ordinary paragraphs, cards or tables. Audit details belong in a linked supplement
+  or machine record. Do not strip existing anchors that links depend on: changing
+  opaque anchors requires coordinated link migration, not cosmetic hiding.
+- Use ordinary, precise language. Explain necessary technical terms on first use;
+  do not invent jargon for a simple operation, failure or result. Separate the
+  conclusion, supporting observations and limits without repeating a disclaimer
+  on every line.
+- Primary links need actual relevance: current code/configuration, the authoritative
+  plan, experiment conclusions/results and explicitly related paper-unit files.
+  Explain each relation. Put inventories, hashes, full logs, snapshots and historical
+  checks in a discoverable supplement unless they directly explain the current
+  result or failure. Every selected entry, including missing files, stays accounted for.
 - Place evidence and a usable source entry beside the statement it supports. Distinguish
   source assertions from analysis inference and unavailable evidence. A page link
   promises a page, not a selected sentence; do not claim finer precision than the
@@ -38,12 +52,15 @@ geometry, table columns, filenames, and edit behavior.
 | Surface | Detailed contract |
 |---|---|
 | Paper analysis Markdown and Canvas | `skills/analyze-paper/references/analysis-output-template.md` (current required format); `analysis-format.md` in the same directory (v4 compatibility and shared source/update protections) |
-| Literature tree and paper ledger | `skills/build-literature-tree/SKILL.md` and `contracts/literature-tree.schema.json` |
+| Literature tree and paper ledger | `skills/build-literature-tree/SKILL.md` and `contracts/literature-tree.schema.json`; opt-in contribution/evolution preview uses that skill's `references/evolution-preview.md` and `contracts/literature-evolution.schema.json` |
 | Annotation note | `skills/export-annotations/SKILL.md` |
 | Reading Report | `skills/recommend-papers/SKILL.md` |
 | Consistency audit report | `skills/check-consistency/SKILL.md` |
 | Obsidian and Notion projections | `skills/sync-projections/references/obsidian-index-format.md` and `notion-schema.md` |
 | Project material overview | `references/project-context.md` |
+| Rich internal PROJECT document | `references/project-entry.md` |
+| Selected Field paper-unit navigation | `skills/build-literature-tree/references/field-paper-units.md` |
+| Experiment review and comparison | `references/experiment-review.md` |
 | Legacy Hub view and direct actions | `references/hub-contract.md` |
 
 For a machine-only JSON response, the owning schema controls fields; its companion

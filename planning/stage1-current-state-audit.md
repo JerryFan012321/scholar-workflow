@@ -1,6 +1,87 @@
-# 第一阶段当前证据核对（2026-10-08）
+# 第一阶段当前证据核对
 
-## 当前结果：0.41.7安装态与单篇摘录候选
+## 当前核对：2026-10-10
+
+### 最新发布准备（覆盖下节授权与版本的旧观察）
+
+用户ok已批准0.43.0 hotfix提交、发布与正常安装，四版本及lock本包已同步。
+2486项合成回归通过（107.38秒、11既有警告），16skill基础校验、改动Python Ruff和
+lock/diff通过。尚未据此声称正常安装成功，实际身份见后续发布结果；main/服务及
+原论文模板保持。下节0.42安装核对仍是此前真实基线，不能当本次最终安装状态。
+
+### 本次只读实存复核（覆盖下方笼统项目描述）
+
+PATH CLI和pipx包仍为0.42.0，pipx记录的runtime commit为
+67a221680b92822558502f36924b2e862f1ae8d5。当前Codex 0.42缓存双manifest一致，
+有14个skill，但没有organize-project、review-experiments或公共reproduction-delivery
+reference。版本号一致不是这批开发能力已经交付；源码仍未提交，不能当成0.43安装身份。
+
+两个已知0330示例根的当前project-layout.json保留同一稳定身份。原根project-context.json
+为8项，0330-replay为历史6项，外部分析仍指旧候选；不应泛称两根都具8项当前资料。
+主线程独立读取两清单确认8/6，两根均无PROJECT/SCHEDULE，docs/plan为空。既有重建
+成功证据保留，之后原根资料变更没有自动同步到历史重建根，不据此重跑或擅自同步。
+
+独立只读复核确认两根各一个Run/三Attempt，失败与成功回执、报告、acceptance、
+日志和成果仍存在；12份预期/成果/成功metrics及stdout逐字节一致，数值4/10/2.5。
+成果仍选correct-cwd，不把重放当独立新实验，backup未验证；不借合成两Run报告补证。
+
+当前必要交付缺口是新skill的正常hotfix安装及单个冻结模范项目上的真实执行/原生评鉴，
+不是再跑算术、论文或迁移整库。现有test样张及新版解析树仍分别待人工，新版外观未
+纳入默认renderer。本次再次明确询问0.43提交/发布/正常安装授权，回复前不实施。
+真实资料采用/迁移与main合并不包含在这项授权中。只改开发状态记录，未改业务/安装。
+
+既有展示候选已转存test Vault的独立上层组合审阅目录；67原展示/52项目输入/34实验
+输入守恒，53PROJECT入口、32实验链接及8wikilink存在。原生Canvas加载36节点/10边
+并获得主线文字截图，未改节点/文件；全图过小观察保留。旧展示目录可恢复移入废纸篓，
+worktree未动；人工、安装态及真实采用未据此通过。位置与分离结果由HANDOFF持有。
+
+同批交付准备已完成2458完整unit/contract（106.05秒、11既有警告）、16skill基础、
+26改动Python Ruff及开发wheel字节检查。公共六项复现交付已进入runtime reference，
+两专属入口按需加载；旧文献writer与README层级歧义最小修正，不改论文/Canvas模板。
+具体结果及四对象完整边界见upper-assembly-delivery-test-results.md。发布安装授权
+已单独询问，当前仍未提交/发布安装这批能力；折叠候选正式采用及新PROJECT采用等
+是独立未完成事项，不把它们说成仅待重新人工评鉴，也不据本轮通过完成G17。
+
+新增开发态单Field论文单元导航，复用现有知识归属/引用/reader，只扩展knowledge list
+显式opt-in，不替换旧Paperlist。独立预期先行；41新项及562定向联合通过，实际stdout
+见field-paper-units-demo.md，结果见field-paper-units-test-results.md。标题/用途、所有
+已声明文件及不可用状态保留，无正文/网络/原生打开/真实写入。清单人工可读性、真实
+Field点击与正常安装仍待验，既有论文分析/Canvas规范保持，G17完整目标未完成。
+
+新增独立可编辑文献Canvas候选，不替换运行期默认或已认可单篇格式。七篇合成输入的
+8分类/2关系/10取舍、来源和6归属线经独立检查完整，几何无重叠/穿框/交叉；浏览器
+留白修正与首次失败均保留。原生编辑/字体和人工美观仍待验，未写Vault。完整当前开发
+unit/contract上一轮2417通过；改动Python Ruff通过，全源历史52诊断未解决。详见
+literature-canvas-candidate-test-results.md，不能据此认证安装态或完整G17。
+
+本次上层实验组合只新增开发态review-experiments及报告规范，按独立预期评价2Run/
+4Attempt合成输入；不执行或改写真正的实验单元。74项定向检查通过，完整评价过程与
+样张独立留在experiment-review-test-results.md；正常安装/人类可读性待验。
+
+项目入口新增开发态organize-project与共享PROJECT规范，独立预期/三场景50raw先行。
+三候选有限行为核对无不符：53文件入口、4Run/7Attempt/4Artifact完整，52原输入集合/
+字节保持；10项schema通过。详见project-entry-skill-test-results.md；正常安装、真实
+PROJECT采用及原生VSCode阅读/导航仍待验，不运行实验或改论文/Canvas规范。
+
+2026-10-09的正常安装入口`/Users/jerryfan/.local/bin/scholar-workflow --version`退出0，报告0.42.0；
+开发包与两manifest一致。只读定位切片的正式source/runtime、正常安装字节及单对象结果
+唯一见`knowledge-ownership-test-results.md`，不以本次版本诊断替代完整安装或业务验收。
+
+| 对象 | 保留的有效证据 | 当前边界与下一步 |
+|---|---|---|
+| 模范Vault/论文单元 | 已登记Source/Field、五分支pair、证据图片及新根归属复现；Canvas/图片认可保留，折叠摘录使用体验已获明确通过 | 折叠候选尚未canonical采用；正式定位不证明阅读器实际打开或全项科学支持，显式来源空缺保持 |
+| 模范项目 | 标准布局、稳定身份、既有新克隆重建、8项生效清单；0.42.0只读总览定位三个知识引用至同一论文包；另补开发态organize-project及三场景有限候选评价 | 内部PROJECT尚未真实采用，VSCode导航/可读性及新skill安装态待验；不替换真实项目 |
+| 模范实验 | 既有一个Run/三个Attempts、真实失败与成功记录、独立预期及归档成果 | 本轮未重跑；不是论文训练复现，没有跨Run结果或verified backup；报告调用体验待人工 |
+| 外部工具 | 已有Local API、ZotFlow页/批注及Canvas显示、正文反链和cmux原PDF显示记录 | 当前归属总览reader仍unverified；cmux翻页/缩放和打开位置便利性待人工，不重开旧Canvas/图片认可 |
+| 后续归属与上层组合 | 0.42.0只读声明定位已交付；开发树已补跨Source登记查重、可信新空Source初始化、Field schema2引用/只读诊断/复现兼容及受控单条增删，763项定向联合通过；另补文献逐贡献演进零写入预览，30专项/89定向联合通过 | 新开发能力未发布安装；Field实际导航未验；PROJECT/literature最终模板待评鉴，真实文献集尚未选定；新图仅归属概览，科学关系完整在正文，不冒称最终演进图 |
+
+当前无需再运行既有论文分析、实验重建或整库业务。独立PROJECT候选、两张模块图和
+检查记录的位置由HANDOFF持有；它们不是安装态输出或人工通过。G17仍未完成。
+新合成预览及独立失败/修正/回归记录分别见literature-evolution-demo.md与
+literature-evolution-test-results.md；来源链接只是合成格式示例，不用于阅读器实测。
+以下记录保留各历史阶段的真实失败/权限与结果，不再代表当前安装版本或已解除的评鉴等待。
+
+## 2026-10-08历史结果：0.41.7安装态与单篇摘录候选
 
 本节覆盖下方0.41.3设备号拒绝和旧权限等待状态；历史操作不改写为成功。
 最新公开安装与单篇结果见`source-rebinding-results.md`、

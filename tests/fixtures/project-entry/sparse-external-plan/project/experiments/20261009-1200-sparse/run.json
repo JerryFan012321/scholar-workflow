@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "run_id": "20261009-1200-sparse",
+  "created_at": "2026-10-09T12:00:00Z",
+  "record_state": "frozen",
+  "source": {
+    "commit": "1111111111111111111111111111111111111111"
+  },
+  "entrypoint": {
+    "path": "src/main.py",
+    "sha256": "3764318516d0eb12c5e04e4139e693f48ad8feead8deb2bc780f2bb620cbd5cb"
+  },
+  "config": {
+    "path": "configs/benchmark.json",
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "dataset": {
+    "dataset_id": "synthetic-project-entry",
+    "version": "1",
+    "split": "fixed-fixture",
+    "manifest": {
+      "path": "config.json",
+      "sha256": "0e5d03974f8df50530620799d56c343866d7c7d31b4ee3ac79310c08e807844c"
+    }
+  },
+  "seed": 7,
+  "environment": {
+    "path": "config.json",
+    "sha256": "0e5d03974f8df50530620799d56c343866d7c7d31b4ee3ac79310c08e807844c"
+  },
+  "recipe_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+}

@@ -1,5 +1,335 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-10 用户批准0.43.0 hotfix提交、发布和正常安装
+
+用户最新“ok”解除下节发布授权阻塞，目标恢复active。先同步版本与发布说明，完成一次
+合成完整回归及runtime边界检查，再从干净提交经既有脚本生成独立release，正常推送与
+安装pipx/Codex插件；不合并main、不切换服务、不迁移正式资料。当前仅开始准备，尚未
+声称提交、发布或安装成功。计划见upper-assembly-release-test-plan.md。
+新论文章节框仍未获明确人工确认，不修改默认renderer或canonical分析。安装后只用
+test中的既有单项目输入验收新skill；输入缺失的冻结Target须单独说明，不用当前profile
+冒充。下节blocked是此前历史，不再是当前授权状态。
+
+## 2026-10-10 目标阻塞核对：等待用户决定
+
+章节框检查轮、安装态实存核对轮和本次复核连续保留同一未答复条件：0.43提交/发布/
+正常安装授权与新外观人工确认。前两轮有实际检查进展，不是等待；当前安全检查已结束，
+没有live session/job或委派任务可等待。fresh PATH仍0.42、开发HEAD仍b9f2ffe，未收到
+直接用户授权，自动goal续行不代替。目标未完成，现标blocked并停止自动迭代，不额外
+造样张/重跑测试/执行业务。收到用户答复后继续对应步骤；若重新恢复后仍缺决定，
+重新计数阻塞审计，不沿用本次次数。所有成果和未提交改动保留，不改安装或默认布局。
+
+## 2026-10-10 安装态交付缺口实存核对（未获发布安装授权）
+
+上轮章节框防误放行是实际进展；本轮按完整四类目标核对现存证据，不继续发明布局。
+PATH/pipx及Codex缓存仍0.42，缓存14skill缺organize-project/review-experiments与共享
+delivery reference。原0330项目8引用、历史重建根6引用，两根均无PROJECT/SCHEDULE、
+docs/plan空；主线程与独立只读检查一致。两根既有1Run/3Attempt及成果仍完整，未重跑。
+已纠正当前审计和旧交付报告的笼统表述，不擅自同步历史根；详情唯一持于
+stage1-current-state-audit.md当前节。需要正常安装新hotfix才可做新skill安装态单对象验收。
+已明确请求0.43提交/发布/安装授权；自动goal续行不是授权，不合并main、不改默认
+解析树/正式Vault或真实业务。本轮没有待轮询进程；人工美观与新布局采用仍独立待决。
+
+## 2026-10-10 解析树候选章节框防误放行（开发检查完成）
+
+上一轮实际候选构成进展；本轮补独立检查漏洞，不再生成布局或执行业务。通用v5
+允许用户自由group，不能禁止所有嵌套；只在开发辅助脚本按原树和review-section ID
+核验候选章节框，检查包围/标题空间/跨章/重叠/24px净间距，在输出目录创建前失败。
+先固定手算及负例，首次9pass/15fail证明空洞；最终28开发脚本项及81既有相关项共109
+通过，Ruff/diff通过。独立代码核对未发现group误伤/信任候选归属；原坐标案检出2误包、
+1重叠/4间距，修正版0问题。原包及两候选86文件集合/字节保持。结果唯一见
+paper-section-guard-test-results.md；不把局部检查当全文/拓扑/科学或已安装能力认证。
+未改runtime、Vault、安装/服务，不重复发明新版外观；人工美观及0.43发布授权仍待。
+
+## 2026-10-10 单篇解析树布局候选（静态修正完成，待人工）
+
+上一轮文档输出契约与test样张已形成实际进展。继续按用户“论文解析树”的明确表述，
+选择既有单篇V-JEPA2，不扩展文献发展树。本轮不重新分析、不运行论文代码、不改原三件套，
+只从现有Canvas生成独立可编辑布局提案，原正文反链保持指向原配套正文；两幅原图按
+引用复制且逐字节核对。默认生成器/安装态不动，避免将未人工评鉴的新布局直接推广。
+计划见paper-layout-readability-test-plan.md。首间距案超2:1未落盘，次案虽几何通过但
+高增19.8%，不推荐；原坐标分区案被独立查出两组重叠131px，记失败。最终独立目录
+“版式修订/论文解析树分区修正版”只整章纵移、根重居中、五标题色和四框补宽，
+108原文字节点/107边/metadata/99PDF与71正文链接/两图保持，另5原生group。
+独立检查组间均24px、无跨章/穿框/交叉；5616×9403（原5596×9144，高增2.83%）。
+81定向测试、Ruff和diff通过；离线Chrome预览108框无裁切且每框至少21px点击余量，
+65原包文件集合/字节保持。两幅可见预览已目视；原生/人工未通过，不重试锁屏GUI。
+唯一结果paper-layout-readability-test-results.md，test有简短审阅说明和分离检查记录。
+不改默认renderer/冻结预期，不用开发辅助脚本冒充已安装skill能力，0.43发布仍待授权。
+
+## 2026-10-10 人类呈现反馈修订（文档候选已成，不发布）
+
+用户重新提出解析树秩序、PROJECT重点顺序、干净正文和实验图文要求。
+本轮先改共享输出契约，并在test既有上层组合审阅目录中另存版式候选；旧稿、
+冻结输入、正式论文单元和实验档案不覆盖，不重跑业务。PROJECT优先现状、计划、
+结果；实验优先结论、可核对图和结果。机器身份/哈希留在附属记录，不删除科学限制。
+解析树按用户明确表述先选单篇V-JEPA2；保持五分支及全部子槽，不靠删内容
+紧凑化。本文档修改不是正常安装态新skill验收；0.43提交发布安装仍未获授权。
+检查对象、输入、预期和范围先写入presentation-readability-test-plan.md；原生阅读与
+美观待人工，不因静态检查冒称通过，也不在此前锁屏后重试GUI。
+test版式修订已有PROJECT、实验结论、辅助说明和SVG/PNG图；15必要回归通过，两个
+skill基础校验通过。系统python缺yaml的首次校验失败如实保留，改用现有uv项目环境
+后通过，未安装依赖。独立原输入核对确认20项目文件/30实验来源目标保留，两fixture
+不借证；121保护文件字节/集合不变。图已渲染并目视检查，但不是原生阅读器验收。
+文档结果见test同目录“检查结果.md”；解析树后续独立候选见本文件首节，原件保持。
+
+## 2026-10-10 模范项目验收输入落入test（未执行新skill）
+
+继续使用既有model-project-0330，不造新实验。test上层组合目录先有独立准备说明与
+EXPECTED，再保全30所选文件/29,461字节到inputs/model-project-0330；主检查及独立
+核对均确认完整文件集合、原件/副本逐项hash一致、所选路径无symlink。八引用/一Run/
+三Attempt及correct-cwd选定成果完整；六份预期/指标/stdout一致，backup仍not-verified。
+真实项目仍无PROJECT/SCHEDULE且docs/plan为空，未运行脚本、登记副本或复制论文正文。
+可读结果唯一在test复现记录/模范项目输入保全结果.md，清单同处.review；准备说明和
+入口已链接。安装缓存0.42仍缺organize-project/review-experiments，未以源码执行冒充。
+正常hotfix安装授权、安装态候选、原生导航及人工仍待完成，G17不据此完成。GUI上一轮
+明确锁屏后已停，本轮不重试；待用户解锁确认，不把CLI回执当正文显示。此前清理仅
+可恢复移除旧展示和生成build，Git工作副本/源码/安装/发布留档保持。
+
+## 2026-10-10 已审折叠候选采用预检完成（未提交分析）
+
+只读核对原模范V-JEPA2与0.41.8已审候选，正常安装0.42的两次check-bundle均合格/零问题。
+独立比较确认98原文/正文/位置不变，97段新增113强调片段及统一折叠；Canvas完整JSON
+相同，仅序列化不同，6附件字节相同。20显式输入检查前后保持。旧request三文件base
+仍匹配，但catalog/snapshot版本为空，不能直接commit；当前provider两artifact匹配正式文件。
+实际结果唯一在test上层组合目录复现记录/折叠摘录采用预览.md及其.review机器记录。
+纠正候选两说明的过时待评鉴文字，保留用户“折叠摘录很好用，通过”；不重新要求同项体验。
+未stage/commit/provider apply、未改核心三件套/重分析/PDF/安装/服务。正式采用须独立授权
+并补完整当前基线；科学支持边界与0.43发布授权分开，完整G17仍未完成。
+
+## 2026-10-10 审阅产物回归test Vault（转存完成，人工待验）
+
+用户指出展示候选不应持续放.codex。当前审阅位置统一为test Vault的
+`Scholar Workflow 实验/上层组合审阅-20261010/00-审阅入口.md`。
+独立计划先行，见review-location-test-plan.md；67原展示/52项目输入/34实验输入
+全字节保留，三PROJECT只改路径前缀且53入口有效，实验32链接及入口8wikilink有效。
+原生Obsidian实际加载新Canvas36节点/10边；首次全图过小和过早截图保留，仅视图缩放
+后截图可读，未改Canvas字节。实际结果及三张截图唯一持于test新目录复现记录。
+核对通过后旧会话visualization目录可恢复移入废纸篓；Git工作副本/未提交代码不清理。
+既有候选转存不算新skill安装态；人工、发布安装授权及G17其他差距保持，不重做业务。
+
+## 2026-10-10 上层组合交付准备检查完成（待独立发布安装授权）
+
+领域论文单元清单已有实际stdout与有限回归；继续核对整批runtime能力的职责/打包和
+四类交付证据，再做完整unit/contract及本地wheel内容检查。预期先行，见
+upper-assembly-delivery-test-plan.md。实际2458完整回归通过（106.05秒、11既有警告），
+16skill/26改动Python Ruff通过；开发wheel108模块/3静态文件与源码全字节一致。
+独立审计最小修正旧writer作用域、README非发布层链接/个人安排，补公共六项复现交付
+reference并由两专属reference引用，具体格式/操作与原论文Canvas规范保持。38必要文档
+回归通过，28相对链接/7路由目标无缺失，有限隐私扫描未命中，diff通过。唯一结果见
+upper-assembly-delivery-test-results.md。真实四对象证据保留，已审折叠尚未canonical、
+新PROJECT未真实采用等不抹平；人工和安装分开。已询0.43hotfix提交发布正常安装授权，
+回复前不提交/推送/安装，不提升版本或改服务/main。未重做论文/实验或真实写入，G17未完成。
+
+## 2026-10-10 领域论文单元导航完成开发验证（未发布安装）
+
+上轮缩框候选完成有限独立检查，本轮继续组合已有论文单元，不重做论文。
+先准备field-paper-units EXPECTED及独立测试计划，再扩展knowledge list显式选择单个
+Source/Field的只读模式。复用provider/归属和阅读器解析，主资料+分析/Canvas引用归一，
+全部用途、文件及缺失/冲突保留；不按同名归属、不新增账本/命令/Hub。默认list和旧
+01-Paperlist格式不变，stdout不选写入路径。静态复核发现机器ID标题，renderer仅对精确
+title==object_id的附属项改用可读角色，JSON及人工标题保留。41新项及562定向联合通过
+（6.64秒），首轮3项观察器/既有全局incomplete预期错误与I001留证；Ruff、skill、diff通过，
+旧树四hash及analysis/skill字节保持。实际stdout样张field-paper-units-demo.md，唯一结果
+field-paper-units-test-results.md。只用合成输入，无正文读取、网络、实际打开或真实写入。
+清单结构/可读性、真实原生点击与正常安装分别待验，不发布安装或完成G17。
+
+## 2026-10-09 文献树更小卡片候选完成（待人工评鉴）
+
+本轮只落实“每个框再小一点”，派生独立compact-v2，不转入论文列表新功能。
+计划先行；初版280宽有一长标题换行导致仅缩5.33%，保留失败观察后统一294宽。
+七框面积各缩20.20%，待定框缩18.14%。独立核对36节点非几何字段、10边、map/provenance
+及旧目录21文件集合/hash不变，6父关系与整数正交无交叉/穿框保持。独立浏览器32框
+20px、28px行高/余量，无溢出/裁剪/缩放，渲染文字和链接匹配；观察器段落拼接误报
+纠正后通过，未改产物。详见literature-compact-v2-test-results.md；1160×1283总览及
+完整可编辑Canvas在literature-evolution-compact-v2，原生Obsidian/人工美观仍待评鉴。
+不更改运行模板、正式/test Vault、安装版本或服务，不发布；G17仍未完成。
+
+## 2026-10-09 项目入口 skill 开发评价完成（未发布安装）
+
+新增独立organize-project及共享project-entry规范，复用project-context和Run/Attempt/Artifact；
+内部PROJECT、对外README与唯一详细计划分离，不给initializer新增隐式首页或资料整理。
+独立EXPECTED/计划先行，三场景50raw输入在候选前冻结；不知道oracle的执行者生成三份
+中文PROJECT，独立核对者确认4Run/7Attempt/4Artifact、53文件入口、静态代码图、单计划/
+冲突处理无不符。52输入文件集/字节及四份冻结候选保持。P3既有计划命名歧义已最小修正，
+未改预期或raw；Mermaid依赖/原生点击明确未验。10项schema、skill quick_validate及diff通过。
+结果唯一见project-entry-skill-test-results.md，展示目录project-entry-skill-candidates内有GUIDE、
+三PROJECT和独立报告。人工VSCode可读/导航及正常安装态触发仍待验；未替换真实项目入口，
+不建新CLI/schema/状态库/Hub，不重跑论文或实验，不改原论文/Canvas规范、版本、安装、服务、
+main或正式资料。上一轮2417完整回归保留但不当成本轮新skill验收；G17仍未完成。
+
+## 2026-10-09 可编辑文献演进候选完成（非正式模板）
+
+复用7篇合成输入，独立EXPECTED/计划先行。原生Canvas纵向小框总览，同图完整8分类、
+2科学关系/10取舍及来源；36text节点含4非语义junction，10整数正交段恢复恰6parent，
+独立核验无丢失/重叠/穿框/交叉。parent仅归属，逆comparison完整留卡，不冒充继承。
+初稿2关系卡溢出116px、5卡仅余24px，定向尺寸/机器字段呈现修正后浏览器32可读卡
+20px且至少余28px，失败观察保留。8选定原文件/hash保持；未读取旧论文Canvas，
+不以展示目录无旧Canvas推断全机状态。结果唯一见literature-canvas-candidate-test-results.md。
+展示目录literature-evolution-candidate中有.canvas、preview.html、overview.png、relations.png
+及GUIDE/provenance/map。浏览器截图不是Obsidian实机显示；原生tiny节点、编辑、字号、
+点击和人工美观待验，会话明确交接。本轮不写test/正式Vault、不改默认载体或加CLI。
+完整unit/contract 2417通过（105.20秒、11警告）；24改动Python Ruff通过。广泛lint
+另有52诊断，34文件与HEAD字节相同，属于未解历史债，不冒称全源lint通过。
+手工编辑不回写IR，不覆盖原图。发布/安装/版本/服务/main保持不变，G17仍未完成。
+
+## 2026-10-09 实验复核 skill 切片完成（开发树，未发布安装）
+
+现有Run/Attempt/Artifact可保存事实；缺口是明确选择、可读比较和证据入口。本轮只新增
+review-experiments及共享报告契约，不加CLI/schema/状态库，不改init-project触发。
+独立手写EXPECTED与测试计划先落盘，随后准备同一个合成项目2Run/4Attempt；不执行
+配方。不知道EXPECTED的独立agent仅读raw输入，正向事实符合预期、首版漏report链接，
+一次定向格式修复后完整。四个隔离负例分别保留未知/缺值/远端/来源hash冲突，均不
+输出有效差值/排名、不替代选定成果；模板不因测试放宽。74项定向通过（10.15秒），
+skill/Ruff/diff通过；33原fixture文件集/hash保持。可见样张有32链接/30本地目标，
+这是静态存在性不是实际点击。会话已明确人工评鉴对象/打开方式/标准，外观仍待确认。
+实际结果唯一见experiment-review-test-results.md，样张见experiment-review-demo.md。
+真实既有单例仍1Run/3Attempt，不包装成三种科学方案，不重跑。未发布安装、不改服务、
+main或正式资料；人工外观与安装态分别待验，G17仍未完成，不冒称普遍鲁棒或科学验收。
+
+## 2026-10-09 文献演进预览切片完成（开发树，未发布安装）
+
+接续上层组合，保留旧技术/挑战分类树及已认可的单篇论文格式。新增独立、显式版本的
+贡献/演进输入和零写入 Markdown 预览：逐贡献四类 novelty，只有 1/2 类具备主/主要支线
+资格，3/4 可重叠但仅局部，未知保持待定；图形归属线不冒充科学继承。每条演进关系的
+改变、原因、收益、代价和比较条件附原文页级入口及陈述性质。引用已有论文身份，不复制
+正文或新建归属账本。独立预期/合成输入先准备；公开CLI先确认缺命令，再实现纯预览。
+位置待定可保留分类，unverified与not_reported明确区分。30专项及89定向联合通过，
+最终0.30秒；首次1项失败是sentinel转义观察器错误，已单独记录，不伪装成产品修复。
+旧schema/renderer保留；新模块守护knowledge不依赖Hub/analysis。Ruff、skill入口和diff通过。
+实际stdout样张见literature-evolution-demo.md，结果唯一见literature-evolution-test-results.md。
+最新紧凑外观、真实语料科学关系、Obsidian 原生呈现仍待各自评鉴；预览不宣称无交叉
+最终载体或已安装功能。规则/双语说明/eval/当前状态同步；不发布安装、不变main/服务，
+不运行已有论文或实验业务。正常CLI仍0.42.0，G17完整目标未完成。
+
+## 2026-10-09 Field 引用安全增删完成（开发树，未发布安装）
+
+已实现独立reference-plan/reference：计划零写入，明确所选Field/引用名/增减/用途，
+确认摘要后只改引用方fields.yml。新增须全局确认唯一owner及目标/主文件可用，移除不读
+目标provider，离线也可清理；不复制/迁移/级联删除，不新建owner台账。
+ruamel保注释和其他Field/nav；schema1首次新增升2，移除不降。固定既有锁序，最终CAS
+限长/NONBLOCK并核对叶inode，临时文件fsync后再次检查全声明/目录/文件元数据读集。
+单文件不建journal；持久性或发布不确定exit6，不误报未写入/成功，重新plan观察真实状态，
+旧digest不得覆盖。82专项加681必要回归=763通过（21.15秒、5既有警告），Ruff/diff通过。
+过程中的夹具错误、5项最终读集真实RED、CLI分型及同用途展示修正单独留证，见
+field-reference-writes-test-results.md；实际合成CLI展示见field-reference-writes-demo.md。
+根说明/运行reference/双语说明和eval同步。正常CLI只读仍0.42.0；未提交发布安装，
+未写正式Vault/Zotero/项目、未变服务或main，不重开已认可论文格式。安装态及人工导航
+仍未验；PROJECT/literature候选待评鉴，G17完整目标未完成。下方为各开发阶段历史。
+
+## 2026-10-09 Field 引用安全增删准备（历史阶段，现已开发完成）
+
+只补已有schema2引用的受控增删。先独立准备合成输入与预期；计划为零写入预览+摘要确认，
+仅对引用方fields.yml单文件CAS，不复制/移动/删除目标，不新增owner台账或Hub依赖。
+新增须全局确认唯一归属；移除须在目标离线时仍可清理。沿用registry→provider→Vault锁序，
+保留YAML注释/其他Field/导航。单文件不另建多文件journal，故障后先重做plan，不用旧摘要覆盖。
+具体范围与测试见field-reference-writes-test-plan.md；本轮不改正式资料/服务/版本/安装。
+
+## 2026-10-09 Field 引用兼容切片完成（未发布/未安装）
+
+接续唯一归属登记，已实现 `fields.yml` 显式 schema 2 的引用契约和只读解析，
+不另建 owner 或 Field-context 台账。每个 Field 的 references 只保存稳定目标 Source/
+object ID、引用 ID 和用途；真实 owner、所属 Field 与路径仍从 provider 推导。
+navigation 继续只持本地 Markdown 路径和原读写授权，引用绝不扩大权限或成为 owner。
+schema 1 输入/序列化保持原样；复现包带走引用声明，不带走外部正文。历史重建清单的
+入口保留版本及引用，不能静默降级。独立输入/预期先于产品实现，详见
+field-references-test-plan.md。151项新增合成及681项定向联合通过（19.27秒、5既有
+PyMuPDF弃用警告）；Ruff通过。动态schema缺条件、clean-text正则端点两类缺口已由独立
+预期暴露并修正，夹具/观察器误报分别留证，详见field-references-test-results.md。
+`knowledge list --resolve-references`显式才读provider，默认清单只显示用途；中英文
+分别显示归属/文件/未验证阅读器，不输出ID/hash/绝对路径或不可点击假链接。
+真实合成CLI清单在field-reference-demo.md，未将它当作已安装或人工导航验收。
+安全增删引用事务、正常安装与人工导航仍是后续工作，不能宣称完整交付。
+本轮不发布、不安装、不写真实 Vault/Zotero/项目，不重跑单篇分析、不变更已认可格式。
+
+## 2026-10-09 登记归属开发切片完成（未发布安装）
+
+原28项跨Source归属边界保持通过，selected missing-as-empty兜底已移除。真正新Source的
+既有registration-plan/register入口明确绑定空provider初始化，workflows组合provider、
+Field与registry，持久journal冻结生成ID，逐成员CAS可恢复。历史attach/追加Field不猜空。
+新增27项覆盖明确初始化、两Source、三中断点/缺progress恢复、冲突、损坏/重算checksum
+注入、目录重绑及公共CLI退出7；独立预期先于各项修正，失败/夹具错误分别留证。
+真实spawn双进程同时申请同一论文仅1成功/1拒绝，只有1owner/目录/导航，失败方原件保持。
+最终225项定向联合通过（4.27秒），Ruff及diff检查通过；不是完整发布回归/压力测试。
+
+运行reference、配置中英文说明、README、eval和当前状态已同步；不新增owner台账或命令，
+knowledge核心不反向依赖analysis。论文五分支/Canvas/图片/折叠格式及既有认可均保持。
+显式正常CLI重新只读报告0.42.0；本轮没有提交、发布安装、真实Vault/Zotero/项目写入、
+服务切换或main合并。新能力安装态未验，Field引用写入未实现；PROJECT/literature候选
+仍待人工评鉴，完整G17继续未完成。下方旧待实现记录是各阶段历史，不是当前阻断。
+结果唯一见source-inventory-initialization-test-results.md与paper-owner-uniqueness-test-results.md。
+
+## 2026-10-09 唯一归属定向验证（未发布安装）
+
+当前register_paper已补外部Source完整声明读集与身份检查；原16项通过后另补12项独立边界。
+28项初测4失败，其中receipt格式与锁helper目录前置条件是2项夹具错误；纠正后3失败明确
+指向kind矛盾、前导零文库ID和committed目标内重复。最小修正后三者及全部28项通过
+（0.77秒）；159项既有登记/归属/恢复/Canvas登记回归通过（2.68秒），Ruff通过。
+结果独立记于paper-owner-uniqueness-test-results.md，不将失败夹具冒充产品缺陷。
+
+完整修复仍缺可信新空Source初始化：Field登记目前无持久三成员journal，不能把不存在
+provider猜为空库；selected Source的旧fallback仍待去除。先独立准备source-inventory-
+initialization预期/测试，随后在workflows层组合真正新Source的provider+Field+registry，
+保留旧attach/追加Field语义，不让knowledge核心反向依赖analysis、不新增owner台账/CLI。
+当前没有真实数据写入、安装、服务切换、提交发布或main合并；正常安装仍0.42.0。
+PROJECT/literature候选仍待人工评鉴，不重开已获认可的论文Canvas/图片/折叠格式。
+
+## 2026-10-09 唯一归属实现中（尚未发布安装）
+
+先在既有register_paper工作流补齐规范Zotero身份检查与外部Source声明读集：manifest、
+provider及目录绑定进入确认摘要，apply按固定顺序锁provider，恢复和逐成员发布复核。
+只改同一登记切片，不新增owner台账、Field引用或上层模板。16项独立预期保持；
+合法新空Source与旧provider丢失的区分另查现有初始化接口，未补齐前不宣称完整可用。
+本轮仅合成临时根，正常0.42.0安装、真实Vault/项目/论文格式保持。
+
+## 2026-10-09 登记前唯一归属回归准备（未修复产品）
+
+PROJECT/literature候选留待人工评鉴；先补既有单owner要求的独立回归，不定稿上层模板。
+当前register_paper.paper_plan只读所选Source provider，跨Source同Zotero论文可能被重复登记。
+旧ID缺文库、缺失provider、跨Source读集CAS及恢复/逐成员发布均需明确拒绝或核验，
+不能仅加瞬时key检查。合成输入/手写预期已先写于paper-owner-uniqueness-test-plan.md、
+tests/fixtures/paper-owner-uniqueness/EXPECTED.md及对应contract测试。
+已完成实现前RED：修正两项旧receipt不一致的夹具后，13项为12失败/1通过；再补同Source
+跨文库和恢复/人工编辑对照，16项为13失败/3通过（0.51秒），Ruff通过。
+失败明确暴露跨Source漏查、旧身份不可核验放行、同Source跨文库误拒与外部读集CAS遗漏；
+详见paper-owner-uniqueness-test-results.md。尚未修改产品源码、运行真实业务、发布安装或宣称完整修复。
+新空Source如何证明空状态与并发发布仍须补齐，不能把缺失声明自动当空库。
+
+## 2026-10-09 当前状态文档纠偏（仅开发记录）
+
+只读版本诊断确认正常CLI为0.42.0。stage1-current-state-audit、reproducible-exemplars-stage1
+及ownership-and-reuse-review顶部仍有0.41.6/0.41.7或“未发布安装”的旧当前表述，已按
+knowledge-ownership-test-results、GOALS与folded-quotes-test-results修正摘要，旧阶段保留为历史。
+折叠摘录认可不再重开；PROJECT/literature新设计、人工导航、跨Source登记查重及Field引用
+写入仍各自未完成，不把新草图或只读定位当正式模板/完整归属能力。不重新安装、业务执行、
+改Vault/项目、发布或合并。G17完整目标不变。
+
+## 2026-10-09 上层组合设计讨论（仅规划记录）
+
+已另生成真实单例的内部入口候选：
+[PROJECT.md 历史审阅候选](obsidian://open?vault=test&file=Scholar%20Workflow%20%E5%AE%9E%E9%AA%8C%2F%E4%B8%8A%E5%B1%82%E7%BB%84%E5%90%88%E5%AE%A1%E9%98%85-20261010%2F%E5%A4%8D%E7%8E%B0%E8%AE%B0%E5%BD%95%2F%E5%8E%9F%E5%A7%8B%E5%B1%95%E7%A4%BA%2Fproject-entry-candidate%2FPROJECT.md)。
+仅只读model-project-0330的源码、清单和既有1Run/3Attempts，保留其脏工作区；候选没有
+写入项目或Vault。21本地文件引用存在且无symlink逃逸，4原生URI与当前清单逐字一致，
+指标/Attempt与既有记录一致；这不是运行示例、点击阅读器或Mermaid视觉验收。
+候选含现状、两份Mermaid模块图源、实验表、论文入口、建议计划及文件归属，仍待人工评鉴。
+独立离线渲染发现水平长链在窄窗口下字体过小，现改为上下布局/直角线，补齐独立预期输入，
+完整路径仍在表格中。736/520px两图标签边界及字号检查通过，520px最小文字12.62/13.95px，
+21文件引用、4原生URI与节点/关系预期均通过；无网络请求或业务执行。
+结果见候选同目录PREVIEW-REVIEW.md及module-diagrams-*.png；不是VSCode原生预览或人工认可。
+源码显示计算读取项目根配置/数据而非自动读取Run快照，候选已明确该复现边界，不据此
+宣称任意工作区修改后仍锁定原输入。没有新增执行、正式PROJECT模板或运行期能力。
+
+用户转向用已完成的论文/实验单元搭建上层结构。项目采用内部 PROJECT.md，README.md
+仍对外发布；PROJECT 含最新情况、代码模块图及代码/资料/实验链接与计划，详细计划可选
+SCHEDULE.md。项目草图方向获认可，未据此宣称真实导航或新模板验收通过。
+文献演进图要求纵向、紧凑；四类novelty中只有1（milestone task seminal）和2（novel
+pipeline/representation seminal）可在主线/主要支线上，3（novel module seminal）和4
+（加module改进已有pipeline）属于局部进展。同篇允许多贡献，证据不足待定，不作质量排名。
+完整决定、当前源码差距及后续边界见upper-assembly-design-review.md。
+会话占位草图已缩小框体，合成几何/交互检查通过；最新外观仍待用户评鉴。
+本次只写规划，不改运行期契约/版本/安装/真实Vault或项目，不重开已有效的单篇分析验收，
+不恢复Hub建设；0.42.0既有发布事实不变，G17完整目标继续未完成。
+
 ## 2026-10-09 0.42.0已发布安装，单对象自动验收通过
 
 实际source9886f9043e5e974c7085d25155cb3c168de539e5；runtime

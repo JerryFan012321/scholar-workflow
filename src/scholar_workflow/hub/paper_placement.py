@@ -37,13 +37,6 @@ from scholar_workflow.analysis.models import (
     AnalysisCommitRequest,
     KnowledgeArtifactChange,
 )
-from scholar_workflow.knowledge.models import (
-    KnowledgeManifest,
-    KnowledgeProjection,
-    KnowledgeRelation,
-    KnowledgeSupportingDocument,
-    SupportingDocumentKind,
-)
 from scholar_workflow.analysis.rendering import AnalysisBundle
 from scholar_workflow.hub.field_migration import _has_legacy_hub_reference, _managed_paths
 from scholar_workflow.hub.field_transaction import (
@@ -56,6 +49,7 @@ from scholar_workflow.hub.field_transaction import (
     _identity,
     _read_target,
 )
+from scholar_workflow.knowledge.catalog_models import HubCatalog
 from scholar_workflow.knowledge.fields import (
     FieldDefinition,
     FieldManifest,
@@ -67,7 +61,13 @@ from scholar_workflow.knowledge.fields import (
     _read_regular_at,
     _safe_relative,
 )
-from scholar_workflow.knowledge.catalog_models import HubCatalog
+from scholar_workflow.knowledge.models import (
+    KnowledgeManifest,
+    KnowledgeProjection,
+    KnowledgeRelation,
+    KnowledgeSupportingDocument,
+    SupportingDocumentKind,
+)
 from scholar_workflow.models import ResourceKind
 
 _HASH = re.compile(r"sha256:[0-9a-f]{64}\Z")
@@ -499,6 +499,7 @@ def plan_v4_paper_placement(
                 "Field navigation proposal is not the exact paper-note substitution"
             )
         planned_manifest = FieldManifest(
+            schema_version=field_manifest.schema_version,
             source_id=source_id,
             fields=[
                 proposed_field if row.field_id == field_id else row for row in field_manifest.fields

@@ -1,0 +1,23 @@
+# Synthetic observation only; there was no process or successful experiment.
+schema_version: 1
+attempt_id: primary
+run_id: 20261009-1100-variant
+target_id: synthetic-local
+target_profile_sha256: 9e4dd2c895bbb0a918242845d8cabdcf387ec64503ef39a24a25494f0e60c748
+status: succeeded
+started_at: '2026-10-09T11:01:00Z'
+finished_at: '2026-10-09T11:02:00Z'
+exit_code: 0
+actual:
+  working_directory: .
+  output_location: experiments/20261009-1100-variant/attempts/primary/metrics.json
+  log_location: experiments/20261009-1100-variant/attempts/primary/stdout.log
+  hostname: synthetic-host-unverified
+  os: null
+  gpu: null
+  driver: null
+  cuda: null
+  python: null
+  commit: null
+  recipe_hash: null
+output_inventory: null

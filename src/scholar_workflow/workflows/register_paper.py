@@ -11,7 +11,7 @@ import json
 import os
 import re
 import stat
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 
@@ -20,6 +20,7 @@ import yaml
 from scholar_workflow.analysis.apply_changes import (
     _SNAPSHOT_NAME,
     KnowledgeApplyReceipt,
+    KnowledgeApplySafetyError,
     KnowledgeProviderSnapshot,
     _atomic_create,
     _atomic_replace_if_unchanged,
@@ -33,16 +34,25 @@ from scholar_workflow.knowledge.fields import (
     FieldRegistryError,
     FieldService,
     KnowledgeSourceRegistry,
+    KnowledgeSourceRegistryDocument,
     _open_directory_chain,
 )
-from scholar_workflow.knowledge.models import KnowledgeAtomicResource, KnowledgeManifest
+from scholar_workflow.knowledge.models import KnowledgeAtomicResource
 from scholar_workflow.knowledge.presentation import _text
 from scholar_workflow.models import ResourceKind
+from scholar_workflow.workflows.knowledge_ownership import (
+    _json,
+    _placements,
+    _read_declaration,
+    _root_identity,
+    _UniqueYaml,
+)
 
 _SNAPSHOT = _SNAPSHOT_NAME
 _LIMIT = 16 * 1024 * 1024
 _KEY = re.compile(r"[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}\Z")
 _SEGMENT = re.compile(r"[a-z0-9][a-z0-9-]{0,95}\Z")
+_PAPER_ID = re.compile(r"paper:zotero:([1-9][0-9]*):([23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8})\Z")
 
 
 def _bytes(value: object) -> bytes:
@@ -127,7 +137,7 @@ def _paper(zotero, item_key: str, attachment_key: str) -> dict:
         or data.get("itemType") in {None, "attachment", "note", "annotation"}
         or not isinstance(title, str) or not title.strip() or len(title) > 1000
         or any(ord(c) < 32 for c in title)
-        or not library_id.isdigit() or int(library_id) <= 0
+        or re.fullmatch(r"[1-9][0-9]*", library_id) is None
         or str(attachment.get("library", {}).get("id", "")) != library_id
         or child.get("parentItem") != item_key or child.get("contentType") != "application/pdf"
         or child.get("linkMode") not in {0, "imported_file"}
@@ -174,6 +184,114 @@ def _location(registry: KnowledgeSourceRegistry, source_id: str, field_id: str):
 
 def _provider_path(registry: KnowledgeSourceRegistry, source_id: str) -> Path:
     return registry.path.parent / "knowledge-providers" / source_id
+
+
+def _assert_unused_paper(snapshot: KnowledgeProviderSnapshot, paper: dict, *,
+                         existing_owner_id: str | None = None) -> None:
+    """Compare explicit identities, never a title or an unqualified item key."""
+    for resource in snapshot.catalog.resources:
+        identity = _PAPER_ID.fullmatch(resource.resource_id)
+        if resource.kind != ResourceKind.PAPER:
+            if identity is not None:
+                raise FieldRegistryError("Registered paper identity has a conflicting resource kind")
+            continue
+        key = resource.zotero.item_key
+        if key is None or (identity is not None and identity[2] != key):
+            raise FieldRegistryError("Registered paper identity cannot be verified")
+        if key != paper["item_key"]:
+            continue
+        if identity is None:
+            raise FieldRegistryError("Registered paper library identity cannot be verified")
+        if identity[1] == paper["library_id"]:
+            if resource.resource_id == existing_owner_id:
+                continue
+            raise FieldRegistryError("Paper already has a registered Knowledge owner; do not create a duplicate")
+
+
+def _registered_sources(registry: KnowledgeSourceRegistry) -> KnowledgeSourceRegistryDocument:
+    declaration = _read_declaration(registry.path.parent, registry.path.name, 2 * 1024 * 1024)
+    return KnowledgeSourceRegistryDocument.model_validate(_json(declaration.content))
+
+
+def _ownership_read_set(registry: KnowledgeSourceRegistry, source_id: str, paper: dict) -> list[dict]:
+    """Read only explicit outside-Source declarations, binding absence as unknown."""
+    try:
+        document = _registered_sources(registry)
+    except (OSError, ValueError, RecursionError, FieldRegistryError) as exc:
+        raise FieldRegistryError("Registered paper ownership cannot be verified: registry unavailable") from exc
+    result = []
+    for source in sorted(document.sources, key=lambda row: row.source_id):
+        if source.source_id == source_id:
+            continue
+        try:
+            root = registry.resolve(source.source_id, capability="read")
+            root_identity = _root_identity(root)
+            field_read = _read_declaration(root, ".scholar-workflow/fields.yml", 2 * 1024 * 1024)
+            manifest = FieldManifest.model_validate(yaml.load(field_read.content, Loader=_UniqueYaml))
+            if manifest.source_id != source.source_id:
+                raise ValueError("Field manifest differs from the registered Source")
+            provider_path = _provider_path(registry, source.source_id)
+            provider_identity = _root_identity(provider_path)
+            provider_read = _read_declaration(provider_path, _SNAPSHOT, _LIMIT)
+            snapshot = KnowledgeProviderSnapshot.model_validate(_json(provider_read.content))
+            binding = snapshot.vault_binding
+            if binding is None or (binding.root_path, binding.device, binding.inode) != (
+                str(root), *root_identity,
+            ):
+                raise ValueError("Provider binding differs from the registered Source")
+            _placements(source.source_id, manifest, snapshot)
+            if (_root_identity(root) != root_identity
+                    or _root_identity(provider_path) != provider_identity):
+                raise ValueError("Registered Source declaration directory changed")
+            _assert_unused_paper(snapshot, paper)
+            result.append({"source_id": source.source_id, "folder_id": source.folder_id,
+                           "root_binding": binding.model_dump(mode="json"),
+                           "provider_binding": list(provider_identity),
+                           "fields_identity": list(field_read.identity),
+                           "provider_identity": list(provider_read.identity),
+                           "fields_hash": _hash(field_read.content),
+                           "provider_hash": _hash(provider_read.content)})
+        except FieldRegistryError:
+            raise
+        except (OSError, ValueError, KeyError, RecursionError, KnowledgeApplySafetyError,
+                yaml.YAMLError) as exc:
+            raise FieldRegistryError(
+                f"Registered paper ownership cannot be verified for Source {source.source_id}"
+            ) from exc
+    return result
+
+
+def _check_ownership_read_set(registry: KnowledgeSourceRegistry, plan: dict) -> None:
+    try:
+        current = _ownership_read_set(registry, plan["source_id"], plan["paper"])
+        if (plan.get("ownership_read_set", []) != current
+                or plan["registry_hash"] != registry.revision()):
+            raise FieldRegistryError("Ownership read set differs from the approved plan")
+    except (OSError, ValueError, FieldRegistryError) as exc:
+        raise FieldRegistryError("Registration ownership declarations changed; review a new plan") from exc
+
+
+@contextmanager
+def _locked_registered_providers(registry: KnowledgeSourceRegistry, source_id: str):
+    """Serialize registered provider writers in a stable order, after the registry lock."""
+    document = _registered_sources(registry)
+    with ExitStack() as stack:
+        selected = None
+        for source in sorted(document.sources, key=lambda row: row.source_id):
+            path = _provider_path(registry, source.source_id)
+            if source.source_id != source_id:
+                try:
+                    descriptor = _open_directory_chain(path)
+                except OSError as exc:
+                    raise FieldRegistryError("Registered paper ownership cannot be verified") from exc
+                else:
+                    os.close(descriptor)
+            state = stack.enter_context(_locked_state_root(path))
+            if source.source_id == source_id:
+                selected = state
+        if selected is None:
+            raise FieldRegistryError("Selected Source is no longer registered")
+        yield selected
 
 
 def _note(paper: dict, language: str) -> str:
@@ -228,16 +346,13 @@ def paper_plan(registry: KnowledgeSourceRegistry, zotero, *, source_id: str,
         finally:
             os.close(fd)
     if provider_before is None:
-        before = KnowledgeProviderSnapshot(vault_binding=binding, manifest=KnowledgeManifest(),
-                                          catalog=HubCatalog(generated_at=datetime(1970, 1, 1, tzinfo=UTC)))
-    else:
-        before = KnowledgeProviderSnapshot.model_validate_json(provider_before)
-        if before.vault_binding != binding:
-            raise FieldRegistryError("Existing provider belongs to a different Source root")
+        raise FieldRegistryError("Source inventory is missing; restore it, never infer an empty library")
+    before = KnowledgeProviderSnapshot.model_validate_json(provider_before)
+    if before.vault_binding != binding:
+        raise FieldRegistryError("Existing provider belongs to a different Source root")
     resource_id = f"paper:zotero:{paper['library_id']}:{item_key}"
-    if any(r.resource_id == resource_id or r.zotero.item_key == item_key
-           for r in before.catalog.resources):
-        raise FieldRegistryError("Paper already has a provider identity; do not create a duplicate")
+    _assert_unused_paper(before, paper)
+    ownership_read_set = _ownership_read_set(registry, source_id, paper)
     after_manifest = manifest.model_dump(mode="json")
     selected = next(f for f in after_manifest["fields"] if f["field_id"] == field_id)
     selected["navigation"].append({"label": paper["title"][:120], "items": [owner_relative]})
@@ -255,11 +370,13 @@ def paper_plan(registry: KnowledgeSourceRegistry, zotero, *, source_id: str,
         raise FieldRegistryError("Registration authority changed during planning")
     payload = {"schema_version": 1, "source_id": source_id, "field_id": field_id,
                "root_binding": binding.model_dump(mode="json"), "registry_hash": registry_hash,
+               "ownership_read_set": ownership_read_set,
                "paper": paper, "resource_id": resource_id, "segment": segment, "language": language,
                "owner_path": owner_path, "note": _note(paper, language),
                "fields_before": fields_before.decode(), "fields_after": fields_after,
                "provider_before": provider_before.decode() if provider_before else None,
                "before_snapshot": before.model_dump(mode="json")}
+    _check_ownership_read_set(registry, payload)
     payload["approved_digest"] = _hash(_bytes(payload)).removeprefix("sha256:")
     return payload
 
@@ -307,7 +424,7 @@ def register_paper(registry: KnowledgeSourceRegistry, zotero, *, approved_digest
         root, binding, _, field = _location(registry, selection["source_id"], selection["field_id"])
         with _directories(registry.path.parent,
                           ("knowledge-providers", selection["source_id"])) as (_, check_state), (
-            _locked_state_root(_provider_path(registry, selection["source_id"]))
+            _locked_registered_providers(registry, selection["source_id"])
         ) as provider:
             journal_bytes, _ = _read(provider.fd, journal_name)
             if journal_bytes is None:
@@ -344,6 +461,7 @@ def register_paper(registry: KnowledgeSourceRegistry, zotero, *, approved_digest
                 plan["registry_hash"] != registry.revision() or
                 plan["paper"] != _paper(zotero, selection["item_key"], selection["attachment_key"])):
                 raise FieldRegistryError("Registration authority or source changed; refusing recovery")
+            _check_ownership_read_set(registry, plan)
             if journal["status"] == "committed":
                 value, _ = _read(provider.fd, _SNAPSHOT)
                 if value is None:
@@ -363,6 +481,8 @@ def register_paper(registry: KnowledgeSourceRegistry, zotero, *, approved_digest
                     or projected.zotero.attachment_key != selection["attachment_key"]
                     or not any(relative_owner in group.items for group in field.navigation)):
                     raise FieldRegistryError("Committed paper ownership changed")
+                _assert_unused_paper(current_snapshot, plan["paper"],
+                                     existing_owner_id=plan["resource_id"])
                 return _result(plan, current_snapshot, prior.receipt_id)
             before = KnowledgeProviderSnapshot.model_validate(plan["before_snapshot"])
             catalog_data = before.catalog.model_dump(mode="json")
@@ -421,6 +541,7 @@ def register_paper(registry: KnowledgeSourceRegistry, zotero, *, approved_digest
                         provider.ensure_current()
                         if _vault_binding_for_root(root) != binding:
                             raise FieldRegistryError("Source root changed during publication")
+                        _check_ownership_read_set(registry, plan)
                         _put(fd, name, old, new)
                         if fault_inject is not None:
                             fault_inject(f"member-{index + 1}")
@@ -431,6 +552,7 @@ def register_paper(registry: KnowledgeSourceRegistry, zotero, *, approved_digest
                         current_member, _ = _read(fd, name)
                         if current_member != new:
                             raise FieldRegistryError("Registration publication changed before completion")
+                    _check_ownership_read_set(registry, plan)
                     journal["status"] = "committed"
                     current, _ = _read(provider.fd, journal_name)
                     _put(provider.fd, journal_name, current, _bytes(journal))

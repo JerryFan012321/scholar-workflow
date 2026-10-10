@@ -1,0 +1,16 @@
+{
+  "synthetic": true,
+  "execution_status": "not_executed",
+  "evaluation_protocol": "synthetic-eval-v1",
+  "dataset_id": "synthetic-review",
+  "dataset_version": "1",
+  "split": "fixed-test",
+  "metrics": {
+    "accuracy": {
+      "value": 0.85,
+      "unit": "fraction",
+      "range": [0, 1],
+      "higher_is_better": true
+    }
+  }
+}

@@ -794,6 +794,7 @@ class FieldTransactionService:
             preview_managed_names = set(_managed_paths(selected))
             if field_definition is not None:
                 try:
+                    references_provided = "references" in field_definition.model_fields_set
                     revised = FieldDefinition.model_validate(field_definition.model_dump())
                 except (AttributeError, ValueError) as exc:
                     raise FieldTransactionError("invalid proposed Field definition") from exc
@@ -802,6 +803,10 @@ class FieldTransactionService:
                     selected.relative_root,
                 ):
                     raise FieldTransactionError("proposed Field changed its preview identity")
+                if references_provided and revised.references != selected.references:
+                    raise FieldTransactionError("legacy Field transaction cannot change references")
+                if revised.references != selected.references:
+                    revised = revised.model_copy(update={"references": selected.references})
                 relocation_names = set(relocations or {})
                 omitted = (
                     set(_managed_paths(selected)) - set(_managed_paths(revised)) - relocation_names
@@ -815,6 +820,10 @@ class FieldTransactionService:
             try:
                 root = self.field_service._validate_candidate(candidate)
                 manifest = FieldManifest(
+                    schema_version=(
+                        self.field_service._load_manifest(root).schema_version
+                        if preview.existing_manifest else 1
+                    ),
                     source_id=preview.source_id,
                     fields=[*preview.registered_fields, selected],
                 )
@@ -1706,6 +1715,10 @@ class FieldTransactionService:
         if _identity(root.joinpath(*parts)) != (pending.field_device, pending.field_inode):
             raise FieldTransactionError("Field folder changed after plan")
         manifest = FieldManifest(
+            schema_version=(
+                self.field_service._load_manifest(root).schema_version
+                if candidate.preview.existing_manifest else 1
+            ),
             source_id=pending.plan.source_id,
             fields=[*candidate.preview.registered_fields, field],
         )
@@ -2143,6 +2156,7 @@ class FieldTransactionService:
                     if pending.registry_before != pending.registry_after:
                         candidate = self.field_service.candidates.peek(pending.candidate_token)
                         manifest = FieldManifest(
+                            schema_version=self.field_service._load_manifest(pending.root).schema_version,
                             source_id=pending.plan.source_id,
                             fields=[*candidate.preview.registered_fields, pending.field_definition],
                         )

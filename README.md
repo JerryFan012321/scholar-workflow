@@ -26,8 +26,8 @@ derived indexes; **Notion** holds an optional cross-device projection.
 - **Knowledge System** keeps readable Markdown as the primary knowledge artifact. Papers,
   technical documents, and blog posts are atomic resources; analyses, Canvas overviews, and
   attachments are explicitly owned supporting artifacts. New whole-paper analyses follow the
-  reference-image Abstract / Introduction / Method / Limitation tree, with evidence beside each
-  claim or point; the older five-role tree remains readable for historical artifacts.
+  reference-image Abstract / Introduction / Method / Experiments / Limitation tree, with evidence
+  beside each claim or point; historical artifacts retain their own versioned formats.
 - **Project System** keeps a stable `project_id`, host-neutral source/config profiles, and
   separate Run, Attempt, Target, artifact-promotion, and backup records. A promoted artifact
   is not called a verified backup without an independently checked copy.
@@ -38,6 +38,38 @@ derived indexes; **Notion** holds an optional cross-device projection.
 Project references leave source ownership unchanged. An explicitly requested document copy is
 different: it receives destination identity and evolves independently. Neither operation creates
 hidden synchronization, source overwrite or cascading deletion.
+
+From 0.43.0, schema-2 Fields can retain qualified references to existing
+knowledge objects and their purpose. `knowledge list --resolve-references` optionally shows
+declared ownership and file diagnostics without opening readers or creating copies. Schema 1
+keeps its original shape. `knowledge reference-plan/reference` previews and
+confirms one addition/removal without changing its target. Human navigation acceptance
+remains separate from the installed command contracts.
+See [knowledge registration](references/knowledge-registration.md).
+
+For a selected Field's existing paper packages, `knowledge list
+--paper-units --source-id SOURCE_UUID --field-id FIELD_UUID` groups information,
+analysis, Canvas and note entries with direct safe Obsidian links and honest
+unavailable states. It does not replace the fixed ledger, copy content or write
+files. Available from 0.43.0; see [paper-unit navigation](skills/build-literature-tree/references/field-paper-units.md).
+
+The 0.43.0 `literature-preview --input evolution.json --format md|json`
+also previews contribution-level novelty, placement and evidence-linked technical
+tradeoffs without reading or writing source material. The final editable evolution
+figure and human appearance acceptance remain pending.
+See [the evolution preview contract](skills/build-literature-tree/references/evolution-preview.md).
+
+The 0.43.0 `review-experiments` skill turns selected Run/Attempt/Artifact
+records into a readable, source-linked comparison without running experiments or
+adding a result database. Ask to compare explicit Runs, result Attempts and metrics;
+failures, replays and missing evidence remain visible. See
+[experiment review](skills/review-experiments/README.md).
+
+The 0.43.0 `organize-project` skill prepares a rich internal PROJECT.md:
+current state, source-supported module diagrams, direct code/experiment/paper links,
+and one detailed plan in PROJECT or SCHEDULE. README remains public-facing. It is
+separate from initialization and the short inventory overview. See
+[internal project entry](skills/organize-project/README.md).
 
 ### Project overview (0.31.0 hotfix; human acceptance pending)
 
@@ -121,6 +153,10 @@ The single-paper enrollment interface (0.38.0+) is documented in
 and `knowledge register-paper` use an existing registered Source/Field, live Zotero
 identity, a new companion folder and digest-bound conditional recovery. This is
 not adoption of old packages or scientific acceptance; verify installed support.
+From 0.43.0, registration checks canonical paper ownership across explicitly registered
+Sources and refuses missing inventories. New Source registration initializes its empty
+provider explicitly; old Source attachment never guesses one. See the linked contracts
+for conditional recovery.
 
 ```bash
 scholar-workflow analysis check-bundle /absolute/paper-folder \
@@ -299,8 +335,9 @@ still works. Empty task targets require registration rather than an arbitrary fi
 missing model catalog offers only a confirmed local model. Configuration changes wait for active
 runs to finish or be explicitly cancelled.
 
-These new entries are implemented in the development tree but await independent tests and one-paper
-visible acceptance; see `planning/hub-paper-task-test-plan.md`. This does not claim installed-product validation.
+These are retained legacy Hub compatibility entries, not the current project-centered
+workflow. An accepted open request does not prove visible reader behavior. For native
+paper opening without Hub, use the [resource-location contract](skills/find-resource/references/resource-location.md).
 
 To give another PDF reader a separate copy with supported Zotero annotations:
 
@@ -392,6 +429,8 @@ flows instead of treating a compatibility response as write authority.
 | env-setup | Scaffold — and consult — a personal API-key / SSH-server env-records ledger |
 | agent-collaboration | Coordinate bounded work bidirectionally between Claude Code, Codex, or another available agent |
 | init-project | Initialize a host-neutral, Git-managed research project skeleton without custom agents or hooks |
+| organize-project | Internal PROJECT entry with module views, material links and a single plan (0.43.0+) |
+| review-experiments | Read-only review/comparison of selected experiment archives (0.43.0+) |
 | config-setup | Initialize, query, and update the plugin configuration |
 | project-backlog | Maintain the repository's persistent work-item queue |
 
@@ -496,6 +535,7 @@ you can also invoke a skill explicitly with `$skill-name`, e.g.:
 - *"sync the Obsidian index and Notion"* → sync-projections
 - *"have Claude Code and Codex split this migration and integrate it"* → agent-collaboration
 - *"initialize this project with the standard skeleton"* → init-project
+- *"prepare an internal PROJECT preview from these selected materials"* → organize-project
 
 Each skill's own `README` (under `skills/<name>/`) documents its options and setup in
 detail. Recommendation reports are ephemeral; papers you keep flow into the normal
@@ -509,13 +549,12 @@ The plugin is in active `0.x` development. What's solid vs. still settling:
   listing, remembered write authorization, item creation, imported-PDF upload, exact DOI
   reuse, and attachment reuse. The same ingest payload returns the original item and
   attachment without re-uploading.
-- **Hub v3: 0.30.0 hotfix; installed-product human acceptance is pending:** it replaces the
-  v0.28.1 binding model in the development tree. cmux is only an open location; trusted
-  folder/project targets authorize files and cwd. Managed lifecycle uses a dynamic port and
-  self-identifying discovery rather than a fixed 23128 service or source-tree root.
-- **Real data still uses per-Field gates:** the first Source is the current research-document
-  Vault, the first Field is World Models, and JEPA/V-JEPA is the acceptance sample. A preview must
-  be accepted before that Field changes; other Vaults and projects remain untouched.
+- **Legacy Hub is compatibility-only:** its dynamic service and historical routing remain
+  protected, but it is not a prerequisite for current content workflows. Native tools retain
+  their own configuration and lifecycle; cmux selects an opening location, not file permission.
+- **Real data still uses per-Field gates:** explicitly select a registered Source/Field and
+  review a current preview before a migration changes it. Other Vaults and projects remain untouched;
+  a sample's acceptance does not approve another Field or a whole-library migration.
 - **ZotFlow availability is diagnosed, not repaired automatically:** incompatible versions,
   disabled local-storage mode, missing CLI proof, or absent local PDF disable only the ZotFlow
   action with a reason. Hub never upgrades Obsidian, removes another plugin, or retrieves a PDF

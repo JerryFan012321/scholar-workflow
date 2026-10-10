@@ -2,6 +2,46 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "human-docs-priority-plain-language-and-figures",
+      "description": "G12/G13/G16/G17：2026-10-10用户重新指出呈现问题。PROJECT正文按现状、计划、结果、代码、资料、归属排序，相关文件说明用途；机器ID/哈希转储留辅助记录且所选入口不丢。实验先普通语言结论、有依据图和数值，再条件/历史/限制；合成值不冒充科学收益，缺图明确。test现有合成输入另存版式候选，原件不覆盖。独立计划先于检查；静态事实与安装态、原生导航、人工美观分开。论文五分支及完整子槽/证据反链/图片要求不取消，具体图形调整对象待确认。见planning/presentation-readability-test-plan.md；人工及安装态仍pending。",
+      "status": "pending"
+    },
+    {
+      "id": "reproduction-shared-six-part-delivery",
+      "description": "G17：显式复现请求由公共reproduction-delivery持有固定六项交付（输入/来源/hash、模板/实际安装版本/公开入口、预期文件与归属格式、新目的地重放及影响、自动/人工分栏、空缺/失败）。论文与项目专属reference按需引用，保留各自IR/格式/成对提交及layout/Run/报告/新根操作，不新增schema/强制文件/状态源或思考流程。2026-10-10独立只读审计确认六项完整且既有具体边界保留，16skill基础与静态引用通过；规则落地不等于安装态或四对象完整交付，保持pending，见planning/upper-assembly-delivery-test-results.md。",
+      "status": "pending"
+    },
+    {
+      "id": "knowledge-selected-field-paper-unit-navigation",
+      "description": "G2/G16/G17：knowledge list显式paper-units及Source/Field选择只读组合本地paper owner与qualified references；analysis/Canvas沿owner归一，全部用途和已声明文件保留，同名不同身份不合并。缺失、非paper、未知、冲突、reader不可用分别可见，安全且唯一归属/reader的文件才给原生Obsidian链接；无应用打开或正文/状态写入。默认list、固定01-Paperlist及旧树保持。独立预期先行，2026-10-10为41新项及562定向联合通过；首轮3项独立观察器/全局incomplete预期错误与I001分别留证。实际机器ID标题仅在人类renderer使用可读角色，JSON/人工标题保持。样张为实际合成Click stdout，安装态、真实导航和人工可读性仍待验，保持pending。见planning/field-paper-units-test-results.md与field-paper-units-demo.md。",
+      "status": "pending"
+    },
+    {
+      "id": "project-entry-internal-navigation-and-single-plan",
+      "description": "G16/G17：独立organize-project复用已选代码、论文单元和Run/Attempt/Artifact，输出内部PROJECT的当前状态、模块图及直接链接、实验结果/历史、资料、唯一详细计划和归属未决项；README仍对外。独立EXPECTED/计划先行，未知oracle的执行者生成三场景候选，独立核对53文件入口、4Run/7Attempt/4Artifact、静态图/计划/冲突与52原输入守恒均无不符，10项schema通过。仅有限host行为评价，无新CLI/schema/状态库/初始化副作用；正常安装/真实采用/原生VSCode导航及人工美观仍待验，保持pending。见planning/project-entry-skill-test-results.md。",
+      "status": "pending"
+    },
+    {
+      "id": "experiment-review-evidence-linked-comparison",
+      "description": "G16/G17：review-experiments只读复核明确所选Run/Attempt/Artifact，输出摘要范围、比较条件、Run结果、Attempt历史、差异和限制，链接既有配方/config/report/指标。无新CLI/schema/状态库；PROJECT内部、README对外边界保持。独立手写预期及一个2Run/4Attempt合成项目先于评价；74项定向通过，独立正向事实正确但首轮漏report入口，经一次格式修复补齐；四个隔离负例均保留未知/缺值/远端/来源hash冲突，扣留有效差值/排名且不替代成果。33原输入文件集/hash保持，样张32链接/30本地目标静态存在。仅有限host行为评价，不是普遍鲁棒证明，正常安装和人工可读/导航仍待验，保持pending。见planning/experiment-review-test-results.md。",
+      "status": "pending"
+    },
+    {
+      "id": "knowledge-field-reference-single-manifest-writes",
+      "description": "G2/G16/G17：reference-plan/reference明确Field、引用名、增减及用途，零写入预览后用当前64hex摘要确认。新增核验全局唯一owner与目标/主文件可用，移除不读provider，目标离线仍只删本Field选择。保持schema2/注释/其他Field/nav及所有正文/provider；registry→排序provider→Vault锁下单文件CAS，每次读取限长NONBLOCK及叶inode，temp fsync后再次核验全部声明/目录/目标元数据。发布或持久性不确定exit6并fresh plan，不用旧摘要回滚。独立预期及具体窗口RED先于修正，82专项与763定向联合通过（21.15秒）；实际合成CLI见planning/field-reference-writes-demo.md，过程见对应test-results。未发布安装或真实业务/人工导航验收，完整G17保持未完成。",
+      "status": "pending"
+    },
+    {
+      "id": "knowledge-field-reference-portability-and-resolution",
+      "description": "G2/G16/G17：fields.yml显式schema2保存每Field的qualified Source/object、reference ID和用途，schema1序列化不变；引用不复制正文、不成为owner、不扩大navigation读写权限。复现包保留元数据但不收编外部文档；旧追加/迁移保版本引用。knowledge list默认只展示用途，可选--resolve-references核验全局归属/文件/目标Source，冲突和失联不隐藏，reader仍unverified。独立预期先于实现，151专项及681定向联合通过；动态版本条件和clean-text映射缺口已修。后续受控增删由knowledge-field-reference-single-manifest-writes独立记录，未发布安装，人类导航仍待验收，保持pending，不冒称完整归属或G17。见planning/field-references-test-results.md。",
+      "status": "pending"
+    },
+    {
+      "id": "knowledge-new-source-inventory-and-single-paper-owner",
+      "description": "G2/G12/G16/G17：新Source登记明确初始化bound空provider、Field及host registry，原文不收编；已有Source挂接不猜空。跨Source按规范Zotero文库/item身份查重，外部声明读集及恢复/逐成员/完成重放均核验。2026-10-09独立预期先于实现，27项Source初始化、28项owner边界及1项真实spawn双进程竞争已通过；并发只产生一个owner，失败方清单/原文保持。运行说明与结果分离，未发布安装，真实单对象安装态仍待验；Field引用写入与完整G17不因此完成。见planning/source-inventory-initialization-test-results.md和paper-owner-uniqueness-test-results.md。",
+      "status": "pending"
+    },
+    {
       "id": "project-registered-knowledge-ownership",
       "description": "G2/G16/G17：可选project overview --resolve-knowledge只读组合已有registry/Field/provider声明，按同一稳定ID分别报告唯一归属或conflict/incomplete/not_found、目标和primary owner文件状态、未核验阅读器；不读正文、不启动工具、不创建state/锁/副本，默认输出和清单schema保持。根祖先及对象symlink不跟随，声明重复键/读中变化/binding不符不能resolved。独立手写预期和合成输入先于实现；2026-10-09获批57专项及138必要回归通过，两项lint最小修正后195项联合复跑通过。0.42.0版本准备2092完整unit/contract通过，11既有警告；196 wheel用例在Python3.14.5通过。用户批准后source9886f90/runtime67a2216正常发布及pipx/Codex安装，246缓存文件和104模块/3静态文件与发布字节相等。安装CLI单模范项目8项总览保留，4本地available、3个V-JEPA2知识引用resolved至同一正式论文包，阅读器仍unverified；范围内82文件路径/hash不变，没有正文写入或重跑实验。人类导航便利性未确认，故整项仍pending。不同ID的同论文查重、Field引用写入和owner迁移不属本切片，不能冒称完整归属或G17完成。见planning/knowledge-ownership-test-results.md。",
       "status": "pending"
@@ -157,8 +197,13 @@
       "status": "pass"
     },
     {
+      "id": "literature-contribution-evolution-preview",
+      "description": "G12/G16/G17：独立schema_version1及literature-preview只读输入，不加载Hub/config/registry或原文、不写文件。逐贡献四类novelty、多贡献复用同一qualified论文身份，1/2才具主/主要支线资格，3/4局部可重叠，已知类型亦可位置待定。归属parent与科学relation分开，五项技术取舍完整带来源页级入口，未核验不冒充原文未报告。独立七篇合成输入和30项定向测试守护；旧分类树保持。新预览未安装，最终可编辑图/无交叉外观及真实科学支持待各自验收，保持pending",
+      "status": "pending"
+    },
+    {
       "id": "novelty-tree-topology-and-paperlist",
-      "description": "文献树为 novelty tree(INV22):可变深度概念拓扑 topic→task→pipeline→module(可选)→论文,内部节点是概念、论文是叶,每概念记 novelty 锚点(task=类1/pipeline=类2/module=类3);类4=改进型论文作普通成员挂被改进节点、不入 schema。树旁并存 flat 全集 paper list(论文可在册未分类)。渲染限 Obsidian 受管块 + 内联 Mermaid,块外内容幂等存活;由 tests/unit/test_novelty_tree.py + tests/contract/test_literature_tree_schema.py 守护",
+      "description": "旧概念分类视图为 novelty tree(INV22):可变深度概念拓扑 topic→task→pipeline→module(可选)→论文,内部节点是概念、论文是叶,每概念记 bounded novelty 锚点(task=类1/pipeline=类2/module=类3);旧schema中类4作普通成员。树旁并存flat全集paper list。该旧接口不证明逐贡献分类、主干资格或科学继承；新演进预览另有显式契约。渲染限Obsidian受管块+内联Mermaid,块外内容幂等存活；由test_novelty_tree.py和test_literature_tree_schema.py守护",
       "status": "pass"
     },
     {

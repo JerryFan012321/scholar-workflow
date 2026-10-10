@@ -1,0 +1,11 @@
+# Synthetic declaration only; no real execution or host has been verified.
+schema_version: 1
+target_id: synthetic-local
+kind: local
+server_alias: null
+project_root: .
+output_root: experiments
+executor:
+  kind: shell
+environment_bindings:
+  environment: env/synthetic.json

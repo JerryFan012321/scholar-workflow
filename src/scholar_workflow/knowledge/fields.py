@@ -26,7 +26,7 @@ from pathlib import Path, PurePosixPath
 from typing import Literal, Self
 
 import yaml
-from pydantic import Field, field_validator, model_validator
+from pydantic import ConfigDict, Field, field_validator, model_serializer, model_validator
 
 from scholar_workflow.knowledge.catalog_models import HubModel
 
@@ -473,12 +473,62 @@ class FieldNavigationGroup(HubModel):
         return normalized
 
 
+class FieldReferenceTarget(HubModel):
+    """A qualified stable identity, never a path, locator, or ownership claim."""
+
+    source_id: str = Field(pattern=r"^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$",
+                           json_schema_extra={"not": {"pattern": r"[\u0000-\u001f]"}})
+    object_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$",
+                           json_schema_extra={"not": {"pattern": r"[\u0000-\u001f]"}})
+
+    @field_validator("source_id")
+    @classmethod
+    def _source_id(cls, value: str) -> str:
+        return _canonical_uuid(value, name="source_id")
+
+
+class FieldResourceReference(HubModel):
+    """One Field's selection and purpose; the provider still owns placement."""
+
+    reference_id: str = Field(pattern=r"^[a-z0-9][a-z0-9._:-]{1,127}$",
+                              json_schema_extra={"not": {"pattern": r"[\u0000-\u001f]"}})
+    target: FieldReferenceTarget
+    purpose: str = Field(min_length=1, max_length=2000, json_schema_extra={
+        "pattern": r"^[^\s\u0000-\u001f](?:[^\u0000-\u001f]*[^\s\u0000-\u001f])?$",
+        "not": {"pattern": r"[\u0000-\u001f]"},
+    })
+
+    @field_validator("purpose")
+    @classmethod
+    def _purpose(cls, value: str) -> str:
+        if value != value.strip() or any(ord(character) < 32 for character in value):
+            raise ValueError("Reference purpose must be clean nonempty text")
+        return value
+
+
 class FieldDefinition(HubModel):
     field_id: str
     title: str = Field(min_length=1, max_length=200)
     relative_root: str
     home: str
     navigation: list[FieldNavigationGroup] = Field(default_factory=list)
+    references: list[FieldResourceReference] = Field(default_factory=list, max_length=512)
+
+    @model_serializer(mode="wrap")
+    def _portable_shape(self, handler):
+        data = handler(self)
+        # Keep the exact schema-1 shape, including callers' historical digests.
+        if not self.references:
+            data.pop("references", None)
+        return data
+
+    @model_validator(mode="after")
+    def _unique_references(self) -> Self:
+        identifiers = [row.reference_id for row in self.references]
+        targets = [(row.target.source_id, row.target.object_id) for row in self.references]
+        if len(identifiers) != len(set(identifiers)) or len(targets) != len(set(targets)):
+            raise ValueError("Duplicate Field reference identity or qualified target")
+        return self
 
     @field_validator("field_id")
     @classmethod
@@ -504,9 +554,23 @@ class FieldDefinition(HubModel):
 
 
 class FieldManifest(HubModel):
-    schema_version: int = 1
+    model_config = ConfigDict(json_schema_extra={
+        "allOf": [{
+            "if": {"properties": {"schema_version": {"const": 1}}},
+            "then": {"properties": {"fields": {"items": {"not": {"required": ["references"]}}}}},
+        }],
+    })
+
+    schema_version: Literal[1, 2] = 1
     source_id: str
     fields: list[FieldDefinition]
+
+    @field_validator("schema_version", mode="before")
+    @classmethod
+    def _schema_version(cls, value):
+        if type(value) is not int:
+            raise ValueError("Field manifest schema version must be an integer")
+        return value
 
     @field_validator("source_id")
     @classmethod
@@ -515,8 +579,10 @@ class FieldManifest(HubModel):
 
     @model_validator(mode="after")
     def _valid_manifest(self) -> Self:
-        if self.schema_version != 1:
-            raise ValueError("unsupported Field manifest schema version")
+        if self.schema_version == 1 and any(
+            field.references or "references" in field.model_fields_set for field in self.fields
+        ):
+            raise ValueError("Field references require explicit schema version 2")
         if not self.fields:
             raise ValueError("Field manifest must contain at least one Field")
         identifiers = [field.field_id for field in self.fields]
@@ -808,7 +874,8 @@ class FieldService:
             root = self._validate_candidate(candidate)
             previous_manifest = self._manifest_bytes(root)
             fields = [*preview.registered_fields, selected]
-            manifest = FieldManifest(source_id=preview.source_id, fields=fields)
+            previous_version = self._load_manifest(root).schema_version if previous_manifest is not None else 1
+            manifest = FieldManifest(schema_version=previous_version, source_id=preview.source_id, fields=fields)
             self._validate_manifest_paths(root, manifest)
             registration = self._planned_registration(root, manifest, preview.folder_id)
             payload = yaml.safe_dump(
@@ -1513,19 +1580,20 @@ class FieldService:
                 )
                 continue
             for field in manifest.fields:
-                result.append(
-                    {
-                        "source_id": source.source_id,
-                        "field_id": field.field_id,
-                        "title": field.title,
-                        "home": field.home,
-                        "relative_root": field.relative_root,
-                        "navigation": [
-                            group.model_dump(mode="json") for group in field.navigation
-                        ],
-                        "available": True,
-                    }
-                )
+                row = {
+                    "source_id": source.source_id,
+                    "field_id": field.field_id,
+                    "title": field.title,
+                    "home": field.home,
+                    "relative_root": field.relative_root,
+                    "navigation": [
+                        group.model_dump(mode="json") for group in field.navigation
+                    ],
+                    "available": True,
+                }
+                if manifest.schema_version == 2:
+                    row["references"] = [item.model_dump(mode="json") for item in field.references]
+                result.append(row)
         return result
 
     def _resolve_field(

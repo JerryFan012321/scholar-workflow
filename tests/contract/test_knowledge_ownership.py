@@ -226,9 +226,11 @@ def _plain(value):
 
 @contextmanager
 def _inspection_guard(scope: SyntheticScope, *, project: Path | None = None,
-                      context_file: str | None = None):
-    """Permit exact declaration reads; deny every other body and production write."""
+                      context_file: str | None = None, header_paths: tuple[Path, ...] = ()):
+    """Permit exact declarations and optional bounded headers; deny other bodies/writes."""
     allowed_paths = {scope.registry.path.absolute()}
+    allowed_headers = {path.absolute() for path in header_paths}
+    header_bytes: dict[Path, int] = {}
     for source_id, root in scope.source_roots.items():
         allowed_paths.add((root / ".scholar-workflow/fields.yml").absolute())
         allowed_paths.add((scope.registry.path.parent / "knowledge-providers" / source_id
@@ -319,6 +321,19 @@ def _inspection_guard(scope: SyntheticScope, *, project: Path | None = None,
         return original_fdopen(descriptor, mode, *args, **kwargs)
 
     def checked_read(descriptor, *args, **kwargs):
+        path = descriptor_paths.get(descriptor)
+        if not scope.fixture_writer_active and path in allowed_headers:
+            if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+                denied("attempted to read a non-regular owner header")
+            count = args[0] if args else kwargs.get("n")
+            consumed = header_bytes.get(path, 0)
+            offset = os.lseek(descriptor, 0, os.SEEK_CUR)
+            if (type(count) is not int or count < 0 or count > 64 * 1024 - consumed
+                    or offset < 0 or offset + count > 64 * 1024):
+                denied("attempted to exceed the bounded owner-header read")
+            content = original_read(descriptor, *args, **kwargs)
+            header_bytes[path] = consumed + len(content)
+            return content
         require_declaration_descriptor(descriptor)
         return original_read(descriptor, *args, **kwargs)
 

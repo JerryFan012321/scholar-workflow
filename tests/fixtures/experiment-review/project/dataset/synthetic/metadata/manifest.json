@@ -1,0 +1,8 @@
+{
+  "synthetic": true,
+  "dataset_id": "synthetic-review",
+  "version": "1",
+  "split": "fixed-test",
+  "description": "Handwritten evaluation declaration; no real examples or execution.",
+  "example_ids": ["synthetic-test-a", "synthetic-test-b"]
+}

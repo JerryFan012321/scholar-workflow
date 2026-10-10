@@ -2,6 +2,64 @@
   "description": "Skill routing eval — verifies correct skill is triggered for each input type",
   "cases": [
     {
+      "id": "existing-field-paper-unit-list",
+      "input": "为这个明确选定领域整理已有论文单元的flat清单，列出各篇资料、分析、Canvas及阅读笔记入口，保留引用用途；不要重做分析或更新Zotero书目",
+      "expected_skill": "build-literature-tree",
+      "must_not_trigger": "analyze-paper",
+      "must_not_write": true
+    },
+    {
+      "id": "organize-internal-project-entry",
+      "input": "根据已选代码、论文单元和Run/Attempt档案，给这个项目编写内部PROJECT.md预览，含最新情况、模块关系和唯一计划；不要改README或执行实验",
+      "expected_skill": "organize-project",
+      "must_not_trigger": "init-project",
+      "must_not_write": true
+    },
+    {
+      "id": "project-entry-not-initialization",
+      "input": "Initialize a Git-managed project using the standard skeleton",
+      "expected_skill": "init-project",
+      "must_not_trigger": "organize-project"
+    },
+    {
+      "id": "project-entry-not-code-review",
+      "input": "Review this code diff for bugs",
+      "expected_skill": null,
+      "must_not_trigger": "organize-project"
+    },
+    {
+      "id": "project-entry-not-public-readme",
+      "input": "Write a public README introducing this open-source package",
+      "expected_skill": null,
+      "must_not_trigger": "organize-project"
+    },
+    {
+      "id": "project-entry-not-experiment-only-comparison",
+      "input": "Compare the selected Runs and primary Attempt metrics without creating a project entry",
+      "expected_skill": "review-experiments",
+      "must_not_trigger": "organize-project",
+      "must_not_write": true
+    },
+    {
+      "id": "review-selected-experiment-results",
+      "input": "对比这个项目选定的两条Run及primary Attempt结果，保留失败和重放历史，不运行实验",
+      "expected_skill": "review-experiments",
+      "must_not_trigger": "init-project",
+      "must_not_write": true
+    },
+    {
+      "id": "experiment-review-not-project-initialization",
+      "input": "Initialize a new Git-managed project with the standard research skeleton",
+      "expected_skill": "init-project",
+      "must_not_trigger": "review-experiments"
+    },
+    {
+      "id": "experiment-review-not-code-review",
+      "input": "Review this code diff for bugs",
+      "expected_skill": null,
+      "must_not_trigger": "review-experiments"
+    },
+    {
       "id": "discover-paper",
       "input": "帮我找最近的 world model 论文",
       "expected_skill": "find-resource",

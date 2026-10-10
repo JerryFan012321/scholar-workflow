@@ -1,6 +1,43 @@
 # 第一阶段：可复现模范对象交付契约
 
-## 当前状态（2026-10-08）
+## 当前状态（2026-10-10）
+
+共享固定六项交付已补入runtime `references/reproduction-delivery.md`，由论文与项目
+专属复现reference按需引用。它只持交接结果与职责，不新增统一manifest/schema/执行器。
+独立复核确认六项覆盖和专属操作边界保留；完整开发回归2458通过，正常安装/人工评鉴
+不能由此替代。见upper-assembly-delivery-test-results.md。
+已认可折叠候选仍未canonical采用，是独立业务状态缺口，不再误写为仍需重新审美；
+新PROJECT及论文清单/文献图也未据合成验证自动替换真实内容，既有四对象证据保留。
+
+实验比较的开发切片现采用独立只读review-experiments与共享末端契约，不新建比较
+CLI或结果状态库。一个合成项目2Run/4Attempt用于独立评价，既有真实1Run/3Attempt
+保持不变、未重跑；原论文五分支/Canvas/图片/折叠认可保持。结果与人工/安装态边界见
+experiment-review-test-results.md，不能把合成对比宣称真实科研进步或完整G17。
+
+显式正常安装入口只读报告0.42.0；两plugin manifest及包版本同为0.42.0。
+该版本的正式发布、正常安装及单对象零写入归属总览结果见
+`knowledge-ownership-test-results.md`。这是既有发布记录及当前版本诊断，不是本轮重新
+安装、重建模范对象或执行实验。0.42.0仅核验同一稳定ID的声明归属，跨Source同论文
+登记查重未包含在该安装中。开发树已独立补齐跨Source查重和可信新空Source初始化，
+合成及真实双进程竞争检查通过，结果见source-inventory-initialization-test-results.md与
+paper-owner-uniqueness-test-results.md；未发布安装。
+不能据此宣称完整归属管理。
+Field引用schema2与只读解析/复现兼容现也在开发树通过，见field-references-test-results.md；
+受控增删现已在开发树完成，82专项及763定向联合通过，见field-reference-writes-test-results.md
+与实际demo；安装态仍未完成，不改变上述正常0.42.0的能力边界或代替人工导航评鉴。
+
+折叠摘录使用体验已获用户明确通过，见`folded-quotes-test-results.md`；不再重开该评鉴，
+但候选尚未canonical成对采用。已有Canvas、图片及有效新根复现证据保留，不因版本升级
+重新分析论文、运行实验或遍历整库。新资料导航、项目/实验报告与cmux使用便利性仍各自
+待人工确认；来源空缺继续显式保留，不冒称全篇科学认证。
+
+内部PROJECT入口与纵向literature演进图正在独立设计审阅，见
+`upper-assembly-design-review.md`及HANDOFF；新贡献/演进零写入预览已在开发树实现，
+独立7篇合成输入、30专项及89定向联合通过，见literature-evolution-test-results.md及demo。
+它尚非安装版模板或最终可编辑演进图，真实科学支持与外观各自待验。
+第一阶段仍按下方四类交付完整判断，G17未完成；上层新设计不代替或缩小既有目标。
+
+## 2026-10-08历史状态（不覆盖上述当前状态）
 
 PATH产品现已核为0.41.6；该版本的正式发布/正常安装及单篇非canonical暂存结果见
 markdown-source-images-test-results.md。正文图片投影不再只是开发能力：公开stage一次

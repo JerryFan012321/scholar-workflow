@@ -1,8 +1,15 @@
 # 单元归属与复用：当前实例和下一切片
 
 日期：2026-10-09。状态：只读实例核对已完成；首个只读定位切片在独立hotfix完成
-57专项及138必要合成回归，规范修正后195项联合复跑通过；尚未发布安装。
-下述查重、Field引用与迁移不因此具备，实际结果见knowledge-ownership-test-results.md。
+57专项及138必要合成回归，规范修正后195项联合复跑通过，现已随0.42.0正常发布安装。
+安装态单对象总览与82项保护文件不变的证据见knowledge-ownership-test-results.md；
+人工导航仍待确认，不将只读声明定位冒称登记查重或Field引用写入。
+开发树已另补跨Source查重与可信新空Source初始化，尚未发布安装；结果分别见
+paper-owner-uniqueness-test-results.md和source-inventory-initialization-test-results.md。
+这些登记修正不自动增加引用写入或迁移能力，0.42.0安装事实仍见knowledge-ownership-test-results.md。
+现已在同一开发树补Field清单schema2选择与只读诊断/复现保持，见field-references-test-results.md；
+后续已另实现受控reference-plan/reference，单文件CAS及离线移除通过82专项/763定向联合，
+见field-reference-writes-test-results.md与实际demo；不把开发实现当安装态或人工导航通过。
 对应 G2、G12、G16、G17；不另建 Hub，不改变已认可的论文输出格式。
 
 ## 结论
@@ -55,9 +62,10 @@ ZotFlow 来源笔记仍保持独立 writer，不与 Scholar 分析或 Better Not
    所有外部项仍为 `unverified`。首先从已登记 Source 的现有声明解析唯一正式对象，
    分别报告 owner 已解析、当前文件可用性、阅读器未验证。不要用一个“已通过”混淆三者，
    也不把 owner 解析当科学支持认证。原只读 overview 的无网络、无工具启动边界保持。
-2. **在登记前查重。** 当前新论文登记只检查所选 Source 的 provider；需核对同一
-   主机 registry 内已登记 Sources 的同一 Zotero 论文身份。冲突、不可核验或不可读声明
-   不能静默选第一个或新建替代 owner。不扫任意磁盘、不按同名判断、不隐式合并旧身份。
+2. **在登记前查重。** 开发树已核对同一主机registry的已登记Sources，并绑定外部声明
+   读集、排序锁与恢复/逐成员复核；真正新Source通过明确事务初始化空provider，历史
+   缺失不猜空。合成及真实双进程检查通过，尚待正常hotfix安装态单对象验证。
+   不扫任意磁盘、不按同名判断、不隐式合并旧身份。
 3. **再补领域引用。** 当前多主题字段只是投影，Field 尚无正式资源引用登记。
    为已有资源增加多领域引用，不再调用新论文 owner 登记。具体字段与 schema 演进
    在这一切片单独确定；不提前修改 fields.yml 或发明已可用的 CLI 命令。
@@ -98,7 +106,7 @@ knowledge-ownership-test-plan.md和tests/fixtures/knowledge-ownership/EXPECTED.m
 可见产物是一份清楚写出“正式存放位置、在哪些容器使用、为什么使用、不可用原因”的
 资料清单；人工评鉴需在会话中明确打开方式和标准，再由用户评价导航与使用是否方便。
 
-## 当前交付边界
+## 实现阶段边界（历史；后续发布结果见上）
 
 最初只读核对只改开发规划和人工评鉴记录；随后独立knowledge-ownership工作区基于
 0.41.8源码71a9f7b实现可选只读正式定位；独立合成预期先于实现，195项联合验证通过。

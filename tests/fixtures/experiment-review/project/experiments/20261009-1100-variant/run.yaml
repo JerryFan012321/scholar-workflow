@@ -1,0 +1,25 @@
+# Handwritten synthetic input. Source commit is an unverified placeholder.
+schema_version: 1
+run_id: 20261009-1100-variant
+created_at: '2026-10-09T11:00:00Z'
+record_state: frozen
+source:
+  commit: '1111111111111111111111111111111111111111'
+entrypoint:
+  path: tools/do-not-run.sh
+  sha256: 922e604ca6bd76adcf7274d5231b4f41e31d684309a70a5e50a8e13df9799f59
+config:
+  path: configs/variant.json
+  sha256: 160e70a857849b7d3b4395bc8cd646e59cc63d3e72a02b1a24d8745e8ae5eff3
+dataset:
+  dataset_id: synthetic-review
+  version: '1'
+  split: fixed-test
+  manifest:
+    path: dataset/synthetic/metadata/manifest.json
+    sha256: af3259534c2377e4f5522acdafccd64d97a3229747c044f3dd7c5e901d1816b5
+seed: 7
+environment:
+  path: env/synthetic.json
+  sha256: 999a15373067a44bbe50bb046324862927b89700ce6ff979f60a53483c61ba4d
+recipe_hash: 5a91f4b8fa81be24ba6a062a0b91b74831757cde3b53b1c51de4fd0b5606297f

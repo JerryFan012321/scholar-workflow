@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "run_id": "20261009-1100-variant",
+  "artifacts": [
+    {
+      "artifact_id": "art_2222222222222222",
+      "role": "report",
+      "retention": "local-required",
+      "source_attempt_id": "success",
+      "relative_path": "artifacts/result.md",
+      "size": 258,
+      "sha256": "90303f5f52d010dba10ec100a9a9a2a675628ba3ec19a32385cb5d44f758793f",
+      "remote_source": null,
+      "promoted_at": "2026-10-09T11:07:00Z",
+      "backup": {
+        "state": "not-verified",
+        "verified_at": null,
+        "location": null,
+        "sha256": null
+      }
+    }
+  ]
+}
