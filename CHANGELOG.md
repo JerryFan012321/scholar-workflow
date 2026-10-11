@@ -7,6 +7,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development 0.44.4 receipt:** record normal hotfix/runtime publication and
+  pipx/Codex installation, 269-file installed identity, and bounded native white-card,
+  typography and edit checks in the same Git-managed test topic. Preserve pending
+  human assessment, complete-paper-package and stage-one delivery boundaries;
+  documentation-only closeout does not rebuild runtime or merge main.
 - **Development 0.44.3 receipt:** record normal hotfix/runtime publication, pinned
   pipx and Codex plugin installation, and 269-file installed identity verification.
   Test-topic native/human assessment and main integration remain separate; this
