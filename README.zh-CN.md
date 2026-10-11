@@ -45,6 +45,8 @@ schema 1 保持原样；`knowledge reference-plan/reference` 提供单条增删�
 03放射技术路线树和04放射挑战洞见树。安装skill自带纯布局工具与两份限定作用域的CSS；
 原生样式需Advanced Canvas及启用两份snippet，具体见
 [设置与输出格式](skills/build-literature-tree/references/field-library-format.md)。
+0.44.2起明确复现模范库的紧凑呈现：02标题只放短名年份，03/04论文叶端一句做法加导航；
+详细条件与证据留正文，不逐卡重复诊断，开发材料不混入领域阅读目录。
 已有论文归属和单篇分析格式不变；新主题原生显示、人工评鉴仍独立验收。
 
 0.43.0 的 `literature-preview --input evolution.json --format md|json` 可零写入预览逐贡献

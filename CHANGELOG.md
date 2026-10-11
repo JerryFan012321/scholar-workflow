@@ -20,6 +20,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   rendering check. No runtime behavior changes or rebuild; native/human assessment
   and main integration remain pending.
 
+## [0.44.2] - 2026-10-11
+
+### Fixed
+
+- **build-literature-tree:** match the compact exemplar presentation: short-name/year
+  timeline titles, one-sentence radial paper leaves, detailed source-backed prose and
+  consolidated reading state. Keep development evidence outside the topic's reading
+  folder; preserve paper identities, individual leaves and the distinct three views.
+- **Field timeline sizing:** align title estimates and scoped native heading/padding
+  rules with 22px typography while retaining complete text and one spare click line.
+  Other Canvas styles and per-paper analysis contracts remain unchanged.
+
 ## [0.44.1] - 2026-10-11
 
 ### Fixed

@@ -8,8 +8,11 @@
 .canvas-node[data-sw-lit="milestone"] .canvas-node-container,
 .canvas-node[data-sw-lit="pipeline"] .canvas-node-container { border: 1px solid #b7c8d8; border-left: 7px solid #819db4; border-radius: 5px; }
 .canvas-node[data-sw-lit="pipeline"] .canvas-node-container { border-left-color: #81ae9b; }
-.canvas-node[data-sw-lit="milestone"] .markdown-preview-view,
-.canvas-node[data-sw-lit="pipeline"] .markdown-preview-view { padding: 10px 15px; font-size: 22px; }
+.canvas-node[data-sw-lit="milestone"] .canvas-node-content.markdown-embed .markdown-preview-view,
+.canvas-node[data-sw-lit="pipeline"] .canvas-node-content.markdown-embed .markdown-preview-view,
+.canvas-node[data-sw-lit="local"] .canvas-node-content.markdown-embed .markdown-preview-view { padding: 10px 15px; font-size: 22px; }
+/* A prepared heading must not inherit the theme's larger default h2 size. */
+.canvas-node:is([data-sw-lit="milestone"], [data-sw-lit="pipeline"], [data-sw-lit="local"]) .canvas-node-content .markdown-preview-view h2 { font-size: 22px; line-height: 1.45; margin: 0 0 8px; }
 .canvas-node[data-sw-lit="milestone"] a,
 .canvas-node[data-sw-lit="pipeline"] a { color: #173a5e; text-decoration: underline; text-underline-offset: 4px; font-weight: 550; }
 .canvas-node[data-sw-lit="local"] a { color: #96561f; text-decoration: underline; text-underline-offset: 4px; font-size: 22px; }

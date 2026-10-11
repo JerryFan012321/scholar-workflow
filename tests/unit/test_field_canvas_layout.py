@@ -106,6 +106,42 @@ def test_literature_has_distinct_descriptions_and_horizontal_spine():
         assert len(matching) == 1
 
 
+@pytest.mark.parametrize("role", ["milestone", "pipeline", "local"])
+def test_timeline_long_title_reserves_real_font_lines_and_click_space(role):
+    # 15 full-width glyphs cannot fit the 22px title content width on one line.
+    # Two title lines, three metadata/link lines, one spare 32px line and 24px
+    # vertical padding require at least 216px, rounded up, independent of _size().
+    # This boundary input is supported text, not the default compact card content.
+    uri = "https://example.org/source/" + "x" * 600
+    text = "## [[papers/example|" + "高" * 15 + "]]\nFirst preprint 2023-10-16\nVenue 2024\n[Source](" + uri + ")"
+    node = _lit_node("long-title", role)
+    node["text"] = text
+    if role == "milestone":
+        spine = [node]
+    elif role == "pipeline":
+        spine = [_lit_node("parent", "milestone", [node])]
+    else:
+        spine = [_lit_node("parent", "milestone", [_lit_node("branch", "pipeline", [node])])]
+    canvas = layout.render({"schema_version": 1, "view": "literature", "spine": spine})
+    title = next(n for n in canvas["nodes"] if uri in n["text"])
+    assert title["height"] >= 224
+    assert title["text"] == text
+    assert layout.validate_canvas(canvas) == []
+    node["text"] = text.replace(uri, "https://example.org/short")
+    short = layout.render({"schema_version": 1, "view": "literature", "spine": spine})
+    assert next(n for n in short["nodes"] if "[Source]" in n["text"])["height"] == title["height"]
+
+
+def test_compact_timeline_title_does_not_reserve_a_bibliography_block():
+    paper = _lit_node("compact", "milestone")
+    paper["text"] = "[[papers/example|Short Name · 2024 ↗]]"
+    canvas = layout.render({"schema_version": 1, "view": "literature", "spine": [paper]})
+    title = next(n for n in canvas["nodes"] if n["styleAttributes"]["swLit"] == "milestone")
+    assert 80 <= title["height"] <= 96  # 22px title + spare line + compact padding.
+    assert title["text"] == paper["text"]
+    assert layout.validate_canvas(canvas) == []
+
+
 @pytest.mark.parametrize("view", ["technical", "challenge"])
 def test_left_and_right_root_buses_have_distinct_stable_ids_and_fixed_anchors(view):
     canvas = layout.render(_radial(view, (1, 1)))

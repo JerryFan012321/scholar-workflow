@@ -3,7 +3,7 @@
   "cases": [
     {
       "id": "field-library-portable-three-views",
-      "description": "G12/G13/G17/INV22：安装包自带field-library-v1、局部CSS和纯stdin/stdout布局/几何检查器；跨领域复现完整01、时间线02及放射03/04，论文独立叶端和普通语言说明/证据，复用owner，缺原文/摘要/未知可见。旧writer和单篇分析不改；只用test一个5篇合成主题，无正式Vault/Zotero写入。独立输入/EXPECTED先行，开发、正常安装、原生导航和人工评鉴分别取证，保持pending。",
+      "description": "G12/G13/G17/INV22：安装包自带field-library-v1、局部CSS和纯stdin/stdout布局/几何检查器；跨领域复现完整01、时间线02及放射03/04。02短名年份标题及下方短说明，03/04每个论文叶端仅一句做法与导航；详细条件/证据留正文，共同阅读状态集中01，个别缺失诚实可见，开发输入/验收不混入领域阅读目录。复用owner，旧writer和单篇分析不改。先独立合成预期，再以test单个真实4DGS样板验证；不做正式Vault/Zotero写入。正常安装、原生导航、科学支持和人工评鉴分别取证；紧凑呈现纠偏进行中，保持pending。",
       "status": "pending"
     },
     {
