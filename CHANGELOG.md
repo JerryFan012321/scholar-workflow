@@ -7,6 +7,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development acceptance state:** record one installed 0.44.1 eight-paper 4DGS
+  field-library reproduction and correct obsolete current-version labels in the
+  stage-one audit. Preserve incomplete native/human assessment, paper-analysis,
+  project, experiment and tool-delivery boundaries; no runtime rebuild or behavior change.
 - **Development field-library receipt:** record normal 0.44.1 publication and installation,
   installed native-save validation and one Git-managed synthetic test topic. Human
   appearance/usability assessment and main integration remain pending; this receipt
