@@ -83,3 +83,7 @@ Scientific relations remain complete in the adjacent prose even when not drawn i
 placement-only overview. This preview is not the final no-crossing evolution diagram.
 Final editable carrier, compact appearance and real scientific content require their
 own acceptance; renderer/schema success does not satisfy those judgments.
+
+For the final 02 literature timeline and the separate 03/04 radial maps, use
+`field-library-format.md`. This preview remains zero-write and membership-only;
+do not substitute it for those three editable views or their readable explanations.

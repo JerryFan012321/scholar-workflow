@@ -1,0 +1,14 @@
+/* Center-out concept maps only; other Canvas views keep their existing style. */
+.canvas-wrapper:has(.canvas-node[data-sw-mind]) { background: #fff; }
+.canvas-wrapper:has(.canvas-node[data-sw-mind]) .canvas-background { opacity: 0; }
+.canvas-node[data-sw-mind] { --font-text: var(--font-interface); --canvas-node-radius: 6px; }
+.canvas-node[data-sw-mind] .markdown-preview-view { font-family: var(--font-interface); font-size: 18px; line-height: 1.45; color: #273b4c; }
+.canvas-node[data-sw-mind] h1 { font-size: 25px; line-height: 1.25; border: 0; }
+.canvas-node[data-sw-mind] h2 { font-size: 21px; line-height: 1.3; border: 0; }
+.canvas-node[data-sw-mind] p { margin: 0 0 12px; }
+.canvas-node[data-sw-mind] a { color: #315e82; text-decoration: underline; text-underline-offset: 3px; }
+.canvas-node[data-sw-mind] .canvas-node-container { box-shadow: none; }
+.canvas-node[data-sw-mind="root"] .canvas-node-container { border: 1px solid #91afbd; background: #eaf1f4; }
+.canvas-node[data-sw-mind="detail"] .canvas-node-container { border: 1px solid #c7d4df; background: #fff; }
+.canvas-node[data-sw-mind="junction"] .canvas-node-container { background: #8196a7 !important; border: 0 !important; border-radius: 0; min-width: 0; min-height: 0; }
+.canvas-node[data-sw-mind="junction"] .canvas-node-content { padding: 0; display: none; }

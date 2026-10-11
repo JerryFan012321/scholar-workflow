@@ -1,98 +1,71 @@
 ---
 name: build-literature-tree
-description: Build an Obsidian literature tree and flat paper ledger for a research topic. Supports technical trees (task → pipeline → optional module → paper) and challenge trees (challenge → insight → paper). Use for 'literature tree', 'novelty tree', 'paper lineage', '文献树', '文献脉络', '技术路线树', '挑战洞见树', '画出发展脉络'.
+description: Organize an Obsidian research topic around existing paper units with a complete paper list, a literature timeline, radial technical routes and a radial challenge/solution tree. Use for 'literature tree', 'novelty tree', 'paper lineage', '文献树', '文献脉络', '技术路线树', '挑战洞见树', '画出发展脉络'.
 ---
 
 # build-literature-tree
 
-## Output contract
+## Result contract
 
-For a navigable list of existing paper packages in one selected Field, read
-`references/field-paper-units.md`. Its opt-in read-only list preserves qualified
-ownership and all file/purpose diagnostics; it does not replace `01-Paperlist.md`.
+For a new topic library, or an explicitly requested exemplar-style organization, use
+the versioned **field-library-v1** contract in `references/field-library-format.md`.
+The paper ledger and three different views coexist: **01 complete paper list,
+02 literature timeline, 03 center-out technical routes, 04 center-out challenges and
+solutions**. Each paper owns a separate leaf in 03/04. Required Markdown explanations,
+links, editable Canvas, geometry and honest evidence states are completion conditions,
+not suggestions. A request for one view changes only that view and its necessary links.
 
-For a contribution-level evolution view (four novelty types, main/branch/local
-placement, and evidence-backed technical tradeoffs), read
-`references/evolution-preview.md` and use its separate zero-write preview interface.
-The following topology and write path remain the legacy concept-classification view;
-membership alone is not technical inheritance. Do not send evolution input to that
-legacy writer or create duplicate paper companions to assemble a view.
+Read the selected format before writing. Use the bundled pure layout helper and
+portable styles documented there; the installed skill contains everything required
+for geometry, without access to the original exemplars or a code repository.
+Paper analysis Markdown, quotations, images and per-paper Canvas still belong to
+`analyze-paper`'s current output contract; this Field format never replaces it.
 
-- **Technical tree:** `task → pipeline/representation → module (optional) → paper`.
-- **Challenge tree:** `challenge → insight → paper`.
-- Internal nodes are concepts; paper leaves reference `resource_id`.
-- `novelty_anchor` stores the earliest supported introducing paper within the declared
-  corpus for a task, pipeline, module, or insight. Leave it unresolved when that bounded
-  priority claim is not supported. A paper that only improves an existing module is an
-  ordinary paper leaf and has no anchor field.
-- One document contains one tree. Technical and challenge trees are separate notes that
-  may share papers and always use the same topic-local flat ledger.
+## Operations and scope
 
-## Vault format
+- Resolve the user's selected topic/Field, actual existing paper-unit identities and
+  declared paths. Reuse existing papers, analyses and notes. New primary owners use
+  the established paper-registration interface, not a layout tool.
+- Prepare the selected views from the declared corpus and supported relations.
+  Unknown classification, missing PDF and incomplete reading stay visible. The
+  four novelty classes constrain placement, not how the model must reason.
+- The layout helper reads JSON from stdin and emits Canvas to stdout only.
+  Inspect its result and link targets before saving within the selected folder.
+  It does not register a Source, write notes, open apps or verify scientific support.
+- Preserve unrelated files, human prose, accepted layout and user deletions.
+  Existing content requires an explicitly scoped update with current-byte checks
+  and recovery; do not initialize a template over an existing library.
+- Supply an opening/inspection handoff for the resulting notes and Canvas. Report
+  format checks, installed-tool checks and pending human assessment separately.
 
-Inside a registered topic Field (`<Field>/`):
+## Compatibility and optional views
 
-- `01-Paperlist.md` — fixed flat metadata ledger;
-- `02-<topic>文献树.md`, `03-<topic>挑战洞见树.md`, ... — one numbered tree/view per
-  note, in creation order;
-- `resources/papers/<stable-paper-segment>/论文信息.md` — new companion note per paper,
-  including `# 相关文献树` back-links to every tree section that contains it. Keep its
-  analysis Markdown, editable Canvas, sidecar, and other Scholar-owned paper notes in
-  the same paper folder. The Zotero PDF remains in Zotero storage.
-
-The segment is a path-safe, collision-checked folder label allocated once and recorded
-with the paper's stable `resource_id` and companion-note path in the owning manifest;
-it is not the paper identity. Existing `paper_assets/*.md` paths remain valid on reads
-and updates. Do not move them or create a second companion note merely to apply the
-new layout.
-
-A tree note has no H1. It contains an inline Mermaid overview followed by concept
-sections: task/challenge `##`, pipeline/insight `###`, module `####`, with each
-node's anchor, optional summary, and paper subset. The ledger and trees cross-link.
-
-## Steps
-
-1. Resolve the registered topic Field, tree view, paper set, time window, and requested resolution.
-   Ask only for unspecified choices that materially change the output.
-2. The declared corpus comes from a Zotero collection
-   (`scholar-workflow zotero collection-items`), an existing paper index, or the user's
-   list. Metadata comes from Zotero or authoritative sources. The output conforms to
-   `contracts/literature-tree.schema.json`; papers without supported concept placement
-   remain in the ledger with `classified: false`.
-3. Preview and render:
-   - ledger: pipe
-     `{"root":"<topic>","paperlist_only":true,"doc":{...}}` to
-     `scholar-workflow project-literature-tree`;
-   - tree: pipe
-     `{"root":"<topic>","filename":"02-<topic>文献树.md","doc":{...}}` to the same
-     command, using `03-`, `04-`, ... for additional views.
-   Use `--dry-run` before each write.
-4. For a new companion note, resolve or explicitly allocate its manifest-declared paper
-   folder before writing. If the mapping cannot be durably declared, preview the proposed
-   path and leave the paper note unwritten. Update existing companion notes at their
-   declared paths, including legacy `paper_assets/*.md`, and maintain tree back-links
-   without replacing unrelated human content.
+- Existing managed Mermaid notes / `project-literature-tree`:
+  `references/legacy-concept-tree.md`. Its schema and writer stay unchanged.
+- Read-only navigation of existing owned packages:
+  `references/field-paper-units.md`; this does not replace the readable ledger.
+- Contribution classification and evidence-bearing relation preview:
+  `references/evolution-preview.md`; its membership-only Mermaid is not the final 02.
+  Reuse its four-class and bounded-evidence semantics.
 
 ## Constraints
 
-- Preserve the topology, filename, heading, anchor, and backlink contracts above.
-- `01-Paperlist.md` is per topic. A `resource_id` may appear in multiple nodes,
-  trees, or topic folders; do not impose one-node/one-tree uniqueness (INV25).
-- The legacy concept-tree/ledger writer renders only Obsidian managed blocks and
-  inline Mermaid, not PNG, draw.io, HTML or Notion. The optional read-only modes use
-  their own referenced stdout Markdown/JSON contracts.
-- Metadata never comes from PDF body text. DOI remains an identity field and is not a
-  rendered column.
-- Writes are limited to managed blocks and new companion-note content; never overwrite
-  human-authored content outside managed blocks.
-- `asset_note` in the paper-list/tree payload is the declared companion-note path, not
-  a filename derived from title, author, or `resource_id`. A paper's repeated appearances
-  in one Field reuse that path; path collisions require explicit resolution, not overwrite.
+- A view grants no ownership or write permission. Multiple views/Fields may reference
+  one paper; do not copy its reusable analysis or create another primary owner.
+- Keep 02/03/04 distinct; a radial map cannot replace the timeline. No fixed number
+  of papers, branches, scientific terms, host paths, Vault IDs or attachment keys.
+- Plain-language explanations accompany paper entries. No visible machine comments,
+  hashes, loopback URLs, unsupported priority/inheritance or cross-task rankings.
+- Scope is the selected Field and explicit navigation edits. Zotero bibliography/PDFs
+  remain authoritative; styles/configuration changes require a separately explained
+  target and preserve unrelated settings.
 
 ## References
 
-- `references/field-paper-units.md` — only for navigating existing Field paper units.
-- `references/evolution-preview.md` — only for contribution/evolution previews.
+- `references/field-library-format.md` — required for current Field-library outputs.
+- `references/legacy-concept-tree.md` — existing legacy projection only.
+- `references/field-paper-units.md` — existing package navigation only.
+- `references/evolution-preview.md` — contribution/evolution input only.
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md`

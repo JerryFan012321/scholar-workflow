@@ -2,6 +2,12 @@
   "description": "Skill routing eval — verifies correct skill is triggered for each input type",
   "cases": [
     {
+      "id": "field-library-exemplar-three-views",
+      "input": "以模范库结构组织这个领域的论文列表、02文献树、03技术路线树和04挑战洞见树；不要重做单篇分析",
+      "expected_skill": "build-literature-tree",
+      "must_not_trigger": "analyze-paper"
+    },
+    {
       "id": "existing-field-paper-unit-list",
       "input": "为这个明确选定领域整理已有论文单元的flat清单，列出各篇资料、分析、Canvas及阅读笔记入口，保留引用用途；不要重做分析或更新Zotero书目",
       "expected_skill": "build-literature-tree",

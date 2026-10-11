@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "view": "technical",
+  "root": {
+    "id": "technical-root",
+    "text": "# 长文检索\n## 技术路线树\n\n按解决办法找资料。\n\n5 篇虚构论文；只验收结构，不作科学结论。\n\n[[领域库结构验收/长文检索/01-论文列表|论文列表]]"
+  },
+  "branches": [
+    {
+      "id": "route-two-stage",
+      "text": "## 按段定位和核对\n\n先找到相关段落，并保留原文位置；两阶段方法再检查候选是否支持问题。\n\n[[领域库结构验收/长文检索/fixture#^beta-method|来源片段]]",
+      "children": [
+        {
+          "id": "technical-alpha",
+          "text": "## [[领域库结构验收/长文检索/resources/papers/alpha/Paper|样本甲]]\n\n定义从长文查找证据段落的任务，保留原文位置。\n\n资料状态：已有完整合成片段；非真实全文。\n\n[[领域库结构验收/长文检索/resources/papers/alpha/阅读记录|阅读记录]] · [[领域库结构验收/长文检索/fixture#^alpha-task|来源片段]]",
+          "children": []
+        },
+        {
+          "id": "technical-beta",
+          "text": "## [[领域库结构验收/长文检索/resources/papers/beta/Paper|样本乙]]\n\n快速召回候选，再核对是否支持问题；不能恢复召回阶段漏掉的证据。\n\n资料状态：已有完整合成片段；非真实全文。\n\n[[领域库结构验收/长文检索/resources/papers/beta/阅读记录|阅读记录]] · [[领域库结构验收/长文检索/fixture#^beta-method|来源片段]]",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "route-parallel",
+      "text": "## 并行检索后合并\n\n关键词与语义检索并行执行，再合并去重。\n\n[[领域库结构验收/长文检索/fixture#^gamma-method|来源片段]]",
+      "children": [
+        {
+          "id": "technical-gamma",
+          "text": "## [[领域库结构验收/长文检索/resources/papers/gamma/Paper|样本丙]]\n\n并行关键词和语义检索，再用统一段落身份合并去重。\n\n资料状态：已有完整合成片段；非真实全文。\n\n[[领域库结构验收/长文检索/resources/papers/gamma/阅读记录|阅读记录]] · [[领域库结构验收/长文检索/fixture#^gamma-method|来源片段]]",
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "route-filter",
+      "text": "## 筛选候选段落\n\n模块位置已知；只有摘要或资料记录，细节未提供。\n\n[[领域库结构验收/长文检索/fixture#^delta-unknown|缺失内容]]",
+      "children": [
+        {
+          "id": "technical-delta",
+          "text": "## [[领域库结构验收/长文检索/resources/papers/delta/Paper|样本丁]]\n\n摘要只说明增加可学习段落筛选模块，方法与实验未知。\n\n资料状态：仅合成摘要；无 PDF。\n\n[[领域库结构验收/长文检索/resources/papers/delta/阅读记录|阅读记录]] · [[领域库结构验收/长文检索/fixture#^delta-abstract|来源片段]]",
+          "children": []
+        },
+        {
+          "id": "technical-epsilon",
+          "text": "## [[领域库结构验收/长文检索/resources/papers/epsilon/Paper|样本戊]]\n\n只有模块改进的资料记录，缺少原文，具体做法和效果未知。\n\n资料状态：内容覆盖未知；原文与 PDF 缺失。\n\n[[领域库结构验收/长文检索/resources/papers/epsilon/阅读记录|阅读记录]] · [[领域库结构验收/长文检索/fixture#^epsilon-record|来源片段]]",
+          "children": []
+        }
+      ]
+    }
+  ]
+}

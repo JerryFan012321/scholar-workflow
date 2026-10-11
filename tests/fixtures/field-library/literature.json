@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "view": "literature",
+  "spine": [
+    {
+      "id": "literature-alpha",
+      "text": "[[领域库结构验收/长文检索/resources/papers/alpha/Paper|样本甲 · 2001 ↗]]",
+      "description": "定义从长文查找证据段落的任务，保留原文位置。\n\n没有真实实验数字。\n\n[[领域库结构验收/长文检索/fixture#^alpha-task|来源片段]] · [[领域库结构验收/长文检索/resources/papers/alpha/阅读记录|说明]]",
+      "role": "milestone",
+      "children": []
+    },
+    {
+      "id": "literature-beta",
+      "text": "[[领域库结构验收/长文检索/resources/papers/beta/Paper|样本乙 · 2002 ↗]]",
+      "description": "把检索分成快速召回和详细核对。\n\n第一阶段漏掉的证据不能凭空恢复。\n\n[[领域库结构验收/长文检索/fixture#^beta-method|来源片段]] · [[领域库结构验收/长文检索/resources/papers/beta/阅读记录|说明]]",
+      "role": "milestone",
+      "children": [
+        {
+          "id": "literature-gamma",
+          "text": "[[领域库结构验收/长文检索/resources/papers/gamma/Paper|样本丙 · 2003 ↗]]",
+          "description": "并行关键词与语义检索，再合并去重。\n\n这是替代路线，不表示直接继承样本乙。\n\n[[领域库结构验收/长文检索/fixture#^gamma-method|来源片段]] · [[领域库结构验收/长文检索/resources/papers/gamma/阅读记录|说明]]",
+          "role": "pipeline",
+          "children": [
+            {
+              "id": "literature-epsilon",
+              "text": "[[领域库结构验收/长文检索/resources/papers/epsilon/Paper|样本戊 · 2005 ↗]]",
+              "description": "只有模块改进的资料记录；具体做法未知。\n\n这里是展示分组，不表示直接继承样本丙。\n\n[[领域库结构验收/长文检索/fixture#^epsilon-record|来源片段]] · [[领域库结构验收/长文检索/resources/papers/epsilon/阅读记录|说明]]",
+              "role": "local",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -12,6 +12,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   rendering check. No runtime behavior changes or rebuild; native/human assessment
   and main integration remain pending.
 
+## [0.44.0] - 2026-10-11
+
+Independent field-library hotfix. Installed/native assessment and main integration
+are separate from development checks.
+
+### Added
+
+- **build-literature-tree:** versioned field-library-v1 result contract for a complete
+  paper ledger, horizontal literature timeline and two distinct editable radial maps.
+  Bundle portable scoped styles and a pure, deterministic Canvas layout/check helper;
+  preserve current paper-analysis requirements, declared owners and legacy writers.
+  Cross-domain synthetic validation and installed/native human acceptance are separate.
+
 ## [0.43.2] - 2026-10-10
 
 Independent hotfix for compact paper-tree routes and project-document output

@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "view": "challenge",
+  "root": {
+    "id": "challenge-root",
+    "text": "# 长文检索\n## 挑战洞见树\n\n从问题找到解决思路和对应资料。\n\n5 篇虚构论文；同篇可以出现在多个问题下，但仍只拥有一个论文包。\n\n[[领域库结构验收/长文检索/01-论文列表|论文列表]]"
+  },
+  "branches": [
+    {
+      "id": "problem-location",
+      "text": "## 问题 · 怎样找到回答所需的证据\n\n相关词相似不等于段落真正支持问题；还需保留可回看的原文位置。\n\n[[领域库结构验收/长文检索/fixture#^alpha-task|任务片段]]",
+      "children": [
+        {
+          "id": "solution-location",
+          "text": "## 解决思路\n\n保留段落位置；扩展检索来源，或在召回后核对支持关系。\n\n需要什么：稳定的段落身份和候选记录。\n\n还要注意：这些虚构片段没有提供实测比较。",
+          "children": [
+            {
+              "id": "challenge-location-alpha",
+              "text": "## [[领域库结构验收/长文检索/resources/papers/alpha/Paper|样本甲]]\n\n定义从长文查找证据段落的任务，保留原文位置。\n\n资料状态：已有完整合成片段；非真实全文。\n\n[[领域库结构验收/长文检索/resources/papers/alpha/阅读记录|阅读记录]] · [[领域库结构验收/长文检索/fixture#^alpha-task|来源片段]]",
+              "children": []
+            },
+            {
+              "id": "challenge-location-beta",
+              "text": "## [[领域库结构验收/长文检索/resources/papers/beta/Paper|样本乙]]\n\n快速召回候选，再核对是否支持问题；不能恢复召回阶段漏掉的证据。\n\n资料状态：已有完整合成片段；非真实全文。\n\n[[领域库结构验收/长文检索/resources/papers/beta/阅读记录|阅读记录]] · [[领域库结构验收/长文检索/fixture#^beta-method|来源片段]]",
+              "children": []
+            },
+            {
+              "id": "challenge-location-gamma",
+              "text": "## [[领域库结构验收/长文检索/resources/papers/gamma/Paper|样本丙]]\n\n并行关键词和语义检索，再用统一段落身份合并去重。\n\n资料状态：已有完整合成片段；非真实全文。\n\n[[领域库结构验收/长文检索/resources/papers/gamma/阅读记录|阅读记录]] · [[领域库结构验收/长文检索/fixture#^gamma-method|来源片段]]",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "problem-overload",
+      "text": "## 问题 · 候选太多怎样处理\n\n详细核对所有段落会增加工作量；筛选也可能漏掉需要的证据。\n\n[[领域库结构验收/长文检索/fixture#^beta-boundary|资料边界]]",
+      "children": [
+        {
+          "id": "solution-overload",
+          "text": "## 解决思路\n\n先缩小候选，再详细核对；筛选模块可以放在核对之前。\n\n需要什么：可追踪的候选记录。\n\n还要注意：样本丁仅有摘要，样本戊方法未知，不能补写速度或准确率收益。",
+          "children": [
+            {
+              "id": "challenge-overload-beta",
+              "text": "## [[领域库结构验收/长文检索/resources/papers/beta/Paper|样本乙]]\n\n快速召回候选，再核对是否支持问题；不能恢复召回阶段漏掉的证据。\n\n资料状态：已有完整合成片段；非真实全文。\n\n[[领域库结构验收/长文检索/resources/papers/beta/阅读记录|阅读记录]] · [[领域库结构验收/长文检索/fixture#^beta-method|来源片段]]",
+              "children": []
+            },
+            {
+              "id": "challenge-overload-delta",
+              "text": "## [[领域库结构验收/长文检索/resources/papers/delta/Paper|样本丁]]\n\n摘要只说明增加可学习段落筛选模块，方法与实验未知。\n\n资料状态：仅合成摘要；无 PDF。\n\n[[领域库结构验收/长文检索/resources/papers/delta/阅读记录|阅读记录]] · [[领域库结构验收/长文检索/fixture#^delta-abstract|来源片段]]",
+              "children": []
+            },
+            {
+              "id": "challenge-overload-epsilon",
+              "text": "## [[领域库结构验收/长文检索/resources/papers/epsilon/Paper|样本戊]]\n\n只有模块改进的资料记录，缺少原文，具体做法和效果未知。\n\n资料状态：内容覆盖未知；原文与 PDF 缺失。\n\n[[领域库结构验收/长文检索/resources/papers/epsilon/阅读记录|阅读记录]] · [[领域库结构验收/长文检索/fixture#^epsilon-record|来源片段]]",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

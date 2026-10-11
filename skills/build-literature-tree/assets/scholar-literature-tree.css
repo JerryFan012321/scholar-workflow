@@ -1,0 +1,26 @@
+/* Literature Tree only: Advanced Canvas exposes these per-node attributes. */
+.canvas-wrapper:has(.canvas-node[data-sw-lit]) { background: #fff; }
+.canvas-wrapper:has(.canvas-node[data-sw-lit]) .canvas-background { opacity: 0; }
+.canvas-node[data-sw-lit] { --font-text: var(--font-interface); --font-text-size: 20px; --canvas-node-radius: 5px; }
+.canvas-node[data-sw-lit] .markdown-preview-view { font-family: var(--font-interface); font-size: 20px; line-height: 1.45; }
+.canvas-node[data-sw-lit] .markdown-preview-view p { margin: 0 0 10px; }
+.canvas-node[data-sw-lit] .canvas-node-container { box-shadow: none; background: #fff; }
+.canvas-node[data-sw-lit="milestone"] .canvas-node-container,
+.canvas-node[data-sw-lit="pipeline"] .canvas-node-container { border: 1px solid #b7c8d8; border-left: 7px solid #819db4; border-radius: 5px; }
+.canvas-node[data-sw-lit="pipeline"] .canvas-node-container { border-left-color: #81ae9b; }
+.canvas-node[data-sw-lit="milestone"] .markdown-preview-view,
+.canvas-node[data-sw-lit="pipeline"] .markdown-preview-view { padding: 10px 15px; font-size: 22px; }
+.canvas-node[data-sw-lit="milestone"] a,
+.canvas-node[data-sw-lit="pipeline"] a { color: #173a5e; text-decoration: underline; text-underline-offset: 4px; font-weight: 550; }
+.canvas-node[data-sw-lit="local"] a { color: #96561f; text-decoration: underline; text-underline-offset: 4px; font-size: 22px; }
+.canvas-node[data-sw-lit="local"] .markdown-preview-view { padding: 10px 15px; }
+.canvas-node[data-sw-lit="desc"] .markdown-preview-view { padding: 3px 10px; color: #536474; font-size: 19px; line-height: 1.4; }
+.canvas-node[data-sw-lit="desc"] a { color: #607d93; font-size: 16px; }
+.canvas-node[data-sw-lit="header"] .markdown-preview-view { padding: 0; color: #183754; }
+.canvas-node[data-sw-lit="header"] h1 { margin: 0 0 8px; font-size: 40px; border: 0; }
+.canvas-node[data-sw-lit="header"] p { font-size: 19px; color: #60748a; }
+.canvas-node[data-sw-lit="label"] .markdown-preview-view { padding: 0; color: #7c8b98; font-size: 17px; }
+.canvas-node[data-sw-lit="legend"] .markdown-preview-view { padding: 0; color: #6a7c8d; font-size: 17px; }
+.canvas-node[data-sw-lit="junction"] .canvas-node-container { background: #8196a7 !important; border: 0 !important; border-radius: 0; min-width: 0; min-height: 0; }
+.canvas-node[data-sw-lit="junction"] .canvas-node-content { padding: 0; display: none; }
+.canvas-wrapper:has(.canvas-node[data-sw-lit]) .canvas-edges path[data-sw-lit="edge"] { stroke-width: 2; }

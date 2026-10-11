@@ -40,6 +40,9 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
   分析、批注、Canvas 和补充材料是附属产物。Paperlist 或文献树只是一种视图，不能定义整个知识库。
   持久论述应以可独立阅读的人类 Markdown 为主，机器身份与关系放在薄 frontmatter、manifest、
   sidecar 或可重建投影中，不淹没正文；Canvas 等非正文产物由 owner Markdown 说明。
+  领域库新建/模范结构整理以build-literature-tree的field-library-v1为准：01完整列表、
+  02时间线文献树、03放射技术路线树、04放射挑战洞见树共存；具体布局/正文/链接只由
+  skills/build-literature-tree/references/field-library-format.md持有，旧Mermaid writer仅兼容。
 - 需持续审阅并在 Obsidian 展示的知识实验和迁移候选放在独立 `test` Vault，`/tmp` 仅存可丢弃
   中间物；实验副本不自动注册正式 Field、不与正式 Vault 同步，也不代表迁移或发布验收获批。
 - **历史 Hub** 的 `HubDirectory`、v1/v2 派生投影和浏览器安全规则继续保护实际兼容路径；

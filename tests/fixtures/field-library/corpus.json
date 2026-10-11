@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "field_title": "长文检索",
+  "vault_relative_root": "领域库结构验收/长文检索",
+  "warning": "这是合成资料，不是正式论文分析或科学验证。所有论文身份虚构；不得导入正式文库。",
+  "source_document": "fixture.md",
+  "papers": [
+    {
+      "id": "alpha",
+      "title": "样本甲：长文证据检索任务",
+      "short_title": "样本甲",
+      "year": 2001,
+      "novelty_class": 1,
+      "owner": "resources/papers/alpha",
+      "coverage": "whole-synthetic-fragment",
+      "pdf_status": "not-provided",
+      "route_ids": [
+        "two-stage"
+      ],
+      "problem_ids": [
+        "evidence-location"
+      ],
+      "source_anchors": [
+        "alpha-task",
+        "alpha-method"
+      ],
+      "summary": "定义从长文查找证据段落的任务，保留原文位置。"
+    },
+    {
+      "id": "beta",
+      "title": "样本乙：先召回再核对",
+      "short_title": "样本乙",
+      "year": 2002,
+      "novelty_class": 2,
+      "owner": "resources/papers/beta",
+      "coverage": "whole-synthetic-fragment",
+      "pdf_status": "not-provided",
+      "route_ids": [
+        "two-stage"
+      ],
+      "problem_ids": [
+        "evidence-location",
+        "candidate-overload"
+      ],
+      "source_anchors": [
+        "beta-method",
+        "beta-boundary"
+      ],
+      "summary": "快速召回候选，再核对是否支持问题；不能恢复召回阶段漏掉的证据。"
+    },
+    {
+      "id": "gamma",
+      "title": "样本丙：并行检索后合并",
+      "short_title": "样本丙",
+      "year": 2003,
+      "novelty_class": 2,
+      "owner": "resources/papers/gamma",
+      "coverage": "whole-synthetic-fragment",
+      "pdf_status": "not-provided",
+      "route_ids": [
+        "parallel"
+      ],
+      "problem_ids": [
+        "evidence-location"
+      ],
+      "source_anchors": [
+        "gamma-method",
+        "gamma-boundary"
+      ],
+      "summary": "并行关键词和语义检索，再用统一段落身份合并去重。"
+    },
+    {
+      "id": "delta",
+      "title": "样本丁：段落筛选模块",
+      "short_title": "样本丁",
+      "year": 2004,
+      "novelty_class": 3,
+      "owner": "resources/papers/delta",
+      "coverage": "abstract-only",
+      "pdf_status": "missing",
+      "route_ids": [
+        "filter"
+      ],
+      "problem_ids": [
+        "candidate-overload"
+      ],
+      "source_anchors": [
+        "delta-abstract",
+        "delta-unknown"
+      ],
+      "summary": "摘要只说明增加可学习段落筛选模块，方法与实验未知。"
+    },
+    {
+      "id": "epsilon",
+      "title": "样本戊：轻量筛选变体",
+      "short_title": "样本戊",
+      "year": 2005,
+      "novelty_class": 4,
+      "owner": "resources/papers/epsilon",
+      "coverage": "unknown",
+      "pdf_status": "missing",
+      "route_ids": [
+        "filter"
+      ],
+      "problem_ids": [
+        "candidate-overload"
+      ],
+      "source_anchors": [
+        "epsilon-record",
+        "epsilon-unknown"
+      ],
+      "summary": "只有模块改进的资料记录，缺少原文，具体做法和效果未知。"
+    }
+  ],
+  "literature_selection": [
+    "alpha",
+    "beta",
+    "gamma",
+    "epsilon"
+  ],
+  "relation_notes": [
+    {
+      "from": "alpha",
+      "to": "beta",
+      "kind": "synthetic-task-to-pipeline",
+      "source_anchor": "beta-method"
+    },
+    {
+      "from": "beta",
+      "to": "gamma",
+      "kind": "alternative-pipeline-not-inheritance",
+      "source_anchor": "gamma-method"
+    },
+    {
+      "from": "gamma",
+      "to": "epsilon",
+      "kind": "display-grouping-only",
+      "source_anchor": "epsilon-record",
+      "warning": "为了示范局部节点位置，不表示样本戊直接继承样本丙；其原始记录关联样本丁。"
+    }
+  ]
+}
