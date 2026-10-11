@@ -165,6 +165,12 @@ actual routed segments, not just endpoint distance. Preserve full text, sources 
 the original selected topology; layout optimization cannot silently delete content.
 A diagram export is optional and never replaces editable Canvas.
 
+Native Advanced Canvas saves may add optional `metadata` containing exactly
+`version` (nonblank string, at most 64 characters) and `frontmatter`
+(object with string keys). Preserve valid metadata; it is editor data,
+not paper/Field identity or authorization. Unknown top-level/metadata fields and
+malformed types remain invalid. Geometry checks still apply after native saves.
+
 ## 6. Native appearance setup
 
 Both CSS files in `assets/` contain only attribute-scoped styling. For the user's

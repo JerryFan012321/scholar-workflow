@@ -219,6 +219,54 @@ def _edge(index, source, target, from_side="right", to_side="left"):
             "styleAttributes": {"pathfindingMethod": "square"}}
 
 
+@pytest.mark.parametrize("frontmatter", [{}, {"tags": ["test"], "nested": {"label": "原样保留"}}])
+def test_validator_preserves_observed_advanced_canvas_metadata(frontmatter):
+    canvas = layout.render(_literature())
+    metadata = {"version": "1.0-1.0", "frontmatter": frontmatter}
+    canvas["metadata"] = metadata
+    before = json.dumps(canvas, ensure_ascii=False)
+    assert layout.validate_canvas(canvas) == []
+    assert canvas["metadata"] is metadata
+    assert canvas["metadata"]["frontmatter"] is frontmatter
+    assert json.dumps(canvas, ensure_ascii=False) == before
+
+
+@pytest.mark.parametrize("metadata", [
+    None,
+    [],
+    {},
+    {"version": "1.0-1.0"},
+    {"frontmatter": {}},
+    {"version": 1, "frontmatter": {}},
+    {"version": "   ", "frontmatter": {}},
+    {"version": "v" * 65, "frontmatter": {}},
+    {"version": "1.0-1.0", "frontmatter": []},
+    {"version": "1.0-1.0", "frontmatter": {1: "not a string key"}},
+    {"version": "1.0-1.0", "frontmatter": {}, "owner": "forged"},
+])
+def test_validator_rejects_invalid_or_forged_advanced_canvas_metadata(metadata):
+    canvas = layout.render(_radial("technical"))
+    canvas["metadata"] = metadata
+    before = copy.deepcopy(canvas)
+    assert layout.validate_canvas(canvas) == ["Advanced Canvas metadata is invalid"]
+    assert canvas == before
+
+
+@pytest.mark.parametrize("field", ["owner", "source_id", "unexpected"])
+def test_metadata_does_not_allow_unknown_top_level_identity_fields(field):
+    canvas = layout.render(_radial("technical"))
+    canvas["metadata"] = {"version": "1.0-1.0", "frontmatter": {"owner": "display only"}}
+    canvas[field] = "forged"
+    assert layout.validate_canvas(canvas)
+
+
+def test_valid_metadata_does_not_bypass_exact_geometry_checks():
+    canvas = {"nodes": [_node(1, 0, 100), _node(2, 200, 100), _node(3, 100, 0), _node(4, 100, 200)],
+              "edges": [_edge(5, 1, 2), _edge(6, 3, 4, "bottom", "top")],
+              "metadata": {"version": "1.0-1.0", "frontmatter": {}}}
+    assert any("crossing" in error for error in layout.validate_canvas(canvas))
+
+
 def test_validator_rejects_real_segment_crossing_despite_square_metadata():
     canvas = {"nodes": [_node(1, 0, 100), _node(2, 200, 100), _node(3, 100, 0), _node(4, 100, 200)],
               "edges": [_edge(5, 1, 2), _edge(6, 3, 4, "bottom", "top")]}

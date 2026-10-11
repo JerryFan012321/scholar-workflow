@@ -12,6 +12,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   rendering check. No runtime behavior changes or rebuild; native/human assessment
   and main integration remain pending.
 
+## [0.44.1] - 2026-10-11
+
+### Fixed
+
+- **Field Canvas validation:** preserve optional, bounded Advanced Canvas metadata
+  after native editor saves; continue rejecting unknown top-level/metadata fields
+  and forged identity. Geometry, paper topology, prose, links and style are unchanged.
+
 ## [0.44.0] - 2026-10-11
 
 Independent field-library hotfix. Installed/native assessment and main integration
