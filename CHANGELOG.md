@@ -7,6 +7,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development 0.44.3 receipt:** record normal hotfix/runtime publication, pinned
+  pipx and Codex plugin installation, and 269-file installed identity verification.
+  Test-topic native/human assessment and main integration remain separate; this
+  development-only receipt does not rebuild the installed runtime.
 - **Development acceptance state:** record one installed 0.44.1 eight-paper 4DGS
   field-library reproduction and correct obsolete current-version labels in the
   stage-one audit. Preserve incomplete native/human assessment, paper-analysis,
@@ -19,6 +23,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   pipx/Codex installation, byte-for-byte identity checks and one installed synthetic
   rendering check. No runtime behavior changes or rebuild; native/human assessment
   and main integration remain pending.
+
+## [0.44.4] - 2026-10-11
+
+### Fixed
+
+- **Field Canvas appearance:** remove Obsidian's content-layer color overlay from
+  the existing white radial detail and literature cards. Keep role accents,
+  typography, full text, topology and unrelated Canvas styles unchanged.
+  Installed native appearance and human assessment remain distinct checks.
 
 ## [0.44.3] - 2026-10-11
 

@@ -5,6 +5,7 @@
 .canvas-node[data-sw-lit] .markdown-preview-view { font-family: var(--font-interface); font-size: 20px; line-height: 1.45; }
 .canvas-node[data-sw-lit] .markdown-preview-view p { margin: 0 0 10px; }
 .canvas-node[data-sw-lit] .canvas-node-container { box-shadow: none; background: #fff; }
+.canvas-node[data-sw-lit]:not([data-sw-lit="junction"]) .canvas-node-content { background-color: transparent; }
 .canvas-node[data-sw-lit="milestone"] .canvas-node-container,
 .canvas-node[data-sw-lit="pipeline"] .canvas-node-container { border: 1px solid #b7c8d8; border-left: 7px solid #819db4; border-radius: 5px; }
 .canvas-node[data-sw-lit="pipeline"] .canvas-node-container { border-left-color: #81ae9b; }
