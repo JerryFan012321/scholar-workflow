@@ -7,14 +7,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
-- **organize-project:** define a lightweight project literature division-of-work
-  table and short related-work synthesis within the existing PROJECT section.
-  Reuse paper-unit evidence and direct project entries without duplicating field
-  library views, fixed role/paper quotas or whole-paper analysis. Add independent
-  expectations and pending routing/outcome coverage. A bounded source-skill
-  preview passes independent role/link review with unchanged synthetic inputs;
-  2,754 unit/contract checks pass before the local hotfix commit. Publication,
-  installed output and human acceptance remain separate.
 - **Development VS Code receipt:** record observed Mermaid/source navigation and
   local result-image display, including the initial too-narrow workspace failure
   and corrected test opening instructions. Preserve incomplete file-click,
@@ -40,6 +32,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   pipx/Codex installation, byte-for-byte identity checks and one installed synthetic
   rendering check. No runtime behavior changes or rebuild; native/human assessment
   and main integration remain pending.
+
+## [0.44.5] - 2026-10-12
+
+Independent project-literature hotfix. Installation, native display and human
+assessment remain separate from development checks; main integration is separate.
+
+### Changed
+
+- **organize-project:** define a lightweight project literature division-of-work
+  table and short related-work synthesis within the existing PROJECT section.
+  Reuse paper-unit evidence and direct project entries without duplicating field
+  library views, fixed role/paper quotas or whole-paper analysis. Preserve unknown
+  use and distinguish proposed work from implemented adoption. A bounded
+  source-skill preview passes independent role/link review with unchanged
+  synthetic inputs; 2,754 unit/contract checks pass before the feature commit.
 
 ## [0.44.4] - 2026-10-11
 
