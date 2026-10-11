@@ -10,6 +10,10 @@ reasoning procedure, or repetition of a previously analyzed paper.
 A whole-paper output has these five first-level branches, in this order. Repeated
 challenges, contributions and modules follow the paper's actual content; the image's
 example counts and ellipses are not facts or fixed counts to copy into an analysis.
+Repeated modules, challenges, contributions, findings and limitation reasons have
+no fixed branch quota. The fixed framework and each instance's named subslots define
+their shape, not how many instances the paper may contain. Preserve every selected
+instance and its evidence; never pad, truncate or combine instances to match a sample.
 
 ```text
 Paper
@@ -138,6 +142,9 @@ Canvas image supplements are limited to **experimental data tables** and **key
 pipeline / process diagrams**. Paragraph crops and verbatim excerpts belong in
 Markdown, not Canvas. This restriction concerns image supplements; it does not
 replace any required editable framework or claim/point node.
+Choose their number and coverage from the paper and the explanation they support,
+not an exemplar's image count. No fixed image quota applies; do not pad with unrelated
+figures or omit a necessary figure/table merely to match a sample's volume.
 
 - Place a data table beside its corresponding comparison or ablation content under
   Experiments; place a key process diagram beside Method Overview or its actual module.
@@ -172,8 +179,10 @@ limitation and return a noncanonical proposal rather than a validated success.
 
 Count actual independently rendered nodes; do not use the old grouped-node accounting
 to conceal expanded nodes.
-If a geometry or node budget conflicts with required content, report the conflict
-instead of merging away named slots, dropping content or silently relaxing a limit.
+The current v5 interface imposes no semantic-record or generated-node count quota.
+If readable geometry conflicts with required content, retain the complete candidate
+and report the actual layout conflict instead of merging named slots or dropping
+content. Layout failure is not permission to reduce the paper's branch count.
 An explicit format conversion preserves prior source/claim content and follows the
 ordinary paired review and conflict protections; it is not an automatic refresh.
 

@@ -63,6 +63,15 @@ See [setup and output format](skills/build-literature-tree/references/field-libr
 Existing paper owners and current single-paper analysis formats remain unchanged.
 Native appearance and each new topic's human assessment remain separate gates.
 
+From 0.44.3, the Field-library format uses the user's Canonical Knowledge Vault as its
+sole blueprint: required elements must be present, absent elements are omitted by
+default, and subsequent directory, prose and visual formats must match. New paper
+packages use `resources/<segment>/`; existing declared owners stay in place.
+Scientific detail and figure/table/evidence counts follow the actual papers, not
+the exemplar's content volume.
+Normal installation, native display and each topic's human assessment are separate
+from source validation; see the same format contract.
+
 The 0.43.0 `literature-preview --input evolution.json --format md|json`
 also previews contribution-level novelty, placement and evidence-linked technical
 tradeoffs without reading or writing source material. The final editable evolution

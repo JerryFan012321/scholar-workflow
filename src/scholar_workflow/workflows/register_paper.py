@@ -325,7 +325,7 @@ def paper_plan(registry: KnowledgeSourceRegistry, zotero, *, source_id: str,
     root, binding, manifest, field = _location(registry, source_id, field_id)
     paper = _paper(zotero, item_key, attachment_key)
     registry_hash = registry.revision()
-    owner_relative = f"resources/papers/{segment}/Paper.md"
+    owner_relative = f"resources/{segment}/Paper.md"
     owner_path = (PurePosixPath(field.relative_root) / owner_relative).as_posix()
     # Directory absence is checked without following even a dangling symlink.
     current = root
@@ -451,9 +451,13 @@ def register_paper(registry: KnowledgeSourceRegistry, zotero, *, approved_digest
             for name in ("source_id", "field_id", "segment", "language"):
                 if plan[name] != selection[name]:
                     raise FieldRegistryError("Registration journal belongs to another selection")
-            expected_owner = (PurePosixPath(field.relative_root) / "resources" / "papers"
-                              / selection["segment"] / "Paper.md").as_posix()
-            if expected_owner != plan["owner_path"]:
+            expected_owners = {
+                (PurePosixPath(field.relative_root) / "resources"
+                 / selection["segment"] / "Paper.md").as_posix(),
+                (PurePosixPath(field.relative_root) / "resources" / "papers"
+                 / selection["segment"] / "Paper.md").as_posix(),
+            }
+            if plan["owner_path"] not in expected_owners:
                 raise FieldRegistryError("Registered Field no longer owns the selected paper folder")
             if (plan["paper"]["item_key"] != selection["item_key"] or
                 plan["paper"]["attachment_key"] != selection["attachment_key"] or
@@ -474,7 +478,9 @@ def register_paper(registry: KnowledgeSourceRegistry, zotero, *, approved_digest
                               if getattr(r, "source_receipt", None) == source_receipt), None)
                 projected = next((r for r in current_snapshot.catalog.resources
                                   if r.resource_id == plan["resource_id"]), None)
-                relative_owner = f"resources/papers/{selection['segment']}/Paper.md"
+                relative_owner = PurePosixPath(plan["owner_path"]).relative_to(
+                    PurePosixPath(field.relative_root)
+                ).as_posix()
                 if (owner_row is None or owner_row.markdown_path != plan["owner_path"]
                     or prior is None or current_snapshot.vault_binding != binding
                     or projected is None or projected.zotero.item_key != selection["item_key"]

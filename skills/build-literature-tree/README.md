@@ -1,6 +1,6 @@
 # build-literature-tree
 
-Build a readable topic library around existing paper units. The **field-library-v1**
+Build a readable topic library around existing paper units. The **field-library-v2**
 profile keeps four coexisting entries: a complete paper list, a horizontal literature
 timeline, a center-out technical-route map and a center-out problem/solution map.
 The three maps are editable JSON Canvas; paired notes explain methods, conditions,
@@ -8,6 +8,13 @@ limitations and source support in ordinary language. Each radial leaf is one pap
 Timeline titles are short-name/year links; radial paper cards contain one method
 sentence and navigation. Detailed evidence stays in paired prose, common reading
 status in the list, and development/test records outside the human topic folder.
+
+The user's Canonical Knowledge Vault is the sole blueprint. Required elements cannot
+be omitted, absent elements are not added by default, and later outputs must match
+its structure and appearance. One domain overview and `resources/<paper>/Paper.md`
+with existing analysis/Canvas form the navigation; no extra topic homepage or taxonomy.
+This fixes presentation, not scientific content or volume: arguments, depth, images,
+tables, evidence and branch counts follow the actual papers, never the sample's counts.
 
 The installed skill bundles its precise output contract, scoped CSS styles and a
 stdlib-only deterministic layout/check helper. Neither a source checkout nor the

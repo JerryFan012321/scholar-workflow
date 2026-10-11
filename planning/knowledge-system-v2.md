@@ -185,38 +185,42 @@ Source/Field 身份与 navigation 属于 Knowledge，不以 Hub 浏览器为唯�
 旧 Hub 导航只是可重建投影。内部对象模型仍保持核心文档—原子资源—附属产物三层，不因前端退役而
 丢失 owner 或 conformance；当前尚存 Hub 依赖须分批解耦，不能宣称已经全部完成。
 
-## 5. 推荐 Vault 投影
+## 5. 唯一模范 Vault 投影
 
-逻辑角色是硬契约；用户现要求新论文使用所属 canonical owner Field 内的
-`resources/papers/<stable-paper-segment>/` 单篇目录，资料笔记、分析 Markdown、Canvas、
-sidecar 与 Scholar-owned 附属内容同处，PDF 仍由 Zotero 持有。一个资源只有一个 canonical
-owner 目录，其他 Field/topic 引用它而不复制真源。目录段由持久资源映射分配，不靠标题推断。
-以下示意中的 `<knowledge-root>` 可以是登记的 owner Field 根；既有 `paper_assets/`、平铺分析对及
-`01-Paperlist.md` 不在普通更新中自动重命名或移动：
+2026-10-11用户指定 `~/Documents/5-templates/模范知识库` 为唯一蓝本。
+新领域库以 `field-library-v2` 为准：该有的必须有，没有的默认不加，后续目录、正文、
+导航与图形格式必须一致。此前建议的topic首页、resource-links及按papers/documents/blogs
+分层不是新领域库默认格式，不再与蓝本并列。运行期详细规范唯一持于
+`skills/build-literature-tree/references/field-library-format.md`，不依赖本机蓝本路径。
+
+新论文使用所属owner Field内的 `resources/<stable-paper-segment>/` 单篇目录；资料笔记、
+分析、Canvas、sidecar与实际附属内容同处，PDF仍由Zotero持有。一个资源只有一个owner，
+其他Field/topic引用而不复制真源。已有resources/papers、paper_assets、平铺分析和显式名称
+原位兼容，不因新规范自动重命名或迁移。新领域结构为：
 
 ```text
-<knowledge-root>/
-├── resources/                          # 跨 topic 的 canonical resource-owned 产物
-│   ├── papers/<resource-segment>/
-│   │   ├── 论文信息.md
-│   │   ├── <paper>分析.md
-│   │   ├── <paper>解析树.canvas
-│   │   ├── <paper>分析.analysis.json
-│   │   └── attachments/              # Vault-owned 补充材料；非 Zotero PDF
-│   ├── documents/<resource-segment>/
-│   └── blogs/<resource-segment>/
-└── topics/<topic>/
-    ├── 00-<topic>-导览.md              # charter / 人类入口
-    ├── 01-资源目录.md                  # catalog：论文、文档、Blog 全集
-    ├── 02-<view>-梳理.md               # survey，可重复
-    ├── 03-<view>-文献树.md             # survey，可重复
-    ├── resource-links/                 # topic-local hub / 语境入口，只链接 canonical 产物
-    └── attachments/                    # 只放 topic-owned context artifacts
+<domain>/
+├── README.md                           # 一个总览及主题表
+└── <topic>/
+    ├── 01-论文列表.md
+    ├── 02-文献树.canvas                # 横向时间线，不是放射树
+    ├── 02-文献树.md                    # 所选蓝本变体使用；另一变体直接链接论文详情
+    ├── 03-技术路线树.md
+    ├── 03-技术路线树.canvas            # 目标→路线→单篇论文
+    ├── 04-挑战洞见树.md
+    ├── 04-挑战洞见树.canvas            # 目标→问题→解法→单篇论文
+    └── resources/<resource-segment>/
+        ├── Paper.md
+        ├── <paper>分析.md
+        ├── <paper>解析树.canvas
+        ├── <paper>分析.analysis.json
+        └── attachments/                # 有实际图片/重放材料才创建；非原PDF
 ```
 
-兼容迁移时可把既有 `paper_assets/` 视为 `resource-links/` 的历史布局，不立即移动，也不就地复制其中链接的
-canonical analysis。`knowledge_catalog` 由显式 manifest/provider 中的 role、kind 和 ID 汇编，不依赖上面的
-英文目录名或编号；具体根目录仍由 config 决定，不把这个示意路径硬编码进 runtime。
+不强加空白02说明页、空attachments目录、额外分类或开发验收目录。缺少真实分析/Canvas时，
+只记局部整理完成，不造占位分析或宣称完整模范复现。单篇当前五分支与证据图文规范保持。
+原子资源/核心文档/附属产物的逻辑角色继续用于明确归属，不暴露为额外公共分类树。
+`knowledge_catalog` 仍由显式manifest/provider的role、kind和ID汇编，不从目录名推断身份。
 
 `resource-segment` 不是原始 `resource_id`。现有 ID 可能含 `:`，DOI 分支还可能含 `/`，因此实现必须
 生成跨平台 path-safe 的 encoded/hashed segment，并在 manifest 保存 `resource_id ↔ resource-segment`

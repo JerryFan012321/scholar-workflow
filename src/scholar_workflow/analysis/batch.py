@@ -271,7 +271,7 @@ def _validate_targeted_repair(
         or repaired.paper_title != original.paper_title
         or repaired.language != original.language
         or repaired.reader != original.reader
-        or repaired.capacity != original.capacity
+        or (original.schema_version != 5 and repaired.capacity != original.capacity)
     ):
         raise ValueError(
             "targeted repair cannot change artifact identity, profile, capacity, or paper title"

@@ -40,8 +40,11 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
   分析、批注、Canvas 和补充材料是附属产物。Paperlist 或文献树只是一种视图，不能定义整个知识库。
   持久论述应以可独立阅读的人类 Markdown 为主，机器身份与关系放在薄 frontmatter、manifest、
   sidecar 或可重建投影中，不淹没正文；Canvas 等非正文产物由 owner Markdown 说明。
-  领域库新建/模范结构整理以build-literature-tree的field-library-v1为准：01完整列表、
-  02时间线文献树、03放射技术路线树、04放射挑战洞见树共存；具体布局/正文/链接只由
+  领域库新建/模范结构整理以build-literature-tree的field-library-v2为准：用户指定的
+  模范知识库是唯一蓝本，该有的必须有、没有的默认不加；后续目录、正文与图形格式必须一致，
+  不以近似、旧正式库或测试候选替代。蓝本约束格式而非内容配额；论点、深度、图表、证据和
+  实质分支数按实际论文与范围决定。01完整列表、02时间线文献树、03放射技术路线树、
+  04放射挑战洞见树共存；具体布局/正文/链接只由
   skills/build-literature-tree/references/field-library-format.md持有，旧Mermaid writer仅兼容。
 - 需持续审阅并在 Obsidian 展示的知识实验和迁移候选放在独立 `test` Vault，`/tmp` 仅存可丢弃
   中间物；实验副本不自动注册正式 Field、不与正式 Vault 同步，也不代表迁移或发布验收获批。
@@ -66,7 +69,7 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
   `knowledge reader/open` 把包含 Source 的 Obsidian Vault 仅作为原生打开位置；授权仍限 Source，
   不读取秘密配置，不把原生打开请求或阅读器 ID 当作论文正式归属/人工评鉴证明。
   单篇新owner登记的契约由 `references/paper-registration.md` 持有；只创建新论文目录，
-  不把旧审阅副本或裸provider初始化冒充登记。根Field `.` 的合法路径直接从resources/papers
+  不把旧审阅副本或裸provider初始化冒充登记。根Field `.` 的新目录路径直接从resources
   起算，成对提交仍独立核实实际Source/Field及provider owner。
 - 真实 Field 多文件迁移只可在外部编辑器/同步器停写窗口中执行，靠逐文件 CAS、持久 journal 和条件恢复
   达成可恢复的逻辑事务；不能宣称文件系统硬原子或把恢复快照称为已验证备份。旧论文分析改写须同时
@@ -107,8 +110,10 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
   块点击已通过（非71链接逐一点击）。正文图补充仍以输出reference为准，新增阅读体验独立评鉴，
   全项科学支持未认证。其他产物仍独立评鉴，安装/结构检查不能替代。不得用旧格式测试通过
   冒充新输出规范完成，也不因修订规范重新分析或批量迁移已有论文。
-  英文内容使用英文结构标签，中文内容使用中文标签；空槽位不编造论文事实。Canvas 必须保留可编辑
-  JSON text 节点和直角无箭头连接；对齐、无交叉的具体硬规则由输出模板唯一持有。
+  英文内容使用英文结构标签，中文内容使用中文标签；空槽位不编造论文事实。
+  固定框架规定栏目与单个实例的子槽位，不规定模块、挑战、贡献、发现等可重复实例的数量；
+  新v5不得用记录/节点容量档位限制这些分支，也不得为排版截断或合并实质内容。
+  Canvas 必须保留可编辑 JSON text 节点和直角无箭头连接；对齐、无交叉的具体硬规则由输出模板唯一持有。
   逐点证据、原文入口及对应正文反链不得因紧凑排版丢失。正式 Vault
   旧分析迁移仍需独立审议，test Vault 样张不能冒充真实论文验收。Advanced Canvas 自动添加的
   受限 `metadata`（`version`/`frontmatter`）须被校验并保留，但不能当作 Scholar 对象身份或放行任意顶层字段。
@@ -117,8 +122,8 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
   阅读器入口分离：在已核验 Vault 可显式选择 ZotFlow Library Reader 页级投影，Markdown/Canvas
   同步渲染并成对校验；未核验时保留 Zotero 原生入口，不手改其中一个文件。
 - 新论文的资料笔记、分析 Markdown、Canvas 和 sidecar 同处 Field 内
-  `resources/papers/<stable-paper-segment>/`；PDF 仍归 Zotero。目录段须与资源 ID 持久映射，旧平铺
-  产物只原位兼容，正式搬迁需显式 CAS/恢复事务及链接清理，不能靠普通分析更新顺手移动。
+  `resources/<stable-paper-segment>/`；PDF 仍归 Zotero。目录段须与资源 ID 持久映射，旧
+  resources/papers与平铺产物原位兼容，正式搬迁需显式CAS/恢复事务及链接清理，不能靠普通分析更新顺手移动。
 - 历史 Hub TaskRecipe 只接受 allowlisted target、已验证的上下文 EntityRef、最多 8 KiB 的 bounded brief、
   已批准的 `model_profile_id` 和该模型支持的 reasoning effort；`fast/standard/deep` 仅作旧请求兼容。
   浏览器不能提交命令、cwd/path、原始 model、sandbox、permission、环境变量或任意 config。

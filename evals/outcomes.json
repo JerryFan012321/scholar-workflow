@@ -2,8 +2,13 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "repeatable-content-no-fixed-branch-quota",
+      "description": "G12/G13/G17/INV22/INV40/INV54：格式蓝本规定固定栏目、层级和单个实例子槽位，不规定流程模块、挑战、贡献、发现、原因及领域论文叶端数量。v5模型/schema/渲染/conformance/baseline和领域布局必须完整保留超过旧数量阈值的合法输入，不截断、不合并、不换成更大固定配额；legacy v1–4兼容、唯一身份、证据及实际几何检查保留。几何不合格保留完整候选并明确失败，不把排版失败变成内容限额。独立合成输入先红测，正常安装和test单对象、人类外观验收独立，不因开发检查通过冒称实际产品已验收。",
+      "status": "pending"
+    },
+    {
       "id": "field-library-portable-three-views",
-      "description": "G12/G13/G17/INV22：安装包自带field-library-v1、局部CSS和纯stdin/stdout布局/几何检查器；跨领域复现完整01、时间线02及放射03/04。02短名年份标题及下方短说明，03/04每个论文叶端仅一句做法与导航；详细条件/证据留正文，共同阅读状态集中01，个别缺失诚实可见，开发输入/验收不混入领域阅读目录。复用owner，旧writer和单篇分析不改。先独立合成预期，再以test单个真实4DGS样板验证；不做正式Vault/Zotero写入。正常安装、原生导航、科学支持和人工评鉴分别取证；紧凑呈现纠偏进行中，保持pending。",
+      "description": "G12/G13/G17/INV22：field-library-v2以用户指定模范知识库为唯一格式蓝本，要求该有的呈现结构齐备、没有的默认不加，后续目录/正文/导航/图形格式必须一致；论点、展开深度、图表、证据与实质分支数量依实际论文及范围决定，不复制样例内容配额、不凑图、不删必要材料。保留一个领域总览、01完整列表、02时间线及两种实际说明变体、03/04放射树与resources/<segment>完整论文包；不增加首页/分类/测试目录，不以资料卡或占位分析冒充全文分析。遵守蓝本卡宽、紧凑标题/叶端及原生样式与导航变体，不强制全图互链；必要证据/条件留正文，旧owner与批准journal原位兼容，单篇五分支/证据图文规范不降级。独立合成预期先行，再仅于test单对象安装态验收。当前已安装0.44.2属于上一契约，新v2未发布安装，4DGS为暂停的局部整理候选；正常安装、原生导航、科学支持和人工评鉴分别取证，保持pending。",
       "status": "pending"
     },
     {

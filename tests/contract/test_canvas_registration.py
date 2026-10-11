@@ -16,13 +16,27 @@ from scholar_workflow.cli import main
 from scholar_workflow.knowledge.fields import FieldRegistryError
 from scholar_workflow.workflows.register_canvas import canvas_plan, register_canvas
 from scholar_workflow.workflows.register_paper import paper_plan, register_paper
-from tests.contract.test_paper_registration import scope  # noqa: F401
+from tests.contract.test_paper_registration import (
+    _frozen_legacy_plan,
+    _install_frozen_legacy_journal,
+    _scope,
+    scope,  # noqa: F401
+)
 
 
 @pytest.fixture
 def canvas_scope(scope, tmp_path):  # noqa: F811 - pytest fixture injection
-    root, registry, zotero, selection = scope
-    plan = paper_plan(registry, zotero, **selection)
+    return _prepare_canvas_scope(scope, tmp_path)
+
+
+def _prepare_canvas_scope(paper_scope, tmp_path, *, legacy_owner=False):
+    root, registry, zotero, selection = paper_scope
+    if legacy_owner:
+        # Frozen historical input, not a new planner result moved to an old path.
+        plan = _frozen_legacy_plan(paper_scope)
+        _install_frozen_legacy_journal(paper_scope, plan, applied_members=3, status="committed")
+    else:
+        plan = paper_plan(registry, zotero, **selection)
     owner = register_paper(registry, zotero, approved_digest=plan["approved_digest"], **selection)
     document = AnalysisDocument.model_validate({
         "schema_version": 5, "artifact_id": "analysis:" + owner["resource_id"],
@@ -59,6 +73,37 @@ def canvas_scope(scope, tmp_path):  # noqa: F811 - pytest fixture injection
 
 def _files(root):
     return {p.relative_to(root).as_posix(): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+
+
+@pytest.mark.parametrize(("field_root", "legacy_owner", "segment", "expected_folder"), [
+    (".", False, "synthetic", "resources/synthetic"),
+    ("domain/topic", False, "synthetic", "domain/topic/resources/synthetic"),
+    (".", True, "synthetic", "resources/papers/synthetic"),
+    ("domain/topic", True, "synthetic", "domain/topic/resources/papers/synthetic"),
+    (".", False, "papers", "resources/papers"),
+    ("domain/topic", False, "papers", "domain/topic/resources/papers"),
+], ids=["new-root", "new-nested", "frozen-legacy-root", "frozen-legacy-nested",
+        "new-papers-segment-root", "new-papers-segment-nested"])
+def test_canvas_registration_preserves_exact_new_and_frozen_legacy_owner(
+    tmp_path, field_root, legacy_owner, segment, expected_folder,
+):
+    paper_scope = _scope(tmp_path, field_root)
+    paper_scope[3]["segment"] = segment
+    root, registry, selection, paths, provider = _prepare_canvas_scope(
+        paper_scope, tmp_path, legacy_owner=legacy_owner,
+    )
+    expected_owner = expected_folder + "/Paper.md"
+    assert paths["canvas"] == expected_folder + "/Tree.canvas"
+    before, provider_before = _files(root), _files(provider)
+    assert expected_owner in before
+    plan = canvas_plan(registry, **selection)
+    assert _files(root) == before and _files(provider) == provider_before
+    result = register_canvas(registry, approved_digest=plan["approved_digest"], **selection)
+    assert result["artifact"]["vault_path"] == expected_folder + "/Tree.canvas"
+    assert result == register_canvas(registry, approved_digest=plan["approved_digest"], **selection)
+    assert {path: (root / path).read_bytes() for path in before} == before
+    assert (provider / "knowledge-provider.snapshot.json").read_bytes() == (
+        provider_before["knowledge-provider.snapshot.json"])
 
 
 def test_public_zero_write_plan_registration_and_replay(canvas_scope):

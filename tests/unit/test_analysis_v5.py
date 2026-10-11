@@ -524,10 +524,13 @@ def test_source_projection_is_per_record_and_quotes_are_markdown_only() -> None:
     assert "corresponding challenge" not in canvas_text.lower()
 
 
-def test_geometry_keeps_all_generated_nodes_and_reports_the_real_budget() -> None:
+def test_geometry_keeps_all_fixture_records_and_readable_boxes() -> None:
     _, bundle = _render()
     nodes = bundle.canvas["nodes"]
-    assert len(nodes) <= 96, f"Actual expanded graph has {len(nodes)} nodes; do not hide records."
+    node_ids = {node["id"] for node in nodes}
+    payload = _payload()
+    for _, claim_id, point_id, _ in RECORDS:
+        assert _record_node_id(_claim(payload, claim_id), point_id) in node_ids
     assert all(0 < node["height"] <= 420 for node in nodes)
     assert all(node["width"] > 0 for node in nodes)
     width = max(node["x"] + node["width"] for node in nodes) - min(node["x"] for node in nodes)

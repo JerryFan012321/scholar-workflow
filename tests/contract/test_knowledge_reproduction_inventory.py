@@ -35,7 +35,7 @@ def test_explicit_portable_inventory_is_complete_and_zero_write(canvas_scope):
     assert len(restored.manifest.supporting_documents) == 2
     assert {a.vault_path for a in restored.artifacts} == set(paths.values())
     assert set(paths.values()) <= set(package["files"])
-    assert "resources/papers/synthetic/Paper.md" in package["files"]
+    assert (Path(paths["markdown"]).parent / "Paper.md").as_posix() in package["files"]
     assert "README.md" in package["files"]
     assert ".scholar-workflow/fields.yml" in package["files"]
     assert "local.pdf" not in package["files"]
@@ -46,7 +46,8 @@ def test_explicit_portable_inventory_is_complete_and_zero_write(canvas_scope):
 @pytest.mark.parametrize("member", ["markdown", "canvas", "sidecar", "owner", "home"])
 def test_missing_declared_file_never_exports_partial_inventory(canvas_scope, member):
     root, registry, selection, paths, _ = canvas_scope
-    path = paths.get(member, "resources/papers/synthetic/Paper.md" if member == "owner" else "README.md")
+    owner = (Path(paths["markdown"]).parent / "Paper.md").as_posix()
+    path = paths.get(member, owner if member == "owner" else "README.md")
     (root / path).unlink()
     with pytest.raises((FieldRegistryError, OSError, ValueError)):
         reproduction_plan(registry, source_id=selection["source_id"])
@@ -62,8 +63,8 @@ def test_drifted_registered_bytes_fail_closed(canvas_scope, member):
 
 
 def test_symlink_declared_owner_is_not_followed(canvas_scope, tmp_path):
-    root, registry, selection, _, _ = canvas_scope
-    owner = root / "resources/papers/synthetic/Paper.md"
+    root, registry, selection, paths, _ = canvas_scope
+    owner = root / Path(paths["markdown"]).parent / "Paper.md"
     content = owner.read_bytes()
     owner.unlink()
     outside = tmp_path / "outside.md"
@@ -92,8 +93,8 @@ def test_provider_missing_is_not_synthesized(canvas_scope):
 
 @pytest.mark.parametrize("member", ["owner", "home", "provider", "fields", "registry"])
 def test_concurrent_input_change_does_not_return_a_stale_package(canvas_scope, member):
-    root, registry, selection, _, provider = canvas_scope
-    targets = {"owner": root / "resources/papers/synthetic/Paper.md", "home": root / "README.md",
+    root, registry, selection, paths, provider = canvas_scope
+    targets = {"owner": root / Path(paths["markdown"]).parent / "Paper.md", "home": root / "README.md",
                "provider": provider / "knowledge-provider.snapshot.json",
                "fields": root / ".scholar-workflow/fields.yml", "registry": registry.path}
     target = targets[member]

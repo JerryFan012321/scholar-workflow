@@ -55,7 +55,9 @@ INPUT_HASHES = {
     "geometry-mutations.json": "1fa29ce6f02dca72099a091867b1151449e8bc473ae2c088c1e628b2862287e7",
     "human-edge-mutations.json": "2f6346f5b3d0bd8b82f5df4ed6a3983305b3155121c3855446f01a1292fb0913",
     "point-prose-mutations.json": "53d6378874a0e447aebb61277ec9d7ce089c8a1b895f3c394c29ebf68fd7ef52",
-    "manifest.json": "8ebdbb0a15ea92bf79ad7e8f5e7e0ce360dd26a288779b8b0fac2b97e31af4b6",
+    # N-18 now reports its real layout conflict, not the retired content quota.
+    # All paper, mutation and geometry inputs above remain byte-for-byte frozen.
+    "manifest.json": "737f6076a1541e58955b7d149761ad4458a80659a1963e4769fbc3ffec743710",
 }
 GEOMETRY_CANVAS_HASH = "6dab532f4b5bbf261716ede769eb1e135eac92ea5c8fe50531ba9fe98ff12b9d"
 
@@ -552,7 +554,7 @@ def test_g04_focused_limitation_keeps_exact_source_and_a_compact_editable_tree(t
         assert max(width / height, height / width) <= 2
 
 
-def test_n18_expanded_budget_preserves_all_slots_but_refuses_baseline(tmp_path: Path) -> None:
+def test_n18_preserves_all_slots_but_reports_the_real_layout_conflict(tmp_path: Path) -> None:
     payload = _input("budget-40-modules.json")
     assert len(payload["claims"]) == 40
     assert [claim["claim_id"] for claim in payload["claims"]] == [
@@ -591,8 +593,9 @@ def test_n18_expanded_budget_preserves_all_slots_but_refuses_baseline(tmp_path: 
     assert not baseline_path.exists()
     with _unchanged_files(paths):
         report = validate_bundle(document, _read_pair(paths), note_stem=NOTE_STEM)
-        _assert_finding(report, "canvas-node-limit")
-        with pytest.raises(AnalysisUpdateError, match="canvas-node-limit"):
+        _assert_finding(report, "canvas-aspect-limit")
+        assert all(finding.code != "canvas-node-limit" for finding in report.findings)
+        with pytest.raises(AnalysisUpdateError, match="canvas-aspect-limit"):
             create_baseline(document, bundle, note_stem=NOTE_STEM)
         assert not baseline_path.exists()
 

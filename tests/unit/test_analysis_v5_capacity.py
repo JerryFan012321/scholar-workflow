@@ -1,4 +1,4 @@
-"""Explicit capacity boundaries; synthetic inputs, no real Vault operations."""
+"""Legacy capacity-input compatibility and readable geometry, not content quotas."""
 
 import json
 from copy import deepcopy
@@ -15,7 +15,6 @@ from scholar_workflow.analysis.complete_reference import TemplateNode, _layout_t
 from scholar_workflow.analysis.conformance import validate_bundle
 from scholar_workflow.analysis.models import AnalysisBaseline, AnalysisDocument, ConformanceReport
 from scholar_workflow.analysis.updates import (
-    AnalysisUpdateError,
     plan_analysis_update,
     render_analysis_projection,
 )
@@ -99,16 +98,15 @@ def test_explicit_record_boundaries(count, capacity):
     document = AnalysisDocument.model_validate(payload)
     jsonschema.validate(payload, json.loads(SCHEMA.read_text()))
     assert len(document.claims) == count
-    assert document.fact_node_limit == (96 if capacity else 40)
-    assert document.managed_node_limit == (192 if capacity else 96)
+    assert document.fact_node_limit is None
+    assert document.managed_node_limit is None
 
 
 @pytest.mark.parametrize("count,capacity", [(41, None), (97, "expanded")])
-def test_over_budget_records_are_rejected(count, capacity):
-    with pytest.raises(ValidationError, match="semantic Canvas nodes"):
-        AnalysisDocument.model_validate(capacity_input(count, capacity))
-    with pytest.raises(jsonschema.ValidationError):
-        jsonschema.validate(capacity_input(count, capacity), json.loads(SCHEMA.read_text()))
+def test_former_record_quotas_do_not_reject_v5_content(count, capacity):
+    payload = capacity_input(count, capacity)
+    assert len(AnalysisDocument.model_validate(payload).claims) == count
+    jsonschema.validate(payload, json.loads(SCHEMA.read_text()))
 
 
 def test_unknown_capacity_and_old_version_are_rejected():
@@ -144,16 +142,19 @@ def test_capacity_does_not_change_projection_or_bypass_conformance():
     assert bundle == old_bundle
     assert baseline.document.capacity == "expanded"
     assert validate_bundle(expanded, bundle, note_stem="Capacity sample").ok
-    with pytest.raises(AnalysisUpdateError, match="capacity"):
-        plan_analysis_update(
-            current=old_bundle, baseline=old_baseline, update=expanded, note_stem="Capacity sample"
-        )
+    plan = plan_analysis_update(
+        current=old_bundle, baseline=old_baseline, update=expanded, note_stem="Capacity sample"
+    )
+    assert plan.status == "ready"
+    assert plan.proposed == old_bundle
+    assert plan.document.capacity is None
+    assert plan.baseline.document.capacity is None
     damaged = deepcopy(bundle)
     damaged.canvas["nodes"][0]["height"] = 421
     assert not validate_bundle(expanded, damaged, note_stem="Capacity sample").ok
 
 
-def test_baseline_expanded_budget_remains_bounded():
+def test_v5_baseline_node_count_has_no_quota_but_ids_remain_unique():
     payload = json.loads(FIXTURE.read_text())
     payload["capacity"] = "expanded"
     _, baseline = render_analysis_projection(
@@ -171,7 +172,10 @@ def test_baseline_expanded_budget_remains_bounded():
     assert len(AnalysisBaseline.model_validate(raw).generated_node_ids) == 192
     jsonschema.Draft202012Validator(baseline_schema, registry=registry).validate(raw)
     raw["generated_node_ids"].append("ffffffffffffffff")
-    with pytest.raises(ValidationError, match="192"):
+    assert len(AnalysisBaseline.model_validate(raw).generated_node_ids) == 193
+    jsonschema.Draft202012Validator(baseline_schema, registry=registry).validate(raw)
+    raw["generated_node_ids"].append(raw["generated_node_ids"][-1])
+    with pytest.raises(ValidationError, match="unique"):
         AnalysisBaseline.model_validate(raw)
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.Draft202012Validator(baseline_schema, registry=registry).validate(raw)
@@ -196,16 +200,16 @@ def test_focused_update_retains_expanded_capacity():
     assert plan.proposed == bundle
 
 
-def test_targeted_repair_cannot_switch_capacity():
+def test_v5_targeted_repair_accepts_a_compatibility_marker_difference():
     payload = json.loads(FIXTURE.read_text())
     original = AnalysisDocument.model_validate(payload)
     payload["capacity"] = "expanded"
     repaired = AnalysisDocument.model_validate(payload)
-    with pytest.raises(ValueError, match="capacity"):
-        _validate_targeted_repair(original, repaired, ConformanceReport(ok=False, findings=[]))
+    _validate_targeted_repair(original, repaired, ConformanceReport(ok=False, findings=[]))
 
 
-def test_seventy_independent_records_reach_the_paired_projection():
+@pytest.mark.parametrize("capacity", [None, "expanded"])
+def test_seventy_independent_records_reach_the_paired_projection(capacity):
     """38 approved fixture records plus 8 modules with 4 distinct points each."""
     payload = json.loads(FIXTURE.read_text())
     for index in range(1, 9):
@@ -229,9 +233,8 @@ def test_seventy_independent_records_reach_the_paired_projection():
                 for slot in ("motivation", "method", "why-it-works", "technical-advantage")
             ],
         })
-    with pytest.raises(ValidationError, match="40 generated semantic Canvas nodes"):
-        AnalysisDocument.model_validate(payload)
-    payload["capacity"] = "expanded"
+    if capacity is not None:
+        payload["capacity"] = capacity
     document = AnalysisDocument.model_validate(payload)
     assert sum(not claim.container for claim in document.claims) + sum(
         len(claim.points) for claim in document.claims

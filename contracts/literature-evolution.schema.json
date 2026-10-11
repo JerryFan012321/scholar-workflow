@@ -318,7 +318,6 @@
       "items": {
         "$ref": "#/$defs/EvolutionPaper"
       },
-      "maxItems": 512,
       "title": "Papers",
       "type": "array"
     },
@@ -326,7 +325,6 @@
       "items": {
         "$ref": "#/$defs/EvolutionContribution"
       },
-      "maxItems": 2048,
       "title": "Contributions",
       "type": "array"
     },
@@ -334,7 +332,6 @@
       "items": {
         "$ref": "#/$defs/EvolutionRelation"
       },
-      "maxItems": 4096,
       "title": "Relations",
       "type": "array"
     }

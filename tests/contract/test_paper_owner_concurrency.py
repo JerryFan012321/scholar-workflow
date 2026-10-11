@@ -19,7 +19,7 @@ from scholar_workflow.workflows.register_paper import paper_plan, register_paper
 
 _TIMEOUT_SECONDS = 30
 _PAPER_ID = "paper:zotero:123:ABCD2345"
-_PAPER_PATH = "resources/papers/concurrent-paper/Paper.md"
+_PAPER_PATH = "resources/concurrent-paper/Paper.md"
 _README = b"# Existing Source home\n\nHuman text must remain unchanged.\n"
 _PDF = b"%PDF-1.7 synthetic concurrency fixture, not a real paper\n"
 
@@ -187,7 +187,7 @@ def test_same_paper_concurrent_sources_create_exactly_one_owner(tmp_path: Path):
                           for item in group["items"] if item == _PAPER_PATH)
     assert navigation == [winner_index]
     assert (roots[winner_index] / _PAPER_PATH).is_file()
-    assert not (roots[loser_index] / "resources/papers/concurrent-paper").exists()
+    assert not (roots[loser_index] / "resources/concurrent-paper").exists()
     assert sum((root / _PAPER_PATH).is_file() for root in roots) == 1
     assert [(root / "README.md").read_bytes() for root in roots] == [_README, _README]
     assert registry.path.read_bytes() == registry_before

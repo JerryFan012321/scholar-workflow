@@ -13,6 +13,10 @@ from pathlib import Path
 import pytest
 import yaml
 
+from scholar_workflow.analysis.apply_changes import apply_knowledge_change_set
+from scholar_workflow.analysis.commit import commit_analysis_bundle
+from scholar_workflow.analysis.models import AnalysisCommitRequest, AnalysisDocument
+from scholar_workflow.analysis.updates import render_analysis_projection
 from scholar_workflow.knowledge.fields import (
     FieldRegistryError,
     FieldService,
@@ -24,10 +28,6 @@ from scholar_workflow.workflows.knowledge_reproduction import (
     restore,
     restore_plan,
 )
-from scholar_workflow.analysis.apply_changes import apply_knowledge_change_set
-from scholar_workflow.analysis.commit import commit_analysis_bundle
-from scholar_workflow.analysis.models import AnalysisCommitRequest, AnalysisDocument
-from scholar_workflow.analysis.updates import render_analysis_projection
 from scholar_workflow.workflows.register_paper import paper_plan, register_paper
 from tests.contract.test_canvas_registration import canvas_scope  # noqa: F401
 from tests.contract.test_paper_registration import scope  # noqa: F401
@@ -106,7 +106,7 @@ def asset_scope(canvas_scope):
     root, registry, selection, paths, provider = canvas_scope
     snapshot = json.loads((provider / "knowledge-provider.snapshot.json").read_text())
     owner = next(a["artifact_id"] for a in snapshot["artifacts"] if a["kind"] == "analysis_markdown")
-    path = "resources/papers/synthetic/attachments/source-region.png"
+    path = (Path(paths["markdown"]).parent / "attachments/source-region.png").as_posix()
     content = base64.b64decode(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j7h8AAAAASUVORK5CYII="
     )

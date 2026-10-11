@@ -145,12 +145,16 @@ def test_v4_zotflow_reader_accepts_host_vault_id_and_rejects_malformed_ids() -> 
         jsonschema.validate(ambiguous, IR_SCHEMA)
 
 
-def test_new_v4_commit_keeps_analysis_bundle_in_one_paper_folder() -> None:
+@pytest.mark.parametrize("folder", [
+    "World Models/resources/v-jepa-2", "resources/v-jepa-2",
+    "World Models/resources/papers/v-jepa-2", "resources/papers/v-jepa-2",
+], ids=["new-nested", "new-root", "legacy-nested", "legacy-root"])
+def test_new_v4_commit_keeps_analysis_bundle_in_one_paper_folder(folder: str) -> None:
     document = _tree_document()
     good_paths = AnalysisCanonicalPaths(
-        markdown="World Models/resources/papers/v-jepa-2/V-JEPA 2分析.md",
-        canvas="World Models/resources/papers/v-jepa-2/V-JEPA 2解析树.canvas",
-        sidecar="World Models/resources/papers/v-jepa-2/V-JEPA 2分析.analysis.json",
+        markdown=folder + "/V-JEPA 2分析.md",
+        canvas=folder + "/V-JEPA 2解析树.canvas",
+        sidecar=folder + "/V-JEPA 2分析.analysis.json",
     )
 
     def request(paths: AnalysisCanonicalPaths) -> AnalysisCommitRequest:
@@ -179,21 +183,15 @@ def test_new_v4_commit_keeps_analysis_bundle_in_one_paper_folder() -> None:
     )
     with pytest.raises(ValidationError, match="folder"):
         request(flat_paths)
-    rootless_paths = AnalysisCanonicalPaths(
-        markdown="resources/papers/v-jepa-2/V-JEPA 2分析.md",
-        canvas="resources/papers/v-jepa-2/V-JEPA 2解析树.canvas",
-        sidecar="resources/papers/v-jepa-2/V-JEPA 2分析.analysis.json",
-    )
-    assert request(rootless_paths).paths == rootless_paths
     shallow_paths = AnalysisCanonicalPaths(
         markdown="papers/v-jepa-2/V-JEPA 2分析.md",
         canvas="papers/v-jepa-2/V-JEPA 2解析树.canvas",
         sidecar="papers/v-jepa-2/V-JEPA 2分析.analysis.json",
     )
-    with pytest.raises(ValidationError, match="Field resources/papers"):
+    with pytest.raises(ValidationError, match="Field resources/"):
         request(shallow_paths)
     split_paths = good_paths.model_copy(update={
-        "canvas": "World Models/resources/papers/other/V-JEPA 2解析树.canvas"
+        "canvas": (Path(folder).parent / "other/V-JEPA 2解析树.canvas").as_posix()
     })
     with pytest.raises(ValidationError, match="paper folder"):
         request(split_paths)

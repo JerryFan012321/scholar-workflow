@@ -32,7 +32,18 @@
 | G16 | 以科研项目的完整资料上下文为中心：集中展现并显式关联项目代码、论文、分析笔记、实验档案与成果，内容留在各权威来源；人和 agent 不启动 Hub 也能读取、导航和调用。Project 持有薄关联清单，Knowledge 持有可复用正文与资料归属，Analysis 持有分析结果，Adapters 对接原生工具，Workflows 组合任务，CLI/agent/skill 是薄入口与结果契约；不再内置 Codex 任务控制产品 |
 | G17 | 构造稳定、可靠、易用且严格满足呈现契约的学术、知识库和实验 skills；第一阶段交付可复现的模范 Vault、模范项目和实验文件夹，以及可复用的外部工具交互。复现是运行期 skill 的明确能力，不只是开发记录：从明确输入经已安装产品入口得到符合版本化契约的产物；单篇样本、合成测试或规划完成不能冒称整个阶段完成。具体交付与证据见 `reproducible-exemplars-stage1.md` |
 
-G12/G17 当前状态（2026-10-11）：0.44.1正常安装，领域库01/02/03/04共同结构已有
+G12/G17 最新边界（2026-10-11）：用户指定5-templates/模范知识库为唯一蓝本，
+field-library-v2要求该有的齐备、没有的默认不加，后续目录/正文/导航/图形必须一致。
+用户进一步明确：一致限于呈现格式，不复制模范库的内容配额；图表、证据、论点与展开深度
+依实际论文决定，不能机械凑相同图片或分支数量，也不能为贴合样例删必要材料。
+流程模块、挑战、贡献、实验发现和限制原因等可重复实例不设固定分支数；固定五主分支及
+单个实例的具名子槽位不变。新v5与领域图的模型/schema/渲染/基线不能保留隐含数量配额。
+本轮仅用合成输入越过旧阈值验证完整保留；几何冲突保留完整候选，不以截断或合并冒充通过。
+源码同步默认卡宽与新resources/<segment>登记，历史owner/journal原位兼容。
+新的v2尚未发布安装；已安装仍0.44.2，test/4DGS暂停原生验收，仅属部分整理候选，
+缺少完整论文分析的样张不能算完整模范复现。G17继续未完成，蓝本与正式Vault不改。
+
+以下保留上一轮阶段记录。0.44.2正常安装，领域库01/02/03/04共同结构已有
 独立合成与真实4DGS八篇的安装态产物；格式/链接/几何和本轮有限来源检查通过。
 4DGS不是八篇全文分析或训练复现；最终原生/人工仍待验，不改正式库或Zotero。
 四类完整交付缺口统一见stage1-current-state-audit.md当前节，旧版本缺安装不再算当前阻断；
@@ -40,7 +51,8 @@ G12/G17 当前状态（2026-10-11）：0.44.1正常安装，领域库01/02/03/04
 
 领域呈现纠偏（2026-10-11）：真实4DGS对比暴露额外书目/诊断段落及原生标题裁切，
 故不能把结构通过当忠实复现。0.44.2固化短标题、一句方法叶端、正文详细证据、
-集中阅读状态及开发材料分离；2600项完整回归通过，正常安装及同一样板复验仍待执行。
+集中阅读状态及开发材料分离；2600项完整回归通过，0.44.2已正常发布安装，
+同一样板原位复验中，人工待评鉴。简洁意味着不要多余之物，而非削减必要事实和证据。
 
 G16/G17 多实验表格补充（2026-10-10）：对比表记录实验名称、对应执行时间、目的、
 配置自变量和结果。变量少时直接列值；较多时展示关键差异，链接并核查对应执行的
@@ -410,7 +422,7 @@ check-bundle通过。0.41.1最小列定位修复的169项定向检查通过，�
 | INV19 | Notion 投影**单向 本地→Notion**（本地权威源→Notion，机器只推、不回流）；Notion 是简化跨设备前端，Vault 相关文档只投影一段话摘要与回 Obsidian/Hub 的稳定入口。项目 `docs/` 不通过托管 project-reference 投影进全局知识库；只有显式归档形成的新 Vault 文档才按其新身份投影。进程内 action ID 永不持久化，正文不进入 Notion | 已激活：safety: no-notion-writeback / no-notion-full-body |
 | INV21 | **Notion 双库模型**：**Papers 库**每篇论文一行，upsert 键为现有稳定投影 `Resource ID`（显式映射 Zotero item key / work identity，不参与 library 判重）；**Related Docs 库**每个 Vault 附属文档一行，目标 upsert 键为稳定 artifact/resource ID，并经 `Paper` relation 指回论文。v0.27.2 仍以 Vault 相对路径 `Doc ID` 作为 legacy key，迁移必须保留兼容映射。编排顺序仍是先 upsert 论文取得 page_id，再 upsert 相关文档带 relation。Notion 只镜像 Vault/Zotero 的权威关系，不接管 Hub Projects 集合或项目 `docs/` | 已激活：Papers `Resource ID` + legacy Related Docs `Doc ID` + `notion-two-db-relation-order`；stable artifact ID 为**目标态（未激活）** |
 | INV20 | **论文类原子资源的主题内 Hub 文档**：每篇论文可按需挂一个相关资料文档，聚合该论文的周边资料位置链接（阅读笔记/分析笔记/方向笔记/补充材料），不重复论文元数据（元数据属 Zotero）。既有统一命名与落点为主题文件夹内 `paper_assets/<年>-<第一作者>-<标题>.md`；它是 INV37 通用 resource hub 的论文类历史布局，不再被视为全知识库的顶层模型。索引行、文献树和 analyze-paper 共用稳定 resource ID 关联该 Hub；同一论文可在不同主题拥有不同语境的 Hub（见 INV25），重投影不得覆盖人工正文 | 已激活：现有 paper hub、稳定关联与人工正文保护；INV37 通用 resource-hub 重解释为**目标态（未激活）** |
-| INV22 | **领域库四个固定视图共存**：新领域库/明确模范结构整理遵守 `field-library-v1`；01为完整论文列表，02为横向时间线文献树，03为中心向外的技术路线树，04为同样式挑战洞见树。03/04末端各一篇论文，保留做法、限制及现有资料/分析/Canvas/原文入口；02每篇标题下有简短说明，仅有依据的类1/2贡献可在主干与主要支线，类3/4在局部，未知不凑槽。布局、正文、样式、链接与可编辑要求由 `skills/build-literature-tree/references/field-library-format.md` 唯一持有；不固化论文数/3DGS事实/主机路径，不复制论文owner，不降级单篇分析规范。旧 `literature-tree.schema.json`、`project-literature-tree` 与Mermaid概念树仅原接口兼容，旧结果保留但不证明新图通过。 | outcomes: field-library-portable-three-views（0.44.1安装/合成通过，人工待验）；legacy: novelty-tree-topology-and-paperlist / module-level-and-challenge-tree |
+| INV22 | **唯一蓝本与四视图共存**：新领域库/明确模范结构整理遵守 `field-library-v2`；用户指定模范知识库是唯一蓝本，该有的必须有、没有的默认不加，后续目录/正文/导航/图形必须一致，不混用旧库/测试候选。01完整列表、02横向时间线、03放射路线、04放射问题解法共存。03/04各论文叶端一句做法与实际入口，条件/限制在对应分支与正文；02标题下简短说明，仅有依据的类1/2贡献位列主干/主要支线。具体变体、样式、卡宽、可编辑性与链接由 `skills/build-literature-tree/references/field-library-format.md` 唯一持有；不固定论文数/个人路径，不复制owner，不降级单篇分析，不以占位分析冒充完整复现。旧writer/schema只原接口兼容。 | outcomes: field-library-portable-three-views（v2源码修订，尚未安装/原生验收；0.44.2为上一契约）；legacy: novelty-tree-topology-and-paperlist / module-level-and-challenge-tree |
 | INV23 | **略读级(recommend-papers)临时性**:略读经外部服务(四推荐源 REST + NotebookLM)进行,四源(S2 Recommendations / Scholar Inbox / S2 author watchlist / HF Daily)按 arXiv id 合并去重,仅对用户细化后的 shortlist 走 NotebookLM 略读(省 token,不略读全池);产物为**临时 Reading Report,绝不落 vault、不改 Zotero**;看中的论文经 find/ingest 正式管线入库(精确判重)。推荐聚合器不访问 Zotero,种子由 Local API CLI 注入 | （待补） |
 | INV24 | **详细分析级(analyze-paper)源、落点与人类投影**：详细分析只经 Zotero Local API 读取索引全文（承 INV10 不直接解析 PDF 本体），每篇论文按稳定投影 `resource_id`（显式映射 Zotero item/work identity）维护一份 canonical 人类可读 Markdown 分析和一份可编辑概览 Canvas，与人工批注分立并互链；论文进入多个 topic 时，各 topic hub 只链接同一分析对，不复制真源。Markdown 是详细、证据完备的正文真源；新分析使用参考图的 `Abstract / Introduction / Method / Experiments / Limitation` 完整层级和子槽位，Canvas 只保留可编辑、紧凑且与正文同源的主张/逐点投影，不逐字段复制正文。旧“任务 → 输入 → 分步流程 → 输出 → 边界”仅供 IR v1–v3 兼容读取，不能静默重渲染为新框架。Method 呈现实际流程，不添加原图没有的“对应挑战 / 贡献”；不生成独立 Evidence 节点或 field-to-anchor 重复索引。证据与对应 claim/point 同处，提供原文入口和准确正文反链；仍区分作者陈述与分析推断，以及`论文未报告`、`当前正文通道无法核实`、`不适用`。复杂 canonical path、baseline hash 和节点映射进入 manifest/sidecar，不淹没人类正文。局部更新只替换声明的完整分支并保留未选分支、人工正文、自建节点、布局和 stable ID；冲突返回拟议 patch 而不静默覆盖。主题特有解读须另建 topic-owned context artifact，不冒充第二份 canonical 分析 | **v5 已正常发布安装；installed 0.41.1 的现有完整单篇成对检查通过**。五分支与逐点投影已可用；源摘录充分性、人工阅读/审美及正式迁移分别评鉴，安装/结构检查不代替这些验收。 |
 | INV25 | **论文↔文献树多对多，主题 Hub 可分身但 canonical 资源产物不分身**：同一篇论文按 Zotero work identity 唯一，并显式映射到现有稳定投影 `resource_id`；它可被任意多个概念节点、多棵树引用——同 topic 内多树（`02-`/`03-`…含技术树+挑战树）、跨不同主题文件夹的树皆可。树节点只引用投影 ID、不复制元数据；`resource_id` 不参与 library 判重。反链是复数关系：一篇论文可同时指向多棵树的多个位置。既有 `paper_assets/…` 是按 topic 分身的语境 Hub，可聚合该 topic 的反链与周边资料位置；它只链接 INV24 的单一 canonical 分析/Canvas。若确需主题特有解读，使用独立 topic-owned context artifact 与新 ID。`01-Paperlist.md` 是每个主题文件夹内的 catalog 视图，同一论文入多个主题可各登记一行。绝不增加“一个 resource_id 只归一个节点/一棵树”的唯一性检查，也绝不因多 topic 复制 resource-owned 正文真源 | 已激活：outcomes: paper-in-multiple-trees；canonical resource artifact 不分身为**目标态（未激活）**，守护待补 |
@@ -445,7 +457,7 @@ check-bundle通过。0.41.1最小列定位修复的169项定向检查通过，�
 | INV54 | **论文分析后的输出忠实投影最新通用参考图并保持可编辑**：Markdown/JSON Canvas 共享 `Abstract / Introduction / Method / Experiments / Limitation` 五分支，完整展开原图的 challenge/contribution/module 具名子项；Introduction 保留 demos/applications，Method Overview 保留任务/输入/输出及合写步骤，Experiments 独立含对比和核心组件/模块设计选择消融。详细输出规范唯一持于 `skills/analyze-paper/references/analysis-output-template.md`，不规定模型阅读或推理步骤。Canvas 为独立可编辑子节点、直角无箭头连线、紧凑布局、点击留白，逐点保留行内证据、原文入口与正文反链；正文附源语言逐字摘录及必要语境，Canvas 不附摘录。Canvas 图片补充仅限实验数据表和关键流程图，段落截图留在正文；图片不取代树形节点或证据。标签语言一致，空槽不编造；旧产物不自动刷新 | **v5 完整框架及对齐、无交叉/穿框门禁已实现并正常安装，科学来源和人工评鉴独立**。选定图片接口在 0.41.0 发布、0.41.1 窄修复后安装；单篇候选 public stage/check 通过，Obsidian 1.14.4 实际显示图2/表2，正文反链及 ZotFlow 物理4/14页点击核验。只加两图，不改旧106节点/105边或正文；裁剪充分性/美观待人工，候选未提交或新增资产登记，不称完整带图归属复现。outcome: `analysis-canvas-selected-source-visuals` |
 | INV55 | **v4 人类正文不暴露机器身份注释**：分析 Markdown 与 Canvas text 节点不得输出 `sw-analysis-claim`；可点击块锚点、确定性节点 ID、薄 frontmatter 和 sidecar 承担身份及更新冲突判断。旧 v1–v3 保持兼容，旧 v4 sidecar 不静默重新信任 | 开发树 markerless conformance/update 已实现；test Vault 候选已重生，正式 Vault 未迁移；WI-051 |
 | INV56 | **来源身份与阅读器投影分离，点击空间可用**：新 v4 可在已核实的 Vault 上显式选择 ZotFlow Library Reader 页级链接，Markdown/Canvas 成对生成并校验；默认保留 Zotero 原生入口，不能把 URI 当 PdfRef 或批注同步证明。Canvas 文本框按中英文换行估算，并多留约一行高度供点击，整体仍不得单轴过度延伸 | 开发树与 test Vault 候选结构门禁已通过；2026-09-29 用户确认最新版候选链接可用且页码正确。此项不证明逐条论据来源或批注双向同步；WI-051/WI-050 |
-| INV57 | **新论文一篇一目录，旧稿搬迁须独立审议**：新 companion note、分析 Markdown、Canvas 与 sidecar 同处 Field 内 `resources/papers/<stable-paper-segment>/`，目录段与 resource ID 须持久映射；PDF 继续在 Zotero。旧 `paper_assets` 与平铺分析对原位兼容，不由普通更新移动；正式搬迁需要带 CAS、journal、条件恢复与链接改写的显式事务 | 开发树 v4 commit 已核对 Vault 身份、锁定的 provider manifest owner、完整 snapshot CAS、目标路径和 Zotero key；旧 provider 需可信绑定且 CLI 尚未解析到指定 Source。普通 Field 文件可在本地受审搬迁；provider+分析三件套的统一事务仍缺，正式 Vault 未改，WI-052 |
+| INV57 | **新论文一篇一目录，旧稿搬迁须独立审议**：新 companion note、分析 Markdown、Canvas 与 sidecar 同处 Field 内 `resources/<stable-paper-segment>/`，目录段与 resource ID 须持久映射；PDF 继续在 Zotero。旧 `resources/papers`、`paper_assets` 与平铺分析对原位兼容，历史批准journal使用其原始owner路径，不由普通更新移动；正式搬迁需要带 CAS、journal、条件恢复与链接改写的显式事务 | 新默认路径修订中；既有成对提交/归属校验与独立迁移边界保留，正式Vault未改，WI-052；最新状态以HANDOFF顶部为准 |
 | INV58 | **所有面向人的呈现遵守一致的共同结果规范**：笔记、Canvas、树、报告、Hub 和 CLI 文本都明确对象与范围，优先展示可读结论/状态；同一产物的语言和标签一致；论据与可用原文入口贴近所支持的论点、定位精度不夸大；不可点击的入口不伪装成链接；完成、部分完成、失败、冲突与不可用状态不混称，机器身份不淹没正文。共同规范不取代各格式已验收的具体模板 | **目标态（未激活）**：`references/human-presentation.md` 已形成共同文本；outcomes: `human-facing-presentation-consistency` pending。Hub 预览与 CLI 文本仍有待实现和独立验收的缺口 |
 | INV59 | **项目资料关联是独立、便携的薄清单**：`project-context.json` 使用自己的 schema/version，并绑定稳定 `project_id`；`project-layout.json` 仍只持有布局与 profile。关联由人或 agent 明确给出，项目内文件用安全相对路径，外部资料用稳定 provider/entity identity；显示名称不证明身份，不自动扫描关联、复制正文、同步或级联删除 | **目标态（未激活）**：WI-054；schema/model/只读CLI已写入开发树，未运行测试或发布，详见 `project-centered-refactor.md` |
 | INV60 | **内容核心不依赖网页控制面**：Project/Knowledge/Analysis 不依赖 Hub HTTP、UI、task store 或 workspace registry；Adapters 对接原生外部接口，Workflows 组合核心能力，CLI/agent/skill 只解析与呈现结果。兼容 facade 可暂保留，但不得制造第二份模型或状态真源 | **目标态（未激活）**：WI-054 分批解耦；本批不宣称全部旧依赖已移除 |

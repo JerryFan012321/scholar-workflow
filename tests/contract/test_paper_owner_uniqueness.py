@@ -140,7 +140,7 @@ def test_same_key_in_another_proven_library_is_not_a_duplicate(pair):
     before = _files(pair.second_root)
     proposal = paper_plan(pair.registry, LocalZotero(pair.zotero.pdf, 456), **pair.selection)
     assert proposal["resource_id"] == "paper:zotero:456:ABCD2345"
-    assert proposal["owner_path"] == "resources/papers/new-owner/Paper.md"
+    assert proposal["owner_path"] == "resources/new-owner/Paper.md"
     assert _files(pair.second_root) == before
     assert pair.second_snapshot.read_bytes() == pair.second_snapshot_before
 
@@ -160,7 +160,7 @@ def test_same_key_in_another_library_inside_one_source_is_allowed(tmp_path):
     before = _files(root)
     proposal = paper_plan(registry, LocalZotero(pdf, 456), **dict(selection, segment="other-library"))
     assert proposal["resource_id"] == "paper:zotero:456:ABCD2345"
-    assert proposal["owner_path"] == "resources/papers/other-library/Paper.md"
+    assert proposal["owner_path"] == "resources/other-library/Paper.md"
     assert _files(root) == before
 
 
@@ -234,9 +234,9 @@ def test_unchanged_outside_declarations_allow_safe_recovery(pair):
     result = register_paper(pair.registry, zotero, approved_digest=proposal["approved_digest"],
                             **pair.selection)
     assert result["status"] == "registered"
-    assert result["owner_path"] == "resources/papers/new-owner/Paper.md"
+    assert result["owner_path"] == "resources/new-owner/Paper.md"
     assert result["resource_id"] == "paper:zotero:456:ABCD2345"
-    assert (pair.second_root / "resources/papers/new-owner/Paper.md").is_file()
+    assert (pair.second_root / "resources/new-owner/Paper.md").is_file()
 
 
 def test_human_edit_of_partial_note_is_preserved(pair):
@@ -250,7 +250,7 @@ def test_human_edit_of_partial_note_is_preserved(pair):
     with pytest.raises(RuntimeError, match="interruption"):
         register_paper(pair.registry, zotero, approved_digest=proposal["approved_digest"],
                        fault_inject=stop, **pair.selection)
-    note = pair.second_root / "resources/papers/new-owner/Paper.md"
+    note = pair.second_root / "resources/new-owner/Paper.md"
     note.write_text("# Human edit must remain\n")
     before = _files(pair.second_root)
     with pytest.raises(FieldRegistryError, match="conflict"):
@@ -263,7 +263,7 @@ def test_outside_change_stops_before_the_next_publication_member(pair):
     zotero = LocalZotero(pair.zotero.pdf, 456)
     proposal = paper_plan(pair.registry, zotero, **pair.selection)
     fields = pair.second_root / ".scholar-workflow/fields.yml"
-    assert proposal["owner_path"] == "resources/papers/new-owner/Paper.md"
+    assert proposal["owner_path"] == "resources/new-owner/Paper.md"
     fields_before = fields.read_bytes()
 
     def change(phase):

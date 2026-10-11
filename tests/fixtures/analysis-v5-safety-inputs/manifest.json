@@ -72,10 +72,10 @@
           "technical-advantage"
         ],
         "managed_node_lower_bound": 206,
-        "managed_node_limit": 96,
+        "layout_conflict": "canvas-aspect-limit",
         "canonical_success": false,
         "records_must_not_be_dropped": true,
-        "implicit_merge_or_budget_increase": false
+        "implicit_merge_or_content_loss": false
       }
     }
   ],

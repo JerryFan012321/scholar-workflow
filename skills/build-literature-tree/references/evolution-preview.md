@@ -10,6 +10,9 @@ or certify source support, paper priority, reader behavior or visual acceptance.
 Provide a document conforming to `contracts/literature-evolution.schema.json`:
 integer `schema_version: 1`, `topic`, bounded `corpus_scope`, `language` (`en`/`zh`),
 explicit `synthetic`, and `papers`, `contributions`, `relations` arrays.
+These repeatable semantic collections have no fixed count quota; the actual declared
+corpus and relations determine their size. Identity, reference and evidence checks
+still apply to every entry, including entries beyond older implementation limits.
 
 ```bash
 scholar-workflow literature-preview --input evolution.json --format md

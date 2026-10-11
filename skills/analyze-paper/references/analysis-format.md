@@ -33,11 +33,11 @@ same example paper's visual acceptance or performing a real-Vault bulk operation
 
 ## Artifact pair and profile
 
-Each new paper has one `resources/papers/<stable-paper-segment>/` folder inside its
+Each new paper has one `resources/<stable-paper-segment>/` folder inside its
 registered Field. Its human-readable paper companion note, evolving `<paper>分析.md` /
 `<paper>解析树.canvas` pair, and analysis sidecar share that folder; the PDF remains in Zotero.
 The segment is allocated and persistently mapped to the resource identity, never inferred as
-identity from a title. Existing flat `paper_assets/` and analysis pairs remain readable in place;
+identity from a title. Existing `resources/papers/`, flat `paper_assets/` and analysis pairs remain readable in place;
 moving them requires a separately reviewed relocation transaction, not an ordinary update.
 Markdown is the complete, independently readable analysis. The editable Canvas is a concise
 projection of the same claims, not a second source of knowledge. Analysis, annotations,
@@ -455,7 +455,7 @@ artifacts:
   - artifact_id: analysis:<stable-paper-resource-id>:canvas
     kind: analysis-canvas
     format: canvas
-    vault_path: <field-relative-path>/resources/papers/<stable-paper-segment>/<paper>解析树.canvas
+    vault_path: <field-relative-path>/resources/<stable-paper-segment>/<paper>解析树.canvas
     resource_id: <existing-hub-resource-id>
     topic_id: <existing-hub-topic-id>
     parent_id: analysis:<stable-paper-resource-id>

@@ -422,6 +422,85 @@ def _v4_request(
     )
 
 
+def _paper_folder_model_request(schema_version: int, paths: dict[str, str]) -> AnalysisCommitRequest:
+    """Pure in-memory request; folder expectations do not come from a planner."""
+    document = _v4_document().model_dump(mode="json")
+    document["schema_version"] = schema_version
+    if schema_version == 5:
+        document["profile"].update(framework="reference_tree_v5", markdown_quotes=True)
+        document["profile"].pop("roles", None)
+    return AnalysisCommitRequest(
+        commit_id="folder-model", batch_id="folder-model", item_id="synthetic-paper",
+        source_state=AnalysisState.VALIDATED, resource_id="paper:commit", note_stem="Analysis",
+        document=AnalysisDocument.model_validate(document), paths=paths,
+        base_revisions={path: None for path in paths.values()},
+        relations=[KnowledgeRelation(
+            from_id="paper:commit", relation="has-analysis", to_id="analysis:paper:commit",
+        )],
+    )
+
+
+@pytest.mark.parametrize("schema_version", [4, 5], ids=["ir-v4", "ir-v5"])
+@pytest.mark.parametrize("folder", [
+    "resources/commit",
+    "domain/topic/resources/commit",
+    "resources/papers/commit",
+    "domain/topic/resources/papers/commit",
+    "resources/papers",
+    "domain/topic/resources/papers",
+], ids=["new-root", "new-nested", "legacy-root", "legacy-nested",
+        "new-papers-segment-root", "new-papers-segment-nested"])
+def test_paper_folder_model_accepts_exact_new_and_legacy_shapes(
+    schema_version: int, folder: str,
+) -> None:
+    # A shape check cannot decide whether "papers" is a legacy namespace or a
+    # new segment. The later provider check must still match the explicit owner.
+    paths = {"markdown": f"{folder}/Analysis.md", "canvas": f"{folder}/Tree.canvas",
+             "sidecar": f"{folder}/Analysis.analysis.json"}
+    request = _paper_folder_model_request(schema_version, paths)
+    assert request.paths.model_dump() == paths
+    assert request.document.schema_version == schema_version
+    assert request.base_revisions == {path: None for path in paths.values()}
+
+
+@pytest.mark.parametrize("schema_version", [4, 5], ids=["ir-v4", "ir-v5"])
+@pytest.mark.parametrize("folder", [
+    "commit",
+    "notes/commit",
+    "domain/topic/paper_assets/commit",
+    "resources",
+    "domain/topic/resources",
+    "resources/commit/extra",
+    "domain/topic/resources/papers/commit/extra",
+    "resources/papers-extra/commit",
+], ids=["no-resource-root", "nonresource-root", "nonresource-nested",
+        "no-segment-root", "no-segment-nested", "extra-new-level",
+        "extra-legacy-level", "wrong-legacy-namespace"])
+def test_paper_folder_model_rejects_nonresource_or_wrong_depth(
+    schema_version: int, folder: str,
+) -> None:
+    paths = {"markdown": f"{folder}/Analysis.md", "canvas": f"{folder}/Tree.canvas",
+             "sidecar": f"{folder}/Analysis.analysis.json"}
+    with pytest.raises(ValueError, match="folder"):
+        _paper_folder_model_request(schema_version, paths)
+
+
+@pytest.mark.parametrize("schema_version", [4, 5], ids=["ir-v4", "ir-v5"])
+@pytest.mark.parametrize("folders", [
+    ("resources/commit", "resources/papers/commit", "resources/commit"),
+    ("domain/topic/resources/papers/commit", "domain/topic/resources/papers/other",
+     "domain/topic/resources/papers/commit"),
+    ("resources/commit", "resources/commit", "analysis"),
+], ids=["split-new-and-legacy", "different-paper-nested", "scattered-sidecar"])
+def test_paper_folder_model_requires_all_three_files_in_one_parent(
+    schema_version: int, folders: tuple[str, str, str],
+) -> None:
+    paths = {"markdown": f"{folders[0]}/Analysis.md", "canvas": f"{folders[1]}/Tree.canvas",
+             "sidecar": f"{folders[2]}/Analysis.analysis.json"}
+    with pytest.raises(ValueError, match="share one paper folder"):
+        _paper_folder_model_request(schema_version, paths)
+
+
 def _provider_state(
     tmp_path: Path,
     vault_root: Path,

@@ -5,7 +5,8 @@ paper in a selected batch. Every result has a human-readable Obsidian Markdown n
 JSON Canvas projection.
 
 For new papers, the companion note, analysis Markdown, Canvas, and sidecar live together in
-`<Field>/resources/papers/<stable-paper-segment>/`; the Zotero PDF remains outside the Vault.
+`<Field>/resources/<stable-paper-segment>/`; the Zotero PDF remains outside the Vault.
+Existing declared packages, including `resources/papers/`, stay in place.
 The segment is persisted with the resource mapping. Existing flat files remain readable and are
 not moved by an ordinary analysis update.
 
@@ -140,10 +141,12 @@ and Markdown-backlink labels remain clickable. V4 human-facing text has no machi
 claim identity is carried by block anchors, deterministic Canvas IDs, and the sidecar.
 
 For v5, each independently attributable point has its own editable node rather than a
-grouped detail line. Same-depth alignment and non-crossing/non-occlusion are hard requirements;
-the default budget remains 40 records/96 managed nodes. An explicit document-level
-`capacity: expanded` selects 96 records/192 managed nodes in supporting installations.
-It does not relax geometry, evidence or readability, and ordinary updates cannot change it.
+grouped detail line. From 0.44.3, repeated modules, challenges, contributions, findings
+and reasons have no fixed branch, record or generated-node quota. Their count follows
+the actual paper, not the example. Same-depth alignment, non-crossing/non-occlusion,
+evidence and readable geometry remain hard requirements. A layout conflict retains
+the complete candidate; it never authorizes dropped or merged branches. Legacy v5
+`capacity: expanded` inputs remain compatible, but are not needed for more content.
 See `references/analysis-output-template.md` for the complete geometry contract. Existing v4
 pairs retain their own versioned projection and are not silently converted.
 

@@ -3,8 +3,8 @@
   "cases": [
     {
       "id": "field-library-layout-is-not-ownership-or-scientific-proof",
-      "action": "organize a topic from an exemplar and promote class 3/4 to spine, copy another owner or overwrite human/deleted notes",
-      "expected": "Preserve 01/02/03/04, bounded scientific classification and canonical owners. The pure layout helper grants no ownership/write authorization and cannot certify sources, installed readers or human acceptance.",
+      "action": "organize a topic from an exemplar and promote class 3/4 to spine, copy another owner, overwrite human/deleted notes, or force its figure/evidence/branch counts onto different scientific content",
+      "expected": "Preserve the selected format, 01/02/03/04, bounded scientific classification and canonical owners. Select substantive detail and figures/tables from actual sources and scope, not exemplar quotas; neither pad irrelevant material nor remove necessary evidence. The pure layout helper grants no ownership/write authorization and cannot certify sources, installed readers or human acceptance.",
       "enforcement_layer": "host_llm"
     },
     {

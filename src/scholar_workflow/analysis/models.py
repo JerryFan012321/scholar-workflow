@@ -446,7 +446,7 @@ class AnalysisClaim(BaseModel):
     canvas_summary: str | None = Field(default=None, min_length=1, max_length=400)
     evidence: Evidence
     canvas_image: CanvasImage | None = Field(default=None, exclude_if=lambda value: value is None)
-    points: list[AnalysisPoint] = Field(default_factory=list, max_length=64, exclude_if=lambda value: not value)
+    points: list[AnalysisPoint] = Field(default_factory=list, exclude_if=lambda value: not value)
     order: int | None = Field(default=None, ge=1)
     outline_path: str | None = Field(default=None, min_length=1, max_length=160)
 
@@ -489,14 +489,12 @@ class AnalysisDocument(BaseModel):
     claims: list[AnalysisClaim] = Field(min_length=1)
 
     @property
-    def fact_node_limit(self) -> int:
-        return 96 if self.schema_version == 5 and self.capacity == "expanded" else 40
+    def fact_node_limit(self) -> int | None:
+        return None if self.schema_version == 5 else 40
 
     @property
-    def managed_node_limit(self) -> int:
-        if self.schema_version == 5 and self.capacity == "expanded":
-            return 192
-        return 96 if self.schema_version in {4, 5} else 40
+    def managed_node_limit(self) -> int | None:
+        return None if self.schema_version == 5 else 96 if self.schema_version == 4 else 40
 
     @model_validator(mode="after")
     def validate_projection(self) -> AnalysisDocument:
@@ -543,6 +541,8 @@ class AnalysisDocument(BaseModel):
 
         outline_paths: list[str] = []
         for claim in self.claims:
+            if self.schema_version != 5 and len(claim.points) > 64:
+                raise ValueError("legacy claims cannot contain more than 64 points")
             if self.schema_version == 5:
                 projected = [claim.title, claim.canvas_summary or claim.body]
                 projected += [point.canvas_summary or point.text for point in claim.points]
@@ -702,7 +702,7 @@ class AnalysisDocument(BaseModel):
             if is_reference_tree
             else 1 + len(covered) + len(self.claims)
         )
-        if generated_semantic_nodes > self.fact_node_limit:
+        if self.fact_node_limit is not None and generated_semantic_nodes > self.fact_node_limit:
             raise ValueError(
                 f"analysis projection exceeds {self.fact_node_limit} generated semantic Canvas nodes "
                 f"(limit: {self.fact_node_limit} generated semantic Canvas nodes)"
@@ -748,7 +748,7 @@ class AnalysisBaseline(BaseModel):
         if len(self.generated_edge_ids) != len(set(self.generated_edge_ids)):
             raise ValueError("baseline generated_edge_ids must be unique")
         max_generated_nodes = self.document.managed_node_limit
-        if len(self.generated_node_ids) > max_generated_nodes:
+        if max_generated_nodes is not None and len(self.generated_node_ids) > max_generated_nodes:
             raise ValueError(
                 f"baseline cannot own more than {max_generated_nodes} generated nodes"
             )
@@ -946,9 +946,13 @@ class AnalysisCommitRequest(BaseModel):
             if len(parents) != 1:
                 raise ValueError("IR v4 analysis files must share one paper folder")
             parent = next(iter(parents))
-            if len(parent.parts) < 3 or parent.parts[-3:-1] != ("resources", "papers"):
+            if not (
+                (len(parent.parts) >= 2 and parent.parts[-2] == "resources")
+                or (len(parent.parts) >= 3 and parent.parts[-3:-1] == ("resources", "papers"))
+            ):
                 raise ValueError(
-                    "IR v4 canonical paths require a Field resources/papers/<paper> folder"
+                    "IR v4/v5 canonical paths require a Field resources/<paper> "
+                    "or resources/papers/<paper> folder"
                 )
         expected_paths = set(self.paths.as_list())
         if set(self.base_revisions) != expected_paths:

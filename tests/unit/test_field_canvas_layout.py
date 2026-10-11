@@ -72,7 +72,7 @@ def test_radial_small_large_and_unequal_branches_keep_every_leaf(view, counts):
     assert document == before
     assert layout.validate_canvas(canvas) == []
     nodes = _semantic(canvas)
-    leaves = [node for node in nodes if node["styleAttributes"]["swMind"] == "detail"]
+    leaves = [node for node in nodes if node["text"].startswith("**paper-")]
     assert len(leaves) == sum(counts)
     assert len(nodes) == 1 + len(counts) + sum(counts) * (2 if view == "challenge" else 1)
     for index, count in enumerate(counts):
@@ -85,6 +85,39 @@ def test_radial_small_large_and_unequal_branches_keep_every_leaf(view, counts):
     assert len({node["x"] for node in peers}) <= (4 if view == "challenge" else 2)
     for node in nodes:
         assert node["height"] >= layout._size(node["text"], node["width"])[1]
+
+
+@pytest.mark.parametrize(("view", "counts"), [("technical", (128, 128)), ("challenge", (64, 64))])
+def test_radial_views_keep_more_than_256_semantic_nodes(view, counts):
+    document = _radial(view, counts)
+    before = copy.deepcopy(document)
+    canvas = layout.render(document)
+    nodes = _semantic(canvas)
+
+    def texts(item):
+        yield item["text"]
+        for child in item.get("children", []):
+            yield from texts(child)
+
+    expected = {document["root"]["text"]}
+    for branch in document["branches"]:
+        expected.update(texts(branch))
+    assert len(nodes) == len(expected) == 259
+    assert {node["text"] for node in nodes} == expected
+    assert document == before
+
+
+def test_literature_keeps_more_than_1536_rendered_nodes():
+    document = {"schema_version": 1, "view": "literature",
+                "spine": [_lit_node(f"milestone-{index}", "milestone") for index in range(769)]}
+    before = copy.deepcopy(document)
+    canvas = layout.render(document)
+    titles = [node for node in canvas["nodes"] if node["styleAttributes"]["swLit"] == "milestone"]
+    descriptions = [node for node in canvas["nodes"] if node["styleAttributes"]["swLit"] == "desc"]
+    assert len(canvas["nodes"]) == 1538
+    assert [node["text"] for node in titles] == [item["text"] for item in document["spine"]]
+    assert [node["text"] for node in descriptions] == [item["description"] for item in document["spine"]]
+    assert document == before
 
 
 def test_literature_has_distinct_descriptions_and_horizontal_spine():
@@ -143,6 +176,76 @@ def test_compact_timeline_title_does_not_reserve_a_bibliography_block():
 
 
 @pytest.mark.parametrize("view", ["technical", "challenge"])
+def test_radial_widths_match_the_canonical_blueprint(view):
+    canvas = layout.render(_radial(view))
+    for node in _semantic(canvas):
+        assert node["width"] == (370 if node["text"].startswith("**paper-") else 340)
+    assert layout.validate_canvas(canvas) == []
+
+
+def test_short_timeline_titles_match_blueprint_without_shrinking_descriptions():
+    canvas = layout.render(_literature())
+    for node in _semantic(canvas):
+        role = node["styleAttributes"]["swLit"]
+        assert node["width"] == (360 if role == "desc" else 300)
+    assert layout.validate_canvas(canvas) == []
+
+
+def test_challenge_solutions_use_blueprint_white_detail_cards():
+    canvas = layout.render(_radial("challenge", (2,)))
+    solutions = [node for node in _semantic(canvas) if node["text"].startswith("**solution-")]
+    assert len(solutions) == 2
+    assert all(node["styleAttributes"]["swMind"] == "detail" for node in solutions)
+    assert all(node["width"] == 340 for node in solutions)
+    assert layout.validate_canvas(canvas) == []
+
+
+def test_timeline_keeps_prepared_title_legend_and_section_label_without_paper_id_collision():
+    document = {"schema_version": 1, "view": "literature",
+                "title": "# Literature Tree\n\nPrepared topic", "legend": "Context is not inheritance.",
+                "spine": [_lit_node("header", "milestone"), _lit_node("legend", "milestone")]}
+    document["spine"][1]["section_label"] = "A supported representation change"
+    before = copy.deepcopy(document)
+    canvas = layout.render(document)
+    assert document == before
+    nodes = _semantic(canvas)
+    for role, text in (("header", document["title"]), ("legend", document["legend"]),
+                       ("label", document["spine"][1]["section_label"])):
+        decorations = [node for node in nodes if node["styleAttributes"]["swLit"] == role]
+        assert len(decorations) == 1 and decorations[0]["text"] == text
+        assert decorations[0]["styleAttributes"]["border"] == "invisible"
+    assert sum(node["styleAttributes"]["swLit"] == "milestone" for node in nodes) == 2
+    assert sum(node["styleAttributes"]["swLit"] == "desc" for node in nodes) == 2
+    header = next(node for node in nodes if node["styleAttributes"]["swLit"] == "header")
+    # A 40px heading, 19px subtitle, paragraph gap and spare click line fit compactly.
+    assert 128 <= header["height"] <= 160
+    assert header["width"] <= 1580
+    assert layout.validate_canvas(canvas) == []
+    assert layout.render(document) == canvas
+
+
+@pytest.mark.parametrize("change", [
+    {"title": "Only a title"}, {"legend": "Only a legend"},
+    {"title": "", "legend": "A legend"}, {"title": "A title", "legend": None},
+])
+def test_incomplete_or_invalid_timeline_framing_is_rejected(change):
+    document = dict(_literature(), **change)
+    with pytest.raises(ValueError):
+        layout.render(document)
+
+
+def test_timeline_section_label_requires_framing_and_a_spine_entry():
+    document = _literature()
+    document["spine"][0]["section_label"] = "A section"
+    with pytest.raises(ValueError):
+        layout.render(document)
+    document.update(title="# Literature Tree", legend="Documented context only.")
+    document["spine"][0]["children"][0]["section_label"] = "Not a spine section"
+    with pytest.raises(ValueError):
+        layout.render(document)
+
+
+@pytest.mark.parametrize("view", ["technical", "challenge"])
 def test_left_and_right_root_buses_have_distinct_stable_ids_and_fixed_anchors(view):
     canvas = layout.render(_radial(view, (1, 1)))
     root = next(node for node in canvas["nodes"]
@@ -152,7 +255,8 @@ def test_left_and_right_root_buses_have_distinct_stable_ids_and_fixed_anchors(vi
     assert {edge["fromSide"] for edge in exits} == {"left", "right"}
     assert len({edge["toNode"] for edge in exits}) == 2
     points = {node["id"]: node for node in canvas["nodes"]}
-    assert {points[edge["toNode"]]["x"] + 1 for edge in exits} == {-200, 200}
+    # Blueprint center width 340 gives ±170 anchors, with the existing 40px bus gap.
+    assert {points[edge["toNode"]]["x"] + 1 for edge in exits} == {-210, 210}
     assert all(edge["fromFloating"] is False and edge["toFloating"] is False
                for edge in canvas["edges"])
     assert layout.validate_canvas(canvas) == []
@@ -220,7 +324,7 @@ def test_external_path_or_execution_fields_are_rejected(field):
         layout.render(document)
 
 
-@pytest.mark.parametrize("case", ["duplicate", "path-key", "depth", "role", "version", "text-limit", "count-limit"])
+@pytest.mark.parametrize("case", ["duplicate", "path-key", "depth", "role", "version", "text-limit"])
 def test_invalid_inputs_fail_without_reclassification_or_truncation(case):
     document = _radial("technical", (1,))
     if case == "duplicate":
@@ -236,8 +340,6 @@ def test_invalid_inputs_fail_without_reclassification_or_truncation(case):
         document["schema_version"] = True
     elif case == "text-limit":
         document["root"]["text"] = "x" * (layout.MAX_TEXT + 1)
-    elif case == "count-limit":
-        document = _radial("technical", (layout.MAX_NODES,))
     before = copy.deepcopy(document)
     with pytest.raises(ValueError):
         layout.render(document)
@@ -253,6 +355,22 @@ def _edge(index, source, target, from_side="right", to_side="left"):
     return {"id": f"{index:016x}", "fromNode": f"{source:016x}", "toNode": f"{target:016x}",
             "fromSide": from_side, "toSide": to_side, "fromEnd": "none", "toEnd": "none",
             "styleAttributes": {"pathfindingMethod": "square"}}
+
+
+@pytest.mark.parametrize("invalid_last_segment", [False, True])
+def test_validator_checks_all_geometry_beyond_former_node_and_edge_quotas(invalid_last_segment):
+    count = 1538
+    canvas = {"nodes": [_node(index, index * 40, 0) for index in range(1, count + 1)],
+              "edges": [_edge(count + index, index, index + 1) for index in range(1, count)]}
+    if invalid_last_segment:
+        canvas["nodes"][-1]["y"] = 40
+    before = copy.deepcopy(canvas)
+    errors = layout.validate_canvas(canvas)
+    if invalid_last_segment:
+        assert any("nonorthogonal" in error for error in errors)
+    else:
+        assert errors == []
+    assert canvas == before
 
 
 @pytest.mark.parametrize("frontmatter", [{}, {"tags": ["test"], "nested": {"label": "原样保留"}}])
@@ -362,9 +480,11 @@ def test_cli_emits_only_complete_json_and_no_partial_failure(monkeypatch, capsys
     assert result.out == "" and "refused" in result.err
 
 
-def test_cli_input_size_limit_has_no_json_output(monkeypatch, capsys):
+@pytest.mark.parametrize("raw", ["x" * 17, "界" * 6])
+def test_cli_input_size_limit_has_no_json_output(monkeypatch, capsys, raw):
+    assert layout.MAX_INPUT_BYTES == 4 * 1024 * 1024
     monkeypatch.setattr(layout, "MAX_INPUT_BYTES", 16)
-    monkeypatch.setattr(sys, "stdin", io.StringIO("x" * 17))
+    monkeypatch.setattr(sys, "stdin", io.StringIO(raw))
     assert layout.main([]) == 2
     result = capsys.readouterr()
     assert result.out == "" and "exceeds" in result.err
