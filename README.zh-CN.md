@@ -41,6 +41,12 @@ schema 1 保持原样；`knowledge reference-plan/reference` 提供单条增删�
 缺失诊断。不替换旧论文表、不复制正文、不写文件，详见
 [论文单元导航](skills/build-literature-tree/references/field-paper-units.md)。
 
+0.44.0 起，可请 `build-literature-tree` 将选定主题整理为01完整论文列表、02时间线文献树、
+03放射技术路线树和04放射挑战洞见树。安装skill自带纯布局工具与两份限定作用域的CSS；
+原生样式需Advanced Canvas及启用两份snippet，具体见
+[设置与输出格式](skills/build-literature-tree/references/field-library-format.md)。
+已有论文归属和单篇分析格式不变；新主题原生显示、人工评鉴仍独立验收。
+
 0.43.0 的 `literature-preview --input evolution.json --format md|json` 可零写入预览逐贡献
 novelty、位置归属及带证据入口的技术取舍，不读原资料；
 最终可编辑演进图、真实科学内容和外观人工评鉴分别待验，见
@@ -354,7 +360,7 @@ snapshot 不是 verified backup；真正备份仍需要独立介质和恢复演�
 | find-resource | 搜索论文、核验身份、定位已有资源 |
 | ingest-resource | 导入论文 / 归档技术文档 |
 | sync-projections | 重建 Obsidian 索引表 + 同步 Notion 投影 |
-| build-literature-tree | 构建 novelty tree(里程碑任务 → pipeline → 论文)+ flat 全集清单 |
+| build-literature-tree | 完整论文列表 + 时间线文献树 + 放射技术路线树和挑战洞见树 |
 | check-consistency | 跨系统一致性审计(只读) |
 | export-annotations | 把某篇论文的 Zotero 批注整理成结构化 vault 笔记 |
 | recommend-papers | 每日多源论文 feed + NotebookLM 略读 → 推荐清单 |
@@ -480,9 +486,9 @@ scholar-workflow`)。你的 `config.yml` 与凭证在仓库之外,更新不受�
 - **ZotFlow 可用性只诊断、不自动修复:** 版本不兼容、本机 storage 模式关闭、CLI 无法证明或本机
   PDF 不存在时，Hub 只禁用 ZotFlow 动作并说明原因；不会自动升级 Obsidian、卸载插件或通过
   Zotero Web API/WebDAV 下载 PDF 来补齐本机文件。
-- **已实现但尚未真实端到端跑通:** `build-literature-tree` 的 CLI 渲染路径(尤其第四层
-  `module` 和落盘到 vault 的挑战洞见树)、`recommend-papers` 的 NotebookLM 略读层、
-  `check-consistency`。
+- **已实现但尚未真实端到端跑通:** 旧 `build-literature-tree` Mermaid CLI投影（尤其第四层
+  `module`）、`recommend-papers` 的 NotebookLM 略读层、`check-consistency`。
+  当前领域库格式的安装态、原生显示和人工评鉴独立记录。
 - **不支持跨运行续跑:** 重跑 `apply` 是全新任务、会把每一项从头下载,不会接着上次的进度。
 - **身份安全双层执行:** skill 先预览候选,`zotero ingest` 在创建前再次执行 DOI 或规范化
   title+creators 精确核验。当前 CLI 不暴露破坏性 Zotero 命令;未来若增加仍需审批。

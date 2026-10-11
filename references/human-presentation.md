@@ -65,7 +65,7 @@ not a claim that an existing renderer proves a global shortest layout.
 | Surface | Detailed contract |
 |---|---|
 | Paper analysis Markdown and Canvas | `skills/analyze-paper/references/analysis-output-template.md` (current required format); `analysis-format.md` in the same directory (v4 compatibility and shared source/update protections) |
-| Literature tree and paper ledger | `skills/build-literature-tree/SKILL.md` and `contracts/literature-tree.schema.json`; opt-in contribution/evolution preview uses that skill's `references/evolution-preview.md` and `contracts/literature-evolution.schema.json` |
+| Topic library, literature tree and paper ledger | `skills/build-literature-tree/references/field-library-format.md` (current 01/02/03/04 profile); legacy concept projections retain `contracts/literature-tree.schema.json`; contribution/evolution preview uses the skill's `references/evolution-preview.md` and `contracts/literature-evolution.schema.json` |
 | Annotation note | `skills/export-annotations/SKILL.md` |
 | Reading Report | `skills/recommend-papers/SKILL.md` |
 | Consistency audit report | `skills/check-consistency/SKILL.md` |

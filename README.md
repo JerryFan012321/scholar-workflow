@@ -53,6 +53,14 @@ analysis, Canvas and note entries with direct safe Obsidian links and honest
 unavailable states. It does not replace the fixed ledger, copy content or write
 files. Available from 0.43.0; see [paper-unit navigation](skills/build-literature-tree/references/field-paper-units.md).
 
+From 0.44.0, ask `build-literature-tree` to organize a selected topic into a complete
+01 paper list, a 02 literature timeline, 03 radial technical routes and 04 radial
+challenges/solutions. The installed skill includes the pure layout helper and scoped
+CSS assets; exact native styling requires Advanced Canvas and the two enabled snippets.
+See [setup and output format](skills/build-literature-tree/references/field-library-format.md).
+Existing paper owners and current single-paper analysis formats remain unchanged.
+Native appearance and each new topic's human assessment remain separate gates.
+
 The 0.43.0 `literature-preview --input evolution.json --format md|json`
 also previews contribution-level novelty, placement and evidence-linked technical
 tradeoffs without reading or writing source material. The final editable evolution
@@ -421,7 +429,7 @@ flows instead of treating a compatibility response as write authority.
 | find-resource | Search for papers, verify identity, locate existing resources |
 | ingest-resource | Import papers / archive technical documents |
 | sync-projections | Rebuild Obsidian index tables + sync the Notion projection |
-| build-literature-tree | Build a novelty tree (task → pipeline → paper) + flat paper list |
+| build-literature-tree | Complete paper list + literature timeline + radial technical routes and challenges |
 | check-consistency | Audit cross-system consistency (read-only) |
 | export-annotations | Turn a paper's Zotero annotations into a structured vault note |
 | recommend-papers | Daily multi-source paper feed + NotebookLM skim → Reading Report |
@@ -559,9 +567,10 @@ The plugin is in active `0.x` development. What's solid vs. still settling:
   disabled local-storage mode, missing CLI proof, or absent local PDF disable only the ZotFlow
   action with a reason. Hub never upgrades Obsidian, removes another plugin, or retrieves a PDF
   from the Zotero Web API/WebDAV to repair local availability.
-- **Implemented but not yet exercised on a real end-to-end run:** the `build-literature-tree`
-  CLI render path (especially the fourth `module` level and the challenge-insight tree
-  written to the vault), the `recommend-papers` NotebookLM skim tier, and `check-consistency`.
+- **Implemented but not yet exercised on a real end-to-end run:** the legacy
+  `build-literature-tree` Mermaid CLI projection (especially the fourth `module`
+  level), the `recommend-papers` NotebookLM skim tier, and `check-consistency`.
+  The current Field-library profile has separate installed/native/human assessment.
 - **No cross-run resume:** re-running `apply` starts a fresh job and re-downloads every item;
   it does not pick up where a prior run stopped.
 - **Identity safety is enforced twice:** skills preview candidates and `zotero ingest`
