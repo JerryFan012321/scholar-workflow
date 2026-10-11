@@ -7,10 +7,30 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development acceptance state:** record one installed 0.44.1 eight-paper 4DGS
+  field-library reproduction and correct obsolete current-version labels in the
+  stage-one audit. Preserve incomplete native/human assessment, paper-analysis,
+  project, experiment and tool-delivery boundaries; no runtime rebuild or behavior change.
+- **Development field-library receipt:** record normal 0.44.1 publication and installation,
+  installed native-save validation and one Git-managed synthetic test topic. Human
+  appearance/usability assessment and main integration remain pending; this receipt
+  does not rebuild or change the installed runtime.
 - **Development release receipt:** record the approved 0.43.2 publication, normal
   pipx/Codex installation, byte-for-byte identity checks and one installed synthetic
   rendering check. No runtime behavior changes or rebuild; native/human assessment
   and main integration remain pending.
+
+## [0.44.2] - 2026-10-11
+
+### Fixed
+
+- **build-literature-tree:** match the compact exemplar presentation: short-name/year
+  timeline titles, one-sentence radial paper leaves, detailed source-backed prose and
+  consolidated reading state. Keep development evidence outside the topic's reading
+  folder; preserve paper identities, individual leaves and the distinct three views.
+- **Field timeline sizing:** align title estimates and scoped native heading/padding
+  rules with 22px typography while retaining complete text and one spare click line.
+  Other Canvas styles and per-paper analysis contracts remain unchanged.
 
 ## [0.44.1] - 2026-10-11
 

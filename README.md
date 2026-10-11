@@ -57,6 +57,8 @@ From 0.44.0, ask `build-literature-tree` to organize a selected topic into a com
 01 paper list, a 02 literature timeline, 03 radial technical routes and 04 radial
 challenges/solutions. The installed skill includes the pure layout helper and scoped
 CSS assets; exact native styling requires Advanced Canvas and the two enabled snippets.
+From 0.44.2, timeline titles stay short-name/year links and radial paper leaves stay
+one method sentence plus navigation; detailed evidence stays in prose, not repeated cards.
 See [setup and output format](skills/build-literature-tree/references/field-library-format.md).
 Existing paper owners and current single-paper analysis formats remain unchanged.
 Native appearance and each new topic's human assessment remain separate gates.

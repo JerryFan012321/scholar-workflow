@@ -5,6 +5,9 @@ profile keeps four coexisting entries: a complete paper list, a horizontal liter
 timeline, a center-out technical-route map and a center-out problem/solution map.
 The three maps are editable JSON Canvas; paired notes explain methods, conditions,
 limitations and source support in ordinary language. Each radial leaf is one paper.
+Timeline titles are short-name/year links; radial paper cards contain one method
+sentence and navigation. Detailed evidence stays in paired prose, common reading
+status in the list, and development/test records outside the human topic folder.
 
 The installed skill bundles its precise output contract, scoped CSS styles and a
 stdlib-only deterministic layout/check helper. Neither a source checkout nor the

@@ -22,7 +22,8 @@ second list. Do not renumber one view into another.
 Reuse the parent domain overview and its topic links; a new compulsory homepage is
 not part of this contract. Each new Markdown starts with its readable title, direct
 navigation to the list/three Canvas views and scope. 03/04 also link their paired
-editable graph. The topic list and paper companions link back to these views.
+editable graph in that navigation, not in a second repeated navigation paragraph.
+The topic list and paper companions link back to these views.
 02's paired note is the new-library default; when an existing 02 note was explicitly
 deleted, use the selected existing analysis/detail entries for explanations instead
 of restoring it without instruction.
@@ -42,6 +43,14 @@ Do not display conference/journal as a complex public type taxonomy. Metadata co
 from Zotero/authoritative records, not body-text guesses. Scope and reading status are
 short prose/callouts; audit logs, hashes and machine comments are not table content.
 Escape wikilink alias pipes inside Markdown tables.
+
+Keep the human topic folder to these reading entries and its paper materials.
+Layout inputs, test plans, checks, screenshots and release receipts belong to a
+separate development/test area, not extra children of the topic or table rows.
+State common reading coverage once in 01; other views link to it. Item-specific
+missing sources remain visible in 01 and the paper companion. Do not repeat API
+checks, ownership disclaimers or the same missing-analysis sentence on every card.
+An unavailable analysis stays unavailable; compact presentation must not invent it.
 
 One reusable paper unit keeps its declared owner and folder. New units use
 `resources/papers/<stable-segment>/` under the owning Field through paper-registration;
@@ -68,8 +77,13 @@ in force for new analyses. Older exemplar analyses are not a competing standard.
   and 4 (module improvements to an existing pipeline) remain local. Unknown novelty
   stays pending in the complete list; never promote a paper to fill a layout slot.
   Types, bounded priority and evidence semantics are owned by `evolution-preview.md`.
-- Every paper has a title/detail link and an immediately adjacent short explanation
-  beneath it: what changes, why it matters, and its important condition/cost/unknown.
+- The title card contains only a linked short name and year, for example
+  `[[papers/example/Paper|Short Name · 2024 ↗]]`, without a heading, full date,
+  venue, extra source buttons or a bibliography block. Full metadata stays in 01
+  and the paper companion. A long name may wrap; never truncate its identity.
+- Every paper has an immediately adjacent one-to-two-sentence explanation beneath
+  it: what changes, why it matters, and a material condition/cost/unknown, with a
+  compact detail/source entry. Do not add a repeated completion-status paragraph.
   The readable detail preserves change, reason, benefit, cost and conditions with
   same-point evidence. Missing cost does not mean zero cost.
 - Chronology, membership and citation are not direct inheritance. A visible legend
@@ -89,9 +103,13 @@ not contribution scores or chronology; the outside ends each contain one paper.
 A repeated paper may appear under several approaches using distinct visual node IDs
 and the same qualified paper identity/owner.
 
-A paper leaf contains a linked short title, one specific sentence explaining its
-method, and usable analysis / paper Canvas / original-source links, or a concise
-unavailable reason for each missing entry. Never end a branch in an aggregate list
+A paper leaf contains only a linked short title, one specific sentence explaining
+its method, and a compact navigation row for available analysis / paper Canvas /
+original source. Conditions, costs, components and detailed limitations belong to
+the branch or paired prose, not an additional repeated leaf paragraph. Common
+unavailable-analysis states are stated in 01 and linked from the view; an item-specific
+gap remains diagnosed in its linked companion/list entry rather than a false button.
+Never end a branch in an aggregate list
 instead of individual paper leaves. Same-route placement does not assert inheritance.
 
 The paired Markdown has: navigation; how to read and evidence/reading coverage;
@@ -100,6 +118,9 @@ a concise table “想解决什么 / 大致怎么做 / 论文”
 requirements and limitations; each paper's material/analysis/Canvas/source entries,
 specific method, major components and limits or unknowns; and comparison conditions.
 Actual author results and analyst judgments remain distinguishable.
+Do not repeat the same condition/limitation within one paragraph, copy the whole
+coverage notice into every view, or restate each paper in a second relation dossier.
+Explain each relation once and link to the existing paper detail for its evidence.
 
 ## 4. 04 Challenges and insights
 
@@ -115,6 +136,8 @@ benefit and limitations). Include actual steps only when supported; preserve num
 and evidence from existing source-backed analyses, rather than replacing detail with
 a generic slogan. Each paper has the same four navigation entries as 03. Finish with
 comparable conditions; grouping alone does not make the methods an integrated system.
+Its paper leaves use the same compact content contract as 03; this view's additional
+problem/solution level is not permission to expand each paper into a second analysis.
 
 ## 5. Layout helper — installed, pure and domain-independent
 

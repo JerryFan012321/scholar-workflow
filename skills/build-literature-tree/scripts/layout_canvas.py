@@ -174,14 +174,15 @@ def _visible(text: str) -> str:
     return re.sub(r"[*_`#>]", "", text).replace("\u200b", "")
 
 
-def _size(text: str, width: int) -> tuple[int, int]:
-    # Conservative display estimate: 20 px CJK, 11 px Latin; one extra click line.
+def _size(text: str, width: int, *, title: bool = False) -> tuple[int, int]:
+    # Timeline titles use 22px/1.45 typography and compact padding.
+    padding, cjk, latin, line_height = (12, 22, 12, 32) if title else (_PAD, 20, 11, _LINE)
     lines = 0
     capacity = width - 2 * _PAD
     for line in _visible(text).split("\n"):
-        pixels = sum(20 if unicodedata.east_asian_width(c) in "WF" else 11 for c in line)
+        pixels = sum(cjk if unicodedata.east_asian_width(c) in "WF" else latin for c in line)
         lines += max(1, math.ceil(pixels / capacity))
-    height = math.ceil((2 * _PAD + (lines + 1) * _LINE) / 16) * 16
+    height = math.ceil((2 * padding + (lines + 1) * line_height) / 16) * 16
     return width, height
 
 
@@ -311,7 +312,7 @@ def _literature(doc: dict) -> dict:
     measures = {}
 
     def measure(item):
-        _, title_h = _size(item["text"], width)
+        _, title_h = _size(item["text"], width, title=True)
         _, desc_h = _size(item["description"], width)
         own = title_h + _DESC_GAP + desc_h
         rows = item.get("children", [])

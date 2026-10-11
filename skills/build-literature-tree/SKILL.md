@@ -13,7 +13,9 @@ The paper ledger and three different views coexist: **01 complete paper list,
 02 literature timeline, 03 center-out technical routes, 04 center-out challenges and
 solutions**. Each paper owns a separate leaf in 03/04. Required Markdown explanations,
 links, editable Canvas, geometry and honest evidence states are completion conditions,
-not suggestions. A request for one view changes only that view and its necessary links.
+not suggestions. Match the compact title/leaf content contract, not merely the four
+filenames; keep detailed prose and development evidence out of paper cards.
+A request for one view changes only that view and its necessary links.
 
 Read the selected format before writing. Use the bundled pure layout helper and
 portable styles documented there; the installed skill contains everything required
