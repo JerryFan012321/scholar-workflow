@@ -10,5 +10,6 @@
 .canvas-node[data-sw-mind] .canvas-node-container { box-shadow: none; }
 .canvas-node[data-sw-mind="root"] .canvas-node-container { border: 1px solid #91afbd; background: #eaf1f4; }
 .canvas-node[data-sw-mind="detail"] .canvas-node-container { border: 1px solid #c7d4df; background: #fff; }
+.canvas-node[data-sw-mind="detail"] .canvas-node-content { background-color: transparent; }
 .canvas-node[data-sw-mind="junction"] .canvas-node-container { background: #8196a7 !important; border: 0 !important; border-radius: 0; min-width: 0; min-height: 0; }
 .canvas-node[data-sw-mind="junction"] .canvas-node-content { padding: 0; display: none; }
