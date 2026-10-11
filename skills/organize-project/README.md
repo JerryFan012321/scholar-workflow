@@ -17,6 +17,11 @@ links explain their relevance; verification details remain supplementary. Missin
 evidence and untested reader links stay visible. Module diagrams are editable and
 source-supported; retries are not independent experiments.
 
+The papers/materials section includes a compact literature division-of-work table
+and a short synthesis for this project's approach and related work. Existing paper
+units supply the detail; this is not another field library or a reanalysis task.
+The exact format and optional detailed-note boundary are in the document contract.
+
 VS Code is the primary reader for PROJECT, its plan and project reports. Use its
 capable built-in Markdown/Mermaid preview; optional extensions and native checks are
 described in [the reader contract](../../references/vscode-project-docs.md).
