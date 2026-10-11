@@ -7,6 +7,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development 0.44.5 receipt:** record normal hotfix/runtime publication and
+  pipx/Codex installation, exact 269-file cache and 112-file package identity,
+  and one installed lightweight literature-section update in the existing test
+  PROJECT. Preserve original inputs and section-external bytes; native clicks,
+  profile/security and human usability remain pending. No runtime rebuild or main merge.
 - **Development VS Code receipt:** record observed Mermaid/source navigation and
   local result-image display, including the initial too-narrow workspace failure
   and corrected test opening instructions. Preserve incomplete file-click,

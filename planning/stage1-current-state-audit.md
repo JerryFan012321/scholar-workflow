@@ -1,6 +1,19 @@
 # 第一阶段当前证据核对
 
-## 当前核对：2026-10-11（0.44.4 安装态收尾）
+## 当前核对：2026-10-12（0.44.5 安装态轻量文献节）
+
+PATH CLI、pipx包、Codex双manifest/cache已正常更新0.44.5；source2d39d0a、runtime/cache
+f2693ed，269缓存文件及112包源文件与发行全等。发布实际顺序与完整身份由
+0.44.0-release.md顶部持有；main未合并、服务未切换、正式资料未改。
+安装skill仅更新test原PROJECT的文献节，四列表与短综合；独立静态核对通过，七输入、
+节外正文、实验报告、Canvas和图片不变，PROJECT/使用说明存test本地Git aa3bef9。
+这是一个合成导航样例，不证明真实项目的科学采纳或全部复现能力。
+本次VS Code控制未得到一致画面并返回noWindowsAvailable；不判原生通过。此前有效
+Mermaid/源码/实验图观察保留，剩余点击、当前profile/Strict和人工便利性仍待。
+轻量文献规范现在确已安装，不再沿用下节“未发布安装”时点描述。未重复论文/实验业务，
+不重审已认可的论文Canvas/图片/折叠体验；4DGS人工、完整模范项目/实验及G17缺口保持。
+
+## 历史核对：2026-10-11（0.44.4 安装态收尾）
 
 PATH CLI、pipx包与Codex双manifest/cache当前为0.44.4；source86f6940、runtime/cache5fe5cb8，
 269实际文件与发行全等。发布与回退边界见0.44.0-release.md；main未合并、服务未切换。
