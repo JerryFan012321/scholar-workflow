@@ -23,7 +23,11 @@ it through the shared `knowledge-registration.md` procedure.
 note, then repeat the same selection with `knowledge register-paper`, adding
 `--approved-digest HEX_DIGEST`. Confirm interactively, or use `--yes` only for the
 already reviewed digest. The target is Field-local
-`resources/papers/<segment>/Paper.md`; a root Field `.` needs no invented parent.
+`resources/<segment>/Paper.md`; a root Field `.` needs no invented parent.
+An initial registration note is not a completed paper package. For a Field-library
+delivery, complete the companion and real available analysis/navigation entries under
+`skills/build-literature-tree/references/field-library-format.md`; do not represent
+registration alone as full exemplar reproduction.
 
 An existing folder is not adopted or overwritten. Existing resources, navigation,
 notes and provider receipts remain intact. Within the explicit host registry, one
@@ -42,6 +46,10 @@ transaction, not a filesystem-wide atomic write. After interruption, repeat the
 exact approved request; publication continues only while each member is its recorded
 before or after value. A concurrent human edit, root rebind, revoked capability or
 changed source refuses recovery and retains the journal for explicit review.
+An existing approved journal for `resources/papers/<segment>/Paper.md` resumes at
+that exact saved path with its original note and navigation; it never creates a
+second owner at the new default. A previously previewed plan without a journal
+must be previewed again when its digest changes after an upgrade.
 External ownership declarations are rechecked during recovery, before every member
 publication, and on completed replay. Provider locks are acquired in stable Source-ID
 order after the registry lock; a stale plan never silently adopts a changed read set.

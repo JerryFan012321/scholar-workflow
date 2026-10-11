@@ -20,6 +20,43 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   rendering check. No runtime behavior changes or rebuild; native/human assessment
   and main integration remain pending.
 
+## [0.44.3] - 2026-10-11
+
+Independent blueprint-conformance hotfix. Installation, native display and human
+assessment are separate from development checks; main integration remains separate.
+
+### Changed
+
+- **build-literature-tree:** consolidate field-library-v2 around the user's sole
+  Canonical Knowledge Vault blueprint. Require matching directory, prose, navigation
+  and visual formats with no unsolicited additions; preserve the two actual timeline
+  explanation variants and the complete current single-paper analysis requirements.
+  Separate presentation from content: scientific detail and figure/table/evidence
+  counts follow the actual papers, not an exemplar quota; preserve navigation variants.
+- **Paper registration / analyze-paper:** allocate new owners directly under
+  `resources/<segment>/`, retaining approved legacy journal paths and existing owner
+  packages without migration or duplicate ownership. Registration alone is not a
+  completed paper package or an accepted exemplar.
+  Canvas registration accepts the same new and legacy owner directories while
+  retaining Field/provider ownership, paired-file and conflict checks.
+- **Field Canvas layout:** match the blueprint's compact title and radial card widths,
+  restore timeline headings/legends and white solution cards, retain adaptive click
+  space, and keep routing outside the full description bounds.
+  Source verification is separate from normal installation and native/human assessment.
+  Remove fixed semantic/rendered node and edge count quotas without weakening byte,
+  identity, topology or actual routed-geometry checks; preserve every declared branch.
+- **Literature relation preview:** remove fixed paper/contribution/relation count
+  quotas from the model and schema while retaining per-entry identity, references,
+  novelty eligibility, evidence and cycle checks.
+- **analyze-paper:** remove v5 semantic-record, repeatable-point and generated-node
+  count quotas across the model, public schema, renderer, conformance and baseline.
+  Preserve actual paper modules/challenges/contributions/findings/reasons, fixed
+  framework slots, evidence, identity, legacy v1–v4 boundaries and readable geometry.
+  Old v5 capacity inputs remain compatible without defining content volume.
+- **Development release receipt:** record the completed synthetic regression and
+  resumed independent hotfix release/install preparation. Installed native display
+  and human assessment remain separate; no main merge or production data migration.
+
 ## [0.44.2] - 2026-10-11
 
 ### Fixed

@@ -15,7 +15,6 @@ import re
 import sys
 import unicodedata
 
-MAX_NODES = 256
 MAX_DEPTH = 8
 MAX_TEXT = 12_000
 MAX_INPUT_BYTES = 4 * 1024 * 1024
@@ -50,7 +49,7 @@ def _text(value: object, where: str) -> str:
 
 
 def _input(doc: object) -> dict:
-    value = _fields(doc, {"schema_version", "view", "root", "branches", "spine"},
+    value = _fields(doc, {"schema_version", "view", "root", "branches", "spine", "title", "legend"},
                     {"schema_version", "view"}, "input")
     if type(value["schema_version"]) is not int or value["schema_version"] != 1:
         raise ValueError("schema_version must be integer 1")
@@ -64,15 +63,13 @@ def _input(doc: object) -> dict:
             raise ValueError(f"input nesting exceeds {MAX_DEPTH}")
         fields = {"id", "text", "children"}
         if view == "literature":
-            fields |= {"description", "role"}
+            fields |= {"description", "role", "section_label"}
         required = {"id", "text"} | ({"description", "role"} if role else set())
         item = _fields(raw, fields, required, "node")
         key = item["id"]
         if not isinstance(key, str) or not _ID.fullmatch(key) or key in seen:
             raise ValueError("node id must be a unique, path-free layout key of at most 128 characters")
         seen.add(key)
-        if len(seen) > MAX_NODES:
-            raise ValueError(f"input exceeds {MAX_NODES} semantic nodes; nothing is truncated")
         _text(item["text"], f"node {key} text")
         children = item.get("children", [])
         if not isinstance(children, list):
@@ -81,6 +78,10 @@ def _input(doc: object) -> dict:
             if item.get("role") != role:
                 raise ValueError(f"node {key} must have role {role}")
             _text(item["description"], f"node {key} description")
+            if "section_label" in item:
+                if depth != 0 or "title" not in value:
+                    raise ValueError("section_label requires a framed literature spine entry")
+                _text(item["section_label"], f"node {key} section_label")
             child_role = "pipeline" if role == "milestone" else "local"
         else:
             child_role = None
@@ -93,8 +94,12 @@ def _input(doc: object) -> dict:
             node(child, depth + 1, role=child_role)
 
     if view == "literature":
-        if set(value) != {"schema_version", "view", "spine"}:
-            raise ValueError("literature requires only schema_version, view and spine")
+        base = {"schema_version", "view", "spine"}
+        if set(value) not in (base, base | {"title", "legend"}):
+            raise ValueError("literature requires spine, optionally with both title and legend")
+        for name in ("title", "legend"):
+            if name in value:
+                _text(value[name], name)
         rows = value["spine"]
         if not isinstance(rows, list):
             raise ValueError("spine must be an array")
@@ -174,11 +179,21 @@ def _visible(text: str) -> str:
     return re.sub(r"[*_`#>]", "", text).replace("\u200b", "")
 
 
-def _size(text: str, width: int, *, title: bool = False) -> tuple[int, int]:
+def _size(text: str, width: int, *, title: bool = False, header: bool = False) -> tuple[int, int]:
     # Timeline titles use 22px/1.45 typography and compact padding.
     padding, cjk, latin, line_height = (12, 22, 12, 32) if title else (_PAD, 20, 11, _LINE)
     lines = 0
     capacity = width - 2 * _PAD
+    if header:
+        height = _LINE  # One spare click line; the header's native padding is zero.
+        for raw in text.split("\n"):
+            if not raw.strip():
+                height += 8
+                continue
+            cjk, latin, line_height = (40, 22, 52) if raw.startswith("# ") else (20, 11, 28)
+            pixels = sum(cjk if unicodedata.east_asian_width(c) in "WF" else latin for c in _visible(raw))
+            height += max(1, math.ceil(pixels / capacity)) * line_height
+        return width, math.ceil(height / 16) * 16
     for line in _visible(text).split("\n"):
         pixels = sum(cjk if unicodedata.east_asian_width(c) in "WF" else latin for c in line)
         lines += max(1, math.ceil(pixels / capacity))
@@ -196,10 +211,14 @@ class _Canvas:
 
     def card(self, key, text, x, y, width, height, role, color):
         namespace = "junction" if role == "junction" else "description" if role == "desc" else "node"
+        if role in {"header", "legend", "label"}:
+            namespace = "decoration:" + role
         identifier = _stable(namespace, self.view, key)
         self.nodes.append({"id": identifier, "type": "text", "text": _soft_wrap(text),
                            "x": x, "y": y, "width": width, "height": height,
                            "color": color, "styleAttributes": {self.style: role}})
+        if role in {"header", "legend", "label"}:
+            self.nodes[-1]["styleAttributes"]["border"] = "invisible"
         return self.nodes[-1]
 
     def point(self, key: str, x: int, y: int, color: str) -> dict:
@@ -255,7 +274,7 @@ def _anchor(node: dict, side: str) -> tuple[int, int]:
 def _radial(doc: dict) -> dict:
     canvas = _Canvas(doc["view"])
     leaf_depth = 2 if doc["view"] == "technical" else 3
-    widths = {0: 320, 1: 300, 2: 420 if leaf_depth == 2 else 300, 3: 420}
+    widths = {depth: 370 if depth == leaf_depth else 340 for depth in range(4)}
     measures = {}
 
     def measure(item, depth):
@@ -283,7 +302,7 @@ def _radial(doc: dict) -> dict:
         x = distance if direction > 0 else -distance - width
         center = area_top + span // 2
         node = canvas.card(item["id"], item["text"], x, center - height // 2,
-                           width, height, "detail" if depth == leaf_depth else "branch", color)
+                           width, height, "detail" if depth >= 2 else "branch", color)
         rows = item.get("children", [])
         child_total = sum(measures[c["id"]][2] for c in rows) + max(0, len(rows) - 1) * _GAP_Y
         cursor = center - child_total // 2
@@ -307,12 +326,13 @@ def _radial(doc: dict) -> dict:
 def _literature(doc: dict) -> dict:
     canvas = _Canvas("literature")
     if not doc["spine"]:
+        _literature_framing(canvas, doc)
         return canvas.result()
-    width = 360
+    title_width, width = 300, 360
     measures = {}
 
     def measure(item):
-        _, title_h = _size(item["text"], width, title=True)
+        _, title_h = _size(item["text"], title_width, title=True)
         _, desc_h = _size(item["description"], width)
         own = title_h + _DESC_GAP + desc_h
         rows = item.get("children", [])
@@ -330,7 +350,7 @@ def _literature(doc: dict) -> dict:
         title_h, desc_h, _, _, _ = measures[item["id"]]
         role = item["role"]
         color = {"milestone": "#7d9db4", "pipeline": "#87aaa0", "local": "#b4916f"}[role]
-        title = canvas.card(item["id"], item["text"], x, top, width, title_h, role, color)
+        title = canvas.card(item["id"], item["text"], x, top, title_width, title_h, role, color)
         canvas.card("description:" + item["id"], item["description"], x,
                     top + title_h + _DESC_GAP, width, desc_h, "desc", "#a8b2ba")
         return title
@@ -346,7 +366,7 @@ def _literature(doc: dict) -> dict:
         for child in rows:
             children.append(place(child, x + width + _GAP_X, cursor))
             cursor += measures[child["id"]][3] + _GAP_Y
-        canvas.fan(title, children, 1, "#7c909d")
+        canvas.fan(title, children, 1, "#7c909d", bus=x + width + 40)
         return title
 
     previous = None
@@ -363,10 +383,34 @@ def _literature(doc: dict) -> dict:
         for child in rows:
             children.append(place(child, x + width + _GAP_X, cursor))
             cursor += measures[child["id"]][3] + _GAP_Y
-        canvas.fan(title, children, 1, "#7c909d")
+        canvas.fan(title, children, 1, "#7c909d", bus=x + width + 40)
         previous = canvas.by_id(canvas.points[(x + width + 40, 0)]) if children else title
         x += depth * (width + _GAP_X)
+    _literature_framing(canvas, doc)
     return canvas.result()
+
+
+def _literature_framing(canvas: _Canvas, doc: dict) -> None:
+    """Keep prepared reading context visible without changing paper topology."""
+    if "title" not in doc:
+        return
+    for item in doc["spine"]:
+        if "section_label" in item:
+            title = canvas.by_id(_stable("node", "literature", item["id"]))
+            width, height = _size(item["section_label"], 360)
+            canvas.card("section:" + item["id"], item["section_label"], title["x"],
+                        title["y"] - _GAP_Y - height, width, height, "label", "#7c8b98")
+    left = min((node["x"] for node in canvas.nodes), default=0)
+    right = max((node["x"] + node["width"] for node in canvas.nodes), default=600)
+    top = min((node["y"] for node in canvas.nodes), default=0)
+    bottom = max((node["y"] + node["height"] for node in canvas.nodes), default=0)
+    width = max(600, min(1580, right - left))
+    _, header_height = _size(doc["title"], width, header=True)
+    _, legend_height = _size(doc["legend"], width)
+    canvas.card("header", doc["title"], left, top - _GAP_Y - header_height,
+                width, header_height, "header", "#6c91ac")
+    canvas.card("legend", doc["legend"], left, bottom + _GAP_Y,
+                width, legend_height, "legend", "#6a7c8d")
 
 
 def _intersection(a, b):
@@ -414,8 +458,6 @@ def validate_canvas(doc: object) -> list[str]:
     nodes, edges = doc["nodes"], doc["edges"]
     if not isinstance(nodes, list) or not isinstance(edges, list):
         return ["nodes and edges must be arrays"]
-    if len(nodes) > MAX_NODES * 6 or len(edges) > MAX_NODES * 6:
-        return ["Canvas exceeds the tool's geometry-check budget"]
     by_id = {}
     identifiers = set()
     for node in nodes:

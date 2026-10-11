@@ -253,7 +253,10 @@ def _merged_document(
         )
     if baseline.profile.framework != update.profile.framework:
         raise AnalysisUpdateError("analysis update cannot change its framework")
-    if baseline.capacity != update.capacity:
+    if baseline.schema_version == 5:
+        # Retain the saved compatibility marker; it no longer selects capacity.
+        update = update.model_copy(update={"capacity": baseline.capacity})
+    elif baseline.capacity != update.capacity:
         raise AnalysisUpdateError("analysis update cannot silently change its capacity profile")
     if baseline.schema_version in {4, 5} and update.reader is not None and update.reader != baseline.reader:
         raise AnalysisUpdateError(

@@ -6,6 +6,8 @@ description: Analyze one or a user-selected batch of already-ingested papers, wh
 # analyze-paper
 
 The result is a paired, independently readable Markdown analysis and editable Canvas.
+Repeatable modules, challenges, contributions, findings and reasons follow the paper,
+not a fixed branch count; preserve every selected instance and its own required slots.
 The current required output framework is `references/analysis-output-template.md`;
 `references/analysis-format.md` owns the existing v4 compatibility interface and shared
 evidence/update boundaries. Reuse the output structure, not an example paper's facts.
@@ -40,8 +42,8 @@ new template. Report an unsupported-version limitation rather than substituting 
    Declare `whole` or the exact `focused` section subset,
    select `en` or `zh` consistently, and place each new paper's companion note,
    `<paper>分析.md` / `<paper>解析树.canvas` pair, and sidecar together under
-   `resources/papers/<persistently-mapped-paper-segment>/` in that Field. Existing
-   flat pairs stay in place until a separately reviewed relocation.
+   `resources/<persistently-mapped-paper-segment>/` in that Field. Existing
+   `resources/papers/` packages and flat pairs stay in place until a separately reviewed relocation.
 5. Project claims and separately attributable points through the versioned IR into both
    artifacts. The Markdown remains independently readable; the required Canvas expands the
    reference image's named subslots into separate editable nodes, each keeping its inline

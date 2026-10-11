@@ -760,7 +760,7 @@ def _layout_tree(root: TemplateNode, *, expanded: bool = False) -> None:
 def _render_canvas(
     document: AnalysisDocument, tree: TemplateNode, *, enforce_limits: bool
 ) -> dict[str, Any]:
-    _layout_tree(tree, expanded=document.capacity == "expanded")
+    _layout_tree(tree, expanded=True)
     nodes: list[dict[str, Any]] = []
     edges: list[dict[str, Any]] = []
 
@@ -803,17 +803,6 @@ def _render_canvas(
     if not enforce_limits:
         # Review candidates still require the independent conformance gate before saving.
         return {"nodes": nodes, "edges": edges}
-    if len(nodes) > document.managed_node_limit:
-        raise ValueError(
-            f"Complete-reference Canvas exceeds {document.managed_node_limit} actual managed nodes: {len(nodes)}"
-        )
-    facts = sum(not claim.container for claim in document.claims) + sum(
-        len(claim.points) for claim in document.claims
-    )
-    if facts > document.fact_node_limit:
-        raise ValueError(
-            f"Complete-reference Canvas exceeds {document.fact_node_limit} independently rendered fact nodes: {facts}"
-        )
     if any(node["height"] > 420 for node in nodes):
         raise ValueError(
             "Complete-reference Canvas has a node taller than 420 px; supply a faithful concise summary"

@@ -8,7 +8,14 @@ description: Organize an Obsidian research topic around existing paper units wit
 ## Result contract
 
 For a new topic library, or an explicitly requested exemplar-style organization, use
-the versioned **field-library-v1** contract in `references/field-library-format.md`.
+the versioned **field-library-v2** contract in `references/field-library-format.md`,
+the portable rendering of the user's sole Canonical Knowledge Vault blueprint.
+Required elements must be present; absent elements are not added by default.
+This is a format contract, not a content quota: actual arguments, depth, figures,
+tables, evidence and substantive branch counts follow the selected papers and scope,
+never the exemplar's amounts. See the format/content boundary in that reference.
+Subsequent output must match its structure, prose roles and appearance, not merely
+look similar. Do not mix old live Vaults or test candidates into a second template.
 The paper ledger and three different views coexist: **01 complete paper list,
 02 literature timeline, 03 center-out technical routes, 04 center-out challenges and
 solutions**. Each paper owns a separate leaf in 03/04. Required Markdown explanations,

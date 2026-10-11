@@ -117,9 +117,9 @@ class LiteratureEvolution(_Model):
     corpus_scope: Text
     language: Literal["en", "zh"]
     synthetic: bool
-    papers: list[EvolutionPaper] = Field(max_length=512)
-    contributions: list[EvolutionContribution] = Field(max_length=2048)
-    relations: list[EvolutionRelation] = Field(max_length=4096)
+    papers: list[EvolutionPaper]
+    contributions: list[EvolutionContribution]
+    relations: list[EvolutionRelation]
 
     @field_validator("schema_version", mode="before")
     @classmethod

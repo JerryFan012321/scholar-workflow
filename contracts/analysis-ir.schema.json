@@ -75,7 +75,6 @@
     "claims": {
       "type": "array",
       "minItems": 1,
-      "maxItems": 96,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -91,7 +90,6 @@
           "canvas_image": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/canvas_image"}]},
           "points": {
             "type": "array",
-            "maxItems": 64,
             "items": {
               "type": "object",
               "additionalProperties": false,
@@ -438,8 +436,14 @@
     },
     {
       "if": {"required": ["capacity"], "properties": {"capacity": {"const": "expanded"}}},
-      "then": {"properties": {"schema_version": {"const": 5}}},
-      "else": {"properties": {"claims": {"maxItems": 40}}}
+      "then": {"properties": {"schema_version": {"const": 5}}}
+    },
+    {
+      "if": {"properties": {"schema_version": {"enum": [1, 2, 3, 4]}}},
+      "then": {"properties": {"claims": {
+        "maxItems": 40,
+        "items": {"properties": {"points": {"maxItems": 64}}}
+      }}}
     },
     {
       "if": {"properties": {"schema_version": {"enum": [1, 2, 3, 4]}}},

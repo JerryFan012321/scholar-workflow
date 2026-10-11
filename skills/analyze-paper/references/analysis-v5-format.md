@@ -10,10 +10,15 @@ protection retain `analysis-format.md` and the shared source/storage policies.
 - New analyses use this explicit v5 interface. Check installed runtime support;
   a specification or source checkout is not proof that the installed tool supports it.
 - `schema_version: 5`, `profile.framework: reference_tree_v5`, explicit `language: en|zh`.
-- Optional document-level `capacity: expanded` explicitly selects 96 independent
-  records and 192 managed nodes. Omission retains the standard 40/96 limits.
-  This option is v5-only; ordinary updates cannot change the selected capacity.
-  Verify installed support before supplying it; older installations reject it.
+- From 0.44.3, repeated claims/points and generated nodes have no fixed count quota.
+  Modules, challenges, contributions, findings and reasons follow the actual paper.
+  Optional document-level `capacity: expanded` remains accepted for old v5 inputs
+  and paired-update compatibility; it no longer authorizes a larger content quota.
+  Do not add it merely to fit more branches. Older installations retain their limits;
+  check installed support rather than silently shortening an analysis.
+  An update may omit or supply this legacy marker; the saved pair retains its existing
+  value without treating the difference as a content/profile conflict. Identity,
+  source, format, human-edit, geometry and CAS checks remain unchanged.
 - `profile.markdown_quotes: true`. Supported author claims/inferences include a
   short original-language excerpt and a verified source span; only Markdown renders
   the excerpt. Structural projection cannot prove that the source contains it.
@@ -58,7 +63,8 @@ machine claim comments. Literal non-heading hash-prefixed text remains prose.
 | `limitation/explanation` | none |
 | `limitation/explanation/<slug>` | `reason-<positive integer>` |
 
-Counts follow the paper, not the example's number of instances. Missing fixed
+Counts follow the paper, not the example's number of instances or a capacity tier.
+Neither claims nor repeatable point IDs have a fixed maximum count. Missing fixed
 subslots render as empty labels, never fabricated availability records. All process
 steps stay together in `method/overview`'s `steps` point; Method modules do not add
 corresponding-challenge/contribution axes. Different modules never share a point node.
@@ -90,13 +96,13 @@ schema. Concision cannot remove a material qualification or add unsupported fact
   `analysis-output-template.md` to the actual candidate, including preserved manual
   layout and extra graph items that interact with managed content. Absence of
   rectangle overlaps alone is not enough.
-- Text boxes fit measured visible text plus approximately one click line. The current
-  standard capacity preserves limits of 40 actual independent records, 96 total managed nodes;
-  explicitly selected expanded capacity allows 96 records and 192 managed nodes. Both retain
-  420 px maximum node height and 2:1 maximum overall aspect ratio. Container labels
-  do not count as facts but do count toward total nodes. Failure reports the actual
-  conflict; it never hides records, merges slots, shrinks fonts or silently raises limits.
-- For an expanded tree that is too tall, aligned layer gutters may increase uniformly
+- Text boxes fit measured visible text plus approximately one click line. All actual
+  records and framework labels remain present; there is no count quota to satisfy.
+  The 420 px maximum node height and 2:1 maximum overall aspect ratio remain visual
+  checks, not a reason to reject the IR or delete branches. An unsafe candidate keeps
+  its complete content and reports the actual layout conflict; it never hides records,
+  merges slots or shrinks fonts to claim success.
+- For a tree that is too tall, aligned layer gutters may increase uniformly
   from 64 px to at most 344 px, using only the width needed for the 2:1 limit.
   Box dimensions and vertical bands remain content-driven and unchanged. If bounded
   spacing is insufficient, conformance still fails; spacing is not visual acceptance.

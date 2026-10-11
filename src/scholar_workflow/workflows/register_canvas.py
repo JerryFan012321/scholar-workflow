@@ -126,7 +126,10 @@ def _plan(registry: KnowledgeSourceRegistry, *, source_id: str, field_id: str,
         folder = PurePosixPath(canvas.vault_path).parent
         owners = [r for r in snapshot.manifest.atomic_resources if r.resource_id == canvas.resource_id]
         if len(owners) != 1 or PurePosixPath(owners[0].markdown_path).parent != folder or (
-            folder.parent != PurePosixPath(field.relative_root) / "resources" / "papers"
+            folder.parent not in {
+                PurePosixPath(field.relative_root) / "resources",
+                PurePosixPath(field.relative_root) / "resources" / "papers",
+            }
             or any(PurePosixPath(a.vault_path).parent != folder for a in members.values())
         ):
             raise FieldRegistryError("Selected Field and paper owner do not own this analysis folder")
