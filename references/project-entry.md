@@ -102,9 +102,32 @@ look complete. Reader rendering and navigation are separate from source checks.
 
 ### Papers and materials
 
-List selected resources with their project relevance and direct source/material
-note, analysis Markdown, editable Canvas and original-document entries where
-supplied. Keep these distinct, including missing entries and unqueried readers.
+Provide a lightweight, project-specific literature map, not a miniature field
+library. Default to a compact table in this section with four visible columns:
+**Work (direct entry) | Problem addressed | Role in this project | Project entry**.
+The last column links the relevant module, experiment, decision or project note
+when supplied. Roles describe the actual use or contrast in plain language, such
+as a baseline, a borrowed component, an evaluation reference or an alternative;
+these are examples, not a fixed classification or required set of roles.
+
+Follow the table with a short synthesis explaining how the selected works fit or
+contrast with the current approach, which choices they support and what remains
+unresolved. Link factual comparisons to the existing analysis or original source;
+distinguish project judgments from author claims. Proposed use is not implemented
+adoption, and topic similarity is not evidence of project relevance. Unknown use,
+missing evidence and uninspected comparisons remain explicit. Paper and role
+counts follow the selected project, not a fixed quota.
+
+Keep the map here by default. If a separately selected project literature/related-
+work note is needed, keep the detailed organization there and only a derived
+summary/direct link here, not two independently maintained maps. This project view
+does not require the field library's paper list, literature timeline, technical
+route tree or challenge/insight tree, nor new whole-paper analyses or Canvas.
+
+Retain direct source/material note, analysis Markdown, editable Canvas and
+original-document entries for every selected resource where supplied. Keep these
+distinct, including missing entries and unqueried readers, without reproducing a
+full file inventory in each table row.
 Use existing qualified identities and verified reader mappings; title similarity
 is not ownership. Project-specific decisions can live in project notes, while
 general paper analysis stays in its owning paper unit. Do not reproduce that body

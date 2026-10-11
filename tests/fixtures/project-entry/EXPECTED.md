@@ -66,6 +66,18 @@ Scenario-specific paper/Run/Attempt counts and toy values are not universal rule
 
 ### Paper units and related materials
 
+- For project literature organization, the papers/materials section includes a
+  compact division-of-work table and a short project-specific synthesis, not just
+  a list of file links. It makes each selected work's problem, use or contrast in
+  this project, and relevant module/experiment/note entry discoverable.
+- Preserve the distinction between a proposed use, an implemented dependency, a
+  baseline/comparison and a source of background. Roles and paper counts come from
+  the actual selection, not a fixed taxonomy or quota. Unsupported relevance or
+  adoption remains unknown; do not infer it from a shared topic.
+- The synthesis helps explain the project's approach and related work with source
+  entries, without redoing whole-paper analyses, Canvas or the field library's
+  list/three-tree structure. Default to the existing PROJECT section; a separate
+  detailed note, when selected, has one authority and a derived summary/link here.
 - The selected paper's source/material note, analysis Markdown and editable
   Canvas each have a distinct, direct entry when available. The owning unit is
   reused rather than copying its analysis or creating a new canonical paper.
@@ -140,6 +152,34 @@ files. Do not rewrite human content, select one plan, copy papers, create a new
 owner, alter ignore rules or publish the internal entry.
 
 ## Independent evaluation and visible handoff
+
+### Lightweight literature subsection case (2026-10-11)
+
+`LITERATURE-INPUT.md` is a separate, handwritten four-work case. Its count is not
+part of the contract and does not change the earlier three-scenario byte baseline.
+Before generation, freeze these semantic expectations:
+
+- TrimBaseline: project-declared attribution; inspected `strip()` supports only
+  implemented row-boundary cleanup, not provenance or successful execution.
+- BoundaryScore: proposed evaluation reference only; no implemented evaluator,
+  experiment, measured improvement or task-accuracy claim.
+- PreserveSpaces: explicitly unadopted alternative; explain boundary-data loss
+  versus retained formatting using the source passage and project declaration,
+  without claiming measured superiority or a completed comparison.
+- NeighborNotes: selected but project use unknown; do not invent background use
+  from its subject or omit it.
+- Give all four work entries, supported problems and project roles, the actual
+  code entry or supplied proposal/decision anchor where relevant, and a short
+  synthesis useful for related work. Missing paper-package/reader entries stay
+  visible together rather than fake links or repeated inventories.
+- Match the four-column contract with consistent Chinese structural labels.
+  Source titles keep their supplied spelling; no role taxonomy or paper quota is
+  introduced. Only this requested subsection is returned as a preview.
+- Preserve all inputs byte-for-byte. Do not execute source, create a Field/tree,
+  redo paper analysis/Canvas, launch applications/network or save a project file.
+
+This evaluation checks a source-skill subsection preview, not installed dispatch,
+VS Code clicks, scientific support, or human visual acceptance.
 
 Compare original raw files and their byte baselines with the delivered entry and
 this handwritten inventory. Evaluate link targets from the selected input roots,

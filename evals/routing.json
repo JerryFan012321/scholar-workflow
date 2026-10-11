@@ -22,6 +22,13 @@
       "must_not_write": true
     },
     {
+      "id": "project-literature-roles-not-field-library",
+      "input": "整理这个项目已选文献在PROJECT里的分工，方便梳理方案和相关工作；只给预览，不建领域库或重做论文分析",
+      "expected_skill": "organize-project",
+      "must_not_trigger": "build-literature-tree",
+      "must_not_write": true
+    },
+    {
       "id": "project-entry-not-initialization",
       "input": "Initialize a Git-managed project using the standard skeleton",
       "expected_skill": "init-project",

@@ -2,6 +2,11 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "project-lightweight-literature-division-of-work",
+      "description": "G16/G17：PROJECT既有论文资料节默认以文献入口、所解决问题、项目内分工和对应项目入口四列小表及简短综合，帮助梳理当前方案与相关工作。分工/篇数依所选项目，不固定分类或配额；拟议借鉴不冒充实际采用，作者事实与项目判断区分，比较引用既有分析/原文。长文仅在明确选择时外置，PROJECT保留派生小结和链接，不双份维护。保留所选来源/分析/Canvas/原文及缺失入口，不复制领域库四视图、不重做论文分析、不改归属或运行实验。四篇合成输入/独立预期先冻结，源skill盲评仅返回文献节，独立语义与10个静态入口核对通过，四个输入/预期文件hash不变；不是安装态、原生点击、普遍鲁棒或人工可用性证明，保持pending。见planning/project-entry-skill-test-results.md。",
+      "status": "pending"
+    },
+    {
       "id": "repeatable-content-no-fixed-branch-quota",
       "description": "G12/G13/G17/INV22/INV40/INV54：格式蓝本规定固定栏目、层级和单个实例子槽位，不规定流程模块、挑战、贡献、发现、原因及领域论文叶端数量。v5模型/schema/渲染/conformance/baseline和领域布局必须完整保留超过旧数量阈值的合法输入，不截断、不合并、不换成更大固定配额；legacy v1–4兼容、唯一身份、证据及实际几何检查保留。几何不合格保留完整候选并明确失败，不把排版失败变成内容限额。独立合成输入先红测，正常安装和test单对象、人类外观验收独立，不因开发检查通过冒称实际产品已验收。",
       "status": "pending"

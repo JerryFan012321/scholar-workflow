@@ -27,7 +27,8 @@ authoritative; the entry is not another inventory or execution dashboard.
 
 The entry starts with current state, the unique plan and experiment results, then
 code/data flow, related materials and ownership/open questions. It contains direct selected material links,
-honest current state, source-supported module views, experiment history and a
+honest current state, source-supported module views, lightweight literature roles
+and project-specific synthesis, experiment history and a
 single detailed plan authority. Every missing/conflicted/unverified item remains
 accounted for. Report the output location and preserved/changed files; provide
 explicit human assessment instructions for native navigation and appearance.
