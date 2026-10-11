@@ -395,8 +395,21 @@ def _intersection(a, b):
 def validate_canvas(doc: object) -> list[str]:
     """Check actual segment endpoints, not an editor's approximate routing promise."""
     errors = []
-    if not isinstance(doc, dict) or set(doc) != {"nodes", "edges"}:
-        return ["Canvas must contain exactly nodes and edges"]
+    if (not isinstance(doc, dict) or not {"nodes", "edges"}.issubset(doc)
+            or set(doc) - {"nodes", "edges", "metadata"}):
+        return ["Canvas must contain nodes and edges, with optional Advanced Canvas metadata"]
+    # Mirror the shared envelope without a package dependency; metadata is not identity.
+    metadata = doc.get("metadata")
+    if "metadata" in doc and (
+        not isinstance(metadata, dict)
+        or set(metadata) != {"version", "frontmatter"}
+        or not isinstance(metadata["version"], str)
+        or not metadata["version"].strip()
+        or len(metadata["version"]) > 64
+        or not isinstance(metadata["frontmatter"], dict)
+        or any(not isinstance(key, str) for key in metadata["frontmatter"])
+    ):
+        return ["Advanced Canvas metadata is invalid"]
     nodes, edges = doc["nodes"], doc["edges"]
     if not isinstance(nodes, list) or not isinstance(edges, list):
         return ["nodes and edges must be arrays"]
