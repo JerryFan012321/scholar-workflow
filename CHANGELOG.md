@@ -7,6 +7,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development field-library receipt:** record normal 0.44.1 publication and installation,
+  installed native-save validation and one Git-managed synthetic test topic. Human
+  appearance/usability assessment and main integration remain pending; this receipt
+  does not rebuild or change the installed runtime.
 - **Development release receipt:** record the approved 0.43.2 publication, normal
   pipx/Codex installation, byte-for-byte identity checks and one installed synthetic
   rendering check. No runtime behavior changes or rebuild; native/human assessment

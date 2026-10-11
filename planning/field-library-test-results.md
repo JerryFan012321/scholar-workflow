@@ -25,3 +25,16 @@
 完整回归不因仅增加受限metadata兼容而重复整批；新增正反用例与必要旧接口回归独立记录。
 普通测试/API操作曾因文件监听/渲染时序和本机内部mode对象差异失败，均如实排查并恢复，
 没有重启应用、改资料或将命令exit0直接作为原生成功。
+
+## 最终0.44.1增量
+
+- metadata修正及包络边界67项通过；加legacy/eval/版本/manifest后124项通过（0.33秒）。
+- source43de87c、runtime/cache f6a790c，正常发布及pipx/Codex安装；
+  双manifest/CLI/distribution0.44.1，269个实际文件与runtime逐blob一致。
+- 实际安装script对原生保存后的三图全部geometry通过，合法metadata原样保留；
+  注入伪装owner仍拒绝。正文和节点/连线没有重写，上表失败保留为历史过程。
+- test本地Git b992f85保存39个新文件（16固定输入、18产物、4原生截图、1人工说明）；
+  无测试副本蔓延、正式Field登记、Zotero写入、远端Vault推送或main合并。
+- Obsidian停在01可读列表，原生markdown toggle-preview往返正常且返回preview五行表。
+- **待人工评鉴**：在test打开_验收/README的明确入口，确认三图美观、保守留白是否合适、
+  论文/原文块点击准确性、编辑撤销、正文阅读体验。自动与独立agent检查不代替本项。
