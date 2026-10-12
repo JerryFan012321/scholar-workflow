@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development 0.44.6 installed receipt:** record normal hotfix/runtime publication,
+  pipx and Codex installation with exact cache/package identity. Apply the installed
+  report contract to the same test sample: distinguish shared declarations, the sole
+  recorded configuration difference and missing effective-runtime facts. Preserve raw
+  inputs/history/figures; record actual VS Code tables, eight body-verified links,
+  the active default profile and unchanged Strict preview security. New detailed
+  presentation awaits human assessment; no runtime rebuild, experiment or main merge.
 - **Development 0.44.6 preflight:** record a local runtime candidate from the
   fixed source commit, exact 269-file release identity and 112-file wheel payload,
   metadata/RECORD checks and independent boundary review. No push, installation,
