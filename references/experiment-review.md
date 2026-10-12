@@ -7,14 +7,18 @@ reviewing or saving a report does not authorize publishing internal project fact
 Record lifecycle rules remain in `skills/init-project/references/experiment-records.md`.
 Saved project-local reports use VS Code as their primary reader. Load
 `vscode-project-docs.md` for its reading/figure/navigation requirements; this does
-not apply the six-section PROJECT format to the five-section report below.
+not apply the six-section PROJECT format to the report below.
 
 ## Required human result
 
-Use one presentation language. The following sections are required; translate their
-labels consistently. Tables may split when width harms readability, without losing
-the required information. Put the conclusion, a useful evidence-linked visual and
-the main results before detailed comparison conditions and verification records.
+Use one presentation language. The following content roles are required; translate
+their labels consistently. Run results and comparison conditions belong in the same
+results block, not detached chapters the reader must cross-reference to interpret a
+score. State shared conditions once immediately beside the overview; align changed
+conditions with each corresponding result. Tables may split when width harms
+readability, keeping the applicable conditions and status beside each result group.
+Put the conclusion and a useful evidence-linked visual first; detailed verification
+records and the full Attempt history follow the results block.
 
 1. **Summary and scope:** selected project, Runs, result Attempts, requested metrics
    and comparison goal; the useful conclusion first, plus complete/partial status.
@@ -24,11 +28,14 @@ the main results before detailed comparison conditions and verification records.
    and comparable/not-established status. Retain missing and conflicted rows.
    If more than one result per Run is requested, label them separately rather than
    collapsing them into an unspecified Run score.
-3. **Comparison conditions:** for every selected Run, dataset identity/version/split
+3. **Comparison conditions, within the results block:** for every selected Run, dataset identity/version/split
    and manifest, metric definition/unit/direction/evaluation protocol, configuration
    differences, seed, environment, recorded source revision and captured Target.
    Link to the actual declarations. Mark absent conditions as not recorded and
-   distinguish declared equality from independently verified execution.
+   distinguish declared equality from independently verified execution. Label common
+   declarations, deliberate differences and missing/unverified conditions in ordinary
+   language. Conditions that prevent comparison stay visible beside the affected
+   values, not only in a later limitations section.
 4. **Attempt history:** all Attempts in the requested history, with Run, Attempt,
    recorded status/exit outcome and failure/retry/replay meaning. Link records and
    available logs/notes. A successful exit is not proof of a valid scientific result.
@@ -49,7 +56,10 @@ Make multiple experiments directly comparable in a Markdown table near the resul
 not only in separate narrative descriptions. Include experiment name, recorded
 execution time, purpose, configuration/independent variables, and result. Give each
 row direct links to its selected execution and supporting configuration/result files.
-Use readable names; keep machine identities in the linked records.
+Use readable names; keep machine identities in the linked records. Each row pairs its
+changed variables with its result and visible evidence/comparability status. Synthetic,
+unexecuted, missing or conflicted values carry that label at the point of use; a note
+elsewhere in the document is not enough to prevent a misleading result row.
 
 - **Time:** use the selected Attempt's recorded start/end and timezone when available;
   label which time is shown. An inspection date, recipe creation date or file mtime
@@ -73,9 +83,11 @@ Use readable names; keep machine identities in the linked records.
   results remain visible with their reason, not a fabricated zero. Multiple selected
   results from one Run remain explicitly identified, not silently averaged.
 
-Keep the overview narrow enough to read in VS Code. Split detailed conditions or
-metric groups into clearly keyed tables when necessary without losing selected
-rows or source links. This table is a derived view, not a second configuration,
+Keep the overview narrow enough to read in VS Code. Split metric groups into
+clearly keyed tables when necessary without losing selected rows or source links.
+Lengthy configuration details may be supplementary, but the overview still states
+the key changed values and relevant comparison gaps beside their results; a config
+link or a detached conditions table cannot replace them. This table is a derived view, not a second configuration,
 schedule or result authority; the comparison and Attempt-history rules still apply.
 
 ## Visuals and plain language

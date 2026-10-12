@@ -7,6 +7,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development 0.44.5 receipt:** record normal hotfix/runtime publication and
+  pipx/Codex installation, exact 269-file cache and 112-file package identity,
+  and one installed lightweight literature-section update in the existing test
+  PROJECT. Preserve original inputs and section-external bytes; native clicks,
+  profile/security and human usability remain pending. No runtime rebuild or main merge.
 - **Development VS Code receipt:** record observed Mermaid/source navigation and
   local result-image display, including the initial too-narrow workspace failure
   and corrected test opening instructions. Preserve incomplete file-click,
@@ -32,6 +37,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   pipx/Codex installation, byte-for-byte identity checks and one installed synthetic
   rendering check. No runtime behavior changes or rebuild; native/human assessment
   and main integration remain pending.
+
+## [0.44.6] - 2026-10-12
+
+Prepared comparison-presentation hotfix. Publication, normal installation and human
+assessment remain separate from development checks; main integration is separate.
+
+### Fixed
+
+- **review-experiments / organize-project:** keep comparison conditions and results
+  in one human results block: shared declarations next to the overview, changed
+  values aligned with their results, and synthetic/unexecuted or incomparable
+  evidence labelled at the affected values. Preserve selected records, links and
+  complete Attempt history; no reasoning sequence or new result authority.
+  A bounded source-skill trial passes independent content review with unchanged
+  synthetic inputs; 2,754 unit/contract checks pass. These are not installed-reader
+  or human-usability acceptance.
 
 ## [0.44.5] - 2026-10-12
 
