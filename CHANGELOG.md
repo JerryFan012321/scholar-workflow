@@ -11,6 +11,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   fixed source commit, exact 269-file release identity and 112-file wheel payload,
   metadata/RECORD checks and independent boundary review. No push, installation,
   service change or new test-Vault write; installed and human acceptance remain pending.
+  A bounded native VS Code follow-up reports the Mac locked before any clicks or
+  settings changes; preserve the actual blocker and do not reopen resolved historical gaps.
 - **Development 0.44.5 receipt:** record normal hotfix/runtime publication and
   pipx/Codex installation, exact 269-file cache and 112-file package identity,
   and one installed lightweight literature-section update in the existing test
