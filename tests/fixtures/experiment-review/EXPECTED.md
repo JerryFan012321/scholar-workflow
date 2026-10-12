@@ -78,6 +78,52 @@ native VS Code acceptance test.
 - No new file, record, index, result figure, installation or GUI action is needed.
   A correct conversation report remains distinct from saved-reader/human acceptance.
 
+## Conditions and results extension (2026-10-12)
+
+These additional expectations come from the selected raw records and the user's
+requirement to present comparison conditions with results. They are prepared
+without reading the new runtime presentation contract or a reviewer's output.
+They do not change the selected records, earlier facts or negative cases.
+
+- The two selected results and the conditions needed to interpret them form one
+  readable overview. Shared conditions may appear once directly before or after
+  the result table; conditions that differ remain visibly aligned with their own
+  selected result. A detached conditions section or a link alone does not satisfy
+  this requirement. Detailed evidence may still appear elsewhere.
+- The adjacent shared conditions identify dataset `synthetic-review`, version
+  `1`, split `fixed-test`, protocol `synthetic-eval-v1` and seed `7`, with sources.
+  The overview identifies the metric as `accuracy`, unit `fraction`, range
+  `[0, 1]` and higher-is-better direction. These facts apply to both selected
+  rows; none is inferred solely from their numeric values.
+- The baseline result visibly pairs `choice=baseline` with `0.80 fraction`, and
+  the variant result pairs `choice=variant` with `0.85 fraction`. Each pair is
+  associated with its Run, selected `primary` Attempt, recorded execution interval
+  and evidence links. An unlabeled pair of configurations, an unordered list of
+  choices or a separate section requiring readers to reconstruct these pairings
+  is insufficient. Purpose remains explicitly not recorded for each Run.
+- Labels distinguish shared conditions, changed configurations and recorded
+  results in the chosen presentation language; exact wording, headings and
+  column order remain free. Tables remain readable and narrow: common conditions
+  need not become repeated metadata columns, while compact adjacent text must not
+  detach a changed condition from the result it qualifies.
+- Synthetic and unexecuted status is visible in the overview, including where
+  the descriptive `0.05 fraction` / 5-percentage-point delta is interpreted.
+  The shared environment is the declaration in `env/synthetic.json`, not a
+  verified runtime; the source commit is an unverified synthetic placeholder.
+  The frozen `synthetic-local` Target snapshots are execution-placement
+  declarations, not verified machines. Missing actual environment observations
+  must not become claims of equal verified hardware or software. Backup remains
+  not verified wherever its status is presented.
+- The separate history still identifies all four Attempts. `wrong-cwd` keeps its
+  recorded failure and absent metric; `replay` keeps its recorded `0.80` under the
+  baseline Run and does not become another result row or independent repetition.
+  No unrecorded score, purpose, uncertainty, significance, causal benefit or
+  scientific ranking may be added to make the comparison seem complete.
+- In the existing isolated negative cases, an affected result retains its own
+  missing, unavailable or conflicting condition next to that result. Shared labels
+  must not conceal missing variant metadata or imply it inherits baseline facts.
+  Unsupported deltas and rankings remain withheld under the earlier criteria.
+
 ## Isolated negative cases
 
 Each case uses a separate temporary copy of `project/`; do not edit the fixture.

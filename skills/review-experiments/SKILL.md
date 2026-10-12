@@ -31,7 +31,7 @@ a derived view, not a metric store or new experiment index.
 Every selected Run/Attempt and requested metric is accounted for, with usable source
 links or explicit unavailable/conflicted reasons. The report follows the required
 sections in the shared result contract, puts conclusions and supported visual
-results first, uses plain language, and distinguishes recorded results from
+results first, co-locates their comparison conditions, uses plain language, and distinguishes recorded results from
 scientific conclusions. Insufficient evidence yields a partial review, not invented
 values or a claimed successful comparison. Reader navigation and appearance remain
 pending human assessment until actually checked.

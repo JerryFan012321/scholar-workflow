@@ -13,16 +13,18 @@ Example request:
 
 The report leads with a plain-language conclusion, a supported figure and selected
 results; unavailable visual evidence is stated rather than invented. It separates
-Run results from retries, lists comparison conditions and
-configuration differences, preserves failures, and links to the actual records and
+Run results from retries, places comparison conditions and configuration differences
+beside their corresponding results, preserves failures, and links to the actual records and
 artifacts. Missing units/protocols do not silently inherit another Run's metadata.
 Remote-only results remain unavailable without a separate acquisition request.
 No common metric JSON schema or significance claim is invented.
 
 Multi-experiment reviews include a compact table of names, recorded execution
 times, purposes, configuration variables and results. Few variables appear inline;
-many use key differences plus inspected captured-config links. The table retains
-unverified settings and missing/failed results rather than substituting guesses.
+many use key differences plus inspected captured-config links. Shared conditions
+appear once next to the overview; row-specific differences and comparison gaps stay
+beside the affected values. Synthetic/unexecuted, unverified and missing/failed
+results remain labelled rather than substituted or hidden in a later disclaimer.
 
 Saved project reports must display their figures and support local navigation in
 VS Code. Use the [project reader contract](../../references/vscode-project-docs.md);

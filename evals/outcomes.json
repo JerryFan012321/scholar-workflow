@@ -18,7 +18,7 @@
     },
     {
       "id": "experiment-comparison-readable-config-table",
-      "description": "G16/G17：多实验结果以紧凑表格列出名称、对应执行时间、目的、配置自变量和结果。少变量直接列值，多变量显示关键差异并链接/核查Run或Attempt留存配置；不拿当前可变配置替代，不将配方日期/文件mtime当执行时间，不执行配置代码。未知/未解析配置、失败、缺失和冲突结果保持可见；来源Attempt、指标/图/报告链接及可比性规则保留，重试不算独立重复。PROJECT与报告共用references/experiment-review.md，无第二份配置/结果状态源。2026-10-10沿用2Run/4Attempt合成项目，先补独立预期再由隔离agent生成五节报告：两primary行完整，UTC时间/未记录目的/choice值及来源准确，四执行历史与0.80/0.85和5个百分点正确。另两隔离副本完成多变量快照/已记录目的及未解析依赖评价，十字段差异完整、当前三变值不替代快照，未知参数不补造、不执行解析器；原33/A35/B33文件集digest不变。0.43.2 source5b6b1d1/runtimef4e480e已正常发布及pipx/Codex安装，文件身份全等。有限开发行为评价及安装不等于普遍鲁棒、真实VS Code或人工通过，保持pending。详见planning/experiment-review-test-results.md顶部与0.43.2-release.md。",
+      "description": "G16/G17：多实验结果以紧凑表格列出名称、对应执行时间、目的、配置自变量和结果。条件与结果同处结果块：共同声明紧邻总表，变化项与其结果同行，缺失/未核实/合成未执行和影响可比性的条件贴近受影响数值标注，不只在文末免责声明或另章出现。少变量直接列值，多变量显示关键差异并链接/核查Run或Attempt留存配置；不拿当前可变配置替代，不将配方日期/文件mtime当执行时间，不执行配置代码。未知/未解析配置、失败、缺失和冲突结果保持可见；来源Attempt、指标/图/报告链接及可比性规则保留，重试不算独立重复。PROJECT与报告共用references/experiment-review.md，无第二份配置/结果状态源。2026-10-10沿用2Run/4Attempt合成项目，先补独立预期再由隔离agent生成五节报告：两primary行完整，UTC时间/未记录目的/choice值及来源准确，四执行历史与0.80/0.85和5个百分点正确。另两隔离副本完成多变量快照/已记录目的及未解析依赖评价，十字段差异完整、当前三变值不替代快照，未知参数不补造、不执行解析器；原33/A35/B33文件集digest不变。0.43.2 source5b6b1d1/runtimef4e480e已正常发布及pipx/Codex安装，文件身份全等。2026-10-12用户确认原图/原总表可见，新同处排版及其runtime规范独立待验；有限开发行为评价及安装不等于普遍鲁棒、真实VS Code或人工通过，保持pending。详见planning/experiment-review-test-results.md顶部与0.43.2-release.md。",
       "status": "pending"
     },
     {
