@@ -15,7 +15,12 @@ test原报告和使用说明已原位调整并存本地Git `96d73cc`；仅这两
 2754 passed、11弃用警告（113.71秒），skill入口/diff及增量一致性审阅通过。
 详情见experiment-review-test-results.md顶部；不重复四负例/多变量或真实业务。
 
-5处源码版本同步准备0.44.6，尚未发布安装；PATH CLI实查仍0.44.5。下一步须明确
+5处源码版本同步准备0.44.6，尚未发布安装；PATH CLI实查仍0.44.5。已从固定source
+`6c387bd19f193840dbf56c5ab24d4db637d9d61a`在隔离clone用原脚本构建本地候选
+`1db5ce927273662bab9e6a656121aa7c38a2b559`，父为实查远端0.44.5 `f2693edf`。
+269文件全等、112文件wheel字节/metadata/RECORD及独立边界审阅通过；完整回执见
+[0.44.0-release.md的0.44.6节](0.44.0-release.md#0446-比较条件同处-hotfix仅本地候选未发布安装)。
+本收尾只写开发记录，不重建固定候选；未push/install或改test。下一步须明确
 新hotfix的发布安装授权，正常安装后才做同一test对象的受影响复验；不因等待人工反馈
 重新生成报告或扩大业务。main不合并，服务/正式Vault/Zotero不改，G17仍未完成。
 

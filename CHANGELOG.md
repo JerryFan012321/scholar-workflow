@@ -7,6 +7,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development 0.44.6 preflight:** record a local runtime candidate from the
+  fixed source commit, exact 269-file release identity and 112-file wheel payload,
+  metadata/RECORD checks and independent boundary review. No push, installation,
+  service change or new test-Vault write; installed and human acceptance remain pending.
 - **Development 0.44.5 receipt:** record normal hotfix/runtime publication and
   pipx/Codex installation, exact 269-file cache and 112-file package identity,
   and one installed lightweight literature-section update in the existing test
