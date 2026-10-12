@@ -14,6 +14,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   inputs/history/figures; record actual VS Code tables, eight body-verified links,
   the active default profile and unchanged Strict preview security. New detailed
   presentation awaits human assessment; no runtime rebuild, experiment or main merge.
+- **Development goal-state alignment:** update the two current G16/G17 notes to the
+  installed 0.44.6 and body-verified navigation evidence. Preserve pending human
+  assessment, full-stage completion and explicit adoption boundaries; no new capability.
 - **Development 0.44.6 preflight:** record a local runtime candidate from the
   fixed source commit, exact 269-file release identity and 112-file wheel payload,
   metadata/RECORD checks and independent boundary review. No push, installation,
