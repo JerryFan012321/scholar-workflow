@@ -1,6 +1,8 @@
 """Unit tests for Obsidian projection rendering (GOALS INV4/INV17/INV18)."""
 from __future__ import annotations
 
+import pytest
+
 from scholar_workflow.adapters.obsidian import ObsidianAdapter
 from scholar_workflow.workflows.projection import format_row, project_obsidian
 
@@ -49,7 +51,45 @@ def test_format_row_escapes_pipe():
 
 def test_format_row_tolerates_missing_fields():
     row = format_row({"title": "Bare"}, port=1)
-    assert row.startswith("| Bare |")  # no crash, empty cells for the rest
+    assert row.startswith("| Bare |")
+
+
+@pytest.mark.parametrize(
+    ("item_key", "attachment_key"),
+    [(None, None), ("", ""), ("AAAA1111", None), (None, "PPPP1111")],
+)
+def test_missing_links_are_explicit_without_asserting_library_absence(
+    item_key, attachment_key,
+):
+    entry = {"title": "Selected paper", "zotero_key": item_key,
+             "attachment_key": attachment_key}
+    original = entry.copy()
+    row = format_row(entry, port=1)
+    cells = row.removeprefix("| ").removesuffix(" |").split(" | ")
+    assert len(cells) == 9
+    assert cells[5] == (f"[open](zotero://select/items/@{item_key})"
+                        if item_key else "Not linked")
+    assert cells[6] == (f"[PDF](zotero://open-pdf/library/items/{attachment_key})"
+                        if attachment_key else "Not linked")
+    assert "not imported" not in row.lower()
+    assert "not found" not in row.lower()
+    assert entry == original
+    assert format_row(entry, port=2) == row
+
+
+def test_project_partial_links_preserve_manual_content_and_reproject_idempotently(tmp_path):
+    index = tmp_path / "selected.md"
+    index.write_text(f"# Selected\nHuman introduction.\n{START}\nOld table.\n{END}\nHuman notes.\n")
+    entries = [{"title": "Metadata only", "zotero_key": "AAAA1111"}]
+    adapter = _adapter(tmp_path)
+    assert project_obsidian(entries, "selected.md", "Selected", adapter, 1) == 1
+    result = index.read_text()
+    assert "Human introduction." in result.split(START)[0]
+    assert result.split(END)[1] == "\nHuman notes.\n"
+    assert "Old table." not in result
+    assert "[open](zotero://select/items/@AAAA1111) | Not linked |" in result
+    assert project_obsidian(entries, "selected.md", "Selected", adapter, 1) == 1
+    assert index.read_text() == result
 
 
 def test_project_creates_file_and_preserves_outside(tmp_path):

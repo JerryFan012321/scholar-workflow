@@ -1,8 +1,9 @@
 # ingest-resource
 
 Import papers and archive technical documents through Zotero's Local API.
-A paper needs two things: its PDF (from arXiv) and its metadata (from an authoritative
-web source, never parsed from the PDF). Three phases:
+A paper's metadata comes from an authoritative web source, never from the PDF;
+an available PDF comes from arXiv. Metadata-only cases retain their missing-PDF reason.
+Three acquisition phases:
 
 - **Existence check (read-only)** — normalize the identifier (DOI / title+authors;
   arXiv id is a download-source label, not an identity), then search and confirm through
@@ -19,6 +20,14 @@ web source, never parsed from the PDF). Three phases:
 
 Downloaded PDFs go only to `paper_inbox`; technical documents only to the Vault. All
 Zotero access is via its loopback Local API — the plugin never writes `zotero.sqlite`.
+
+## When the request includes a reading index
+
+Import, collection membership, Knowledge owner registration and index update have
+separate completion evidence. Finish the requested parts in the selected existing
+format, read back the result, and report remaining gaps. A stale list does not justify
+reimporting an existing paper. Import-only requests do not create a Field or index.
+See the shared [paper delivery contract](../../references/paper-delivery.md).
 
 ## Cross-machine sync (setup note)
 

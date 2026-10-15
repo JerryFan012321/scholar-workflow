@@ -16,6 +16,8 @@ followed by code/dataflow, papers/materials and ownership/open questions. Primar
 links explain their relevance; verification details remain supplementary. Missing
 evidence and untested reader links stay visible. Module diagrams are editable and
 source-supported; retries are not independent experiments.
+Keep the accepted project architecture and module/dataflow views, without adding
+folder/file trees. A small selected prototype is not a complete project skeleton.
 
 The papers/materials section includes a compact literature division-of-work table
 and a short synthesis for this project's approach and related work. Existing paper

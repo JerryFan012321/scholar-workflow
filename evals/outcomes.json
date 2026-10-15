@@ -2,6 +2,11 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "paper-import-selected-index-closeout",
+      "description": "G2/G4/G12/G17：对明确要求入库并更新已选阅读列表的任务，分别以Local API及实际文件读回证明条目/PDF、已选分类、Knowledge owner与索引的状态；未请求部分不自动执行。合成created一篇含PDF、reused一篇无可用arXiv PDF时，复用真实身份、保留缺PDF原因，按当前Field五列格式更新对应原行及真实现有资料入口，不改其他文档/Source Note或添加占位分析。索引未写成则报告部分完成，不因成功入库宣称全流程完成，也不重建论文条目。旧九列投影只对缺key显示未关联，不能推断文库不存在；固定合成断言与有限独立场景审阅不代替安装态或真实读者验收。",
+      "status": "pending"
+    },
+    {
       "id": "project-lightweight-literature-division-of-work",
       "description": "G16/G17：PROJECT既有论文资料节默认以文献入口、所解决问题、项目内分工和对应项目入口四列小表及简短综合，帮助梳理当前方案与相关工作。分工/篇数依所选项目，不固定分类或配额；拟议借鉴不冒充实际采用，作者事实与项目判断区分，比较引用既有分析/原文。长文仅在明确选择时外置，PROJECT保留派生小结和链接，不双份维护。保留所选来源/分析/Canvas/原文及缺失入口，不复制领域库四视图、不重做论文分析、不改归属或运行实验。四篇合成输入/独立预期先冻结，源skill盲评仅返回文献节，独立语义与10个静态入口核对通过，四个输入/预期文件hash不变；不是安装态、原生点击、普遍鲁棒或人工可用性证明，保持pending。见planning/project-entry-skill-test-results.md。",
       "status": "pending"

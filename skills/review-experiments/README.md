@@ -21,9 +21,10 @@ No common metric JSON schema or significance claim is invented.
 
 Multi-experiment reviews include a compact table of names, recorded execution
 times, purposes, configuration variables and results. Few variables appear inline;
-many use key differences plus inspected captured-config links. Shared conditions
-appear once next to the overview; row-specific differences and comparison gaps stay
-beside the affected values. Synthetic/unexecuted, unverified and missing/failed
+many use key differences plus inspected captured-config links. Shared conditions,
+row-specific differences and results appear in the same comparison table, not in
+separate conditions/results tables. Comparison gaps stay beside the affected values.
+Synthetic/unexecuted, unverified and missing/failed
 results remain labelled rather than substituted or hidden in a later disclaimer.
 
 Saved project reports must display their figures and support local navigation in

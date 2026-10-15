@@ -30,6 +30,10 @@ so the cell reads e.g. `founding ★★★`; empty when untagged), Zotero
 path), arXiv (`[id](https://arxiv.org/abs/id)`), Synced (ISO date, taken from the
 input row, not `now()` — keeps re-projection idempotent).
 
+Absent Zotero or attachment keys render as `Not linked` in their respective cells.
+This diagnoses missing projection data; it does not assert that the library item or
+PDF does not exist. Confirm those outcomes through Local API before reporting them.
+
 DOI is **not** a rendered column — it is retained only as a dedup identity field in the
 data (INV1). The shared renderer (`projection.py`) dropped it from every table, so the
 Zotero-mirror index and the literature-tree paper list stay column-aligned.

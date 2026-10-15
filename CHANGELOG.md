@@ -56,6 +56,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   rendering check. No runtime behavior changes or rebuild; native/human assessment
   and main integration remain pending.
 
+## [0.44.7] - 2026-10-15
+
+Approved independent hotfix; main integration and human assessment remain separate.
+
+### Fixed
+
+- **ingest-resource / sync-projections / build-literature-tree:** distinguish
+  requested acquisition, collection, paper-owner and index delivery evidence.
+  Reuse successful imports when repairing an index, preserve the selected Field
+  format and independent ZotFlow writer, and report unresolved parts without
+  widening import-only requests. Legacy paper tables now diagnose missing Zotero
+  or PDF keys as `Not linked`, not blank cells or evidence of library absence.
+  Synthetic regression and host-behavior cases cover the boundary; installation
+  and actual external-system delivery are verified independently.
+- **review-experiments / organize-project:** require shared conditions, deliberate
+  differences and their results in the same comparison table. Preserve the accepted
+  project architecture and module/dataflow views; keep folder/file trees out of
+  project entries and experiment reports. No change to paper analysis, Canvas
+  templates, project layout or existing experimental inputs.
+- **Development acceptance records:** retain the user's accepted initialized
+  test project, distinguish it from the earlier small presentation fixture, and
+  record 2,759 passing unit/contract tests without claiming full-stage completion.
+
 ## [0.44.6] - 2026-10-12
 
 Prepared comparison-presentation hotfix. Publication, normal installation and human
