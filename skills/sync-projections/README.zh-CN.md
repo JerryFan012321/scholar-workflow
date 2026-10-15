@@ -10,4 +10,8 @@
 Obsidian 论文表是可重建的派生索引,不是主数据。两个子任务可并行执行。
 PDF 单元格持久化 Zotero attachment URI；Hub 端口和运行期 action ID 不写入 Vault 或 Notion。
 
+旧索引缺少 Zotero／PDF key 时显示 `Not linked`（未关联），不留静默空格，也不据此认定未入库。
+当前领域库的五列表交由 `build-literature-tree` 保持原格式，不能用旧表覆盖。
+入库后的索引修复遵守共享[论文交付契约](../../references/paper-delivery.md)，不因列表过时重复获取。
+
 完整流程与约束见 [SKILL.md](./SKILL.md)。

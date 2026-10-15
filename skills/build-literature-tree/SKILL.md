@@ -35,6 +35,9 @@ Paper analysis Markdown, quotations, images and per-paper Canvas still belong to
 - Resolve the user's selected topic/Field, actual existing paper-unit identities and
   declared paths. Reuse existing papers, analyses and notes. New primary owners use
   the established paper-registration interface, not a layout tool.
+- When the request also acquires papers or repairs their index after acquisition,
+  load `${CLAUDE_PLUGIN_ROOT}/references/paper-delivery.md` for the independent
+  import/registration/index completion evidence; keep this Field's selected format.
 - Prepare the selected views from the declared corpus and supported relations.
   Unknown classification, missing PDF and incomplete reading stay visible. The
   four novelty classes constrain placement, not how the model must reason.

@@ -94,6 +94,14 @@ declare and verify the reader capabilities rather than assuming activation. Iden
 each view's scope and keep file links alongside it rather than relying on diagram
 click handlers. Use compact aligned views instead of one sprawling graph.
 
+Preserve the project's accepted architecture and layout contract. Describe the
+selected modules' responsibilities and interfaces, not an exhaustive folder/file
+tree. Project entries and experiment reports do not generate file-tree views;
+those belong to knowledge-library navigation. This does not remove module/dataflow
+diagrams, useful direct file links or the underlying project directories. If the
+selected input is only a small prototype, say which architecture is not covered;
+do not present it as a complete initialized project or invent missing modules.
+
 An inspected import/call supports a static relationship, not successful runtime
 execution. Keep document-only assertions or uninspected edges explicitly
 unverified, outside the established-flow graph. Missing modules/configuration

@@ -1,5 +1,10 @@
 # build-literature-tree
 
+When a selected topic request includes acquiring papers or repairing its post-ingest
+ledger, use the shared [paper delivery contract](../../references/paper-delivery.md)
+to distinguish import, owner registration and current index evidence. Keep the Field
+format and existing owners; a stale list is not a reason to reimport a paper.
+
 Build a readable topic library around existing paper units. The **field-library-v2**
 profile keeps four coexisting entries: a complete paper list, a horizontal literature
 timeline, a center-out technical-route map and a center-out problem/solution map.

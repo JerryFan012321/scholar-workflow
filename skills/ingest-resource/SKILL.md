@@ -14,6 +14,10 @@ A failed or conflicting item
 does not invalidate successful siblings. `references/resource-model.md` defines which
 kinds may enter Zotero and where non-paper resources belong.
 
+For a request that also includes Knowledge registration or a selected reading index,
+load `${CLAUDE_PLUGIN_ROOT}/references/paper-delivery.md`. Complete/report those
+requested results separately; a successful import is not an updated index.
+
 The external write dependencies are:
 
 - Before paper creation, run `scholar-workflow zotero search` and confirm candidates with

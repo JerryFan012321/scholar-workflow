@@ -14,9 +14,12 @@ not apply the six-section PROJECT format to the report below.
 Use one presentation language. The following content roles are required; translate
 their labels consistently. Run results and comparison conditions belong in the same
 results block, not detached chapters the reader must cross-reference to interpret a
-score. State shared conditions once immediately beside the overview; align changed
-conditions with each corresponding result. Tables may split when width harms
-readability, keeping the applicable conditions and status beside each result group.
+score. Put shared conditions, changed conditions and the corresponding results in
+the same comparison table, not a conditions table followed by a results table.
+Each result row states the actual shared values, its changed values and relevant
+unknowns. A shared-condition row within that table may avoid repetition only when
+its applicability to every result is explicit. Tables may split by selected result
+groups when width harms readability; each group still carries its conditions.
 Put the conclusion and a useful evidence-linked visual first; detailed verification
 records and the full Attempt history follow the results block.
 
@@ -66,8 +69,8 @@ elsewhere in the document is not enough to prevent a misleading result row.
   is not an execution time. Missing times or purposes say not recorded; distinguish
   a proposed purpose from one stated in the experiment record.
 - **Few independent variables:** show their names and actual values directly in
-  compact cells or dedicated columns. Explain shared conditions once, with sources;
-  do not bury the comparison variable behind a config link.
+  compact cells or dedicated columns, alongside the applicable shared values and
+  result. Do not bury the comparison variable behind a config link.
 - **Many independent variables:** show the key differences and link each row to its
   captured resolved configuration. Read the referenced configuration and identify
   the relevant values/differences; a link alone is not configuration verification.

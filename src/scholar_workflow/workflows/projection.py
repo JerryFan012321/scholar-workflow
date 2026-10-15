@@ -62,9 +62,9 @@ def format_row(entry: dict, port: int, assets: bool = False) -> str:
     # persistent paper identity.
     del port
     attach = entry.get("attachment_key")
-    pdf = f"[PDF](zotero://open-pdf/library/items/{attach})" if attach else ""
+    pdf = f"[PDF](zotero://open-pdf/library/items/{attach})" if attach else "Not linked"
     zkey = entry.get("zotero_key")
-    zotero = f"[open](zotero://select/items/@{zkey})" if zkey else ""
+    zotero = f"[open](zotero://select/items/@{zkey})" if zkey else "Not linked"
     arxiv = entry.get("arxiv")
     arxiv_cell = f"[{_cell(arxiv)}](https://arxiv.org/abs/{arxiv})" if arxiv else ""
     cells = [

@@ -5,6 +5,12 @@ description: Rebuild Obsidian paper indexes or push the one-way Notion managemen
 
 # sync-projections
 
+For post-ingest or partial-delivery repair, load
+`${CLAUDE_PLUGIN_ROOT}/references/paper-delivery.md`. Reuse the confirmed paper
+identities and update only selected unfinished projections, not acquisition.
+Current Field ledgers use `build-literature-tree`'s existing five-column contract;
+the commands below own legacy managed-block projections, not arbitrary Field pages.
+
 ## Obsidian
 
 1. Supported outputs map to commands as follows:
@@ -42,8 +48,9 @@ description: Rebuild Obsidian paper indexes or push the one-way Notion managemen
 ## Constraints
 
 - Projection is one-way: Zotero/Obsidian → Notion. Never write Notion edits back.
-- Modify only Obsidian managed blocks and Notion machine-managed fields. Preserve all
-  human content.
+- For the legacy commands below, modify only Obsidian managed blocks and Notion
+  machine-managed fields. Preserve all human content; current Field edits retain
+  their owning skill's scope and current-byte/recovery protections.
 - Project no files or full note bodies to Notion: only fields, one-paragraph Summary,
   and Vault backlink.
 - `notion-project.py` is the only Notion API caller. The token comes only from

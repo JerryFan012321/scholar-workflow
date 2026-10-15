@@ -1,7 +1,7 @@
 # ingest-resource
 
-经 Zotero Local API 把论文导入、把技术文档归档到本地库。一篇论文只需两样:PDF(来自 arXiv)
-和元数据(来自权威网源,绝不从 PDF 解析)。分三个阶段:
+经 Zotero Local API 把论文导入、把技术文档归档到本地库。元数据来自权威网源，不从 PDF 解析；
+可用的 PDF 来自 arXiv，只有书目信息的情况明确保留缺 PDF 原因。获取分三个阶段:
 
 - **存在性核验(只读)** —— 规范化标识符(DOI / title+authors;arXiv id 只是下载源标识、
   非身份),经 `scholar-workflow zotero` 搜索和回读确认,结果为 exact / conflict / none。
@@ -14,6 +14,12 @@
 
 下载的论文 PDF 只进 `paper_inbox`,技术文档只进 Vault。所有 Zotero 访问都经 Local API,
 插件绝不直接写 `zotero.sqlite`。
+
+## 同时要求更新阅读索引时
+
+入库、分类归属、知识库论文登记和索引更新分别核验。按明确选择的现有格式完成所需部分，
+读回结果并说明缺项；不能因列表过时再次导入已有论文。只要求入库时，不擅自新建领域或索引。
+具体边界见共享[论文交付契约](../../references/paper-delivery.md)。
 
 ## 跨机同步(配置须知)
 

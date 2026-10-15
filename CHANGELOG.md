@@ -7,6 +7,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development 0.44.6 installed receipt:** record normal hotfix/runtime publication,
+  pipx and Codex installation with exact cache/package identity. Apply the installed
+  report contract to the same test sample: distinguish shared declarations, the sole
+  recorded configuration difference and missing effective-runtime facts. Preserve raw
+  inputs/history/figures; record actual VS Code tables, eight body-verified links,
+  the active default profile and unchanged Strict preview security. New detailed
+  presentation awaits human assessment; no runtime rebuild, experiment or main merge.
+- **Development goal-state alignment:** update the two current G16/G17 notes to the
+  installed 0.44.6 and body-verified navigation evidence. Preserve pending human
+  assessment, full-stage completion and explicit adoption boundaries; no new capability.
+- **Development 0.44.6 preflight:** record a local runtime candidate from the
+  fixed source commit, exact 269-file release identity and 112-file wheel payload,
+  metadata/RECORD checks and independent boundary review. No push, installation,
+  service change or new test-Vault write; installed and human acceptance remain pending.
+  Bounded native follow-ups first report the Mac locked, then inconsistent current
+  accessibility state and stale preview screenshots after reconnecting. Keep the
+  remaining navigation/security and human checks incomplete; preserve 11 selected
+  file hashes and stop retries without settings changes or reopening resolved gaps.
 - **Development 0.44.5 receipt:** record normal hotfix/runtime publication and
   pipx/Codex installation, exact 269-file cache and 112-file package identity,
   and one installed lightweight literature-section update in the existing test
@@ -37,6 +55,29 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   pipx/Codex installation, byte-for-byte identity checks and one installed synthetic
   rendering check. No runtime behavior changes or rebuild; native/human assessment
   and main integration remain pending.
+
+## [0.44.7] - 2026-10-15
+
+Approved independent hotfix; main integration and human assessment remain separate.
+
+### Fixed
+
+- **ingest-resource / sync-projections / build-literature-tree:** distinguish
+  requested acquisition, collection, paper-owner and index delivery evidence.
+  Reuse successful imports when repairing an index, preserve the selected Field
+  format and independent ZotFlow writer, and report unresolved parts without
+  widening import-only requests. Legacy paper tables now diagnose missing Zotero
+  or PDF keys as `Not linked`, not blank cells or evidence of library absence.
+  Synthetic regression and host-behavior cases cover the boundary; installation
+  and actual external-system delivery are verified independently.
+- **review-experiments / organize-project:** require shared conditions, deliberate
+  differences and their results in the same comparison table. Preserve the accepted
+  project architecture and module/dataflow views; keep folder/file trees out of
+  project entries and experiment reports. No change to paper analysis, Canvas
+  templates, project layout or existing experimental inputs.
+- **Development acceptance records:** retain the user's accepted initialized
+  test project, distinguish it from the earlier small presentation fixture, and
+  record 2,759 passing unit/contract tests without claiming full-stage completion.
 
 ## [0.44.6] - 2026-10-12
 
