@@ -49,7 +49,8 @@
 
 新增 `paper-import-selected-index-closeout` outcome 和
 `paper-index-gap-does-not-authorize-reingest` host-layer safety 场景；不伪造 CLI exit code。
-前者保持 pending，需安装态单对象与实际交付验证。路由 description 未改。
+前者保持 pending；本次安装态有限样本已执行，但实际交付与宿主自动触发仍待验证。
+路由 description 未改，结果边界见下方发布回执，不以模拟输入认证真实Field/文库。
 
 ## 保留与待办
 

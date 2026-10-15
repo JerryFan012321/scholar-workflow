@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development 0.44.7 receipt:** record approved independent hotfix/runtime publication,
+  normal pinned pipx and Codex marketplace installation, and exact 270-file plugin /
+  112-file package identity. Freeze one synthetic acceptance input in test Git before
+  installed execution. One installed synthetic closeout passes bounded independent
+  fact/scope review, preserving 273 other files; native display is inconsistent and
+  readability remains for human assessment. Preserve existing project/paper evidence;
+  no runtime rebuild, main merge, service switch or formal Vault/Zotero mutation.
 - **Development 0.44.6 installed receipt:** record normal hotfix/runtime publication,
   pipx and Codex installation with exact cache/package identity. Apply the installed
   report contract to the same test sample: distinguish shared declarations, the sole
