@@ -8,6 +8,15 @@ description: Initialize or retrofit a Git-managed project with the standard host
 `AGENTS.md` is canonical. `CLAUDE.md` imports it and `AGENT.md` is a compatibility
 pointer.
 
+## Research parent and execution child requests
+
+For a research parent or remote execution child, first load
+`${CLAUDE_PLUGIN_ROOT}/references/project-management.md`. Its role/ownership result
+contract is required. The current helper only implements the generic source skeleton:
+return a role-specific proposal and capability gap rather than running generic
+`apply` and calling the new management mode complete. Do not deploy or initialize a
+remote repository as a substitute. The steps below retain explicit generic/legacy use.
+
 ## Steps
 
 1. Resolve the target root, inspect hidden entries, and read existing `AGENTS.md`,
@@ -31,13 +40,14 @@ pointer.
 
 ## Constraints
 
-- Use exactly the local skeleton; do not create parallel `plan/plans`,
-  `report/reports`, or `scripts/data` layouts.
-- `experiments/<id>/` is the run source of truth; registries are indexes only.
+- For supported generic initialization use exactly the common skeleton; do not
+  create parallel `plan/plans`, `report/reports`, or `scripts/data` layouts.
+- The current flat `experiments/<id>/` bundle is the Run authority; indexes are derived.
+  It does not implement parent aggregation of remote children.
 - Preserve `project-layout.json` identity and profile versions. A different selection requires
   `migrate-plan`; ordinary `apply` cannot change it.
-- New `dataset/`, `docs/`, and `experiments/` trees are local-first. Existing tracked trees are
-  diagnosed, never silently untracked.
+- The generic helper's new `dataset/`, `docs/`, and `experiments/` trees are local-first.
+  Existing tracked trees are diagnosed, never silently untracked.
 - Never scaffold credentials, custom agents, hooks, or `.DS_Store`.
 - The initializer never deletes, overwrites, stages, commits, or pushes.
 
@@ -69,6 +79,7 @@ from ordinary initialization; preparation never commits or runs it. A real exper
 keeps its own recipe and scientific facts rather than adopting the example's data or failure.
 
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
+- `${CLAUDE_PLUGIN_ROOT}/references/project-management.md` — required for research parent / execution child requests
 - `${CLAUDE_PLUGIN_ROOT}/references/project-context.md` — when explicitly organizing project materials
 - `references/skeleton-manifest.md`
 - `references/source-layout.md`

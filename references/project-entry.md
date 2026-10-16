@@ -5,6 +5,11 @@ short `project overview` inventory or a public README. This is a human document,
 not another registry, synchronization service or execution interface. Shared
 presentation and storage rules remain in `human-presentation.md` and
 `storage-policy.md`; selected material references follow `project-context.md`.
+For a local research parent with execution children, also use `project-management.md`.
+Keep its full local research surface and child-qualified records; source development
+being remote does not remove code/module navigation or project knowledge. Supplied
+remote locators may be shown with their actual unverified state, but are not supported
+SSH entries in the current context schema or proof that a native link works.
 VS Code is the primary reader: load `vscode-project-docs.md` for the required
 reading, diagram and navigation surface, optional extensions and native acceptance.
 

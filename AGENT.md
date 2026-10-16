@@ -35,6 +35,12 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
 
 - **Project System** 持有便携 `project_id`、共同项目布局、源码/config profile 和
   Run/Attempt/Target/Artifact 档案；主机项目根只进入显式 host registry。
+- 项目管理新决定（2026-10-16，已确认、待实现）：本地保留完整研究总项目及不推送的资料Git；
+  所有执行子项目的代码/Git开发与运行均在远端，只有primary可推送项目自有GitHub，本地只留最简恢复材料。
+  所有实验按子项目回传轻量档案，在本地分析；保留项目知识、唯一计划、规则/skills和既有呈现契约。
+  skill运行结果细则唯一见references/project-management.md，实现增量见planning/project-system-v2.md §15；
+  当前runtime接口仍兼容旧版，不冒称新模式可用，
+  不由设计确认推导真实迁移、远端写入、发布安装或verified backup授权。
 - **Knowledge System** 持有 Vault 核心文档、原子资源、附属产物、analysis result contract 和
   knowledge relations；批量产物逐项通过 conformance gate，失败不得记成功。
 - 知识库以纲领、梳理和目录文档组织主题；论文、重要技术文档和 Blog/Web article 是原子资源，

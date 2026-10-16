@@ -1,5 +1,63 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-16：0.45.1发布安装与完整热修复历史合并，执行中
+
+用户明确要求安装并合并main，并另行确认把main 0.29.0之后当前99个提交的完整热修复
+历史连同本轮一起合入，而非只cherry-pick新skill文案。独立分支为
+codex/hotfix-project-management，基于asset-management的14c2db6保留本轮已审改动。
+同步0.45.1的Python、双manifest与lock；先完整unit/contract回归，再从干净固定源码
+经原发布脚本生成以远程当前release为父的runtime-only产物，普通推送和正常pipx/Codex
+安装，检查实际字节/版本/启用状态后才合并main。旧主工作区的脏文件保持，不强推。
+
+本轮只发布项目skill结果契约及原既有能力；WI-055双角色初始化/分层回传/远端代码
+机器引用仍未实现，旧人工/科学来源/G17及备份缺口不被合并改写为通过。不切Hub服务，
+不操作真实服务器/Vault/Zotero，不初始化或迁移项目。当前步骤尚在执行，准确源码、
+runtime、安装、检查与合并回执由0.45.1-release.md持有；未完成不预称成功。
+
+## 2026-10-16：把定案固化到项目相关skill，契约切片
+
+用户进一步要求“固化在项目要开发的skill中”。本轮沿用现有init-project、organize-project、
+review-experiments，不新增通用编程skill、不改description或路由。以共享运行reference持有
+本地完整研究管理／远端子项目开发、Git、全实验回传与最简恢复的结果边界，skill按职责引用。
+保留已有PROJECT六节、唯一计划、轻量文献、实验条件—结果同表和论文/Canvas格式。
+
+这次授权只覆盖skill/reference及必要说明、eval的固化，不实现WI-055全部后端：
+不改初始化生成器、CLI/schema、安装缓存、版本或服务，不连接服务器，不创建/移动真实项目，
+不写正式或test Vault，不提交/发布/安装。旧generic apply、扁平Run和本地context接口继续
+兼容；新双角色布局、分层接收与远端代码机器引用不可用时，报告缺口并交付方案，不能假装完成。
+先准备定向验证范围，再做skill基础/现有eval与manifest结构检查；宿主执行行为、正常安装和
+人工产品评鉴仍分别待验。上一轮六份设计文档修改保留，本轮只补相关skill边界。
+已完成三个skill基础校验和14项既有eval/manifest结构回归；首次开发venv缺pytest未执行，
+改用锁定项目的临时pytest runner后通过，不更新安装版/版本/lock。独立执行者只读runtime
+资料，以一个合成总项目返回初始化方案及PROJECT预览，正确报告缺口、区分同名child Run、
+保留失败/未核分数与六节/唯一计划，未写候选或连接远程。此为有限源skill行为通过，
+不是新自动化、安装态或人工验收；新增outcome仍pending。具体预期及实际结果唯一见
+project-management-skill-test-results.md，不据此推进真实项目迁移或重新分析论文。
+
+## 2026-10-16：项目管理方式已确认，仅固化设计
+
+用户明确确认“项目就这么管理”：本地总项目保留完整研究管理，所有执行子项目的源码、
+canonical config、环境定义、测试和Git工作区都在远端；人工和agent直接操作远端，
+本地不再保留Primary或其他子项目的日常开发clone。此前“本地嵌套Primary仓库”的设想
+被本次决定替代。Primary Subproject使用角色名primary，只有它可推送项目自有GitHub；
+其他子项目各有远端Git但不上传自己的修改，总项目自身只用本地Git、不推送。
+
+本地的PROJECT/唯一详细计划、项目知识与轻量文献梳理、规则/skills、身份/资料清单、
+全子项目实验登记回传、分析比较与成果状态都要保留。所有实验含失败/中断均登记；
+本地归档按experiments/<subproject>/<run>/attempts/<attempt>/分组，配置/环境快照、
+指标和必要成果回传，大数据/大产物仍可留远端。执行事实不被本地分析覆盖，身份冲突
+拒写，重复回传幂等。本地只留最简代码恢复材料，不把源码副本、promotion或Git包称为
+verified backup；介质/保留策略与恢复演练仍待WI-041。
+
+详细决定由project-system-v2.md持有，GOALS/根AGENT/BACKLOG/CHANGELOG同步。
+本轮仅规划变更，不修改runtime、skill模板、schema或已安装0.45.0，不提交/发布/安装，
+不连接服务器、不修改真实或test Vault、不初始化/迁移任何项目。沿用已附着的
+codex/hotfix-asset-management工作树，旧主工作区的未提交审阅记录保留。
+当前初始化器仍是通用源码骨架，实验仍为扁平Run目录，资料清单不支持SSH源码引用；
+新双角色初始化、子项目身份/回传、远程导航与代码恢复尚未实现，统一进入WI-055。
+后续开发先准备独立输入、预期与定向测试范围，只验证一个合成项目/子项目，不重跑整库。
+既有论文/Canvas/知识模板验收及G17未完成边界保持，不因设计确认宣称实现或阶段完成。
+
 ## 2026-10-16：0.45.0已正常发布安装，H01收紧复验有限通过、人工待评
 
 用户以“ok”明确承接0.45.0提交、发布、正常安装及隔离单对象验收请求；不合并main、

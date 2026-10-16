@@ -9,6 +9,12 @@ Saved project-local reports use VS Code as their primary reader. Load
 `vscode-project-docs.md` for its reading/figure/navigation requirements; this does
 not apply the six-section PROJECT format to the report below.
 
+For collected execution-child records, load `project-management.md`. Qualify each
+selected Run/result by child and keep source revisions distinct from the parent's
+management commit. Review accessible selected evidence without flattening identities,
+fetching remote files or modifying receipts; unsupported aggregate lifecycle checks
+remain explicit gaps, not missing-data repairs performed by a read-only review.
+
 ## Required human result
 
 Use one presentation language. The following content roles are required; translate

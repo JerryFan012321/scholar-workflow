@@ -17,6 +17,16 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 
 ## Active Items
 
+### WI-055: Complete local research management and remote execution subprojects
+- **Status**: in-progress
+- **Priority**: p1
+- **Type**: planning
+- **Context**: On 2026-10-16 the user confirmed a full local research parent with private local-only management Git, knowledge/literature, PROJECT and one plan, agent guidance/skills, all-child experiment archives and local analysis. Every child has its own remote source Git and all human/agent code changes happen remotely; only the primary role may push project-owned history to GitHub, while reading original upstreams remains allowed for other children. Local code retention is a minimal recovery copy, not a development clone. This supersedes the earlier local nested-primary idea; it does not revoke any existing released contract or accepted paper/Canvas format.
+- **Blocker**: none for bounded contract design; real deployment/migration remains separately scoped, and verified backup still depends on WI-041
+- **Next action**: Implement in small slices from `planning/project-system-v2.md` section 15: parent/child identity and role-specific initialization, safe remote-source locators, all-state experiment registration and child-qualified reception/indexing, then minimal code-recovery records. Prepare independent synthetic inputs and expected results for one parent/child before targeted testing. Current new-run reads the selected root's Git HEAD: do not register a remote recipe against the parent's management commit. Current flat archive, context schema 1 and selected-file promotion do not already implement these capabilities. No server access, project migration, runtime change or publication has occurred in this planning update.
+- **Related**: G11, G16, INV32-INV35, INV62, WI-019, WI-020, WI-022, WI-023, WI-024, WI-041, WI-054; `planning/project-system-v2.md`
+- **Contract slice, 2026-10-16**: The shared runtime result contract is connected to init-project, organize-project and review-experiments without new skills or trigger changes. Three skill validators and 14 eval/manifest structure tests pass. An independent conversation-only check on one synthetic parent preserves the complete local surface, child identity, formats and unsupported-operation stops. This is limited source-skill evidence, not implemented initialization/reception/SSH schema or normal installed acceptance; see `planning/project-management-skill-test-results.md`.
+
 ### WI-054: Project-centered context and responsibility refactor
 - **Status**: in-progress
 - **Priority**: p0
@@ -25,6 +35,7 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Blocker**: independent test approval before executing any tests; publication, installation, service retirement and real-data migration are not included in implementation authorization
 - **Next action**: The schema-1 context contract, three read-only project CLI entries and first Knowledge model/catalog/document/Field extraction are implemented in the development tree without changing project-layout schema 2 or analysis formats. Present the one-project synthetic inputs, expected Markdown/JSON and targeted regression scope for independent approval before running tests. Remaining native-reader imports, literature-tree catalog update and Field transaction HTTP dependencies are explicit later slices, not proof of full decoupling. This batch is untested and unpublished; cancelled Hub UI/worker gates and incomplete real migration/backup do not block its independent acceptance.
 - **Related**: G16, INV59-INV61, NG21-NG22, WI-019, WI-025, WI-030, WI-041; `planning/project-centered-refactor.md`
+- **Direction update, 2026-10-16**: Remote-only child source development and full local research management are accepted under WI-055. The existing context interface has no remote-code locator; add that capability explicitly in the new slice rather than accepting arbitrary SSH URIs or declaring it already supported.
 
 ### WI-053: Direct paper readers, related files and guided Codex tasks
 - **Status**: deferred
@@ -180,6 +191,7 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Blocker**: none for runtime implementation; backup medium and first real migration remain external decision gates
 - **Next action**: Keep the implemented WI-020 through WI-023 contracts green through the final regression/release review; keep WI-024 read-only until a real project is selected.
 - **Related**: G11, INV27, INV32-INV35, WI-020, WI-021, WI-022, WI-023, WI-024
+- **Direction update, 2026-10-16**: The local research parent / remote execution-child design is accepted in `project-system-v2.md` and queued as WI-055. Preserve WI-020 through WI-023 historical completion; new role-specific Git/layout, child-qualified reception and minimal recovery capabilities are not implemented by that older batch.
 
 ### WI-020: init-project v2 common contract and declarative initializer
 - **Status**: done

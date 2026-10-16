@@ -1,6 +1,8 @@
 # 科研项目系统 v2 — 改造计划
 
-> 状态：Accepted 0.5，2026-10-01。用户已授权项目中心重构；本规格继续持有 `init-project`、项目身份和实验档案，
+> 状态：Accepted 0.6，2026-10-16。用户已确认完整本地研究总项目与远端执行子项目的管理方式（§3.6、§4、§15）；
+> 该增量仅固化设计，未实现或部署，不授权真实项目迁移。此前本地保留Primary开发clone的设想被替代。
+> 本规格继续持有 `init-project`、项目身份和实验档案，
 > 新增资料关联与职责边界由 [`project-centered-refactor.md`](project-centered-refactor.md) 细化。
 > `project-context.json` 独立于布局 manifest；旧 Hub 是兼容实现，不再是项目整合的前置条件。
 > 真实项目迁移、正式备份后端和既有项目的 destructive/untrack 操作仍不在授权范围内。
@@ -46,6 +48,8 @@ TRELLIS、Gaussian Splatting、Detectron2、SAM 2、DreamerV3 和 TorchTitan 是
 ### 3.1 Git 与源码
 
 - 源码 Git 与本地实验档案是两套系统；实验记录引用完整 commit SHA，不管理 branch 或 worktree。
+- 在本次确认的总项目/子项目模式中，所有子项目的源码Git工作区均位于远端。本地总项目有独立的
+  资料Git，跟踪管理文档和轻量档案但不推送；本地代码恢复副本不是开发clone，也不被当作源码真源。
 - 多个 Run 可以基于同一个 commit；Run 的差异可以只来自 `run.sh`、resolved config、数据选择或 seed。
 - 新项目的源码演化默认可采用 `develop → main`，但初始化器不在无提交时伪造分支，也不隐式切换分支。
 - `configs/` 只保存长期可复用、机器无关、适合进入源码 Git 的 canonical config/recipe。
@@ -86,7 +90,9 @@ dataset/
 
 - 服务器是执行场，不是长期知识真源。
 - `docs/` 是本地优先的项目知识库，不在服务器维护第二份正文真源。
-- `experiments/` 是本地实验档案，不是试验性源码目录。
+- 本地 `experiments/` 聚合各子项目的执行档案与回传成果；远端子项目也必须登记自身实验。
+  这是显式的实验事实回传，不是知识正文同步；远端执行记录与本地人工分析分开，不互相覆盖。
+- `experiments/` 不存试验性源码，数据集和大型执行产物也不默认回传本地。
 - 试验性源码如确有需要使用 `prototypes/`，框架型扩展优先使用 `extensions/`。
 - 其他既有项目的 `.gitignore`、tracked 文件和目录迁移必须逐项目讨论，不能批量改写。
 
@@ -114,19 +120,97 @@ dataset/
 - 尚未移除的 Hub 项目文件 API 仍只接受 `project_id + docs 相对路径`，守护 no-overwrite、CAS、
   symlink、Git 风险提示与可恢复 trash；本次没有停止服务或放松兼容路径。
 
+### 3.6 本地总项目与远端执行子项目（2026-10-16 已锁定，待实现）
+
+本节适用于插件管理的科研项目，不授权迁移Scholar Workflow插件自身的开发仓库。
+运行期skill的共同结果契约唯一持于 `references/project-management.md`，由现有init-project、
+organize-project与review-experiments按职责加载；本文继续持有设计决定与实施增量，不作为运行期依赖。
+
+**本地是完整研究管理项目，不是备份目录或实验结果收件箱。** 保留稳定项目身份、资料关联、内部
+PROJECT、唯一详细计划、项目知识与轻量文献梳理、agent规则/技能、全子项目实验档案、分析比较、
+成果及恢复状态。PROJECT仍在VS Code阅读，先展示现状、计划与结果；README仍是对外说明文档，
+不会因为总项目不发布而与PROJECT合并或自动删除。论文单元、Canvas、证据与知识格式不变。
+
+**远端子项目是开发和执行单元。** 每个子项目有稳定身份、总项目归属、自己的Git、代码、
+canonical configs、env、tools、tests、按dataset组织的数据及实验登记。不得因裁剪总体管理层，
+删掉子项目所需的执行规则、项目技能或实验档案。角色名采用 `primary`（Primary Subproject）；
+baseline/探索/验证等用途按实际情况说明，不强制固定一套子项目类别或数量。
+
+Git与发布边界：
+
+- 所有人工及agent代码修改都在远端完成，本地不保留任何子项目的日常开发clone。
+- 总项目的本地Git管理其研究资料与轻量实验档案，不推送；各远端子项目独立Git。
+- 只有primary可以向项目自有GitHub仓库推送开发历史；其他子项目不上传自己的修改，但可以
+  读取/clone/fetch其原作者上游。GitHub可见性与正式发布仍分别决定，不自动创建仓库或推送。
+- 同一子项目可在多服务器执行，但明确主要开发位置；并行修改用独立分支/工作目录，执行使用固定
+  commit的独立目录，运行中不更新。主分支整合不自动force-push，不以最后写入覆盖冲突。
+- 本地最简代码恢复材料应覆盖需保留的实验引用提交及必要非秘密恢复信息，不是第二套开发真源；
+  未提交/未跟踪原创内容不能假称已经包含在Git包中。备份状态仍服从§7与WI-041。
+
+实验登记与归档边界：
+
+- 远端各子项目登记全部实验，包括失败和中断；本地按 `experiments/<subproject>/<run>/attempts/<attempt>/`
+  归档，分析、比较和综合在本地进行。Run/Attempt身份及其科学语义不变，目标主机不进入recipe身份。
+- 关联使用总项目/子项目的稳定身份，不以可改的目录名、服务器路径或仓库显示名充当身份。子项目内
+  Run引用须限定子项目范围，同一Run在不同位置的执行使用不同Attempt，避免回传相互覆盖。
+- 回传包含代码commit、入口与实际配置/环境快照、数据版本、状态、指标、必要成果及清单；不因
+  “只有最简源码备份”省掉解释比较结果所需的配方证据，不默认复制整套数据或大型checkpoint。
+- 接收按明确身份与内容校验：同版本同内容幂等，冲突或来源改变时拒绝覆盖；后续执行状态更新须
+  校验已知基线并留下回执，不能把仍在增长的文件伪装成不可变快照。本地分析不写回远端执行事实。
+- 比较条件与结果同处，明确baseline/variant的共同条件、差异和未核实因素；沿用既有实验呈现契约。
+
+agent与原生工具边界：
+
+- 本地agent可通过SSH操作远端，也可在远端运行CLI agent；不强制搬迁所有agent或建设新的控制面。
+  人工使用VS Code Remote-SSH，cmux仅承载原生窗口/终端，不授予文件或服务器权限。
+- 远端规则/skills必须实际可达；本地全局规则、插件、登录和会话不能视为已经自动继承。按任务提供
+  必要目标/约束/资料，不复制整个本地知识库或凭证；服务器凭据继续留在既有私有台账/SSH机制中。
+- 资料关联需增补受控远端代码定位及原生打开约定；当前schema 1只支持本地project-file及
+  Zotero/Obsidian外部对象，不能把任意SSH URL塞进现有URI冒充支持。资料引用不是执行授权。
+
 ## 4. 目标结构
 
-以下是 v2 的概念结构。`project-layout.json` 是便携项目身份与所选 profile 的正式 manifest：
+以下为2026-10-16确认的职责结构，尚非当前初始化器的输出。具体子项目清单及恢复目录的存储形式在
+WI-055契约切片中确定，不因示意强制新增多个管理文件。`project-layout.json`继续持有便携身份；
+总项目/子项目关联和主机定位须各司其职，不能把个人主机路径或凭据塞入便携manifest。
 
 ```text
-project/
+local-research-project/
+├── .git/                              # 研究资料的本地Git，不推送
+├── PROJECT.md                         # 内部现状、计划、结果与直接导航
+├── README.md                          # 对外说明，不发布内部PROJECT
+├── SCHEDULE.md                        # 可选；与既有计划择一，不建第二份详细计划
 ├── AGENTS.md
 ├── CLAUDE.md
 ├── AGENT.md
-├── project-layout.json                 # schema v2：稳定 project_id + profile/addon 及版本
-├── project-context.json                # 可选独立 schema v1：明确资料关联；本批不由初始化器静默生成
-├── .agents/
-│   └── skills/
+├── project-layout.json                 # 稳定身份；当前schema 2，新双角色表达待实现
+├── project-context.json                # 资料关联；当前schema 1，远端代码定位待实现
+├── .agents/skills/                     # 总项目规则与技能，不是自动会话记忆管理器
+├── docs/
+│   ├── notes/                         # 项目知识、设计判断、轻量文献分工
+│   ├── plan/                          # 规划材料；任务计划只有一个权威
+│   └── report/                        # 本地分析、跨实验比较与综合成果
+├── assets/                            # 项目说明所需展示素材
+├── experiments/
+│   ├── profiles/targets/              # 无凭证的执行位置与能力
+│   ├── <subproject-segment>/          # 稳定身份映射，不以目录名充当身份
+│   │   └── <run-id>/
+│   │       ├── run.yaml               # 远端配方及快照的受控回传
+│   │       ├── run.sh                 # 实际入口快照，不是本地训练启动器
+│   │       ├── inputs/
+│   │       ├── report.md              # 本地分析，与执行事实分开
+│   │       ├── notes.md
+│   │       ├── artifacts.yaml
+│   │       ├── artifacts/
+│   │       └── attempts/<attempt-id>/
+│   └── index.yaml                     # 可重建，跨子项目引用须限定身份
+└── backups/code/                      # 示意最简恢复副本；非开发clone，不进入资料Git
+
+remote-execution-subproject/
+├── .git/                              # 每子项目独立；只有primary可连接GitHub
+├── AGENTS.md / CLAUDE.md / AGENT.md     # 适用的执行规则与引用入口
+├── .agents/skills/                     # 该子项目需要的实际技能
+├── <identity-and-parent-declaration>   # 概念占位，具体schema/文件名尚未确定
 ├── src/
 │   ├── <package>/                      # profile 展开区
 │   └── utils/
@@ -134,36 +218,29 @@ project/
 ├── configs/                            # canonical components/recipes
 ├── tools/                              # 薄入口
 ├── tests/
-├── assets/                             # 可发布的 README/项目资产
 ├── env/                                # 机器无关环境定义
-├── dataset/                            # host-local，可在执行服务器物化；不进入源码 Git
+├── dataset/                            # 执行主机物化，不进入源码Git或默认回传
 │   └── <dataset-id>/
 │       ├── source/
 │       ├── intermediate/
 │       ├── prepared/
 │       └── metadata/
-├── docs/                               # 本地知识库，不部署到服务器
-│   ├── notes/
-│   ├── plan/
-│   └── report/
-└── experiments/                        # 本地实验档案，不进入源码 Git
-    ├── profiles/
-    │   └── targets/
+└── experiments/                        # 子项目自己的执行事实，不进入源码Git
+    ├── profiles/targets/               # 所需执行位置声明，不含凭据
     ├── <run-id>/
     │   ├── run.yaml
     │   ├── run.sh
     │   ├── inputs/
-    │   ├── report.md
-    │   ├── notes.md
     │   ├── artifacts.yaml
     │   ├── artifacts/
     │   └── attempts/
     │       └── <attempt-id>/
-    └── index.yaml                      # 可选、可重建索引
+    └── index.yaml                      # 子项目可重建索引
 ```
 
-新项目的本地目录不需要用 tracked `.gitkeep` 假装进入源码 Git。现有项目若已跟踪 `docs/` 或
-`experiments/`，初始化器只能报告状态和建议 patch，绝不自动执行 `git rm --cached`。
+总项目资料Git可跟踪docs与轻量实验记录；远端源码Git仍排除数据/大产物及执行档案。不能把现有
+“忽略整个docs/experiments”的源码策略机械用于本地总项目。当前扁平Run目录保持旧版兼容，
+不会静默搬到新分层；已跟踪内容的untrack、目录移动和ignore变更仍需逐项目确认。
 
 ## 5. 源码与配置 Profiles
 
@@ -246,6 +323,10 @@ Profile 只生成目录和必要包边界，不生成空的 `model.py`、`train.
 Markdown 与测试各维护一份目录清单。
 
 ## 6. 实验档案模型
+
+以下Run/Attempt/Target/Artifact语义保留。远端子项目创建、冻结执行配方，本地接收并按子项目
+归档；接收时必须保留子项目源码commit，不能用本地总项目的资料Git HEAD重新生成配方。
+当前CLI没有该远端接收模式，仍是 `experiments/<run-id>`；新分层与聚合由WI-055另行实现。
 
 ### 6.1 Run
 
@@ -350,15 +431,19 @@ experiment migrate-plan
 
 | 层级 | 内容 | 默认处理 |
 |---|---|---|
-| A：本地必留 | 源码/Git 历史、Run/Attempt 元数据、脚本、resolved config、报告、指标、参数、环境摘要 | 本地保留；纳入后续校验备份 |
+| A：本地必留 | 最简代码恢复材料（含需保留的实验引用提交）、Run/Attempt 元数据、脚本、resolved config、报告、指标、参数、环境摘要 | 本地保留；不建立日常源码clone，纳入后续校验备份 |
 | B：选择性晋升 | 最终点云、代表性渲染图/视频、关键 checkpoint、必要中间物 | 人工选择后 promotion，记录哈希和来源 |
 | C：仅清单 | 可重算但巨大的中间文件、非关键 checkpoint、完整远程输出 | 本地只留 manifest、生成 Run/Attempt 和远程位置 |
 | D：临时 | cache、重复日志、下载缓存 | 可淘汰，不作为研究成果 |
 
 公开、可重新下载的数据可不复制，但必须保留来源、版本、许可、checksum 和准备流程。备份介质、周期、
 保留代数和异地副本尚未决定，因此首批实现不能声称“本地保存即完成备份”。
+最简Git恢复包不包含全部工作区状态；未提交/未跟踪原创内容要单独处理。复制成功或Git包校验不等于
+独立介质恢复演练通过，不能绕过当前runtime/schema对verified状态的拒绝。
 
 ## 8. `init-project` v2 设计
+
+§8–§12保留原v2实施基线与兼容要求；新双角色初始化及分层回传的增量见§15，不冒称旧接口已经支持。
 
 ### 8.1 声明式布局
 
@@ -408,8 +493,8 @@ python3 skills/init-project/scripts/init_project.py apply TARGET \
 | `dataset/raw`、`dataset/metadata` | 分配到各 `dataset/<dataset-id>/...` | 无法可靠判断 dataset，默认只诊断 |
 | 顶层 `dataset_toolkits/` | `src/utils/dataset_toolkit/` | 可提出候选映射，不自动移动 |
 | `env/server/` | env-records / target profile / `env/` / Attempt | 必须逐项分类 |
-| `experiments/<id>/` | 原地补 Run + `attempts/` | 不增加 `runs/` 层，不移动旧 output/log |
-| tracked `docs/`、`experiments/` | local-only | 只报告，不自动 untrack |
+| `experiments/<id>/` | 旧版原地兼容；新总项目按子项目归档 | 不增加 `runs/` 层，不自动搬迁旧 output/log；新分层先做显式迁移预览 |
+| tracked `docs/`、`experiments/` | 本地总项目可跟踪管理记录；远端源码Git仍排除执行档案 | 只报告角色与差异，不自动 untrack或批量改ignore |
 
 旧实验迁移流程：
 
@@ -476,7 +561,8 @@ release snapshot 对齐。
 - Attempt 引用不存在的 Run/Target 时拒绝；Target 含 secret、command 或未知字段时拒绝。
 - Artifact promotion 拒绝绝对路径、`..`、symlink 和同名不同内容；原子复制可恢复。
 - Legacy 多脚本/未知 commit 情况只报告 unresolved；重跑迁移不改变旧字节。
-- 新项目创建实验记录后，源码 Git 不出现 `docs/`、`experiments/` 和 `dataset/` 内容。
+- 远端源码Git不纳入总项目正文、执行档案或dataset；本地资料Git允许跟踪docs及轻量实验记录，
+  不跟踪源码开发clone、大产物和代码恢复包。旧通用初始化器的测试继续守护其历史接口。
 - 已跟踪的旧目录只报告，不自动 untrack。
 - release snapshot 包含所有新增 schema、profile catalog、skill 和 CLI 资源。
 
@@ -530,6 +616,11 @@ CHANGELOG.md
 | D8 | 大产物默认阈值 | 已冻结 | 类型默认 + 人工覆盖，首版不设通用大小阈值 |
 | D9 | 首个真实迁移项目 | 外部决策门 | 只完成临时 fixture；真实项目由用户以后逐项选择 |
 | P-D10 | 项目 `docs/` 与全局知识 Vault 的衔接 | 2026-10-01 已修订 | 允许项目用薄清单显式引用稳定资料身份，正文仍归原系统；复制/归档仍产生独立身份，无同步、跨域覆盖、级联删除或强制 provenance |
+| P-D11 | 开发与研究管理位置 | 2026-10-16 已锁定，待实现 | 本地保留完整研究总项目；所有子项目代码/Git/配置开发与执行均在远端，本地不留Primary等日常开发clone |
+| P-D12 | 版本管理与发布 | 2026-10-16 已锁定，待实现 | 总项目本地Git不推送；各子项目独立远端Git，只有primary可向项目自有GitHub推送；不禁止其他子项目读取作者上游，并行目录隔离、实验固定commit |
+| P-D13 | 全量实验登记与回传 | 2026-10-16 已锁定，待实现 | 所有子项目含失败/中断实验均登记，本地按子项目/Run/Attempt归档；轻量配方/指标/必要成果回传，大数据可只留清单，事实与本地分析分开 |
+| P-D14 | 本地源码保存 | 2026-10-16 已锁定；备份策略仍待D7 | 最简可恢复材料，不是开发工作区；包含实验引用提交和必要恢复信息，未提交内容不假称已备份，verified仍需独立恢复验收 |
+| P-D15 | agent与工具 | 2026-10-16 已锁定，待实现 | 本地SSH或远端CLI均可；不自动继承规则/登录/会话，不复制秘密或整库，不再建设Hub控制面；远端代码导航需新契约 |
 
 ## 14. 完成定义
 
@@ -547,3 +638,24 @@ CHANGELOG.md
 
 本批 context/overview 的完成标准独立记录在 `project-centered-refactor.md`；不因新定位就宣称旧项目迁移、
 真实实验或 verified backup 完成，也不以已经取消的 Hub 前端/worker 门禁阻挡独立内容能力的验收。
+
+## 15. 本地研究总项目／远端子项目实施增量（WI-055，未实现）
+
+保留WI-020至WI-023的历史发布事实，不以本次设计反写为未完成。新增能力按以下小切片推进：
+
+1. 固化总项目/子项目稳定身份、父子归属、角色、执行位置、归档限定引用与兼容版本契约；主机定位
+   复用现有资产/Target机制，不建另一套服务器台账，不把child关联混成知识同步。
+2. 分开总项目与执行子项目的初始化职责和Git策略，保留source/config profiles、数据toolkit和指令拓扑；
+   不因选择角色创建远端机器、推送Git、安装agent、改动既有项目或生成虚假业务正文。
+3. 实现远端登记与本地按子项目接收/索引，正确保存远端源码commit与配方快照；当前new-run依赖
+   所选项目根的Git HEAD，不能在本地总项目调用它冒充远端Run登记。接收覆盖全部实验状态，
+   幂等/CAS/来源变化/并发身份冲突/中断恢复均有明确回执，本地分析不被执行记录更新覆盖。
+4. 增补受控远端代码定位和VS Code原生导航，让PROJECT继续展示代码模块与资料关系；
+   不开放任意命令URI，不把可点击入口冒充连接成功、权限验证或实际运行。
+5. 建立最简代码恢复材料的采集/清单边界，保护实验引用提交与未提交原创内容；不启用verified
+   backup writer，不因存在恢复包宣称WI-041完成。
+6. 先准备独立合成总项目/单子项目及输入、预期、失败分支，只做受影响定向验证；需要安装态验证时，
+   再按独立hotfix正常发布/安装后验收。可见资料样例在test Vault，不重复批量论文或正式项目操作。
+
+本轮只完成决定记录与规划一致性：没有修改runtime/schema/skill模板、运行实验、连接服务器、
+迁移项目、发布安装或切换服务。真实服务器位置、迁移项目及备份介质/保留策略仍在各自授权边界内。

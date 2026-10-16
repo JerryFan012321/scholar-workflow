@@ -24,6 +24,10 @@ Canonical rule for where every object lives. Applies to all skills and agents.
 
 ## Invariants
 
+For the accepted local research-parent / remote execution-child allocation, load
+`project-management.md`. It defines the role boundary without changing current
+layout/context/archive schemas or authorizing deployment and collection.
+
 1. Downloaded paper PDFs land only in `paper_inbox`; ingest into Zotero goes through
    `scholar-workflow zotero ingest`, which uploads the file into Zotero storage.
    Technical documents live in the Vault even when they are PDFs. Never swap.

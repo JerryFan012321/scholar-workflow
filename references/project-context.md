@@ -29,6 +29,12 @@ effect. The short `overview` command does not render that document.
 
 ## Portable inventory
 
+For research-parent/remote-child organization, use `project-management.md` for the
+ownership and capability boundary. The current schema below has no remote-code/SSH
+reference form or parent-child registration fields. A human document may identify
+a supplied remote location as unverified; do not invent JSON fields, a fake local
+path or an unsupported provider to make it pass validation.
+
 The inventory contains `schema_version`, matching `project_id`, `title`, `summary`,
 optional `language` (`en` by default, or `zh`), and up to 512 explicitly selected
 `entries`. Each entry has a unique `entry_id`, `kind`, `title`, `purpose`, and `ref`.
