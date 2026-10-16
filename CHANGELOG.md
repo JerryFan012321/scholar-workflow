@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Changed
+
+- **Development 0.45.0 receipt:** record the approved hotfix/runtime publication,
+  normal pinned pipx and Codex marketplace installation, exact package/plugin
+  identity, independent installed synthetic acceptance and bounded host behavior.
+  Preserve the host test's out-of-scope nonsecret native-registry read as a failed
+  boundary, not a full pass; human usability and automatic discovery remain pending.
+  No runtime rebuild, real asset write, service switch or main merge.
+
 ## [0.45.0] - 2026-10-16
 
 ### Added
