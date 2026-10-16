@@ -5,6 +5,12 @@ dashboard. Select the project, Runs, result Attempts and metrics; the skill retu
 an evidence-linked Markdown report. Ambiguous selections are clarified, not replaced
 with the highest-scoring or latest result.
 
+For collected remote-child results, use the shared
+[project-management contract](../../references/project-management.md). Keep child
+identities and source commits distinct, even when Run names match. Read-only review
+does not receive archives, fetch remote artifacts or turn missing lifecycle support
+into a claim that collection or backup succeeded.
+
 Example request:
 
 > Compare the selected baseline and variant Runs using each primary Attempt's

@@ -1,3 +1,3 @@
 """Project-centered research content and reproducible record primitives."""
 
-__version__ = "0.45.0"
+__version__ = "0.45.1"

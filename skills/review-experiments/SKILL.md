@@ -8,6 +8,10 @@ description: Review or compare explicitly selected project Run/Attempt results a
 Return a human-readable experiment review using the shared experiment-review result
 contract. Existing Run/Attempt/Artifact bundles remain authoritative; the report is
 a derived view, not a metric store or new experiment index.
+For selected remote-child results collected under a research parent, load the
+shared project-management contract. Keep child-qualified identities and every
+selected outcome distinct; review only the supplied safe evidence and report
+collection/lifecycle gaps rather than fetching or rewriting records.
 
 ## Inputs and operations
 
@@ -51,6 +55,7 @@ pending human assessment until actually checked.
 Load these for this task:
 
 - `${CLAUDE_PLUGIN_ROOT}/references/experiment-review.md` — required report structure and metric evidence rules
+- `${CLAUDE_PLUGIN_ROOT}/references/project-management.md` — when reviewing collected execution-child results
 - `${CLAUDE_PLUGIN_ROOT}/skills/init-project/references/experiment-records.md` — existing record authority and mutability
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`

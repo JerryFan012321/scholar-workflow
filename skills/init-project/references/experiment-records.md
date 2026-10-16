@@ -4,6 +4,13 @@ Read this reference when initialization is followed by Run, Attempt, Target, art
 record management. These commands manage records only; they never launch training or construct
 remote shell commands.
 
+The paths/commands below are the current flat archive interface. Research-parent
+collection from execution children follows the shared `references/project-management.md`
+target contract, but a child-qualified receiver is not implemented. In particular,
+`new-run` reads the selected project root's Git HEAD: never use the parent's management
+commit as a remote child's source revision or treat selected-file promotion as full
+archive collection. Preserve old bundles rather than silently relocating them.
+
 ## Authority and mutability
 
 - experiments/<run-id>/run.yaml is the machine-neutral recipe authority.

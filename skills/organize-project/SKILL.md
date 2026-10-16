@@ -8,6 +8,10 @@ description: Organize selected project code, paper units and experiment archives
 Deliver an independently readable internal project entry using the shared
 project-entry contract. Existing project, knowledge and experiment records remain
 authoritative; the entry is not another inventory or execution dashboard.
+For a local research parent with remote children, load the shared
+project-management contract. Preserve the complete local management/knowledge
+surface, qualify selected child experiments and show remote code availability
+honestly; organizing PROJECT does not implement deployment or archive reception.
 
 ## Inputs and operations
 
@@ -50,6 +54,7 @@ Incomplete evidence is not fabricated completion.
 Load for this task:
 
 - `${CLAUDE_PLUGIN_ROOT}/references/project-entry.md` — required internal document format and update contract
+- `${CLAUDE_PLUGIN_ROOT}/references/project-management.md` — when the project has remote execution children
 - `${CLAUDE_PLUGIN_ROOT}/references/project-context.md` — existing association authority and native references
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`

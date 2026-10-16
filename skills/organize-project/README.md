@@ -3,6 +3,12 @@
 Prepare or update an internal PROJECT.md from selected project materials. README.md
 remains the public presentation. No Hub or new registry is needed.
 
+For a local research parent with remote execution children, follow the shared
+[project-management contract](../../references/project-management.md). Preserve its
+full knowledge, plan, guidance and analysis surface; show selected child-qualified
+results and honest remote code availability. This document task does not deploy
+children or add SSH references to the current material-inventory schema.
+
 ## Use
 
 Ask: "Prepare an internal PROJECT.md preview for this project, using these code

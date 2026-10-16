@@ -4,6 +4,10 @@
 
 ## 会创建什么
 
+已确认的“本地研究总项目／远端执行子项目”见共享[项目管理契约](../../references/project-management.md)。
+双角色初始化尚未实现，下列命令仍生成通用源码骨架。新角色请求先交付方案和能力缺口，
+不能套用旧 apply 后宣称完成；已有通用项目接口继续兼容。
+
 - `assets/`、`configs/`、`env/`、`src/`、`tools/` 和 `tests/` 下的共同源码结构。
 - 本地优先的 `dataset/`、`docs/` 和 `experiments/`。
 - 含稳定项目 UUID 和版本化 profile 选择的 `project-layout.json`。

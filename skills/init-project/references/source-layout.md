@@ -2,6 +2,10 @@
 
 Read this reference when selecting a source profile or interpreting `project-layout.json`.
 
+These paths describe the implemented generic source layout. Parent/child ownership
+and its current capability gaps are in the shared `references/project-management.md`;
+profile selection alone does not create either new role.
+
 ## Portable identity
 
 Every initialized project has a root `project-layout.json`. Its `project_id` is a canonical
@@ -18,7 +22,9 @@ servers, credentials, or global-Knowledge relations.
 - `dataset/<dataset-id>/{source,intermediate,prepared,metadata}/` is materialized on each host and
   remains outside source Git.
 - `env/` contains machine-neutral definitions; Target profiles describe where an Attempt runs.
-- `docs/` and `experiments/` are local-first records and are not deployed to execution servers.
+- Parent knowledge and collected archives are local-first, not deployed as a second
+  server truth. A remote execution child registers its own experiments independently;
+  this does not deploy the parent's archive or add a child-reception mode to this helper.
 - `configs/` contains reusable recipes. Resolved per-Run inputs belong in the Run bundle.
 
 The profile catalog in `source-profiles.json` is the machine-readable source of truth for profile

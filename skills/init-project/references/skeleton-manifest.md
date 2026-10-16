@@ -2,6 +2,11 @@
 
 Read this reference before planning or applying initialization.
 
+This is the implemented generic skeleton, not the research-parent/execution-child
+target. For those roles use the shared `references/project-management.md` contract;
+the helper has no role-specific apply mode. Its source-Git ignore policy is not the
+local research parent's management-Git policy.
+
 ## Portable manifest
 
 Every project receives project-layout.json with schema version 2 and a canonical UUIDv4

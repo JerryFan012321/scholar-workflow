@@ -5,6 +5,45 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.45.1] - 2026-10-16
+
+### Changed
+
+- **init-project / organize-project / review-experiments:** share the accepted
+  research-parent/remote-child result contract, with full local research management,
+  remote source ownership, child-qualified experiment evidence and minimal recovery.
+  Preserve existing formats and explicit generic use; expose unsupported role apply,
+  archive reception and SSH inventory references instead of claiming automation.
+  Add host-layer safety/outcome specifications and bilingual usage boundaries without
+  changing triggers, helpers or CLI/schema behavior. Synchronize package and both
+  host manifest versions for the approved normal hotfix release and installation.
+  Three skill validators, 14 eval/manifest structure checks and one independent
+  synthetic conversation check pass within scope; new automation and installed/
+  human acceptance remain separate, with no candidate or business-system writes.
+
+- **Development project-management decision:** accept a complete local research
+  parent and remote-only source development/execution for every independent child.
+  Keep parent management Git local, allow project-owned GitHub pushes only for the primary child, collect
+  all experiment states into child-qualified local archives and retain minimal code
+  recovery material rather than local development clones. Preserve knowledge,
+  PROJECT/one plan, agent guidance, accepted presentation and backup boundaries.
+  Align the project specification, goals, handoff and WI-055. The earlier decision
+  step was planning only; this release adds skill contracts, not role initialization,
+  archive reception, remote-code schema support, deployment or migration.
+
+- **Development 0.45.0 receipt:** record the approved hotfix/runtime publication,
+  normal pinned pipx and Codex marketplace installation, exact package/plugin
+  identity, independent installed synthetic acceptance and bounded host behavior.
+  Preserve the host test's out-of-scope nonsecret native-registry read as a failed
+  boundary, not a full pass; human usability and automatic discovery remain pending.
+  No runtime rebuild, real asset write, service switch or main merge.
+  A subsequent bounded H01 query replay uses installed assets lookup and synthetic
+  native inventory only, preserves all inputs, and passes within that explicit scope;
+  it does not erase the earlier boundary failure or prove native integration.
+  Record a separate read-only use of the installed asset entry against existing
+  registrations/native inventory; retain real ledger permission and legacy-credential
+  warnings without storing credential values or changing user assets.
+
 ## [0.45.0] - 2026-10-16
 
 ### Added

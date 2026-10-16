@@ -5,6 +5,12 @@ host-neutral project instructions.
 
 ## What it creates
 
+The accepted research-parent/remote-child model is defined in the shared
+[project-management contract](../../references/project-management.md). Its two-role
+initializer is not implemented: the commands below still create the generic source
+skeleton. A role-specific request receives a proposal and capability gap, not a
+generic apply presented as complete. Existing generic projects remain compatible.
+
 - A shared source layout under `assets/`, `configs/`, `env/`, `src/`, `tools/`, and `tests/`.
 - Local-first `dataset/`, `docs/`, and `experiments/` trees.
 - `project-layout.json` with a stable portable project UUID and versioned profile selection.
