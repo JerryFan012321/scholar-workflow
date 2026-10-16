@@ -20,6 +20,7 @@ Canonical rule for where every object lives. Applies to all skills and agents.
 | Human-maintained project/task management views | Notion | Notion cloud; not authority for project code, archives or knowledge prose |
 | Machine Notion projections | Original Zotero/Vault/project records | one-way summaries and stable native links; no second content store |
 | Plugin runtime state (mappings, cursors, jobs, audit) | State store | `SCHOLAR_WORKFLOW_HOME` |
+| Personal server metadata and recorded environments | Existing private env-records ledger | configured `env_records_root/servers.yaml`; not a generic asset database |
 
 ## Invariants
 

@@ -3234,6 +3234,185 @@ def _format_rows(rows: list[dict], fmt: str) -> str:
     return "\n".join(lines)
 
 
+@main.group(name="assets")
+def assets() -> None:
+    """Query registered local assets and explicitly register server metadata."""
+
+
+def _asset_server_root() -> Path:
+    from yaml import YAMLError
+
+    from scholar_workflow.config import ConfigNotFound, load_config
+
+    try:
+        return load_config().env_records_root
+    except ConfigNotFound:
+        raise DependencyError(
+            "Server ledger location is not configured. Run `scholar-workflow config init` first."
+        ) from None
+    except (OSError, ValueError, TypeError, YAMLError):
+        # Configuration validation can contain raw values; never propagate it.
+        raise InputError("Server ledger configuration is unavailable or invalid.") from None
+
+
+def _asset_server_inventory() -> dict:
+    from scholar_workflow.assets.servers import AssetLedgerError, read_servers
+
+    try:
+        return read_servers(_asset_server_root())
+    except (click.ClickException, AssetLedgerError, OSError, ValueError, TypeError):
+        return {
+            "schema_version": 1, "status": "unavailable", "revision": None,
+            "servers": [], "diagnostics": [{
+                "code": "server_ledger_unavailable",
+                "message": "Server ledger or its configuration is unavailable or invalid.",
+            }],
+        }
+
+
+def _asset_output(payload: dict, *, fmt: str, language: str, server: bool = False) -> None:
+    from scholar_workflow.assets.inventory import inventory_markdown, server_markdown
+
+    if fmt == "json":
+        click.echo(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        renderer = server_markdown if server else inventory_markdown
+        click.echo(renderer(payload, language=language))
+
+
+@assets.command(name="list")
+@click.option("--kind", type=click.Choice(["all", "server", "knowledge"]), default="all")
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["zh", "en"]), default="zh")
+def assets_list(kind: str, fmt: str, language: str) -> None:
+    """Read existing server and knowledge authorities; never discover or initialize."""
+    from scholar_workflow.assets.inventory import knowledge_inventory
+
+    providers = {}
+    if kind in {"all", "server"}:
+        providers["server"] = _asset_server_inventory()
+    if kind in {"all", "knowledge"}:
+        state_root = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME))
+        providers["knowledge"] = knowledge_inventory(state_root / "hub" / "sources.json")
+    payload = {
+        "schema_version": 1,
+        "status": ("partial" if any(provider["status"] in {"invalid", "unavailable", "partial"}
+                                   for provider in providers.values()) else "available"),
+        "providers": providers,
+    }
+    _asset_output(payload, fmt=fmt, language=language)
+
+
+@assets.group(name="server")
+def assets_server() -> None:
+    """Manage non-secret server registration, without connecting or executing."""
+
+
+@assets_server.command(name="show")
+@click.argument("alias")
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["zh", "en"]), default="zh")
+def assets_server_show(alias: str, fmt: str, language: str) -> None:
+    """Show one exact registered alias with credentials hidden."""
+    inventory = _asset_server_inventory()
+    if inventory["status"] == "uninitialized":
+        raise DependencyError("Server ledger is not initialized; register a server first.")
+    if inventory["status"] in {"invalid", "unavailable"}:
+        raise SafetyRefusalError("Server ledger is unavailable or invalid; run `assets server check`.")
+    matches = [server for server in inventory["servers"] if server["alias"] == alias]
+    if len(matches) != 1:
+        raise InputError("Server alias is not registered or is ambiguous; run `assets list --kind server`.")
+    _asset_output({"schema_version": 1, "status": "available",
+                   "revision": inventory["revision"], "server": matches[0],
+                   "diagnostics": inventory.get("diagnostics", [])},
+                  fmt=fmt, language=language, server=True)
+
+
+@assets_server.command(name="check")
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["zh", "en"]), default="zh")
+def assets_server_check(fmt: str, language: str) -> None:
+    """Validate only the local ledger, not SSH reachability or installed environments."""
+    inventory = _asset_server_inventory()
+    _asset_output(inventory, fmt=fmt, language=language, server=True)
+    if inventory["status"] == "uninitialized":
+        click.get_current_context().exit(3)
+    if inventory["status"] in {"invalid", "unavailable"}:
+        click.get_current_context().exit(7)
+
+
+def _asset_registration_spec(path: Path) -> dict:
+    """Read one bounded JSON object through a non-symlink descriptor chain."""
+    descriptor = None
+    maximum = 64 * 1024
+    try:
+        absolute = Path(os.path.abspath(path))
+        flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+        directory = os.open(absolute.anchor, flags | os.O_DIRECTORY)
+        try:
+            for part in absolute.parts[1:-1]:
+                child = os.open(part, flags | os.O_DIRECTORY, dir_fd=directory)
+                os.close(directory)
+                directory = child
+            descriptor = os.open(absolute.name, flags | os.O_NONBLOCK, dir_fd=directory)
+        finally:
+            os.close(directory)
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > maximum:
+            raise SafetyRefusalError("Server specification must be a regular file of at most 64 KiB.")
+        with os.fdopen(descriptor, "rb", closefd=False) as handle:
+            content = handle.read(maximum + 1)
+        if len(content) > maximum:
+            raise SafetyRefusalError("Server specification exceeds 64 KiB.")
+    except OSError:
+        raise SafetyRefusalError("Server specification is unavailable or its path is unsafe.") from None
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+
+    def unique_keys(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("Duplicate JSON key")
+            result[key] = value
+        return result
+
+    try:
+        record = json.loads(content.decode("utf-8"), object_pairs_hook=unique_keys,
+                            parse_constant=lambda _value: (_ for _ in ()).throw(ValueError()))
+        if not isinstance(record, dict):
+            raise ValueError("Expected JSON object")
+    except (UnicodeError, ValueError, RecursionError):
+        raise InputError("Server specification must be valid UTF-8 JSON with unique object keys.") from None
+    return record
+
+
+@assets_server.command(name="register")
+@click.option("--spec", type=click.Path(path_type=Path), required=True,
+              help="Bounded JSON file containing non-secret server metadata.")
+@click.option("--expected-revision", help="Exact current ledger revision when updating an existing alias.")
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+@click.option("--language", type=click.Choice(["zh", "en"]), default="zh")
+def assets_server_register(spec: Path, expected_revision: str | None,
+                           fmt: str, language: str) -> None:
+    """Register one supplied server; no secrets, connection or implicit overwrite."""
+    from scholar_workflow.assets.servers import AssetLedgerError, register_server
+
+    record = _asset_registration_spec(spec)
+    try:
+        result = register_server(_asset_server_root(), record,
+                                 expected_revision=expected_revision)
+    except AssetLedgerError as exc:
+        error = {5: IdentityConflictError, 6: PartialCompletionError,
+                 7: SafetyRefusalError}.get(exc.exit_code, InputError)
+        # AssetLedgerError messages are fixed diagnostics, not input-value reprs.
+        raise error(str(exc)) from None
+    except (OSError, ValueError, TypeError):
+        raise SafetyRefusalError("Server registration could not be completed safely.") from None
+    _asset_output({"schema_version": 1, **result}, fmt=fmt, language=language, server=True)
+
+
 @main.group(name="knowledge")
 def knowledge() -> None:
     """Preview and explicitly register knowledge folders without Hub."""

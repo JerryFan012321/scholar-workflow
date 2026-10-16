@@ -5,8 +5,35 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.45.0] - 2026-10-16
+
+### Added
+
+- **manage-assets:** one entry for existing-inventory lookup, explicit owned-server
+  capture, safe metadata updates and reuse. Servers and knowledge retain their own
+  stores; watchlists and paper-source settings remain future adapter integrations.
+  Add a sanitized local server interface and read-only cross-type overview, with
+  synthetic validation kept separate from real asset writes and installed acceptance.
+  Development checks cover independent raw fixtures, credential hiding, unsafe
+  paths, stale updates and malformed-config isolation. Normal installation,
+  host behavior and human usability are verified separately from these checks.
+
 ### Changed
 
+- **config-setup:** reject list, mapping and boolean directory settings instead of
+  coercing them into plausible paths; asset inventory reports invalid configuration
+  without exposing raw values or hiding an independently available knowledge provider.
+- **env-setup / config-setup / analyze-paper / build-literature-tree:** share the
+  lookup-before-question asset contract without changing existing trigger descriptions,
+  paper/Canvas formats, knowledge registration approval or external execution scope.
+
+- **Development 0.44.7 receipt:** record approved independent hotfix/runtime publication,
+  normal pinned pipx and Codex marketplace installation, and exact 270-file plugin /
+  112-file package identity. Freeze one synthetic acceptance input in test Git before
+  installed execution. One installed synthetic closeout passes bounded independent
+  fact/scope review, preserving 273 other files; native display is inconsistent and
+  readability remains for human assessment. Preserve existing project/paper evidence;
+  no runtime rebuild, main merge, service switch or formal Vault/Zotero mutation.
 - **Development 0.44.6 installed receipt:** record normal hotfix/runtime publication,
   pipx and Codex installation with exact cache/package identity. Apply the installed
   report contract to the same test sample: distinguish shared declarations, the sole

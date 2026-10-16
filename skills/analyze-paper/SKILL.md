@@ -28,7 +28,9 @@ new template. Report an unsupported-version limitation rather than substituting 
    clone only when the user explicitly requests retention under `code_repo_root`.
 4. Resolve the explicitly registered Obsidian Source and its Field for each paper,
    using the trusted folder registration and `.scholar-workflow/fields.yml` rather
-   than treating `research_vault_root` as a required singleton. If the destination
+   than treating `research_vault_root` as a required singleton. Before asking for a
+   destination, load `${CLAUDE_PLUGIN_ROOT}/references/asset-management.md` and query
+   existing registrations; reuse the selected available identity. If the destination
    is ambiguous or the Field is not initialized, ask for a choice or run the
    Field preview; do not silently create a topic directory or migrate a Vault.
    If this already-ingested paper has no owner yet, use the explicit new-folder
@@ -124,6 +126,7 @@ a canonical commit. Replay uses the installed public CLI, not a private renderer
 
 ## References
 
+- `${CLAUDE_PLUGIN_ROOT}/references/asset-management.md` — destination lookup before questions.
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `references/analysis-output-template.md` — current required Markdown/Canvas framework.
 - `references/analysis-v5-format.md` — explicit five-branch machine/result interface.

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Union, get_args, get_origin
 
 import yaml
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ValidationInfo, field_validator
 from ruamel.yaml import YAML
 
 
@@ -110,10 +110,16 @@ class Config(BaseModel):
     @field_validator("paper_inbox", "research_vault_root", "env_records_root",
                      "code_repo_root", mode="before")
     @classmethod
-    def expand_path(cls, v: Any) -> Path | None:
+    def expand_path(cls, v: Any, info: ValidationInfo) -> Path | None:
         if v is None:
             return None
-        return Path(os.path.expandvars(str(v))).expanduser().resolve()
+        if not isinstance(v, (str, os.PathLike)) or not isinstance(os.fspath(v), str):
+            # Pydantic converts ValueError, not TypeError, into a validation result.
+            raise ValueError("Directory settings require a path string")  # noqa: TRY004
+        expanded = Path(os.path.expandvars(os.fspath(v))).expanduser()
+        # The ledger checks each original component with O_NOFOLLOW. Resolving here
+        # would erase symlinks/traversal before that check can enforce its boundary.
+        return expanded.absolute() if info.field_name == "env_records_root" else expanded.resolve()
 
 
 SECRET_KEY_MARKERS = ("token", "api_key", "cookie", "secret", "password")

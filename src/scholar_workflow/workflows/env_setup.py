@@ -6,13 +6,14 @@ The plugin owns no private data. It reads the target directory from config
 tree for per-environment rebuild scripts, a README, and a .gitignore that keeps
 real records off git while allowing templates and scripts through.
 
-Idempotent: existing files are never overwritten. Real record files are seeded
-once from their templates and then left alone, so re-running is safe.
+Idempotent: existing files are never overwritten. The real server ledger starts
+empty; examples remain separate from actual registered servers.
 """
 from __future__ import annotations
+
+import os
 from dataclasses import dataclass
 from pathlib import Path
-
 
 GITIGNORE = """\
 # Real records stay local — never pushed.
@@ -24,8 +25,8 @@ apis.yaml
 """
 
 SERVERS_EXAMPLE = """\
-# Server ledger — one entry per host. Copy to servers.yaml (gitignored) and fill
-# real values. Three blocks per host: connection / environment inventory / meta.
+# Server ledger format reference, not a real registered server. The CLI creates
+# servers.yaml with an empty list. Connection / environment inventory / meta.
 servers:
   - alias: gpu-01                 # SSH Host alias
     host: <ip-or-hostname>
@@ -33,7 +34,8 @@ servers:
     port: 22
     key: ~/.ssh/id_ed25519        # private key PATH; the key itself never lives here
     jump: null                    # bastion alias, or null for direct connect
-    password: null                # static password if used, else null (local-only, gitignored)
+    password: null                # legacy field only; never add plaintext credentials
+    credential_ref: null          # external store reference, e.g. keychain:servers/gpu-01
     environments:                 # what conda envs live on this host (list, can be many)
       - name: <env-name>
         python: "3.10"
@@ -85,13 +87,14 @@ plugin config field `env_records_root`).
 
 - **Templates (`*.example.yaml`) are committed; real records (`servers.yaml`,
   `apis.yaml`) are gitignored and never pushed.** The `.gitignore` enforces this.
-- Fill real values by copying a template: `cp servers.example.yaml servers.yaml`,
-  then edit. On a new machine, `git clone` restores templates + scripts; re-copy
-  and fill the real values locally.
-- **record-on-consent (servers):** before a new server is added to the ledger,
-  confirm it is worth tracking. Most SSH hosts are throwaway — do not auto-capture.
-- SSH private keys and static passwords live only in the gitignored real files
-  (or in `~/.ssh/`); they are never committed.
+- `servers.yaml` starts empty. Use the asset-management skill / server ledger CLI
+  to register real non-secret connection facts. Templates are format references;
+  do not copy the example server into the real ledger.
+- Read the ledger before using or asking for server details. Re-registering an
+  identical alias is harmless; changing one requires its current ledger revision.
+- SSH private keys remain in their external files and credentials in an external
+  credential store. The server ledger records paths / credential references, not
+  secret values. Legacy secrets remain hidden and are not automatically migrated.
 - `setup/<alias>/<env>.sh` scripts hold conda/pip rebuild recipes — shareable
   knowledge, no secrets. They are committed.
 """
@@ -104,14 +107,13 @@ class ScaffoldResult:
     skipped: list[str]
 
 
-# (relative path, contents, is_template)
-# Real record files are seeded from their template contents but only when absent.
+# Real records are private on creation; existing bytes and modes stay unchanged.
 _TEMPLATES = [
     (".gitignore", GITIGNORE),
     ("README.md", README),
     ("servers.example.yaml", SERVERS_EXAMPLE),
     ("apis.example.yaml", APIS_EXAMPLE),
-    ("servers.yaml", SERVERS_EXAMPLE),
+    ("servers.yaml", "servers: []\n"),
     ("apis.yaml", APIS_EXAMPLE),
     ("setup/.gitkeep", ""),
 ]
@@ -132,6 +134,14 @@ def scaffold(root: Path) -> ScaffoldResult:
             skipped.append(rel)
             continue
         dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(contents, encoding="utf-8")
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
+        mode = 0o600 if rel in {"servers.yaml", "apis.yaml"} else 0o644
+        try:
+            descriptor = os.open(dest, flags, mode)
+        except FileExistsError:
+            skipped.append(rel)
+            continue
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(contents)
         created.append(rel)
     return ScaffoldResult(root=root, created=created, skipped=skipped)

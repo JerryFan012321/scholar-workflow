@@ -32,6 +32,8 @@ Paper analysis Markdown, quotations, images and per-paper Canvas still belong to
 
 ## Operations and scope
 
+- Before asking for a knowledge-library name/path, load
+  `${CLAUDE_PLUGIN_ROOT}/references/asset-management.md` and query existing registrations.
 - Resolve the user's selected topic/Field, actual existing paper-unit identities and
   declared paths. Reuse existing papers, analyses and notes. New primary owners use
   the established paper-registration interface, not a layout tool.
@@ -74,6 +76,7 @@ Paper analysis Markdown, quotations, images and per-paper Canvas still belong to
 
 ## References
 
+- `${CLAUDE_PLUGIN_ROOT}/references/asset-management.md` — existing-library lookup.
 - `references/field-library-format.md` — required for current Field-library outputs.
 - `references/legacy-concept-tree.md` — existing legacy projection only.
 - `references/field-paper-units.md` — existing package navigation only.
