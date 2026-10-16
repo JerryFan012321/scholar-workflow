@@ -34,12 +34,15 @@ comments.
 - This skill covers core `config.yml`, not `recommend.yml`.
 - Dynamic Knowledge Sources/Fields use the independent `knowledge` CLI, not a Hub
   requirement or the optional legacy `research_vault_root` setting. When registering
-  a selected folder, load `${CLAUDE_PLUGIN_ROOT}/references/knowledge-registration.md`.
+  or locating a folder, load `${CLAUDE_PLUGIN_ROOT}/references/asset-management.md`
+  for existing-inventory lookup before asking for names/paths. New registration then
+  loads `${CLAUDE_PLUGIN_ROOT}/references/knowledge-registration.md`.
 - `config init` never overwrites a different existing file. Use `config set` for an
   existing configuration.
 - Zotero, web, and projection work belongs to their owning skills.
 
 ## References
 
+- `${CLAUDE_PLUGIN_ROOT}/references/asset-management.md` — knowledge destination lookup.
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md`

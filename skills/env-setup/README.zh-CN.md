@@ -1,5 +1,9 @@
 # env-setup
 
+服务器查询和维护现统一使用 `manage-assets` 契约及 `scholar-workflow assets` 命令：
+先查再问，按明确的自有服务器任务登记非秘密信息，后续复用。本入口保留兼容，不维护第二套
+服务器流程；API台账行为未改。详见[资产管理契约](../../references/asset-management.md)。
+
 搭建并维护一个个人 **env-records** 目录,记录 API key 与 SSH 服务器,内容完全留在
 插件仓库之外。
 
@@ -7,7 +11,7 @@
   统一骨架:进 git 的模板(`*.example.yaml`)、被 gitignore 挡住的真实记录
   (`servers.yaml` / `apis.yaml`)、`setup/` 脚本目录、README 与 `.gitignore`,再做一次
   本地 `git init`(绝不 push)。
-- **服务器** —— 每台三块:连接(host/user/port/key/jump/password)、环境台账(conda
+- **服务器** —— 每台三块:连接(host/user/port/key/jump；password仅兼容旧记录且隐藏)、环境台账(conda
   环境列表 + python/cuda/关键包/兼容性,宿主机 cuda_driver,代理)、元信息。大块重建
   配方放外置脚本 `setup/<别名>/<环境>.sh`。
 - **API** —— 每个 key 一条:name / env_var / value / owner / scope。
@@ -19,6 +23,7 @@
   上传到 Zotero / 托管服务、调用公开无鉴权 API、或枚举由其他系统暴露的清单(云账号、K8s 集群)不触发它——即便该账号或集群属于用户本人。
 
 插件不存任何私有数据 —— 唯一输入是目录地址。模板进 git,真实记录 gitignore 留本地。
-新增服务器走"先征询再记录"。幂等:`env-init` 绝不覆盖已存在文件。
+新增服务器遵守共享的明确授权范围，不对已下达的登记任务反复征询；偶遇主机不自动收集。
+幂等:`env-init` 绝不覆盖已存在文件。
 
 完整流程与约束见 [SKILL.md](./SKILL.md)。

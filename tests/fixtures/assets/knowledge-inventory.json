@@ -1,0 +1,21 @@
+{
+  "fixture_description": "Test adapter input only; not a production registry schema.",
+  "registered_sources": [
+    {
+      "source_id": "2e0e415d-6a2c-4d84-8093-d679e0e94ae4",
+      "provider": "obsidian",
+      "root_token": "FIXTURE_VAULT_A/World Models",
+      "enabled": true,
+      "manifest_fixture": "fields.yml"
+    }
+  ],
+  "native_known_vaults": [
+    {"native_id": "synthetic-native-a", "name": "Synthetic Vault A", "root_token": "FIXTURE_VAULT_A"},
+    {"native_id": "synthetic-native-b", "name": "Synthetic Vault B", "root_token": "FIXTURE_VAULT_B"}
+  ],
+  "expected_unregistered_native_candidates": ["synthetic-native-b"],
+  "unregistered_sibling_directory_tokens": [
+    "FIXTURE_VAULT_B/Topic One",
+    "FIXTURE_VAULT_B/Topic Two"
+  ]
+}

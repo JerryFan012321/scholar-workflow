@@ -28,6 +28,27 @@ def test_config_path_no_existence_requirement(home):
     assert not C.config_path().exists()
 
 
+@pytest.mark.parametrize("field", ["paper_inbox", "research_vault_root",
+                                   "env_records_root", "code_repo_root"])
+@pytest.mark.parametrize("value", [["not-a-directory-value"], {"path": "bad"}, True])
+def test_path_configuration_rejects_non_path_values(field, value):
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        C.Config(**{field: value})
+
+
+def test_server_ledger_config_preserves_components_for_safety_checks(tmp_path):
+    target = tmp_path / "real-records"
+    target.mkdir()
+    link = tmp_path / "linked-records"
+    link.symlink_to(target, target_is_directory=True)
+
+    assert C.Config(env_records_root=link).env_records_root == link.absolute()
+    traversal = tmp_path / "unused" / ".." / "real-records"
+    assert ".." in C.Config(env_records_root=traversal).env_records_root.parts
+
+
 def test_init_writes_minimal_not_all_defaults(home):
     p = C.init_config()
     text = p.read_text()

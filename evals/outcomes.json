@@ -2,6 +2,11 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "personal-assets-capture-query-reuse",
+      "description": "G18：统一manage-assets入口先查询已有服务器/Source/Field；明确提供的自有服务器非秘密事实按任务授权登记并读回，后续任务复用，只有未解决缺项或真实冲突才问，不重复索取已有名称/路径。servers.yaml及现有knowledge registry分别权威，原生已知Vault不自动登记、不冒充论文归属。安全接口保留旧凭据但不显示，冲突CAS/危险路径拒绝，不连接远程或扫描磁盘。学者关注与论文来源继续原推荐store，本轮尚未聚合。独立合成预期、定向检查、安装态与人工体验分别取证，不以开发检查冒称真实资产已登记或完整G17完成。",
+      "status": "pending"
+    },
+    {
       "id": "paper-import-selected-index-closeout",
       "description": "G2/G4/G12/G17：对明确要求入库并更新已选阅读列表的任务，分别以Local API及实际文件读回证明条目/PDF、已选分类、Knowledge owner与索引的状态；未请求部分不自动执行。合成created一篇含PDF、reused一篇无可用arXiv PDF时，复用真实身份、保留缺PDF原因，按当前Field五列格式更新对应原行及真实现有资料入口，不改其他文档/Source Note或添加占位分析。索引未写成则报告部分完成，不因成功入库宣称全流程完成，也不重建论文条目。旧九列投影只对缺key显示未关联，不能推断文库不存在；固定合成断言与有限独立场景审阅不代替安装态或真实读者验收。",
       "status": "pending"

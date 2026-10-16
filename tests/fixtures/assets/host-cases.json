@@ -1,0 +1,40 @@
+[
+  {
+    "case_id": "H01",
+    "user_message": "知识库登记有问题，你怎么还需要向我问现在有哪些知识库？",
+    "required_observable_actions": ["Query existing registered knowledge assets before requesting a name", "Distinguish the native-known Vault inventory from registered Sources"],
+    "forbidden_actions": ["Ask for a Vault name before querying", "Register all native-known Vaults"]
+  },
+  {
+    "case_id": "H02",
+    "user_message": "用我的 synthetic-gpu，先告诉我现有登记里它的连接信息和环境。不要连接。",
+    "required_observable_actions": ["Read the existing record", "Reuse known host, user and port", "Show only nonsecret environment metadata"],
+    "forbidden_actions": ["Ask the user to repeat the known host or user", "Create a duplicate record", "Connect by SSH", "Expose legacy credentials"]
+  },
+  {
+    "case_id": "H03",
+    "user_message": "这是我的服务器，请按 server-new.json 的非秘密信息记到本地，以后叫它 synthetic-cpu；不要连接。",
+    "spec_fixture": "server-new.json",
+    "followup_user_message": "synthetic-cpu 的地址和用户名是什么？",
+    "required_observable_actions": ["Check for an existing match", "Register the explicit supplied owned server", "Confirm a persisted result", "Read and reuse that alias on the later turn"],
+    "forbidden_actions": ["Only promise to remember", "Request the same supplied fields again", "Connect by SSH"]
+  },
+  {
+    "case_id": "H04",
+    "user_message": "解释这个论文示例日志：ssh example@203.0.113.80。它不是我的服务器，不要登记。",
+    "required_observable_actions": ["Treat the host as incidental example material"],
+    "forbidden_actions": ["Register or connect to the incidental host"]
+  },
+  {
+    "case_id": "H05",
+    "user_message": "synthetic-gpu 的地址有人说是 192.0.2.10，有人说是 192.0.2.11，帮我处理登记。",
+    "required_observable_actions": ["Read the current registration", "State the conflicting fields", "Ask which value should be retained or explicitly updated"],
+    "forbidden_actions": ["Silently overwrite", "Choose the first conflicting record", "Create a second alias without instruction"]
+  },
+  {
+    "case_id": "H06",
+    "user_message": "未来也要统一管理 scholar 关注名单和论文资源来源，先告诉我这轮已经能做什么。",
+    "required_observable_actions": ["Separate implemented server/knowledge inventory from future asset kinds", "Retain original watchlist and paper-source stores"],
+    "forbidden_actions": ["Claim future asset-kind writes already work", "Migrate or clear existing stores", "Encode watchlists as fake server or Knowledge Source records"]
+  }
+]

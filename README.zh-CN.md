@@ -372,6 +372,7 @@ snapshot 不是 verified backup；真正备份仍需要独立介质和恢复演�
 | export-annotations | 把某篇论文的 Zotero 批注整理成结构化 vault 笔记 |
 | recommend-papers | 每日多源论文 feed + NotebookLM 略读 → 推荐清单 |
 | analyze-paper | 把论文详细分析投影为 Markdown + 可编辑 Canvas 文档对 |
+| manage-assets | 先查已有记录，再登记和复用自有服务器与知识库 |
 | env-setup | 搭建并查阅个人 API-key / SSH 服务器 env-records 台账 |
 | agent-collaboration | 在 Claude Code、Codex 或其他可用 agent 之间双向协调边界清楚的任务 |
 | init-project | 初始化宿主中立、由 Git 管理且不带自定义 agent/hook 的研究项目骨架 |
@@ -379,6 +380,23 @@ snapshot 不是 verified backup；真正备份仍需要独立介质和恢复演�
 | review-experiments | 只读整理与比较选定实验档案（0.43.0起） |
 | config-setup | 初始化、查询和更新插件配置 |
 | project-backlog | 维护本仓库的持久化工作项队列 |
+
+## 本地科研资产
+
+让 agent 查询已有服务器/知识库，或登记你明确提供的自有服务器；它应先读已有记录，
+而不是反复让你提供名称和路径。也可直接使用：
+
+```sh
+scholar-workflow assets list --language zh
+scholar-workflow assets server show gpu-example --language zh
+scholar-workflow assets server register --spec server.json --language zh
+scholar-workflow assets server check --language zh
+```
+
+登记JSON只填写别名、主机、用户、端口等非秘密信息；新密码/token值被拒绝。已有记录复用，
+同别名差异更新须带当前版本，查询不初始化、不连接服务器。知识库仍先预览范围再确认登记；
+Obsidian已知Vault、已登记Source和论文归属分别报告。详见[资产管理契约](references/asset-management.md)。
+学者关注名单和论文来源继续使用推荐系统原配置，本轮尚未纳入资产CLI聚合。
 
 ## 环境要求
 

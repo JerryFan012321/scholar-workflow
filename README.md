@@ -445,6 +445,7 @@ flows instead of treating a compatibility response as write authority.
 | export-annotations | Turn a paper's Zotero annotations into a structured vault note |
 | recommend-papers | Daily multi-source paper feed + NotebookLM skim → Reading Report |
 | analyze-paper | Project detailed paper analysis into paired Markdown + editable Canvas |
+| manage-assets | Query, register and reuse owned servers and knowledge libraries |
 | env-setup | Scaffold — and consult — a personal API-key / SSH-server env-records ledger |
 | agent-collaboration | Coordinate bounded work bidirectionally between Claude Code, Codex, or another available agent |
 | init-project | Initialize a host-neutral, Git-managed research project skeleton without custom agents or hooks |
@@ -452,6 +453,26 @@ flows instead of treating a compatibility response as write authority.
 | review-experiments | Read-only review/comparison of selected experiment archives (0.43.0+) |
 | config-setup | Initialize, query, and update the plugin configuration |
 | project-backlog | Maintain the repository's persistent work-item queue |
+
+## Personal research assets
+
+Ask the agent to find your existing servers/libraries or record an owned server. It
+queries saved records first rather than asking you to repeat known details.
+
+```sh
+scholar-workflow assets list --language en
+scholar-workflow assets server show gpu-example --language en
+scholar-workflow assets server register --spec server.json --language en
+scholar-workflow assets server check --language en
+```
+
+The JSON registration spec contains non-secret metadata such as `alias`, `host`,
+`user` and `port`; new password/token values are refused. Existing records are reused,
+and conflicting updates require their current revision. Queries never initialize or
+connect. Knowledge registration still uses the existing preview/confirmation commands;
+known native Vaults, registered Sources and paper owners are distinct states. See
+[asset operations](references/asset-management.md). Scholar watchlists/source settings
+keep their recommendation store and are not yet providers in `assets list`.
 
 ## Requirements
 

@@ -1,0 +1,24 @@
+{
+  "alias": "synthetic-gpu",
+  "host": "192.0.2.10",
+  "user": "researcher",
+  "port": 2222,
+  "key": null,
+  "jump": null,
+  "credential_ref": "env:SYNTHETIC_GPU_PASSWORD",
+  "environments": [
+    {
+      "name": "research",
+      "python": "3.11",
+      "cuda": "12.1",
+      "key_packages": ["torch 2.2"],
+      "compat_notes": "Synthetic metadata; not an installed environment.",
+      "setup_script": null
+    }
+  ],
+  "cuda_driver": "12.2",
+  "proxy": {"http": null, "https": null, "no_proxy": null},
+  "purpose": "Updated synthetic purpose; preserve omitted legacy credentials.",
+  "added": "2026-10-16",
+  "notes": "No SSH execution or real account exists."
+}

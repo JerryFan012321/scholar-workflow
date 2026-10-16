@@ -1,0 +1,8 @@
+schema_version: 1
+source_id: 2e0e415d-6a2c-4d84-8093-d679e0e94ae4
+fields:
+  - field_id: 46f5af59-e37d-468d-8bb3-5a93f42b7946
+    title: Synthetic World Models
+    relative_root: .
+    home: 00-Overview.md
+    navigation: []

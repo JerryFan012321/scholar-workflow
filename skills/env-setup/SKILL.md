@@ -24,17 +24,19 @@ scope.
 
 ## Operations
 
-1. **Query or use:** `servers.yaml` / `apis.yaml` are authoritative when the user asks what
-   is recorded or a task needs one of the user's recorded hosts/credentials. Reading never
-   initializes or mutates the ledger. A no-match result states that no matching record
-   exists; initialization remains opt-in.
+Server operations now use the shared `manage-assets` entry and
+`${CLAUDE_PLUGIN_ROOT}/references/asset-management.md`. Keep this legacy skill usable
+without maintaining a second server procedure.
+
+1. **Query or use:** read the relevant ledger before asking for recorded details.
+   Server queries use the sanitized `assets` CLI; API records retain their existing
+   store. Reading never initializes or mutates a ledger. Unavailable is not no-match.
 2. **Initialize:** only on request, run `scholar-workflow env-init`. It creates missing
    templates/records and a local Git repository without overwriting or pushing.
 3. **Register API:** append the key record to `apis.yaml`, including owner and scope.
-4. **Register server:** obtain consent to track the host, then append its connection and
-   metadata to `servers.yaml`.
-5. **Record environment:** update the server inventory. Put long rebuild procedures in
-   `setup/<alias>/<env>.sh` and store only `setup_script` in YAML.
+4. **Register server / environment:** use the shared asset capture/update contract and
+   deterministic server interface. Long rebuild procedures remain explicit
+   `setup/<alias>/<env>.sh` references, not commands executed during registration.
 
 ## Routing boundary
 
@@ -50,10 +52,12 @@ uses that system instead.
 - `env-init` is additive and idempotent. Do not run it merely because a read finds no
   record.
 - Changing `env_records_root` is a migration and requires approval before moving data.
-- Server capture is opt-in; do not auto-record incidental hosts.
+- Use the shared owned-server capture boundary; do not auto-record incidental hosts.
 
 ## References
 
+- `${CLAUDE_PLUGIN_ROOT}/references/asset-management.md` — server inventory, capture,
+  safe updates and reuse; load for server operations.
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md`

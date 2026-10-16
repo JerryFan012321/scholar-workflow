@@ -1,0 +1,15 @@
+{
+  "alias": "synthetic-cpu",
+  "host": "198.51.100.20",
+  "user": "researcher",
+  "port": 22,
+  "key": null,
+  "jump": null,
+  "credential_ref": "env:SYNTHETIC_CPU_PASSWORD",
+  "environments": [],
+  "cuda_driver": null,
+  "proxy": {"http": null, "https": null, "no_proxy": null},
+  "purpose": "Synthetic CPU host explicitly supplied for registration.",
+  "added": "2026-10-16",
+  "notes": "TEST-NET address. Never connect."
+}

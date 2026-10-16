@@ -2,6 +2,30 @@
   "description": "Skill routing eval — verifies correct skill is triggered for each input type",
   "cases": [
     {
+      "id": "research-assets-unified-registration-and-reuse",
+      "input": "管理我的科研资产：把明确提供的自有服务器记到本地，以后使用时先查记录；同时列出现有知识库",
+      "expected_skill": "manage-assets"
+    },
+    {
+      "id": "knowledge-assets-query-before-question",
+      "input": "现在有哪些已经登记的知识库？先自己查询，不要让我再提供名称或路径",
+      "expected_skill": "manage-assets",
+      "must_not_write": true
+    },
+    {
+      "id": "assets-not-paper-ingest",
+      "input": "把这篇已选论文导入Zotero并更新已选论文列表",
+      "expected_skill": "ingest-resource",
+      "must_not_trigger": "manage-assets"
+    },
+    {
+      "id": "assets-not-cloud-inventory",
+      "input": "列出AWS账号内所有EC2实例，不是我的本地科研台账",
+      "expected_skill": null,
+      "must_not_trigger": "manage-assets",
+      "comment": "远程云账号清单由原云工具持有，不自动收集到个人资产台账"
+    },
+    {
       "id": "field-library-exemplar-three-views",
       "input": "以模范库结构组织这个领域的论文列表、02文献树、03技术路线树和04挑战洞见树；不要重做单篇分析",
       "expected_skill": "build-literature-tree",

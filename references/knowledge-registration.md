@@ -5,6 +5,10 @@ existing host Source registry. No Hub, cmux workspace, singleton Vault setting o
 second identity store is required. A Source root may be a selected Vault subfolder;
 this does not register its parent Vault or establish a PDF-reader identity.
 
+For an existing-library query or an unspecified destination, first use the inventory
+operations in `asset-management.md`. Do not begin by asking the user to name/path
+assets the host can already list. That lookup never registers or adopts content.
+
 ## Native reader and document opens
 
 Use `knowledge list --format json` to obtain the registered `source_id`.

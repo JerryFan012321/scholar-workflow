@@ -44,6 +44,14 @@ it still requires optimistic concurrency protection.
   The target is an input to the write, not an approval gate.
 - All Zotero writes go through the Local API adapter; never write `zotero.sqlite`.
 
+## Personal asset records
+
+The shared `asset-management.md` contract owns lookup/capture/reuse scope. Server
+registration stores non-secret metadata and credential references only; legacy
+secret fields remain private and are neither emitted nor silently migrated. A
+recording request does not authorize remote login, probes, commands or uploads.
+Knowledge registration retains its existing reviewed scope and CAS boundaries.
+
 ## Zotero Local API boundary
 
 - Zotero 10+'s Local API is the only Scholar Workflow channel for Zotero metadata,

@@ -1,6 +1,10 @@
 """Unit tests for the env-records scaffold (pure filesystem, tmp_path)."""
 from __future__ import annotations
+
+import stat
+
 import yaml
+
 from scholar_workflow.workflows.env_setup import scaffold
 
 
@@ -71,3 +75,23 @@ def test_setup_dir_present_for_scripts(tmp_path):
     scaffold(root)
     assert (root / "setup").is_dir()
     assert (root / "setup" / ".gitkeep").exists()
+
+
+def test_real_server_ledger_starts_empty_and_private(tmp_path):
+    root = tmp_path / "env-records"
+    scaffold(root)
+    assert yaml.safe_load((root / "servers.yaml").read_text()) == {"servers": []}
+    assert stat.S_IMODE((root / "servers.yaml").stat().st_mode) == 0o600
+    assert stat.S_IMODE((root / "apis.yaml").stat().st_mode) == 0o600
+
+
+def test_existing_real_ledgers_contents_and_modes_unchanged(tmp_path):
+    root = tmp_path / "env-records"
+    root.mkdir()
+    path = root / "servers.yaml"
+    path.write_text("servers:\n  - alias: existing\n    password: PRIVATE\n")
+    path.chmod(0o644)
+    before = path.read_bytes()
+    scaffold(root)
+    assert path.read_bytes() == before
+    assert stat.S_IMODE(path.stat().st_mode) == 0o644
