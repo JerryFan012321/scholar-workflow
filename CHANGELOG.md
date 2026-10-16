@@ -14,6 +14,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   After installed checks, fast-forward and push the user-approved full hotfix history
   into main. This follow-up records delivery only; it does not rebuild runtime,
   implement remote-child automation, migrate data or retire pending acceptance.
+  Align the Phase 11 status with delivered skill contracts while preserving its
+  unimplemented automation boundary.
 
 ## [0.45.1] - 2026-10-16
 
