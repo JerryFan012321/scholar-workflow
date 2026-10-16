@@ -5,6 +5,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Changed
+
+- **Development 0.45.1 receipt:** record the normal hotfix/runtime publication,
+  pinned HTTPS pipx and marketplace installation, exact 115-file package / 278-file
+  plugin identity and 17 enabled skills. Preserve failed old-proxy/SSH attempts;
+  the successful installation uses the corrected proxy only within its processes.
+  After installed checks, fast-forward and push the user-approved full hotfix history
+  into main. This follow-up records delivery only; it does not rebuild runtime,
+  implement remote-child automation, migrate data or retire pending acceptance.
+
 ## [0.45.1] - 2026-10-16
 
 ### Changed

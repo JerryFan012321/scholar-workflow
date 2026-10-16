@@ -45,6 +45,10 @@ G11/G16管理方式定案（2026-10-16）：用户已确认完整本地研究总
 按职责加载；不新增编程skill或改变description，不实现新CLI/schema。三个skill基础及14项
 结构回归通过，一个合成总项目的独立会话行为有限通过，见project-management-skill-test-results.md。
 新outcome仍pending，代码自动化、正常安装与人工评鉴不能由文案及有限行为检查冒称完成。
+后续0.45.1已正常发布安装：source7db5e57/runtime aca4287，完整2873回归通过，
+115包文件/278插件文件身份与17skill启用核对通过。用户确认完整热修复历史后，
+main已普通快进并推送至该source；仅后续开发回执另行记录，不重建runtime。
+安装检查不代替新自动化实现、宿主普遍行为或人工评鉴，WI-055及G17仍未完成。
 
 G18当前切片（2026-10-16）：manage-assets、服务器确定性台账接口与知识登记只读概览已
 随独立0.45.0 hotfix正常发布安装，17skill/CLI身份与固定发行全等。最终完整2873项通过，
@@ -511,7 +515,7 @@ check-bundle通过。0.41.1最小列定位修复的169项定向检查通过，�
 | INV59 | **项目资料关联是独立、便携的薄清单**：`project-context.json` 使用自己的 schema/version，并绑定稳定 `project_id`；`project-layout.json` 仍只持有布局与 profile。关联由人或 agent 明确给出，项目内文件用安全相对路径，外部资料用稳定 provider/entity identity；显示名称不证明身份，不自动扫描关联、复制正文、同步或级联删除 | **目标态（未激活）**：WI-054；schema/model/只读CLI已写入开发树，未运行测试或发布，详见 `project-centered-refactor.md` |
 | INV60 | **内容核心不依赖网页控制面**：Project/Knowledge/Analysis 不依赖 Hub HTTP、UI、task store 或 workspace registry；Adapters 对接原生外部接口，Workflows 组合核心能力，CLI/agent/skill 只解析与呈现结果。兼容 facade 可暂保留，但不得制造第二份模型或状态真源 | **目标态（未激活）**：WI-054 分批解耦；本批不宣称全部旧依赖已移除 |
 | INV61 | **项目整合视图为可重建导航，不是事实或执行控制面**：从显式清单与项目档案生成可读 Markdown；区分已登记引用、已解析对象和未核验来源，显示可用链接、缺失与冲突。不得把登记成功冒充来源验证、实验成功或人工可读性验收；源码、Run/Attempt/Target、promotion 和 backup 状态仍归原权威记录 | **目标态（未激活）**：WI-054；仅单项目合成样本准备，真实项目与人工评鉴未执行 |
-| INV62 | **完整本地研究管理与远端执行子项目分离**：总项目保留知识、PROJECT/唯一计划、规则/skills、身份/资料关联及全部子项目实验的本地分析，资料Git不推送；所有子项目独立远端源码Git，所有代码修改在远端，只有primary可推送项目自有GitHub。本地只留最简代码恢复材料；所有实验含失败/中断均登记并按子项目/Run/Attempt回传轻量记录，身份限定、同内容幂等、冲突拒写，不用总项目commit代替子项目源码commit，不覆盖本地分析或隐式同步知识。并行工作目录隔离，实验固定commit，原生工具/agent不以Hub为前提 | **2026-10-16用户已确认，规划态未激活**：WI-055；角色/schema/远端定位/接收/恢复接口与定向eval待实现；真实项目迁移及WI-041另行授权 |
+| INV62 | **完整本地研究管理与远端执行子项目分离**：总项目保留知识、PROJECT/唯一计划、规则/skills、身份/资料关联及全部子项目实验的本地分析，资料Git不推送；所有子项目独立远端源码Git，所有代码修改在远端，只有primary可推送项目自有GitHub。本地只留最简代码恢复材料；所有实验含失败/中断均登记并按子项目/Run/Attempt回传轻量记录，身份限定、同内容幂等、冲突拒写，不用总项目commit代替子项目源码commit，不覆盖本地分析或隐式同步知识。并行工作目录隔离，实验固定commit，原生工具/agent不以Hub为前提 | **skill结果契约随0.45.1发布安装**；源skill单例有限通过，安装文件身份已核。WI-055角色/schema/远端定位/接收/恢复自动化未实现，outcome仍pending；真实迁移与WI-041另行授权 |
 
 ## 非目标（NG）
 
