@@ -13,6 +13,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   Preserve the host test's out-of-scope nonsecret native-registry read as a failed
   boundary, not a full pass; human usability and automatic discovery remain pending.
   No runtime rebuild, real asset write, service switch or main merge.
+  A subsequent bounded H01 query replay uses installed assets lookup and synthetic
+  native inventory only, preserves all inputs, and passes within that explicit scope;
+  it does not erase the earlier boundary failure or prove native integration.
 
 ## [0.45.0] - 2026-10-16
 

@@ -123,3 +123,14 @@ venv 代替安装。未获得本轮发布安装授权前，保持“待安装验
 双plugin manifest，核实新skill/reference能进入正式插件边界。dirty工作树不运行release
 脚本、不生成发行分支/提交、不推送。此检查不是实际runtime release或安装态证明，
 H01–H06、真实应用交互及人工评鉴仍待。可见产物仅为本结果文档中的构建与边界回执。
+
+## H01范围收紧后的单项复验（2026-10-16）
+
+首次安装skill执行H01时额外reader读取真实非秘密原生登记，该轮不计全通过。只复验
+这个失败项，不重跑服务器登记、论文、实验、打包或完整suite。沿用原一个Source/Field
+fixture与两项合成原生库存，新空临时根仅用于恢复同一冻结输入，不是新业务样板。
+测试者只获安装skill/references、合成状态根和合成native-vaults.json；唯一允许的CLI
+业务入口为assets list --kind knowledge，显式隔离SCHOLAR_WORKFLOW_HOME。禁止reader、
+open、真实Obsidian库存、网络和任何登记/配置/正文写入。检查实际入口顺序及答复、
+保护输入字节；若再次越界则保留失败并停止，不无限重试。只能证明显式加载安装skill
+在所给合成条件下的有限行为，不证明真实原生查询或所有宿主自动触发；人工仍独立待评。
