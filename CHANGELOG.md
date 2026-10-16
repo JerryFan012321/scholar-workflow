@@ -16,6 +16,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   A subsequent bounded H01 query replay uses installed assets lookup and synthetic
   native inventory only, preserves all inputs, and passes within that explicit scope;
   it does not erase the earlier boundary failure or prove native integration.
+  Record a separate read-only use of the installed asset entry against existing
+  registrations/native inventory; retain real ledger permission and legacy-credential
+  warnings without storing credential values or changing user assets.
 
 ## [0.45.0] - 2026-10-16
 
