@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Prepared local Run update recovery package (not activated)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "transaction_id", "state", "plan", "actions", "backup_state"],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "transaction_id": {"type": "string", "pattern": "^tx-[0-9a-f]{32}$"},
+    "state": {"const": "prepared_not_applied"},
+    "backup_state": {"const": "not-verified"},
+    "plan": {
+      "type": "object",
+      "required": ["schema_version", "status", "parent_project_id", "child_project_id", "run_id", "destination", "parent_sha256", "child_sha256", "local_receipt_sha256", "old_evidence_sha256", "new_evidence_sha256", "new_receipt", "changes", "new_directories", "transitions", "artifact_transitions", "execution_verification"],
+      "properties": {
+        "schema_version": {"type": "integer", "const": 1},
+        "status": {"const": "planned_update"},
+        "execution_verification": {"const": "records_only"},
+        "parent_sha256": {"$ref": "#/$defs/hash"},
+        "child_sha256": {"$ref": "#/$defs/hash"},
+        "local_receipt_sha256": {"$ref": "#/$defs/hash"},
+        "old_evidence_sha256": {"$ref": "#/$defs/hash"},
+        "new_evidence_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "actions": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["destination_path", "before", "after"],
+        "properties": {
+          "destination_path": {
+            "type": "string", "pattern": "^[^/\\\\]+(?:/[^/\\\\]+)*$",
+            "not": {"pattern": "(?:^|/)\\.{1,2}(?:/|$)"}
+          },
+          "before": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/before"}]},
+          "after": {"$ref": "#/$defs/after"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "payload": {
+      "type": "object",
+      "required": ["path", "sha256", "size", "mode", "device", "inode"],
+      "properties": {
+        "path": {"type": "string"},
+        "sha256": {"$ref": "#/$defs/hash"},
+        "size": {"type": "integer", "minimum": 0},
+        "mode": {"type": "integer", "minimum": 0, "maximum": 511},
+        "device": {"type": "integer", "minimum": 0},
+        "inode": {"type": "integer", "minimum": 1}
+      }
+    },
+    "after": {
+      "allOf": [{"$ref": "#/$defs/payload"}, {
+        "properties": {"path": {"pattern": "^after/[0-9]+$"}}
+      }],
+      "unevaluatedProperties": false
+    },
+    "before": {
+      "allOf": [{"$ref": "#/$defs/payload"}, {
+        "required": ["original_device", "original_inode"],
+        "properties": {
+          "path": {"pattern": "^before/[0-9]+$"},
+          "original_device": {"type": "integer", "minimum": 0},
+          "original_inode": {"type": "integer", "minimum": 1}
+        }
+      }],
+      "unevaluatedProperties": false
+    }
+  }
+}

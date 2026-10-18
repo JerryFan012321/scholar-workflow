@@ -291,6 +291,86 @@ def project_commands() -> None:
     """Organize explicit project material without a Hub or tool execution."""
 
 
+@project_commands.command(name="validate-management")
+@click.option(
+    "--project-root", required=True,
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+)
+@click.option(
+    "--parent-root", type=click.Path(exists=True, file_okay=False, path_type=Path),
+    help="Explicit parent root for mutual declaration checks; never discover or contact hosts.",
+)
+def project_validate_management(project_root: Path, parent_root: Path | None) -> None:
+    """Check portable parent/child identity without writing or granting tool access."""
+    from scholar_workflow.project.management import (
+        load_project_management,
+        validate_management_pair,
+    )
+
+    try:
+        declaration = load_project_management(project_root)
+        if parent_root is not None:
+            validate_management_pair(load_project_management(parent_root), declaration)
+    except ValueError as exc:
+        raise InputError(str(exc)) from None
+    click.echo(f"Valid project management declaration: {declaration.kind}.")
+    click.echo(
+        "Parent/child declarations agree." if parent_root is not None else
+        "Counterpart declaration not checked."
+    )
+    click.echo("Remote placement, Git policy and execution availability are not verified.")
+
+
+@project_commands.command(name="register-child")
+@click.option("--project-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--child-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--archive-segment", required=True)
+@click.option("--apply", "apply_change", is_flag=True, help="Apply only with both preview baselines.")
+@click.option("--expected-parent-sha256")
+@click.option("--expected-child-sha256")
+@click.option("--json", "as_json", is_flag=True)
+def project_register_child(
+    project_root: Path, child_root: Path, archive_segment: str, apply_change: bool,
+    expected_parent_sha256: str | None, expected_child_sha256: str | None, as_json: bool,
+) -> None:
+    """Preview by default; append one explicit child to its parent's declaration."""
+    from scholar_workflow.project.registration import (
+        ProjectRegistrationError,
+        plan_child_registration,
+        register_child,
+    )
+
+    if apply_change and (not expected_parent_sha256 or not expected_child_sha256):
+        raise InputError("Apply requires both preview SHA-256 baselines")
+    if not apply_change and (expected_parent_sha256 or expected_child_sha256):
+        raise InputError("Preview baselines are accepted only with --apply")
+    try:
+        if apply_change:
+            result = register_child(
+                project_root, child_root, archive_segment=archive_segment,
+                expected_parent_sha256=expected_parent_sha256,
+                expected_child_sha256=expected_child_sha256,
+            )
+        else:
+            result = plan_child_registration(project_root, child_root, archive_segment=archive_segment)
+    except ProjectRegistrationError as exc:
+        error_class = {5: IdentityConflictError, 6: PartialCompletionError,
+                       7: SafetyRefusalError}.get(exc.exit_code, InputError)
+        raise error_class(str(exc)) from None
+    except ValueError as exc:
+        raise InputError(str(exc)) from None
+    if as_json:
+        click.echo(json.dumps(result, indent=2))
+    else:
+        state = result["status"] if apply_change else "preview; nothing written"
+        click.echo(f"Child registration: {state}. Archive directory: {archive_segment}.")
+        click.echo(f"Parent SHA-256: {result['parent_sha256']}")
+        click.echo(f"Child SHA-256: {result['child_sha256']}")
+        click.echo("Remote placement and Git permissions have not been verified.")
+
+
 @project_commands.command(name="context-template")
 @click.option(
     "--project-root", required=True,
@@ -349,6 +429,93 @@ def project_validate_context(project_root: Path, context_file: str | None) -> No
             f"Valid project context: {len(context.entries)} explicitly declared items. "
             "Source availability and scientific content have not been verified."
         )
+
+
+@project_commands.command(name="code-recovery-plan")
+@click.option("--project-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--child-project-id", required=True)
+@click.option("--bundle-file", required=True, type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--commit", "required_commits", multiple=True,
+              help="Additional full child source commit; recorded Run commits are always included.")
+@click.option("--json", "as_json", is_flag=True)
+def project_code_recovery_plan(project_root, child_project_id, bundle_file, required_commits, as_json):
+    """Check a selected local Git bundle; do not retain, checkout, execute or connect."""
+    from scholar_workflow.project.code_recovery import plan_code_recovery
+
+    try:
+        result = plan_code_recovery(project_root, child_project_id=child_project_id,
+                                    bundle_file=bundle_file, required_commits=required_commits)
+    except ValueError as exc:
+        if getattr(exc, "exit_code", 2) == 3:
+            raise DependencyError(str(exc)) from None
+        raise InputError(str(exc)) from None
+    if as_json:
+        click.echo(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        click.echo("Code recovery preview: recorded/selected commits have intact objects in a self-contained bundle.")
+        click.echo(f"Covered source commits: {len(result['required_commits'])}.")
+        click.echo(f"LFS payload gaps: {len(result['gaps']['lfs_pointers'])}; submodule gaps: {len(result['gaps']['submodules'])}.")
+        click.echo("Uncommitted/untracked work, external dependencies and secrets were not checked.")
+        click.echo("Nothing was retained or executed. This is not verified backup.")
+
+
+@project_commands.command(name="retain-code")
+@click.option("--project-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--child-project-id", required=True)
+@click.option("--bundle-file", required=True, type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--commit", "required_commits", multiple=True)
+@click.option("--expected-plan-sha256", required=True)
+@click.option("--json", "as_json", is_flag=True)
+def project_retain_code(project_root, child_project_id, bundle_file, required_commits, expected_plan_sha256, as_json):
+    """Retain reviewed local recovery material; never clone a development workspace."""
+    from scholar_workflow.project.code_recovery import retain_code_recovery
+
+    try:
+        result = retain_code_recovery(project_root, child_project_id=child_project_id,
+                                      bundle_file=bundle_file, required_commits=required_commits,
+                                      expected_plan_sha256=expected_plan_sha256)
+    except ValueError as exc:
+        code = getattr(exc, "exit_code", 2)
+        error_class = {3: DependencyError, 5: IdentityConflictError,
+                       6: PartialCompletionError, 7: SafetyRefusalError}.get(code, InputError)
+        raise error_class(str(exc)) from None
+    if as_json:
+        click.echo(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        click.echo(f"Code recovery material: {result['status']}.")
+        click.echo("One bundle is retained per child/content hash; coverage records remain separate.")
+        click.echo("No source workspace was checked out. This is not verified backup.")
+
+
+@project_commands.command(name="remote-code-plan")
+@click.option("--project-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--entry-id", required=True)
+@click.option("--target-id", required=True)
+@click.option("--env-records-root", type=click.Path(file_okay=False, path_type=Path),
+              help="Existing private server ledger root; otherwise use the configured location.")
+@click.option("--json", "as_json", is_flag=True)
+def project_remote_code_plan(project_root, entry_id, target_id, env_records_root, as_json):
+    """Preview a selected child code location; never connect, launch or write."""
+    from scholar_workflow.project.remote_code import plan_remote_code
+
+    ledger_root = env_records_root if env_records_root is not None else _asset_server_root()
+    try:
+        result = plan_remote_code(project_root, entry_id=entry_id, target_id=target_id,
+                                  env_records_root=ledger_root)
+    except ValueError as exc:
+        raise InputError(str(exc)) from None
+    if as_json:
+        click.echo(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        click.echo(f"Code location preview: {result['title']}")
+        click.echo(f"Selected Target: {result['target_id']}")
+        click.echo(f"Server: {result['connection']['server_alias']}")
+        click.echo(f"Remote location: {result['remote_path']}")
+        click.echo("Remote project identity, path, commit, access and SSH alias are not verified.")
+        click.echo("Nothing was connected, opened or written. Use native tools under separate authority.")
 
 
 @project_commands.command(name="overview")
@@ -2875,6 +3042,208 @@ def analysis_audit_knowledge(
 @main.group()
 def experiment() -> None:
     """Create and validate local-first Run, Attempt, Target, and Artifact records."""
+
+
+@experiment.command(name="collection-plan")
+@click.option("--project-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--child-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--run-id", required=True)
+@click.option("--json", "as_json", is_flag=True)
+def experiment_collection_plan(project_root: Path, child_root: Path, run_id: str, as_json: bool) -> None:
+    """Check one explicit child Run for collection; do not copy or execute it."""
+    from scholar_workflow.project.collection import plan_run_collection
+
+    try:
+        result = plan_run_collection(project_root, child_root, run_id=run_id)
+    except ValueError as exc:
+        raise InputError(str(exc)) from None
+    if as_json:
+        click.echo(json.dumps(result, indent=2))
+    else:
+        click.echo(f"Collection preview: {run_id}; nothing received or written.")
+        click.echo(f"Destination: {result['destination']}")
+        click.echo(f"Evidence: {len(result['files'])} files, {len(result['attempts'])} Attempts.")
+        for attempt in result["attempts"]:
+            click.echo(f"Attempt {attempt['attempt_id']}: {attempt['status']}.")
+        click.echo("Execution status comes from records, not observed execution.")
+
+
+@experiment.command(name="receive-run")
+@click.option("--project-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--child-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--run-id", required=True)
+@click.option("--expected-parent-sha256", required=True)
+@click.option("--expected-child-sha256", required=True)
+@click.option("--expected-evidence-sha256", required=True)
+@click.option("--json", "as_json", is_flag=True)
+def experiment_receive_run(
+    project_root: Path, child_root: Path, run_id: str, expected_parent_sha256: str,
+    expected_child_sha256: str, expected_evidence_sha256: str, as_json: bool,
+) -> None:
+    """Receive a new child Run, or verify an identical archive; never overwrite versions."""
+    from scholar_workflow.project.reception import ReceptionError, receive_run
+
+    try:
+        result = receive_run(
+            project_root, child_root, run_id=run_id,
+            expected_parent_sha256=expected_parent_sha256,
+            expected_child_sha256=expected_child_sha256,
+            expected_evidence_sha256=expected_evidence_sha256,
+        )
+    except ReceptionError as exc:
+        error_class = {3: DependencyError, 5: IdentityConflictError, 6: PartialCompletionError,
+                       7: SafetyRefusalError}.get(exc.exit_code, InputError)
+        raise error_class(str(exc)) from None
+    except ValueError as exc:
+        raise InputError(str(exc)) from None
+    if as_json:
+        click.echo(json.dumps(result, indent=2))
+    else:
+        click.echo(f"Run archive {result['status']}: {result['destination']}")
+        click.echo("Local analysis is preserved. Execution was not independently verified.")
+
+
+@experiment.command(name="collected")
+@click.option("--project-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--child-project-id", help="Read only this explicitly registered child.")
+@click.option("--language", type=click.Choice(["en", "zh"]), default="en", show_default=True)
+@click.option("--json", "as_json", is_flag=True)
+def experiment_collected(project_root: Path, child_project_id: str | None, language: str, as_json: bool) -> None:
+    """Print a read-only qualified archive index, not a scientific comparison."""
+    from scholar_workflow.project.collected import collected_overview, render_collected_overview
+
+    try:
+        result = collected_overview(project_root, child_project_id=child_project_id)
+    except ValueError as exc:
+        raise InputError(str(exc)) from None
+    if as_json:
+        click.echo(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        click.echo(render_collected_overview(result, language=language), nl=False)
+
+
+@experiment.command(name="update-plan")
+@click.option("--project-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--child-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--run-id", required=True)
+@click.option("--json", "as_json", is_flag=True)
+def experiment_update_plan(project_root: Path, child_root: Path, run_id: str, as_json: bool) -> None:
+    """Preview exact lifecycle changes; do not overwrite or recover an archive."""
+    from scholar_workflow.project.reception import ReceptionError
+    from scholar_workflow.project.updates import plan_run_update
+
+    try:
+        result = plan_run_update(project_root, child_root, run_id=run_id)
+    except ReceptionError as exc:
+        if exc.exit_code == 6:
+            raise PartialCompletionError(str(exc)) from None
+        raise InputError(str(exc)) from None
+    except ValueError as exc:
+        raise InputError(str(exc)) from None
+    if as_json:
+        click.echo(json.dumps(result, indent=2))
+    else:
+        click.echo(f"Update preview: {result['status']}; nothing written.")
+        for change in result["changes"]:
+            click.echo(f"{change['kind']}: {change['destination_path']}")
+        for directory in result["new_directories"]:
+            click.echo(f"create directory: {directory}")
+        for transition in result["transitions"]:
+            click.echo(f"Attempt {transition['attempt_id']}: {transition['from']} -> {transition['to']}")
+        for transition in result["artifact_transitions"]:
+            click.echo(f"{transition['role']} artifact for {transition['source_attempt_id']}: "
+                       f"{transition['from']} -> {transition['to']}; backup remains unverified")
+        click.echo("Local analysis is outside the write set. Execution is not independently verified.")
+
+
+def _raise_collection_update_error(exc):
+    code = getattr(exc, "exit_code", 2)
+    error_class = {3: DependencyError, 5: IdentityConflictError, 6: PartialCompletionError,
+                   7: SafetyRefusalError}.get(code, InputError)
+    raise error_class(str(exc)) from None
+
+
+@experiment.command(name="update-run")
+@click.option("--project-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--child-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--run-id", required=True)
+@click.option("--expected-parent-sha256", required=True)
+@click.option("--expected-child-sha256", required=True)
+@click.option("--expected-new-evidence-sha256", required=True)
+@click.option("--expected-local-receipt-sha256", required=True)
+@click.option("--json", "as_json", is_flag=True)
+def experiment_update_run(project_root, child_root, run_id, as_json, **baselines):
+    """Apply a previewed Run version, preserving local analysis and recovery material."""
+    from scholar_workflow.project.transactions import apply_run_update
+
+    try:
+        result = apply_run_update(project_root, child_root, run_id=run_id, **baselines)
+    except ValueError as exc:
+        _raise_collection_update_error(exc)
+    if as_json:
+        click.echo(json.dumps(result, indent=2))
+    else:
+        click.echo(f"Run archive {result['status']}: {result['destination']}")
+        click.echo("Local analysis is preserved. Recovery material is not verified backup.")
+
+
+@experiment.command(name="recovery-plan")
+@click.option("--project-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--child-project-id", required=True)
+@click.option("--run-id", required=True)
+@click.option("--json", "as_json", is_flag=True)
+def experiment_recovery_plan(project_root, child_project_id, run_id, as_json):
+    """Inspect one local pending update; do not write or infer a live worker."""
+    from scholar_workflow.project.transactions import plan_run_recovery
+
+    try:
+        result = plan_run_recovery(project_root, child_project_id=child_project_id, run_id=run_id)
+    except ValueError as exc:
+        _raise_collection_update_error(exc)
+    if as_json:
+        click.echo(json.dumps(result, indent=2))
+    else:
+        click.echo(f"Recovery preview: {result['destination']}; nothing written.")
+        for action in result["actions"]:
+            click.echo(f"{action['state']}: {action['destination_path']}")
+        click.echo(f"Revision SHA-256: {result['revision_sha256']}")
+        click.echo("Choose commit or rollback explicitly. Execution is not independently verified.")
+
+
+@experiment.command(name="recover-update")
+@click.option("--project-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--child-project-id", required=True)
+@click.option("--run-id", required=True)
+@click.option("--direction", required=True, type=click.Choice(["commit", "rollback"]))
+@click.option("--expected-revision", required=True)
+@click.option("--json", "as_json", is_flag=True)
+def experiment_recover_update(project_root, child_project_id, run_id, direction, expected_revision, as_json):
+    """Commit or roll back one reviewed pending update, using only local material."""
+    from scholar_workflow.project.transactions import recover_run_update
+
+    try:
+        result = recover_run_update(project_root, child_project_id=child_project_id,
+                                    run_id=run_id, direction=direction, expected_revision=expected_revision)
+    except ValueError as exc:
+        _raise_collection_update_error(exc)
+    if as_json:
+        click.echo(json.dumps(result, indent=2))
+    else:
+        click.echo(f"Run archive {result['status']}: {result['destination']}")
+        click.echo("Recovery material is retained; it is not verified backup.")
+        if direction == "rollback":
+            click.echo("New empty directories may remain; no unknown content was removed.")
 
 
 @experiment.command(name="new-run")

@@ -2,8 +2,18 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "child-code-local-recovery-material",
+      "description": "G11/INV35/INV62：明确提供本地自包含SHA-1 bundle，覆盖所选child已收集Run源码commit与明确附加commit，不查parent HEAD；空bare repo verify/unbundle/full strict fsck，不继承Git配置/凭据/对象目录、不checkout/执行/联网。retain-code绑定当前plan摘要，child/hash去重bundle、独立追加schema覆盖记录；同内容重试再同步，冲突拒写，中断partial保留位置。标准所选树LFS/gitlink与未检查内容如实报告，不认证真实远端、未提交工作或verified backup。23专项/117相关开发通过，正常安装、远端采集、原生/人工与G17仍未完成。",
+      "status": "pending"
+    },
+    {
+      "id": "execution-code-reference-and-declared-location",
+      "description": "INV62：context schema1增量execution-code只记录child UUID/安全相对位置/可选commit；overview保留声明/未登记/未核验行，不输出机器hash或假本地链接。remote-code-plan仅组合显式Target及既有服务器台账，不写/连接/启动工具，不输出凭据或环境绑定，读中变化拒绝。27项新增与相关共191项通过，只证明合成开发行为；远端child/路径/commit/访问/SSH配置、安装态、原生打开与人工仍未核验，不当作备份或总体阶段完成。",
+      "status": "pending"
+    },
+    {
       "id": "project-local-management-remote-source-skill-contract",
-      "description": "G11/G16/INV62：init-project、organize-project、review-experiments按职责加载共享project-management运行契约。本地保留完整知识/轻量文献、PROJECT六节/唯一计划、规则skills及实验分析，所有子项目代码与Git开发在远端，只有primary可向项目自有GitHub推送；本地最简恢复不是开发clone或verified backup。全部实验状态按子项目限定身份回传，执行事实不覆盖本地分析，不把总项目commit当远端源码commit。当前双角色apply、分层接收与SSH机器引用尚未实现，必须报告缺口，不假造命令/schema或用旧骨架冒充。只读文档/分析不扩大为远端执行、收集、Git发布或迁移；旧通用接口和论文/Canvas规范保留。skill基础/eval结构检查、有限宿主行为、正常安装及人工评鉴分别取证；新自动化能力未实现，整项保持pending。",
+      "description": "G11/G16/INV62：项目skills按职责加载共享project-management契约；总项目保留知识/轻量文献、PROJECT六节/唯一计划、规则skills及实验分析，子项目代码/Git开发在远端，只有primary可向项目自有GitHub推送。源码支持新空根双角色骨架、独立Git、preview/CAS登记、三摘要首次接收/验证重试及qualified本地只读索引，保留子commit/五状态/本地分析，同名Run按child分开。新增四摘要update-run与local-only显式commit/rollback恢复；先验证完整旧新版本及精确归属，receipt最后，pending失败关闭，未知人工文件不收编。19项transaction及相关共205项通过，最终完整unit/contract3021项通过、11既有warnings；不是安装态、执行真实性或科学正确性证明。SSH引用/源码恢复及原生/人工仍有缺口，复制/恢复包不等于verified backup。文档/分析请求不扩大为执行、收集、Git发布或迁移；既有论文/Canvas规范保持。当前安装仍0.45.1，整项pending。",
       "status": "pending"
     },
     {

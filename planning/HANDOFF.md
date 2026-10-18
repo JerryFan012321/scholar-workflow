@@ -1,5 +1,207 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-18：0.46.0整批发布安装与单对象验收已授权
+
+用户明确批准整批提交/正式发布/正常安装及test Vault单个合成项目验收。恢复执行；
+不合并main、不连接服务器、不改正式Vault/Zotero、不切换服务。先同步包及双manifest
+版本，完整回归与runtime边界检查后固定source；独立构建clone沿既有make-release生成
+runtime，普通推送hotfix/release，再pipx固定runtime SHA和Codex正常marketplace安装。
+实际身份核对完成后才按0.46.0-installed-acceptance-plan执行一个对象并提供可见PROJECT/
+实验报告。人工评鉴仍单独pending，不能把发布/安装或合成结果冒称第一阶段完成。
+当前正常安装基线0.45.1/runtime aca428750b068d7a72f96377a0878958ea91e17c，
+源分支codex/hotfix-project-management-identity，HEAD/main均2e3c61f；保留旧主目录脏稿。
+回退CLI可正常重装上一固定runtime，Codex降级不预称已演练。所有网络进程仅本次使用
+已确认的46993代理及需要时Git HTTP/1.1，不改全局网络设置或凭据。
+版本同步后完整3072项通过、11既有警告，136.85秒；相关Ruff、三skill基础及隐私/diff
+检查通过。正式计划与回退见0.46.0-release.md；下步固定source并生成独立runtime。
+
+## 2026-10-18：现用入口核对与执行授权边界
+
+本轮实查正常安装project --help只有context-template/overview/validate-context，
+experiment --help仍为旧flat生命周期入口，新命令未安装；不把源码或临时wheel当成可用版。
+reproducible-exemplars-stage1.md的过期0.45.0“当前”指引已改成0.45.1实查及单一证据入口，
+历史保留。上一轮分发核验属于实际证据进展；当前不再靠重复测试、追加功能或未执行计划
+延续开发。相同0.46.0发布/安装授权缺失已在连续至少三轮出现，安全开发验证和分发预检
+已完成；下一必要动作依赖该确认，安装后还需实际单项目/人工评鉴，第一阶段不能记完成。
+等待用户明确回复：授权本批提交/发布/安装0.46.0并只在test做单项目验收；不合并main、
+不连接服务器、不改正式Vault/Zotero。未收到前不发布，不自行换成源码展示或另扩范围。
+
+## 2026-10-18：分发预检完成，仍未安装
+
+本轮为progress：离线源码wheel构建与125包文件逐字节核对通过，10新模块从wheel导入，
+12命令help成功；两manifest/包metadata仍0.45.1，未升级/发布/安装。临时wheel不是正式候选。
+系统Python虽缺pydantic，但initializer是stdlib-only；-I -S下profiles与只读parent plan
+实际成功，未创建目标目录。首次/tmp别名被安全拒绝后，明确改用核实的物理路径，不改规则。
+故不增加猜测性的runtime runner或全局依赖安装。结果见同一test-results当前节。
+产品代码未变，不重复全仓；3072项结果保持。下一步仍为已提出的整批发布安装授权，
+再按0.46.0-installed-acceptance-plan做一个可见项目；无授权不推送/安装/改正式数据。
+
+## 2026-10-18：代码留存交付审查
+
+上一轮完成真实代码/schema/文档及3071项回归，属于progress。当前只审查交付缺口，
+不据绿色测试直接发布。已重新询问整批0.46.0提交/发布/正常安装及test单对象授权；
+未获回复前不执行。先复现unchanged留存的coverage目录同步失败：应partial6、字节不变，
+不能被root错误包装成冲突5。范围限同一合成项目；如证实则只修错误分类并补定向回归。
+已红测证实exit5错误，最小修复为同步异常显式partial6；24项专项及118相关检查通过，
+12.45秒，Ruff通过。安装后单项目验收准备另见0.46.0-installed-acceptance-plan.md，尚未
+执行，包含两个合成Run的共同/差异条件与同表结果，不冒充真实科学/远端证据。
+修正后完整3072项通过、11既有警告，138.79秒；diff通过。未发布Changelog已整理为
+一致的当前能力，不把开发流水带入产品说明；已发布历史保持。等待本批发布安装授权，
+不以继续目标推导权限；原生远端/人工/备份及G17仍开放，未改变真实资料。
+
+## 2026-10-18：最简代码恢复材料预检，开发开始
+
+选定child与一个显式本地Git bundle，检查其自包含、对象完整性及所选child全部已收集Run
+源码commit覆盖，可额外指定明确commit；绝不用总项目HEAD代替。隔离bare repo解包，
+不checkout/执行内容/联网，不采集全盘或另建服务器库。检查LFS指针/gitlink缺口，未提交/
+未跟踪原创及外部依赖不冒称已保存。先准备合成两提交/完整/增量/损坏等输入，再测。
+这里只是预检开工记录，实际留存writer/安装态/原生与verified backup均不预称完成。
+当前已实现code-recovery-plan与摘要绑定retain-code，空bare repo核验自包含/对象完整性/
+所有所选child已收集Run提交；不查parent HEAD、不联网/checkout/执行。child/hash只存一份
+bundle，覆盖记录独立追加，冲突拒绝，未确认落盘partial6并保留位置。LFS/gitlink仅检查
+所选提交标准指针，未提交/未跟踪/外部依赖/秘密审计未做，不认证真实远端归属或backup。
+23项新增及相关117项通过（12.36秒），新模块/测试Ruff通过；schema与共享skill契约已补齐。
+最终完整unit/contract为3071 passed、11既有警告，139.99秒；eval增补后10项复验通过，
+三skill基础校验/diff通过。新结果包含本次远端引用和代码恢复。新增能力仍未提交/发布/
+安装，PATH仍0.45.1。下一步正常安装单对象与原生远端身份/打开验收，须对应发布与服务器
+范围授权；没有真实数据变更。G17和WI-055保持开放，旧论文/Canvas验收不重做。
+
+## 2026-10-18：执行子项目代码引用与只读定位，开发开始
+
+沿用既有project-context/schema1，增加execution-code引用，仅存child UUID、安全相对路径
+及可选commit，不存主机地址/凭据/任意URI。overview核对总项目子声明，远端状态仍未核验。
+单独remote-code-plan按用户显式Target和既有服务器台账形成零写入预览，不自动绑定child
+与某个远端路径，不连接/启动工具，不把声明当远端身份/源码commit确认。先准备合成
+parent/child/Target/ledger及路径/秘密输出/兼容预期。安装态、原生打开和源码恢复另行推进。
+当前已实现：schema1新增execution-code（仅code项、child UUID/相对路径/可选commit），
+overview保留已声明但未远端核验、未登记及不可查状态，不暴露UUID/hash或假本地链接。
+remote-code-plan显式选择既有SSH Target/ledger，保留输入摘要与五项未核验，不写文件/
+查询远端/读取密钥，不把Target选择当作child部署核验。上下文CLI校验错误隐藏原始输入。
+27项新增及相关共191项通过（最终2.40秒），Ruff/diff通过；无测试失败，初次仅两处
+import排序静态问题已修正。此轮没有重跑全仓：3021全仓结果属于上一更新/恢复快照，
+不能冒称包含本轮。新旧schema/清单/候选/服务器API定向兼容已验，安装态仍未做。
+结果见project-management-identity-test-results.md当前节。下一步最简代码恢复记录及
+原生远端核验/打开的受控方案；不发布安装/合并、不改真实Vault/服务器，G17仍未完成。
+末轮CLI全文件Ruff发现既有TRY004，HEAD已确认相同非对象spec抛ValueError；未改无关代码。
+新增/变更模块与新测试Ruff通过，不冒称CLI全绿；eval增补后10项结构检查通过。
+
+## 2026-10-18：更新激活与显式恢复，开发开始
+
+接上既有四摘要update-plan及恢复包，实现实际写入与local-only commit/rollback恢复。
+先核实immutable journal/旧新receipt/逐文件归属，持久pending marker后才写；收据最后，
+中断保持pending，显式恢复须绑定新观察摘要。所有未知本地改动拒绝，不改人工笔记。
+合成单Run先准备预期，再测正常/中断/恢复/冲突；不运行实验或操作真实项目/Vault/服务器。
+此节仅为开工交接，结果待后续记录；发布安装、远端定位和代码恢复仍独立。
+当前结果：四摘要update-run、只读recovery-plan与revision-bound recover-update已接通；
+正常更新和三个文件边界的commit/rollback、恢复再次中断、未知同字节文件/临时文件及
+伪造journal写人工笔记均按预期。首次6项失败源于RUN_ID字符串被当compiled regex，
+已修正为re.fullmatch，18项复验通过；随后19项transaction+其他相关共205项通过。
+最终完整unit/contract为3021 passed、11既有Deprecation warnings，129.20秒；Ruff/diff及
+init-project基础校验通过（系统Python缺yaml后改用项目uv依赖环境）。测试结果单独记录。
+所有验证为合成数据/本机文件系统，不代表安装态或实机人评；安装实查仍0.45.1。
+下一步为安全remote-code locator与最简源码恢复记录，另准备正常安装单对象验收；
+无发布授权不发布安装，不合并main、不改真实Vault/服务器。WI-055及G17保持未完成。
+
+## 2026-10-18：更新前恢复材料准备，尚未激活更新
+
+新增内部update_package.stage_run_update，绑定父/子/新证据/旧receipt四份摘要，复核源码
+与本地归档后，在.scholar-workflow/collection-transactions/tx-*保存精确变更的before/after
+及journal。保留原字节/权限/位置身份，receipt最后；读回、目录fsync后才报prepared。
+当前不替换归档、不创建pending marker、不增加CLI入口；不能把prepared叫作更新/恢复完成。
+中途失败保留明确位置且返回partial6，不自动删除；恢复材料不是verified backup。
+测试先准备同一合成Run，11项新增+相关共176项通过（10.43秒）；首轮测试模块导入错误
+修正后再测，未放宽产品规则。Ruff通过；没有真实项目、Vault、服务器、发布/安装或main变更。
+下一步：基于此包实现严格校验的activation/apply与显式commit/rollback，以及中断故障测试。
+未来writer必须重新验证journal/路径/归属/字节，不能仅凭prepared状态或schema授权覆盖。
+完整阶段目标仍开放，安装版仍0.45.1，原有人工/科学/备份缺口不变。
+
+## 2026-10-18：Run版本更新预览开发
+
+先实现只读update-plan：固定配方、保留旧Attempt/证据、本地人工文件不进写集，列出准确
+新增/替换及状态变化，并给出父/子/新证据/旧receipt摘要。旧终态不可静默改写，incoming
+文件与未受管人工文件碰撞拒绝。pending-update标记使reader/重复接收失败关闭，不伪装完整。
+测试复用一个合成Run，不改真实对象；writer及commit/rollback恢复尚未实现，不调用覆盖替代。
+已实现只读update-plan和pending失败关闭；124项相关回归、末轮70项复验通过，Ruff/diff
+通过。新增空目录也正确标为版本变化；manifest-only补本地副本可预览但backup仍未验证。
+读/接收见pending标记均不报完整，不推断worker存活、不删未知事务。结果见同一test-results
+当前节。下一步为journalled apply及commit/rollback恢复，尚未发布安装。
+
+## 2026-10-18：接收档案只读总览开发
+
+为本地收集后的档案增加qualified reader/index投影，不读取源child或服务器、不写index文件。
+按登记child进入各自namespace，校验receipt、受管证据及路径映射；保留缺失/损坏/未接收
+状态与其他有效记录。导航表的配置/条件和状态/结果入口同处，不选最好结果、不解析未知
+指标意义、不编造目的或执行真实性。冻结合成输入先测，再实现；版本更新/恢复另行推进。
+已实现collected只读Markdown/JSON总览；离线源child移走后可读，本地证据检查/映射/状态
+齐备，损坏行不掩盖有效行，中英链接与标签检查通过。128项定向检查通过（42项预检/
+接收/读取，合成metrics漏填promoted_at:null修正后通过）；Ruff/diff/skill基础通过。
+不解释未知指标、不猜目的/最佳Attempt，表格是导航而非完整科学比较；complete仅读取范围。
+旧flat父命令仍拒绝；qualified只读索引现有源码。CAS更新、crash恢复、远端引用等仍待，
+未安装或人工验收。具体结果见同一test-results当前节，原论文/Canvas认可不重做。
+
+## 2026-10-18：单Run首次接收开发
+
+复用单Run预检，凭父/子/证据三份摘要创建按子项目限定的归档；同内容重试检查受管文件后
+unchanged，保护本地report/notes及其他分析。已有内容变更先拒绝，不以覆盖冒充生命周期更新。
+首次发布使用系统exclusive rename，能力缺失拒绝而非普通rename fallback；私有staging
+完成并复检后才发布。测试为同一合成父子/五状态Run及失败/竞态，不操作Vault/服务器。
+崩溃遗留stage清理、版本更新与派生索引仍须独立实现，不预称完整回传已完成。
+实际首次接收与幂等已实现，schema receipt/文件权限/空目录/原commit/五状态保留，
+本地分析不写。115项相关回归通过；补清理失败/receipt类型用例后，33项预检接收+10项
+eval复验通过。首轮发现publish后fsync错误被root context包装，已在接收边界修正为
+partial6；重试须实际重新同步，不能读到文件就判落盘完成。Ruff/diff通过。
+父项目flat validate/index等现在拒绝，避免漏看子档案后报0Run；Target登记仍支持。
+结果见同一test-results当前节；本机仍0.45.1，未提交发布安装。原生exclusive发布实测
+限macOS，Linux路径未实机验。后续qualified reader/index、CAS更新/恢复仍待。
+
+## 2026-10-18：实验分层接收前检查开发
+
+先核验显式单Run的原始相对子项目路径、实际快照与全部Attempt，再确定本地归档映射。
+只读collection-plan不复制、不改记录或运行实验；source commit来自子Run，不读取管理Git。
+远端report/notes与本地分析必须分开，初次接收、后续CAS更新及恢复仍需后续实现，
+不能把预览叫作接收成功。测试使用合成父子声明/单Run/五种状态，不整库扫描。
+已实现只读collection-plan，15个独立新增用例及相关登记/身份/实验/eval共115项通过，
+6.88秒；Ruff/diff通过。原commit、完整五状态、快照/Target/成果核验及显式路径映射齐备，
+远端报告笔记单独命名，保留本地分析位置。128MiB总文件/1MiB记录资源边界不静默删内容。
+本地receiver/CAS更新/恢复/索引仍未实现。已询问0.46.0正常发布安装授权，未有回复不执行；
+不把授权等待当技术阻塞，仍可继续后续安全开发。详见同一test-results当前节。
+
+## 2026-10-18：子项目登记开发
+
+同一hotfix续行，先输出零写入预览，显式apply绑定父子声明字节摘要，只追加总项目children。
+不反写子项目，不创建实验目录或连接主机；声明与实际部署分开。冲突/过期预览拒写，
+正常重试不重复追加。合成输入先准备，再验证文件守恒、失败清理和并发更新；
+未发布安装、不改真实项目/Vault，旧有效验收保留。
+当前18项登记及相关身份/角色/context/实验/复现/eval共239项通过，12.22秒；Ruff和
+skill基础通过。忙锁非阻塞；过期/写入中变化拒绝；replace失败清理本次暂存，已替换
+但落盘不确定返回partial6。锁仅协作式，外部编辑声明需停写，不冒称跨机器事务。
+结果见project-management-identity-test-results.md当前节；下一项为分层接收/索引。
+
+## 2026-10-18：WI-055双角色初始化，开发续行
+
+同一独立hotfix继续实现显式research-parent/execution-child初始化；旧generic保留。
+新角色仅用于空新根或相同已声明角色的重复补齐，已有非空项目不静默转换；独立Git、
+身份/父子声明、按角色目录及规则分别生成。总项目保留PROJECT六节/唯一内嵌计划和
+空资料清单；子项目保留profile/toolkit/执行结构，不复制总体知识。父项目清单不被
+子项目初始化反写，服务器定位/推送/远端部署/实验接收均不在本步骤中。
+先准备合成输入与预期再测试，安装态与真实对象另行验收，旧审阅文件保持。
+当前13项角色用例及身份/旧初始化/实验生命周期合计95项通过，另36项eval结构、
+旧context和模范项目复现通过；Ruff和skill基础通过。拒绝总项目new-run发生在创建
+锁/状态前；管理Git可保留文档/轻量档案，恢复包忽略。结果见
+project-management-identity-test-results.md当前角色节。未发布安装或合并main。
+
+## 2026-10-18：WI-055父子身份基础，开发中
+
+独立分支codex/hotfix-project-management-identity从已安装0.45.1的main续行。
+先实现独立project-management.json声明与只读validate-management入口；layout schema2
+及旧初始化不变。声明持有总项目/子项目身份、归属、primary及归档目录段，不持有主机路径、
+凭据或权限。可选择两根交叉核对，不扫描目录、不连接远程、不写业务对象。
+测试输入为一个合成总项目/两个子项目，覆盖唯一身份/目录/primary、互认、非法字段及
+安全读取；测试前预期与范围已在会话说明。当前新增27项及相关171项共198个不同测试
+通过；领域异常修正后重跑27项通过，新增Python文件Ruff与diff检查通过。完整结果由
+project-management-identity-test-results.md持有，不冒称全仓或安装态验收。
+双角色初始化、分层回传、远程导航与恢复仍待实现；不发布安装、不改Vault或真实项目。
+
 ## 2026-10-16：0.45.1已正常发布安装，完整热修复历史已合并main
 
 用户确认安装/main合并及纳入此前99提交的完整热修复历史。source 7db5e57、runtime

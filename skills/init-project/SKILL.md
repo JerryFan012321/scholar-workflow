@@ -12,10 +12,11 @@ pointer.
 
 For a research parent or remote execution child, first load
 `${CLAUDE_PLUGIN_ROOT}/references/project-management.md`. Its role/ownership result
-contract is required. The current helper only implements the generic source skeleton:
-return a role-specific proposal and capability gap rather than running generic
-`apply` and calling the new management mode complete. Do not deploy or initialize a
-remote repository as a substitute. The steps below retain explicit generic/legacy use.
+contract is required. Select `--role research-parent` or `--role execution-child`
+explicitly for a new role. See `references/skeleton-manifest.md` for role layouts and
+flags. These modes scaffold an empty chosen root, not remote deployment, child
+registration or experiment reception. An existing nonempty generic project requires
+an explicit migration, not generic `apply` presented as role conversion.
 
 ## Steps
 
@@ -24,6 +25,9 @@ remote repository as a substitute. The steps below retain explicit generic/legac
 2. Read `references/skeleton-manifest.md` and `references/source-layout.md`, then run
    `scripts/init_project.py plan TARGET`. Pass a user-selected `--source-profile`,
    `--package`, and repeatable `--addon` explicitly; omit them for the common base.
+   Select the role where requested; source profiles belong only to generic or execution
+   layouts. A child requires its parent's stable UUID; `--primary` is an explicit role,
+   not permission to create or push a repository.
 3. Present every reported file/directory/symlink or instruction-topology conflict.
    Missing standard paths and `git init` are authorized by the initialization request;
    existing-content conflicts require a decision.
@@ -31,7 +35,8 @@ remote repository as a substitute. The steps below retain explicit generic/legac
    `references/project-instructions.md`; never replace a collision to make room.
 5. Run `scripts/init_project.py apply TARGET` with the same layout selection. It creates the
    portable project UUID and only missing paths, and initializes Git only when no enclosing
-   repository already manages the target.
+   repository already manages the generic target. New role layouts require their own
+   independent Git root, refuse an enclosing repository, and never connect to a host.
 6. New baseline `AGENTS.md` markers remain unresolved until the user approves a proposed
    patch grounded in existing project files.
 7. Re-run the identical `plan`, inspect `project-layout.json` and `git status --short`, and
@@ -40,7 +45,7 @@ remote repository as a substitute. The steps below retain explicit generic/legac
 
 ## Constraints
 
-- For supported generic initialization use exactly the common skeleton; do not
+- Use the selected role's exact skeleton; explicit generic use retains the common base. Do not
   create parallel `plan/plans`, `report/reports`, or `scripts/data` layouts.
 - The current flat `experiments/<id>/` bundle is the Run authority; indexes are derived.
   It does not implement parent aggregation of remote children.
@@ -50,6 +55,9 @@ remote repository as a substitute. The steps below retain explicit generic/legac
   Existing tracked trees are diagnosed, never silently untracked.
 - Never scaffold credentials, custom agents, hooks, or `.DS_Store`.
 - The initializer never deletes, overwrites, stages, commits, or pushes.
+- A parent receives a clean empty six-section PROJECT, inline plan authority, public
+  README stub and empty material inventory. These are initialization state, not a
+  researched PROJECT or evidence of progress. Existing human documents remain intact.
 
 ## Project material context
 

@@ -39,7 +39,18 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
   所有执行子项目的代码/Git开发与运行均在远端，只有primary可推送项目自有GitHub，本地只留最简恢复材料。
   所有实验按子项目回传轻量档案，在本地分析；保留项目知识、唯一计划、规则/skills和既有呈现契约。
   skill运行结果细则唯一见references/project-management.md，实现增量见planning/project-system-v2.md §15；
-  当前runtime接口仍兼容旧版，不冒称新模式可用，
+  当前安装版仍是契约切片；开发helper已支持新空根的显式双角色骨架及独立管理身份，
+  不等于双方登记、远端部署或分层回传已可用，旧通用接口保持兼容，
+  独立父子登记preview/CAS-apply也已进入开发，尚未正常安装，不授予服务器或Git权限，
+  首次Run接收、同内容验证重试及qualified只读reader/index已有开发实现；
+  四摘要update-plan/update-run与local-only recovery-plan/recover-update现已进入开发验证，
+  before/after/journal与pending标记使中断后显式commit/rollback；不证明worker存活或verified backup，
+  execution-code资料引用及按所选Target/服务器台账的只读定位预览已有开发实现，
+  不绑定或核验远端child/路径/commit/SSH配置，不自动启动原生工具；新能力未安装，
+  最简源码bundle预检/摘要绑定本地留存已有开发实现，按child/hash去重并保留核验记录，
+  不联网/checkout，不捕获未提交内容或证明真实远端来源/verified backup；
+  远端实证/安装验收仍待，不能以源码测试冒称真实项目已可完整使用，
+  父项目拒绝旧flat实验命令的漏看，不以0Run冒称完整验证。Target登记继续支持，
   不由设计确认推导真实迁移、远端写入、发布安装或verified backup授权。
 - **Knowledge System** 持有 Vault 核心文档、原子资源、附属产物、analysis result contract 和
   knowledge relations；批量产物逐项通过 conformance gate，失败不得记成功。

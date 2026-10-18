@@ -160,7 +160,7 @@ def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
-def read_project_json(root: str | Path, filename: str) -> object:
+def read_project_bytes(root: str | Path, filename: str) -> bytes:
     """Read a bounded root-level declaration; never discover other files."""
     if not re.fullmatch(r"[a-z][a-z0-9-]*\.json", filename):
         raise ProjectLayoutError("Project declaration must be a root-level JSON filename")
@@ -188,11 +188,19 @@ def read_project_json(root: str | Path, filename: str) -> object:
                 after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns
             ) or (current.st_dev, current.st_ino) != (before.st_dev, before.st_ino):
                 raise ProjectLayoutError(f"{filename} changed while it was read")
-            return json.loads(b"".join(chunks), object_pairs_hook=_unique_json_object)
+            return b"".join(chunks)
         except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise ProjectLayoutError(f"{filename} is malformed or changed while reading") from exc
         finally:
             os.close(descriptor)
+
+
+def read_project_json(root: str | Path, filename: str) -> object:
+    """Parse a safely read declaration, rejecting duplicate fields."""
+    try:
+        return json.loads(read_project_bytes(root, filename), object_pairs_hook=_unique_json_object)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ProjectLayoutError(f"{filename} is malformed or changed while reading") from exc
 
 
 def load_project_identity(root: str | Path) -> str:

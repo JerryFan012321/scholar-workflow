@@ -21,7 +21,16 @@ PLUGIN_SOURCE = SKILL_ROOT.parents[1] / "src"
 if (PLUGIN_SOURCE / "scholar_workflow" / "project" / "layout.py").is_file():
     sys.path.insert(0, str(PLUGIN_SOURCE))
 
-from scholar_workflow.project.layout import is_project_id, validate_project_layout  # noqa: E402
+from scholar_workflow.project.layout import (
+    is_project_id,
+    load_project_layout,
+    validate_project_layout,
+)
+from scholar_workflow.project.management import (
+    PROJECT_MANAGEMENT,
+    load_project_management,
+    validate_project_management,
+)
 
 CATALOG_PATH = SKILL_ROOT / "references" / "source-profiles.json"
 PROJECT_LAYOUT = "project-layout.json"
@@ -74,6 +83,58 @@ class Selection:
     package: str | None
     source_profile: str | None
     addons: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class RoleSelection:
+    kind: str = "generic"
+    parent_project_id: str | None = None
+    primary: bool = False
+
+
+GENERIC_ROLE = RoleSelection()
+
+
+def _resolved_role(root: Path, args: argparse.Namespace, selection: Selection) -> RoleSelection:
+    path = root / PROJECT_MANAGEMENT
+    existing = load_project_management(root) if path.exists() or path.is_symlink() else None
+    kind = args.role or (existing.kind if existing else "generic")
+    parent = args.parent_project_id
+    primary = args.primary
+    if existing is not None:
+        if kind != existing.kind:
+            raise ValueError("role differs from the existing declaration; explicit migration required")
+        if parent is not None and parent != existing.parent_project_id:
+            raise ValueError("parent identity differs; explicit migration required")
+        if primary is not None and primary != existing.primary:
+            raise ValueError("primary role differs; explicit migration required")
+        parent, primary = existing.parent_project_id, existing.primary
+    if kind != "execution-child" and (parent is not None or primary is not None):
+        raise ValueError("--parent-project-id and --primary require an execution child")
+    if kind == "execution-child" and not is_project_id(parent):
+        raise ValueError("execution child requires --parent-project-id with a canonical UUIDv4")
+    if kind == "research-parent" and (selection.package or selection.source_profile or selection.addons):
+        raise ValueError("research parent cannot own a source profile, package or addon")
+    if kind == "research-parent" and existing is not None:
+        layout = load_project_layout(root)
+        if layout.package or layout.source_profile or layout.addons:
+            raise ValueError("research parent layout cannot own source selections")
+    if kind != "generic":
+        if existing is None and root.exists() and any(root.iterdir()):
+            raise ValueError("role initialization requires a new empty root; migrate existing content explicitly")
+        repository = _git_root(root)
+        if repository is not None and repository != root:
+            raise ValueError("role initialization requires an independent Git root, not an ancestor repository")
+    return RoleSelection(kind, parent, bool(primary))
+
+
+def _management_payload(role: RoleSelection, project_id: str) -> dict[str, Any]:
+    data: dict[str, Any] = {"schema_version": 1, "project_id": project_id, "kind": role.kind}
+    if role.kind == "research-parent":
+        data["children"] = []
+    else:
+        data.update(parent_project_id=role.parent_project_id, primary=role.primary)
+    return validate_project_management(data).model_dump()
 
 
 def _load_catalog() -> dict[str, Any]:
@@ -168,9 +229,21 @@ def _resolved_selection(
 def _layout_directories(
     selection: Selection,
     catalog: dict[str, Any],
+    role: RoleSelection = GENERIC_ROLE,
 ) -> tuple[dict[str, str], dict[str, str]]:
+    if role.kind == "research-parent":
+        return {
+            ".agents/skills": "Project-scoped, host-neutral skills",
+            "assets": "Readable project illustrations",
+            "docs/notes": "Project knowledge, decisions and lightweight literature",
+            "docs/plan": "Supporting planning material; PROJECT holds the one detailed plan",
+            "docs/report": "Local analysis and cross-experiment comparisons",
+            "experiments/profiles/targets": "Credential-free execution Target declarations",
+        }, {"backups/code": "Minimal code recovery material, not development clones or verified backup"}
     tracked = dict(catalog["common"]["tracked"])
     local = dict(catalog["common"]["local"])
+    if role.kind == "execution-child":
+        local = {path: detail for path, detail in local.items() if not path.startswith("docs/")}
     additions: list[dict[str, str]] = []
     if selection.source_profile is not None:
         additions.append(catalog["profiles"][selection.source_profile]["paths"])
@@ -197,6 +270,7 @@ def agents_template(
     project_name: str,
     tracked: dict[str, str],
     local: dict[str, str],
+    role: RoleSelection = GENERIC_ROLE,
 ) -> str:
     rows = "\n".join(
         f"| {path}/ | {responsibility} |"
@@ -271,7 +345,66 @@ def agents_template(
         custom agents or hooks; add either only when the user explicitly requests them.
         """
     )
+    if role.kind != "generic":
+        ownership = (
+            "This is the complete local research parent. Keep its management Git local; do not push it.\n"
+            "Keep knowledge, PROJECT, its one detailed plan, guidance and local experiment analysis here.\n"
+            "All child source development happens remotely. Recovery copies are not working clones.\n"
+            "Collect archives under experiments/<child-segment>/<run-id>/attempts/<attempt-id>/.\n"
+            "Child-qualified reception is not implemented by this initializer; never flatten identities.\n"
+            "Do not register child execution using this management repository's Git HEAD."
+            if role.kind == "research-parent" else
+            "This is a remote execution child with independent source Git. Develop and execute remotely.\n"
+            "Keep source/config profiles, env definitions, tools/tests and per-dataset material here.\n"
+            "Register all execution outcomes, including failures and interruptions.\n"
+            "Use fixed source commits in separate execution directories while experiments run.\n"
+            "Only a primary child may push project-owned history to GitHub, with separate authorization.\n"
+            "Other children may read/fetch original upstreams but do not push their own changes.\n"
+            "The parent owns overall knowledge, PROJECT, planning and collected-result analysis."
+        )
+        return (
+            f"# {project_name} Project Instructions\n\n## Ownership\n\n{ownership}\n\n"
+            "## Directory Responsibilities\n\n| Path | Responsibility |\n|---|---|\n"
+            f"{rows}\n\n## Records and safety\n\n"
+            "project-layout.json owns project identity and source selection; project-management.json\n"
+            "declares role and parent/child association, not host credentials or execution permission.\n"
+            "Preserve existing notes and execution evidence. Promotion or recovery copies do not prove backup.\n"
+            "Keep credentials out of Git and Target profiles. No automatic commit, push or remote deployment.\n\n"
+            "## Agent context\n\n"
+            "Project skills live in .agents/skills/. Host rules, installed skills, authentication\n"
+            "and session history are not automatically inherited on another machine.\n"
+        )
     return template.replace("__DIRECTORY_ROWS__", rows)
+
+
+def _parent_project_template(name: str) -> str:
+    return (
+        f"# {name}\n\nResearch goal: not yet recorded.\n\n"
+        "Initialization only; no code, experiments or sources have been inspected.\n\n"
+        "[Current state](#current-state) · [Project plan](#project-plan) · "
+        "[Experiments and results](#experiments-and-results) · "
+        "[Code and data flow](#code-and-data-flow) · [Papers and materials](#papers-and-materials)\n\n"
+        "## Current state\n\nThe management skeleton exists. Research progress is not yet recorded.\n\n"
+        "## Project plan\n\nThis section is the sole detailed plan. No tasks or dates have been agreed yet.\n\n"
+        "## Experiments and results\n\nNo child experiment archives have been received. "
+        "Conditions and results will be recorded together when evidence is available.\n\n"
+        "## Code and data flow\n\nNo remote code entries have been selected or inspected. "
+        "There is no local child development clone or established module diagram.\n\n"
+        "## Papers and materials\n\nNo materials have been selected. Project literature will identify "
+        "each work's problem, role and corresponding project entry.\n\n"
+        "## Ownership and open questions\n\n"
+        "This parent owns project knowledge, the plan, collected experiment analysis and local management Git. "
+        "Each remote child owns its source/configuration and execution facts. "
+        "README is the external presentation; PROJECT remains internal.\n\n"
+        "Research goal, children, materials and code-recovery requirements are not yet recorded. "
+        "No verified backup or remote availability has been established.\n"
+    )
+
+
+def _role_files(role: RoleSelection) -> tuple[str, ...]:
+    if role.kind == "research-parent":
+        return (PROJECT_MANAGEMENT, "PROJECT.md", "README.md", "project-context.json")
+    return (PROJECT_MANAGEMENT,) if role.kind == "execution-child" else ()
 
 
 def _read_text(path: Path) -> str | None:
@@ -323,6 +456,7 @@ def inspect(
     requested: Selection,
     request_is_explicit: bool,
     catalog: dict[str, Any],
+    role: RoleSelection = GENERIC_ROLE,
 ) -> tuple[
     list[Finding],
     bool,
@@ -359,7 +493,7 @@ def inspect(
         findings.append(manifest_conflict)
         blocked = True
     try:
-        tracked, local = _layout_directories(selection, catalog)
+        tracked, local = _layout_directories(selection, catalog, role)
     except ValueError as exc:
         findings.append(Finding("conflict", PROJECT_LAYOUT, str(exc)))
         return findings, True, selection, existing_layout, {}, {}
@@ -375,7 +509,7 @@ def inspect(
             kind = "tracked source" if relative in tracked else "local-first"
             findings.append(Finding("create", relative + "/", f"{kind} directory"))
 
-    for relative in (".gitignore", "AGENTS.md", "AGENT.md", "CLAUDE.md", PROJECT_LAYOUT):
+    for relative in (".gitignore", "AGENTS.md", "AGENT.md", "CLAUDE.md", PROJECT_LAYOUT, *_role_files(role)):
         conflict = _unsafe_component(root, relative, final_directory=False)
         if conflict:
             findings.append(conflict)
@@ -456,6 +590,11 @@ def inspect(
                 "portable project identity and source layout",
             )
         )
+        for relative in _role_files(role):
+            findings.append(Finding(
+                "keep" if (root / relative).exists() else "create", relative,
+                "role declaration" if relative == PROJECT_MANAGEMENT else "empty management entry",
+            ))
 
     for relative in tracked:
         keep_relative = str(Path(relative) / ".gitkeep")
@@ -512,6 +651,7 @@ def apply(
     existing_layout: dict[str, Any] | None,
     tracked: dict[str, str],
     local: dict[str, str],
+    role: RoleSelection = GENERIC_ROLE,
 ) -> int:
     if blocked:
         print_findings(root, findings, "apply")
@@ -527,12 +667,27 @@ def apply(
 
     layout = existing_layout or _layout_payload(selection, str(uuid.uuid4()))
     files = {
-        "AGENTS.md": agents_template(root.name or "Project", tracked, local),
+        "AGENTS.md": agents_template(root.name or "Project", tracked, local, role),
         "AGENT.md": AGENT_POINTER,
         "CLAUDE.md": CLAUDE_STUB,
         ".gitignore": GITIGNORE,
         PROJECT_LAYOUT: json.dumps(layout, ensure_ascii=False, indent=2) + "\n",
     }
+    if role.kind != "generic":
+        files[PROJECT_MANAGEMENT] = json.dumps(
+            _management_payload(role, layout["project_id"]), indent=2,
+        ) + "\n"
+    if role.kind == "research-parent":
+        files[".gitignore"] = GITIGNORE.split("# Scholar Workflow local-first state")[0] + (
+            "# Recovery material and large data are not management records\nbackups/code/\ndataset/\n"
+            ".scholar-workflow/collection-transactions/\n"
+        )
+        files["PROJECT.md"] = _parent_project_template(root.name)
+        files["README.md"] = f"# {root.name}\n\nExternal project description not yet written.\n"
+        files["project-context.json"] = json.dumps({
+            "schema_version": 1, "project_id": layout["project_id"], "title": root.name,
+            "summary": "Research goal not yet recorded.", "language": "en", "entries": [],
+        }, indent=2) + "\n"
     for relative, content in files.items():
         path = root / relative
         if not path.exists():
@@ -565,6 +720,9 @@ def main() -> int:
     parser.add_argument("--source-profile")
     parser.add_argument("--package")
     parser.add_argument("--addon", action="append", default=[])
+    parser.add_argument("--role", choices=("generic", "research-parent", "execution-child"))
+    parser.add_argument("--parent-project-id")
+    parser.add_argument("--primary", action="store_true", default=None)
     args = parser.parse_args()
 
     try:
@@ -579,10 +737,20 @@ def main() -> int:
 
     raw_root = Path(args.target).expanduser()
     root = raw_root.absolute() if raw_root.is_symlink() else raw_root.resolve(strict=False)
+    try:
+        role = _resolved_role(root, args, requested)
+        if role.kind != "generic" and any(p.is_symlink() for p in raw_root.absolute().parents):
+            raise ValueError("role target cannot traverse symlinked parent directories")
+    except (OSError, ValueError) as exc:
+        print(f"error: {exc}; nothing was written", file=sys.stderr)
+        return 2
     explicit = bool(args.source_profile or args.package or args.addon)
     findings, blocked, selection, existing_layout, tracked, local = inspect(
-        root, requested, explicit, catalog
+        root, requested, explicit, catalog, role
     )
+    if role.kind == "research-parent" and not (root / "PROJECT.md").exists() and (root / "SCHEDULE.md").exists():
+        findings.append(Finding("conflict", "SCHEDULE.md", "existing plan authority requires an explicit PROJECT plan link"))
+        blocked = True
     if args.mode in {"plan", "migrate-plan"}:
         print_findings(root, findings, args.mode)
         if args.mode == "migrate-plan":
@@ -592,7 +760,7 @@ def main() -> int:
         else:
             print("result: safe to apply; plan made no changes")
         return 0
-    return apply(root, findings, blocked, selection, existing_layout, tracked, local)
+    return apply(root, findings, blocked, selection, existing_layout, tracked, local, role)
 
 
 if __name__ == "__main__":

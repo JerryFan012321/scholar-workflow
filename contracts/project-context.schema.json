@@ -31,7 +31,24 @@
         "kind": {"enum": ["code", "paper", "analysis", "note", "experiment", "result", "other"]},
         "title": {"$ref": "#/$defs/title"},
         "purpose": {"type": "string", "minLength": 1, "maxLength": 4000},
-        "ref": {"oneOf": [{"$ref": "#/$defs/project_file"}, {"$ref": "#/$defs/external_resource"}]}
+        "ref": {"oneOf": [{"$ref": "#/$defs/project_file"}, {"$ref": "#/$defs/external_resource"}, {"$ref": "#/$defs/execution_code"}]}
+      },
+      "allOf": [{
+        "if": {"properties": {"ref": {"properties": {"kind": {"const": "execution-code"}}, "required": ["kind"]}}},
+        "then": {"properties": {"kind": {"const": "code"}}}
+      }]
+    },
+    "execution_code": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "child_project_id", "relative_path"],
+      "properties": {
+        "kind": {"const": "execution-code"},
+        "child_project_id": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+        "relative_path": {"anyOf": [
+          {"const": "."},
+          {"$ref": "#/$defs/project_file/properties/relative_path"}
+        ]},
+        "commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"}
       }
     },
     "project_file": {

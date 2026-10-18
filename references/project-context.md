@@ -24,16 +24,18 @@ infer paper identity from similar titles, or invent results to make an index com
 
 For an explicitly requested rich internal `PROJECT.md`, use `organize-project` and
 `project-entry.md`. It adds a human document with current state, module diagrams,
-selected archive links and one plan, not another inventory or an initializer side
-effect. The short `overview` command does not render that document.
+selected archive links and one plan, not another inventory. Generic initialization
+does not create that researched document. Explicit research-parent initialization
+creates only an empty six-section PROJECT and empty inventory, with one inline plan;
+it does not select materials or inspect research facts. The short `overview` command
+does not render the rich document.
 
 ## Portable inventory
 
 For research-parent/remote-child organization, use `project-management.md` for the
-ownership and capability boundary. The current schema below has no remote-code/SSH
-reference form or parent-child registration fields. A human document may identify
-a supplied remote location as unverified; do not invent JSON fields, a fake local
-path or an unsupported provider to make it pass validation.
+ownership and capability boundary. Child registration remains in the separate
+management declaration, not this inventory. The additive `execution-code` reference
+below identifies selected child code without embedding a host, path root or credential.
 
 The inventory contains `schema_version`, matching `project_id`, `title`, `summary`,
 optional `language` (`en` by default, or `zh`), and up to 512 explicitly selected
@@ -43,7 +45,7 @@ optional `language` (`en` by default, or `zh`), and up to 512 explicitly selecte
 `other`. These are small output groups, not a mandatory research taxonomy.
 `purpose` explains why this particular material matters to the project.
 
-Two reference forms are supported:
+Three reference forms are supported:
 
 ```json
 {"kind": "project-file", "relative_path": "docs/design.md"}
@@ -53,11 +55,21 @@ Two reference forms are supported:
 {"kind": "external-resource", "provider": "zotero", "resource_id": "<verified source identity>", "uri": null}
 ```
 
+```json
+{"kind": "execution-code", "child_project_id": "22222222-2222-4222-8222-222222222222", "relative_path": "src/train.py", "commit": null}
+```
+
 - `project-file` permits a project-relative file or directory and an optional full
   lowercase 40-character Git `commit`. No absolute paths, `..`, empty segments,
   backslashes, symlink traversal, or implicit root operations are accepted.
 - `external-resource` permits `zotero` or `obsidian`, an explicit stable source ID,
   and an optional reader URI. IDs are not derived from the reader URI.
+- `execution-code` belongs only to a `code` entry and identifies a distinct child
+  UUIDv4, a safe child-relative POSIX path, and an optional full commit. A path of
+  `.` explicitly selects the child root; other paths follow project-file safety.
+  No host, credentials, command, URL, Target or absolute path is accepted in this ref.
+  Schema 1's existing forms remain unchanged; older installations may reject the
+  new form, so check the installed help/version before updating a real inventory.
 - Supported read routes are Zotero `open-pdf`/`select`, Obsidian `open`, and a Zotero
   object's Obsidian `zotflow` Library Reader projection. Unknown command routes,
   duplicate/unknown parameters, malformed encoding, or credentials are rejected.
@@ -108,11 +120,52 @@ The default commands require no Scholar config, Hub, cmux destination, Codex mod
 service port, or host registry. `--language` changes only the returned presentation, not the manifest.
 The `--json` mode keeps typed references and diagnostics for machine use.
 
+For execution-code, the overview checks whether the child is declared by this
+research parent. An undeclared child remains a missing row, not silently adopted;
+an unavailable management declaration remains unverified. A declared child is still
+unverified remotely. Markdown shows its purpose and relative code location without
+machine IDs, fake local links or a generated SSH/VS Code link. Ordinary overview does
+not consult server inventory or infer an execution destination.
+
 Default Markdown is human-oriented: project goal, selected material, purpose, and
 honest state. It omits machine IDs, hashes, and absolute root paths. Project file
 links are relative to the project root: when saving this overview, save it at that
 root or explicitly rebase the links for a different destination. Do not promise that
 terminal stdout alone provides an interactive reading surface.
+
+## Execution-child code location preview
+
+Use only a normally installed version whose `project --help` exposes this command:
+
+```text
+scholar-workflow project remote-code-plan --project-root <parent> --entry-id <code-entry> --target-id <target> --json
+scholar-workflow project remote-code-plan --project-root <parent> --entry-id <code-entry> --target-id <target> --env-records-root <existing-ledger-root> --json
+```
+
+The selected entry must use execution-code and its child must be registered. This
+read-only operation uses exactly the selected existing
+`experiments/profiles/targets/<target>.yaml` and its server alias in the existing
+private servers.yaml authority. Without an explicit ledger root, use the configured
+env-records location. Do not create another registry, discover a server, choose the
+first Target, or copy credentials into project files. Unlike ordinary overview, this
+explicit operation needs those local declarations to be available.
+
+Only a matching SSH Target with a non-root, absolute POSIX project directory is
+accepted. Its safe relative code location is joined as data, never as a command.
+Missing/conflicting/unsafe declarations and detected byte changes fail without
+writing. JSON returns the qualified identities, selected Target, remote location,
+requested commit, nonsecret connection metadata, input baselines, and separate
+unverified child/path/commit/access/SSH-config states. It excludes key paths, credential
+references, environment bindings and raw ledger contents. Keep this machine locator
+private; it is not a human PROJECT body or a portable host registration.
+
+The output status is `declared_not_remote_verified`: choosing a Target does not prove
+that its directory contains this child. This command does not connect, inspect remote
+files or Git, launch VS Code/cmux, verify an SSH config alias, or grant edit authority.
+Native tools retain their routing/authentication policy; verify the remote child's
+management identity and requested commit before an authorized edit. Do not generate
+a clickable remote link from an unverified alias or call this a successful native open.
+This is an operational declaration preview, not a recovery copy or verified backup.
 
 ## Optional registered ownership check
 

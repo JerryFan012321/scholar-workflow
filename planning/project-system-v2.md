@@ -639,7 +639,66 @@ CHANGELOG.md
 本批 context/overview 的完成标准独立记录在 `project-centered-refactor.md`；不因新定位就宣称旧项目迁移、
 真实实验或 verified backup 完成，也不以已经取消的 Hub 前端/worker 门禁阻挡独立内容能力的验收。
 
-## 15. 本地研究总项目／远端子项目实施增量（WI-055，未实现）
+## 15. 本地研究总项目／远端子项目实施增量（WI-055，部分开发中）
+
+2026-10-18开发切片：新增独立`project-management.json` schema1，不扩展只持有身份和源码
+布局的layout schema2。总项目声明kind=research-parent、同layout的project_id和children；
+每项包含子项目project_id、唯一archive_segment及primary布尔值，至多一个primary，允许
+尚未选择primary。子项目声明kind=execution-child、自己的project_id、parent_project_id和
+primary；双方须互认。归档目录段只作稳定映射，不代替身份；profiles保留给Target配置。
+禁止自关联、重复ID/目录、未知字段或个人定位信息；schema定义字段结构，运行validator
+另核跨行唯一及互认。只读`project validate-management --project-root <child>
+--parent-root <parent>`可核对显式两根，不扫描、不写入、不联网；缺少声明不会自动推断。
+单根仅核本地声明，不能称父子互认。该接口仍属未安装开发能力，不证明Git权限、实际部署
+或执行位置；角色初始化、接收及恢复仍按后续切片实现。测试结果另见
+project-management-identity-test-results.md，不据此重跑既有论文或实验验收。
+
+同日续行：helper显式--role research-parent/execution-child已可为新空根生成不同骨架，
+管理声明独立于layout；已有角色重复执行保留，非空通用项目/角色变化/祖先Git拒绝。
+总项目有干净的空六节PROJECT（唯一内嵌计划）、README及空context，资料和轻量档案
+不被整体忽略，恢复材料不进入Git；子项目有源码profile/toolkit和执行结构，无总体文档。
+初始化子项目不反写总项目children，不宣称双方登记或远端可用。旧new-run在总项目上
+于锁/写入前拒绝，防止误记管理commit。131项定向检查通过，未发布安装；后续接收、
+定位、恢复与正式部署仍未实现。新角色骨架不是详尽资料整理或用户人工验收。
+
+同日登记续行：`project register-child`默认零写入预览，apply绑定父子实际字节摘要，只追加
+总项目children，不改子项目、主机台账或实验档案。同内容unchanged，过期/忙锁/冲突拒绝，
+落盘不确定返回partial；239项相关检查通过。外部声明编辑在apply期间须停写，不声称
+跨机器硬事务。未正常安装，也不证明远端部署/权限或档案接收。
+同日新增只读collection-plan，显式单Run验证源快照、配方、五种Attempt状态、Target和
+本地成果，保留原commit，提出远端report/notes与本地分析分离的映射（execution-report.md/
+execution-notes.md）。115项定向检查通过；文件未接收，后续writer/CAS生命周期更新、
+恢复与派生索引仍待。预检资源上限明确失败，不截断记录数量或冒充完整回传。
+最新首次接收：receive-run凭三份摘要实际写入qualified Run，source记录不改写，本地分析
+保留，机器receipt持有文件映射/hash/size/mode。stage读回后原生exclusive发布，同内容重试
+验证后unchanged；不同版本拒绝而非覆盖。macOS已实测，Linux路径未验。115项相关回归
+和末轮43项复验通过；曾发现publish后fsync异常分类错误，已修正并保留partial/retry证据。
+CAS生命周期更新、显式crash恢复、qualified reader/index与正常安装仍待。
+最新只读collected索引已实现，独立于source child读取并核验本地receipt/证据/原始路径映射，
+Markdown条件与记录结果入口同表，JSON保留限定身份/范围与问题状态。128项定向检查通过；
+不写第二份权威索引、不作科学比较或执行认证。版本更新/crash恢复、远端引用与安装态仍待。
+最新update-plan已实现精确只读变化及旧receipt/新证据基线，固定配方与旧历史，保护人工
+文件；待恢复标记使reader/replay失败关闭，不冒充活worker。124项回归、末轮70项通过；
+apply/journal恢复仍未实现，不使用覆盖替代。真实对象/安装态及完整阶段边界不变。
+最新内部恢复材料准备已实现：四摘要绑定，before/after与receipt落盘读回、记录原文件
+身份，176项相关检查通过。只准备包，不改归档、不激活事务；未来writer须重新检查包语义
+及当前归属，prepared/schema不授予覆盖权限。apply/commit/rollback仍待，未正常安装。
+最新源码已有四摘要update-run与local-only recovery-plan/recover-update，先核验双方完整
+版本/精确归属，再持久pending后写入，receipt最后。中断可显式提交/回滚，未知改动拒绝；
+同内容重试也重做目录同步，不编造verified backup。205项相关检查通过，完整回归/当前
+边界见同一test-results；尚未安装或做原生/人工验收，远端引用与源码恢复仍待。
+最新context schema1新增execution-code，仅child UUID/安全相对代码位置/可选commit，
+不是主机注册。remote-code-plan按所选既有SSH Target+ledger只读组合位置并核对当前字节；
+不确认远端身份、版本、访问或SSH配置，不产生假原生链接。27新增/191相关检查通过；
+尚未安装，原生远端验证与源码恢复仍待；完整阶段范围和旧人工/科学门禁不变。
+最新本地源码恢复切片：code-recovery-plan检查明确提供的自包含SHA-1 bundle及所选
+child全部已收集Run提交；retain-code凭计划摘要保存一份child/hash材料与独立覆盖记录。
+23项新增及相关117项通过，严格machine schema不允许verified备份状态；中断保留明确
+位置，不覆盖冲突，不联网/checkout/执行源码。未认证真实远端来源，也不捕获未提交/
+未跟踪、LFS/子仓库payload或外部依赖；自动远端采集、安装态与原生/人工仍独立未完成。
+交付审查补unchanged目录同步失败测试，首次红测证实错误分类5而非partial6，已最小修复；
+24专项/118相关与当前完整3072项通过，11既有警告，138.79秒，不沿用旧快照。
+正常安装后的单项目输入和可见评鉴要求见0.46.0-installed-acceptance-plan.md，尚未执行。
 
 保留WI-020至WI-023的历史发布事实，不以本次设计反写为未完成。新增能力按以下小切片推进：
 
@@ -657,5 +716,5 @@ CHANGELOG.md
 6. 先准备独立合成总项目/单子项目及输入、预期、失败分支，只做受影响定向验证；需要安装态验证时，
    再按独立hotfix正常发布/安装后验收。可见资料样例在test Vault，不重复批量论文或正式项目操作。
 
-本轮只完成决定记录与规划一致性：没有修改runtime/schema/skill模板、运行实验、连接服务器、
+2026-10-16决定记录当时只完成规划一致性：没有修改runtime/schema/skill模板、运行实验、连接服务器、
 迁移项目、发布安装或切换服务。真实服务器位置、迁移项目及备份介质/保留策略仍在各自授权边界内。

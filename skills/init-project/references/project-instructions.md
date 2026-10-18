@@ -19,7 +19,7 @@ Existing states resolve as follows:
 
 ## Generated markers
 
-The standard `AGENTS.md` leaves four project-specific markers:
+The generic `AGENTS.md` leaves project-specific markers:
 
 - project overview;
 - development commands;
@@ -29,6 +29,11 @@ The standard `AGENTS.md` leaves four project-specific markers:
 Proposed marker content must distinguish repository-backed facts from unresolved user choices,
 omit generic coding advice, and be presented as one patch for confirmation. A user may leave
 any marker unresolved.
+
+Role-specific AGENTS instead states the declared ownership and directory contract
+without inventing development commands or leaving machine comments in PROJECT.
+An existing canonical instruction file remains preserved; role initialization does
+not refresh human rules merely because its templates changed.
 
 Project-specific rules belong in `AGENTS.md`. Do not add them to global user instructions or
 to a host-specific adapter.

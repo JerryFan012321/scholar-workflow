@@ -15,6 +15,14 @@ management commit. Review accessible selected evidence without flattening identi
 fetching remote files or modifying receipts; unsupported aggregate lifecycle checks
 remain explicit gaps, not missing-data repairs performed by a read-only review.
 
+For registered local collections, `experiment collected --project-root PARENT
+--child-project-id UUID --json` exposes their scoped integrity and original-evidence
+references without contacting the source child. Its Markdown table is navigation,
+not the comparison report required below. `verified_archive` does not certify
+execution, metric meaning, scientific support or a selected best result. Retain
+invalid/unavailable rows and use the captured local mapping rather than resolving
+original child-relative paths against the parent root.
+
 ## Required human result
 
 Use one presentation language. The following content roles are required; translate
