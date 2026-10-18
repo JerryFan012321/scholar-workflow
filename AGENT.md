@@ -35,21 +35,17 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
 
 - **Project System** 持有便携 `project_id`、共同项目布局、源码/config profile 和
   Run/Attempt/Target/Artifact 档案；主机项目根只进入显式 host registry。
-- 项目管理新决定（2026-10-16，已确认、待实现）：本地保留完整研究总项目及不推送的资料Git；
+- 项目管理定案（2026-10-16）：本地保留完整研究总项目及不推送的资料Git；
   所有执行子项目的代码/Git开发与运行均在远端，只有primary可推送项目自有GitHub，本地只留最简恢复材料。
   所有实验按子项目回传轻量档案，在本地分析；保留项目知识、唯一计划、规则/skills和既有呈现契约。
   skill运行结果细则唯一见references/project-management.md，实现增量见planning/project-system-v2.md §15；
-  当前安装版仍是契约切片；开发helper已支持新空根的显式双角色骨架及独立管理身份，
-  不等于双方登记、远端部署或分层回传已可用，旧通用接口保持兼容，
-  独立父子登记preview/CAS-apply也已进入开发，尚未正常安装，不授予服务器或Git权限，
-  首次Run接收、同内容验证重试及qualified只读reader/index已有开发实现；
-  四摘要update-plan/update-run与local-only recovery-plan/recover-update现已进入开发验证，
-  before/after/journal与pending标记使中断后显式commit/rollback；不证明worker存活或verified backup，
-  execution-code资料引用及按所选Target/服务器台账的只读定位预览已有开发实现，
-  不绑定或核验远端child/路径/commit/SSH配置，不自动启动原生工具；新能力未安装，
-  最简源码bundle预检/摘要绑定本地留存已有开发实现，按child/hash去重并保留核验记录，
-  不联网/checkout，不捕获未提交内容或证明真实远端来源/verified backup；
-  远端实证/安装验收仍待，不能以源码测试冒称真实项目已可完整使用，
+  初始化、双方登记、接收/读取、更新恢复和代码留存是各自明确的操作，不互相代替或自动串行。
+  使用前检查正常安装CLI的版本/帮助；当前交付与验收事实只由planning/HANDOFF及版本回执持有，
+  不在根规则重复维护开发进度。声明登记不证明远端部署，也不授予服务器或Git权限。
+  更新保留before/after/journal，pending不证明worker存活；代码定位不核验远端child/路径/
+  commit/SSH配置，不自动启动原生工具。最简源码材料按child/hash去重，不联网/checkout，
+  不捕获未提交内容，也不证明真实远端来源或verified backup。
+  不以源码测试、安装或合成记录冒称真实项目已完整可用；原生和人工验收单独取证。
   父项目拒绝旧flat实验命令的漏看，不以0Run冒称完整验证。Target登记继续支持，
   不由设计确认推导真实迁移、远端写入、发布安装或verified backup授权。
 - **Knowledge System** 持有 Vault 核心文档、原子资源、附属产物、analysis result contract 和
