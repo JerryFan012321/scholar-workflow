@@ -68,7 +68,29 @@ novelty、位置归属及带证据入口的技术取舍，不读原资料；
 README 仍负责对外展示；此能力独立于初始化和简短资料清单，
 详见[内部项目入口](skills/organize-project/README.zh-CN.md)。
 
-### 项目资料总览（0.31.0 hotfix；待人工评鉴）
+### 项目资料与已收集实验总览
+
+已收集的子项目实验，用正常安装且 `scholar-workflow experiment --help` 中有 `collected` 的版本：
+
+```bash
+scholar-workflow experiment collected --project-root /path/to/parent --language zh
+scholar-workflow experiment collected --project-root /path/to/parent --child-project-id CHILD_UUID --json
+```
+
+它只读本地档案，不连接子项目服务器。配置／条件与记录结果同处一行，缺失或损坏记录保留。
+需要保存时，显式存到总项目根目录以保持相对链接可用；它不解释指标意义或排名。
+预览、登记、首次接收、四摘要更新及显式提交／回滚见[项目管理契约](references/project-management.md)。
+使用前确认正常安装版本的帮助确实列出相应命令；源码开发和测试通过不代表已经安装。
+
+远端子项目代码可用新增的`execution-code`引用，只保留子项目身份与相对代码位置，不留日常开发副本。
+`project remote-code-plan`按明确选择的已有Target和服务器登记预览位置；它不连接、不核验远端Git、
+不启动编辑器。使用前检查安装版本的命令帮助，细则见[资料清单契约](references/project-context.md)。
+
+最简源码留存先用`project code-recovery-plan`检查明确提供的本地自包含Git bundle，
+再用返回的计划摘要显式执行`project retain-code`。它覆盖所选子项目已收集Run的源码提交，
+同内容只保存一份bundle和小型核验记录，不生成开发副本、不从服务器下载、不收集未提交内容，
+也不认证真正备份。具体命令、缺口和中断处理见[恢复材料说明](references/project-management.md#selected-local-git-recovery-material)；
+使用前确认正常安装版本确实提供这些命令。
 
 对于已经初始化的项目，先输出空清单模板，选择实际相关资料后，显式保存为项目根的
 `project-context.json`。模板命令本身不写文件、不猜论文、不创建强制首页：

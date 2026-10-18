@@ -6,10 +6,9 @@ host-neutral project instructions.
 ## What it creates
 
 The accepted research-parent/remote-child model is defined in the shared
-[project-management contract](../../references/project-management.md). Its two-role
-initializer is not implemented: the commands below still create the generic source
-skeleton. A role-specific request receives a proposal and capability gap, not a
-generic apply presented as complete. Existing generic projects remain compatible.
+[project-management contract](../../references/project-management.md). Choose an explicit
+role for a new empty root; omission retains generic initialization, or the existing
+declared role on rerun. Existing nonempty generic projects are not converted silently.
 
 - A shared source layout under `assets/`, `configs/`, `env/`, `src/`, `tools/`, and `tests/`.
 - Local-first `dataset/`, `docs/`, and `experiments/` trees.
@@ -20,6 +19,15 @@ generic apply presented as complete. Existing generic projects remain compatible
 - A Git repository when the target is not already managed by Git.
 
 It does **not** create Claude Code agents, Codex agents, or hooks.
+
+For `research-parent`, the source/config/env/data/tool/test trees above are omitted.
+The parent instead keeps tracked notes/planning/reports, lightweight child archives,
+an empty six-section PROJECT with its one inline plan, public README, empty context
+inventory and local-only code-recovery directory. `execution-child` keeps source and
+execution structure without parent documents. Both declare role/identity separately
+in `project-management.json` and require an independent Git root. No remotes are added.
+New parent ignore rules exclude collection recovery packages as well as code-recovery
+packs; existing ignore files are preserved. Recovery material is not verified backup.
 
 ## Usage
 
@@ -42,7 +50,22 @@ python3 skills/init-project/scripts/init_project.py apply /path/to/project
 python3 skills/init-project/scripts/init_project.py profiles
 python3 skills/init-project/scripts/init_project.py apply /path/to/project \
   --source-profile multi-stage-3d --package my_project --addon native-kernels
+python3 skills/init-project/scripts/init_project.py plan /path/to/parent --role research-parent
+python3 skills/init-project/scripts/init_project.py apply /path/to/parent --role research-parent
+python3 skills/init-project/scripts/init_project.py plan /authorized/child \
+  --role execution-child --parent-project-id PARENT_UUID --primary
 ```
+
+Apply the child only on its explicitly authorized filesystem, using the same options.
+This helper does not deploy a server or modify the parent's child list. A scaffold
+does not prove reciprocal registration, remote availability or Git push permission.
+Run `project validate-management` for explicit declaration checks. Parent `new-run`
+is refused: remote Runs must record the execution child's commit, not management Git.
+See [skeleton manifest](references/skeleton-manifest.md) for exact role outputs and conflicts.
+When registration is requested, `project register-child` previews the explicit
+parent/child declaration and archive segment. Apply separately using both returned
+byte hashes; see the shared management contract. It does not contact servers, change
+the child or collect experiments. This is not an initializer side effect.
 
 ## Layout decisions
 

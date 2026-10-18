@@ -5,6 +5,75 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.46.0] - 2026-10-18
+
+### Added
+
+- **init-project — parent/child identity and scaffolds:** add a
+  separate portable management declaration and `project validate-management`.
+  Explicit roles create new empty independent Git roots: the parent retains full
+  research management, knowledge, PROJECT's six sections and one plan; children
+  retain source/config profiles and execution structure. Preserve legacy generic
+  use and reject implicit conversion, identity/role drift, duplicate children or
+  archive segments, self-parenting and multiple primaries. `project register-child`
+  previews and byte-CAS appends one already-declared child, preserving other entries
+  and human documents. This does not deploy remotely or grant Git permissions.
+
+- **review-experiments — qualified collection and local reading:**
+  `experiment collection-plan` validates one accessible child Run's original
+  snapshots, recipe, Targets and every Attempt. Three-baseline `receive-run` stages,
+  reads back and exclusively publishes the child-qualified archive with a machine
+  receipt; identical replay verifies content and synchronization. Preserve source
+  commits, failed/interrupted states and separate local analysis. `collected` prints
+  a source-independent read-only Markdown/JSON index with conditions and recorded
+  outcomes together, retaining missing/invalid entries without inventing scientific
+  scores or rankings. Parent flat commands refuse rather than silently skip children;
+  Target registration remains available. No SSH transfer or orphan cleanup.
+
+- **review-experiments — version updates and recovery:** read-only
+  `update-plan` lists exact changes and four baselines; `update-run` checks immutable
+  recipes/history and local ownership, retains before/after recovery material, then
+  installs only owned changes with the receipt last. Local-only `recovery-plan` and
+  revision-bound `recover-update` explicitly commit or roll back interrupted updates.
+  Preserve unknown files and human analysis, retain incomplete packages, and report
+  unconfirmed durability as partial. Pending markers block verified reading but do
+  not prove a live worker. New parents ignore recovery payloads; existing ignore
+  files remain unchanged. Recovery material is not verified backup.
+
+- **organize-project — execution-code references:** additive context
+  schema 1 binds child identity, safe relative path and optional commit without
+  portable host/credential fields. The service-free overview preserves unavailable
+  and unverified states. `project remote-code-plan` previews one explicit existing
+  SSH Target and server ledger without writing, connecting or launching tools.
+  Remote child/path/commit/access/SSH configuration remain unverified; no fake native
+  link or automatic host binding. Invalid context errors do not echo submitted values.
+
+- **organize-project — minimal local code retention:**
+  `project code-recovery-plan` checks a supplied self-contained SHA-1 bundle against
+  the selected child's collected Run commits and explicit additional commits in an
+  isolated bare repository. `project retain-code` binds the plan digest, retains one
+  bundle per child/content hash and appends small schema-checked coverage assessments.
+  Check strict object integrity and standard selected-tree LFS/submodule gaps, not
+  authenticated remote origin or uncommitted work. No inherited Git config, checkout,
+  stored-code execution, network, remote bundle creation/transfer or verified backup.
+  Identical retry reconfirms durability; failed synchronization reports partial, not
+  ordinary conflict. Existing unknown material is never overwritten.
+
+Normal installation, native integration, single-object acceptance and human
+assessment require separate evidence; automated tests do not certify those outcomes.
+
+### Changed
+
+- **Development 0.45.1 receipt:** record the normal hotfix/runtime publication,
+  pinned HTTPS pipx and marketplace installation, exact 115-file package / 278-file
+  plugin identity and 17 enabled skills. Preserve failed old-proxy/SSH attempts;
+  the successful installation uses the corrected proxy only within its processes.
+  After installed checks, fast-forward and push the user-approved full hotfix history
+  into main. This follow-up records delivery only; it does not rebuild runtime,
+  implement remote-child automation, migrate data or retire pending acceptance.
+  Align the Phase 11 status with delivered skill contracts while preserving its
+  unimplemented automation boundary.
+
 ## [0.45.1] - 2026-10-16
 
 ### Changed

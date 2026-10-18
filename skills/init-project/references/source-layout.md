@@ -2,9 +2,10 @@
 
 Read this reference when selecting a source profile or interpreting `project-layout.json`.
 
-These paths describe the implemented generic source layout. Parent/child ownership
-and its current capability gaps are in the shared `references/project-management.md`;
-profile selection alone does not create either new role.
+These paths describe generic and execution-child source layouts. The explicit parent
+layout has no source profile; its required management surface is in skeleton-manifest.md.
+Parent/child ownership and remaining reception/navigation gaps are in the shared
+`references/project-management.md`; profile selection alone does not declare a role.
 
 ## Portable identity
 

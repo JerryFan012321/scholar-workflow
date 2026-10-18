@@ -11,7 +11,7 @@ from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, Literal
 from urllib.parse import parse_qsl, quote, urlsplit
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 from scholar_workflow.knowledge.ownership import KnowledgeOwnershipResolution
 from scholar_workflow.project.layout import (
@@ -144,7 +144,28 @@ class ExternalResourceRef(_ContextModel):
         return self
 
 
-ProjectReference = Annotated[ProjectFileRef | ExternalResourceRef, Field(discriminator="kind")]
+class ExecutionCodeRef(_ContextModel):
+    kind: Literal["execution-code"]
+    child_project_id: str
+    relative_path: str = Field(min_length=1, max_length=1024)
+    commit: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
+
+    @field_validator("child_project_id")
+    @classmethod
+    def _child_identity(cls, value: str) -> str:
+        if not is_project_id(value):
+            raise ValueError("Execution code requires a canonical child UUIDv4")
+        return value
+
+    @field_validator("relative_path")
+    @classmethod
+    def _code_path(cls, value: str) -> str:
+        return value if value == "." else ProjectFileRef._relative_path(value)
+
+
+ProjectReference = Annotated[
+    ProjectFileRef | ExternalResourceRef | ExecutionCodeRef, Field(discriminator="kind"),
+]
 
 
 class ProjectContextEntry(_ContextModel):
@@ -158,6 +179,12 @@ class ProjectContextEntry(_ContextModel):
     @classmethod
     def _text(cls, value: str) -> str:
         return _clean_text(value)
+
+    @model_validator(mode="after")
+    def _code_reference_kind(self) -> ProjectContextEntry:
+        if isinstance(self.ref, ExecutionCodeRef) and self.kind != "code":
+            raise ValueError("Execution-code references belong only to code entries")
+        return self
 
 
 class ProjectContext(_ContextModel):
@@ -192,6 +219,9 @@ class ProjectContext(_ContextModel):
         identities = [entry.entry_id for entry in self.entries]
         if len(identities) != len(set(identities)):
             raise ValueError("Project context entry_id values must be unique")
+        if any(isinstance(entry.ref, ExecutionCodeRef) and entry.ref.child_project_id == self.project_id
+               for entry in self.entries):
+            raise ValueError("Execution code must reference a distinct child, not the parent")
         return self
 
 
@@ -221,6 +251,8 @@ def load_project_context(
     try:
         layout = load_project_layout(root)
         context = ProjectContext.model_validate(read_project_json(root, context_file))
+    except ValidationError:
+        raise ProjectContextError("Invalid project context fields or references; inspect the declared inventory") from None
     except (ProjectLayoutError, ValueError) as exc:
         raise ProjectContextError(str(exc)) from exc
     if context.project_id != layout.project_id:
@@ -271,6 +303,8 @@ def build_project_overview(
             layout = load_project_layout(root)
             if context.project_id != layout.project_id:
                 raise ProjectContextError("Project context identity does not match project-layout.json")
+    except ValidationError:
+        raise ProjectContextError("Invalid project context fields or references; inspect the declared inventory") from None
     except (ProjectLayoutError, ValueError) as exc:
         raise ProjectContextError(str(exc)) from exc
     entries: list[ProjectOverviewEntry] = []
@@ -279,6 +313,8 @@ def build_project_overview(
             for entry in context.entries:
                 if isinstance(entry.ref, ProjectFileRef):
                     state, diagnostic = _local_reference_state(root_fd, entry.ref)
+                elif isinstance(entry.ref, ExecutionCodeRef):
+                    state, diagnostic = _execution_reference_state(root, entry.ref)
                 else:
                     state = "unverified"
                     diagnostic = "External object was not queried; its identity and reader URI remain unverified"
@@ -292,6 +328,20 @@ def build_project_overview(
         project_id=context.project_id, title=context.title, summary=context.summary,
         language=context.language, entries=entries,
     )
+
+
+def _execution_reference_state(root, reference):
+    from .management import load_project_management
+
+    try:
+        management = load_project_management(root)
+    except ValueError:
+        return "unverified", "Research parent declaration could not be checked"
+    if management.kind != "research-parent":
+        return "unsafe", "Execution code requires a research-parent declaration"
+    if not any(child.project_id == reference.child_project_id for child in management.children):
+        return "missing", "Execution child identity is not registered in this parent"
+    return "unverified", "Execution child is declared; remote identity, path, commit and access were not checked"
 
 
 def _markdown_text(value: str) -> str:
@@ -392,6 +442,10 @@ def render_project_overview(
         "Referenced project file or directory is missing": "引用的项目文件或目录不存在",
         "Referenced project path could not be inspected safely": "无法安全检查引用的项目路径",
         "External object was not queried; its identity and reader URI remain unverified": "未查询外部对象；其身份与阅读链接仍未核验",
+        "Research parent declaration could not be checked": "无法核查研究总项目声明",
+        "Execution code requires a research-parent declaration": "执行子项目代码需要研究总项目声明",
+        "Execution child identity is not registered in this parent": "此执行子项目尚未登记到当前总项目",
+        "Execution child is declared; remote identity, path, commit and access were not checked": "已声明执行子项目；远端身份、位置、代码版本与访问权限均未核验",
     }
     lines = [f"# {_markdown_text(result.title)}", "", _markdown_text(result.summary), ""]
     lines.extend([
@@ -420,6 +474,9 @@ def render_project_overview(
             lines.extend([
                 f"### {label}", "", f"{purpose_label}: {_markdown_text(entry.purpose)}", "",
             ])
+            if isinstance(entry.ref, ExecutionCodeRef):
+                location_label = "执行子项目代码位置" if chinese else "Execution-child code location"
+                lines.extend([f"{location_label}: {_markdown_text(entry.ref.relative_path)}", ""])
             check = knowledge_ownership.get(entry.entry_id) if knowledge_ownership is not None else None
             if check is None:
                 lines.extend([

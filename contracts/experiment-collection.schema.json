@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Child-qualified collected execution receipt",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "parent_project_id", "child_project_id", "run_id", "source_commit", "recipe_hash", "evidence_sha256", "files", "directories", "execution_verification"],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "parent_project_id": {"$ref": "#/$defs/project_id"},
+    "child_project_id": {"$ref": "#/$defs/project_id"},
+    "run_id": {"type": "string", "pattern": "^[0-9]{8}-[0-9]{4}-[a-z0-9][a-z0-9-]{0,47}$"},
+    "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "recipe_hash": {"$ref": "#/$defs/hash"},
+    "evidence_sha256": {"$ref": "#/$defs/hash"},
+    "execution_verification": {"const": "records_only"},
+    "directories": {"type": "array", "items": {"$ref": "#/$defs/path"}, "uniqueItems": true},
+    "files": {
+      "type": "array", "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["source_path", "destination_path", "sha256", "size", "mode"],
+        "properties": {
+          "source_path": {"$ref": "#/$defs/path"}, "destination_path": {"$ref": "#/$defs/path"},
+          "sha256": {"$ref": "#/$defs/hash"}, "size": {"type": "integer", "minimum": 0},
+          "mode": {"type": "integer", "minimum": 0, "maximum": 511}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "project_id": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "path": {"type": "string", "pattern": "^[^/\\\\]+(?:/[^/\\\\]+)*$", "not": {"pattern": "(?:^|/)\\.{1,2}(?:/|$)"}}
+  }
+}

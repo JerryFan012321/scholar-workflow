@@ -102,7 +102,7 @@ def _validate_slug(value: str, *, label: str) -> str:
     return value
 
 
-def _project_root(value: str | Path) -> Path:
+def _project_root(value: str | Path, *, allow_parent: bool = False) -> Path:
     root = Path(value).expanduser().absolute()
     if root.is_symlink() or not root.is_dir():
         raise ExperimentError("project root must be an existing non-symlink directory")
@@ -117,6 +117,18 @@ def _project_root(value: str | Path) -> Path:
         raise ExperimentError("project-layout.json must use schema_version 2 and UUIDv4 identity") from None
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError, ValueError, TypeError):
         raise ExperimentError("project-layout.json does not contain a valid project identity") from None
+    from scholar_workflow.project.management import PROJECT_MANAGEMENT, load_project_management
+
+    declaration = root / PROJECT_MANAGEMENT
+    if declaration.exists() or declaration.is_symlink():
+        try:
+            management = load_project_management(root)
+        except ValueError as exc:
+            raise ExperimentError(str(exc)) from None
+        if management.kind == "research-parent" and not allow_parent:
+            raise ExperimentError(
+                "Use the execution child for flat experiment commands; parent archives require a qualified reader"
+            )
     return root
 
 
@@ -194,7 +206,7 @@ def _locked_mutation(operation: Callable[..., Any]) -> Callable[..., Any]:
 
     @wraps(operation)
     def locked(project_root: str | Path, *args: Any, **kwargs: Any) -> Any:
-        root = _project_root(project_root)
+        root = _project_root(project_root, allow_parent=operation.__name__ == "register_target")
         with _project_mutation_lock(root):
             return operation(root, *args, **kwargs)
 
@@ -685,7 +697,7 @@ def create_run(
 
 @_locked_mutation
 def register_target(project_root: str | Path, spec_path: str | Path) -> TargetProfile:
-    root = _project_root(project_root)
+    root = _project_root(project_root, allow_parent=True)
     source = _regular_file(Path(spec_path), label="target spec")
     try:
         target = TargetProfile.model_validate(yaml.safe_load(source.read_text(encoding="utf-8")))

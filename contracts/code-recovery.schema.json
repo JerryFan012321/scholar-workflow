@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Local child code recovery material and coverage",
+  "oneOf": [{"$ref": "#/$defs/material"}, {"$ref": "#/$defs/coverage"}],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "projectId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "bundle": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sha256", "size", "object_format", "self_contained", "object_check"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size": {"type": "integer", "minimum": 1, "maximum": 268435456},
+        "object_format": {"const": "sha1"},
+        "self_contained": {"const": true},
+        "object_check": {"const": "fsck_strict_passed"}
+      }
+    },
+    "gaps": {
+      "type": "object", "additionalProperties": false,
+      "required": ["lfs_pointers", "submodules", "uncommitted", "untracked", "external_dependencies", "secret_audit"],
+      "properties": {
+        "uncommitted": {"const": "not_checked"}, "untracked": {"const": "not_checked"},
+        "external_dependencies": {"const": "not_checked"}, "secret_audit": {"const": "not_checked"},
+        "lfs_pointers": {
+          "type": "array", "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["commit", "path", "oid", "size", "payload"],
+            "properties": {
+              "commit": {"$ref": "#/$defs/commit"}, "path": {"type": "string", "minLength": 1},
+              "oid": {"$ref": "#/$defs/sha256"}, "size": {"type": "integer", "minimum": 0},
+              "payload": {"const": "not_included"}
+            }
+          }
+        },
+        "submodules": {
+          "type": "array", "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["commit", "path", "gitlink_commit", "payload"],
+            "properties": {
+              "commit": {"$ref": "#/$defs/commit"}, "path": {"type": "string", "minLength": 1},
+              "gitlink_commit": {"$ref": "#/$defs/commit"}, "payload": {"const": "not_included"}
+            }
+          }
+        }
+      }
+    },
+    "material": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "parent_project_id", "child_project_id", "bundle", "backup_state"],
+      "properties": {
+        "schema_version": {"const": 1}, "parent_project_id": {"$ref": "#/$defs/projectId"},
+        "child_project_id": {"$ref": "#/$defs/projectId"}, "bundle": {"$ref": "#/$defs/bundle"},
+        "backup_state": {"const": "not-verified"}
+      }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "status", "parent_project_id", "child_project_id", "bundle",
+        "required_commits", "advertised_objects", "gaps", "archive_sha256", "parent_sha256",
+        "backup_state", "origin_verification", "plan_sha256"],
+      "properties": {
+        "schema_version": {"const": 1}, "status": {"const": "planned_not_retained"},
+        "parent_project_id": {"$ref": "#/$defs/projectId"}, "child_project_id": {"$ref": "#/$defs/projectId"},
+        "bundle": {"$ref": "#/$defs/bundle"}, "gaps": {"$ref": "#/$defs/gaps"},
+        "required_commits": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["commit", "run_ids", "object_present"],
+            "properties": {
+              "commit": {"$ref": "#/$defs/commit"}, "object_present": {"const": true},
+              "run_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+            }
+          }
+        },
+        "advertised_objects": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/commit"}},
+        "archive_sha256": {"$ref": "#/$defs/sha256"}, "parent_sha256": {"$ref": "#/$defs/sha256"},
+        "plan_sha256": {"$ref": "#/$defs/sha256"}, "backup_state": {"const": "not-verified"},
+        "origin_verification": {"const": "declared_child_commits_only"}
+      }
+    }
+  }
+}

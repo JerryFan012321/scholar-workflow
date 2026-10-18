@@ -2,10 +2,43 @@
 
 Read this reference before planning or applying initialization.
 
-This is the implemented generic skeleton, not the research-parent/execution-child
-target. For those roles use the shared `references/project-management.md` contract;
-the helper has no role-specific apply mode. Its source-Git ignore policy is not the
-local research parent's management-Git policy.
+The default remains the generic skeleton below. For research roles use the shared
+`references/project-management.md` contract and the explicit role modes described here.
+Source-Git ignore policy is not the local parent's management-Git policy.
+
+## Role selection
+
+- `--role research-parent`: create `.agents/skills`, `assets`, `docs/notes`, `docs/plan`,
+  `docs/report`, `experiments/profiles/targets` and local-only `backups/code`. Do not
+  create source/config/env/data/tool/test trees. Track management docs and lightweight
+  archives by default; ignore recovery packs and datasets. No Git remote is added.
+  Create a six-section empty PROJECT with one inline plan, a separate public README
+  stub and an empty project-context inventory. Do not create a second SCHEDULE or
+  pretend that initialization supplies project facts or an inspected module diagram.
+- `--role execution-child --parent-project-id UUID [--primary]`: create the generic
+  source/profile/toolkit and dataset/experiment structure, without parent `docs`,
+  PROJECT, context inventory or recovery directory. Source/config profiles remain
+  available. Each child owns independent Git; primary is a declaration, not a push.
+- Both roles create a separate schema-1 `project-management.json`, with their UUID
+  matching layout schema 2. A new parent starts with no registered children; child
+  initialization never updates a parent's manifest or claims mutual registration.
+- Role modes accept only a new empty root or the same already-declared role on
+  rerun. Without role flags, an existing managed role is retained. Explicit role,
+  parent or primary drift refuses before writes; existing nonempty generic projects
+  require separately scoped migration. An enclosing Git repository is refused.
+- Run the helper on the explicitly authorized filesystem. It does not deploy a remote
+  child or make a local synthetic fixture an actual server project. Remote access,
+  availability, source publication and installing remote agent context are separate.
+
+`scholar-workflow project validate-management --project-root CHILD --parent-root PARENT`
+checks mutually declared identities when both roots are explicitly accessible; omit
+the parent only for local declaration checks. No scanning, network or mutation occurs.
+The schema checks field structure; runtime validation also checks unique children,
+unique archive segments, no self-parenting and at most one primary. `profiles` is
+reserved. No role declaration grants file/host/Git permissions.
+For explicitly requested registration after scaffolding, use the separate preview/
+byte-bound apply in the shared project-management contract. Initialization itself
+never edits the parent's child list. A declared mapping is not remote availability.
 
 ## Portable manifest
 
@@ -62,5 +95,6 @@ untracks them.
 - Existing regular files are preserved.
 - Profile selection is never inferred. A mismatch with an existing manifest requires a migration
   plan.
-- Git is initialized only when neither the target nor an ancestor already manages it.
+- Generic Git is initialized only when neither the target nor an ancestor already manages
+  it. Explicit role modes require independent roots and refuse an ancestor repository.
 - No content is staged, committed, pushed, moved, deleted, renamed, or untracked.

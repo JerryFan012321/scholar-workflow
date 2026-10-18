@@ -5,8 +5,8 @@
 ## 会创建什么
 
 已确认的“本地研究总项目／远端执行子项目”见共享[项目管理契约](../../references/project-management.md)。
-双角色初始化尚未实现，下列命令仍生成通用源码骨架。新角色请求先交付方案和能力缺口，
-不能套用旧 apply 后宣称完成；已有通用项目接口继续兼容。
+新空目录可显式选择角色；不传角色时保留通用初始化，或在重复执行时沿用已声明角色。
+已有非空通用项目不会静默转换，原接口继续兼容。
 
 - `assets/`、`configs/`、`env/`、`src/`、`tools/` 和 `tests/` 下的共同源码结构。
 - 本地优先的 `dataset/`、`docs/` 和 `experiments/`。
@@ -17,6 +17,13 @@
 - 当目标尚未处于 Git 管理下时，初始化 Git 仓库。
 
 它**不会**创建 Claude Code Agent、Codex Agent 或 Hook。
+
+`research-parent` 不创建上述源码/config/env/data/tool/test目录，改为保留纳入资料Git的
+笔记、规划、报告及轻量实验档案，空六节PROJECT及唯一内嵌计划、独立README、空资料清单、
+本地代码恢复目录。`execution-child` 保留源码与执行结构，不创建总体管理文档。
+两者用独立`project-management.json`声明角色/归属，要求自己的Git根，不添加远程仓库。
+新总项目的忽略规则同时排除实验更新恢复包和源码恢复包；已有忽略文件原样保留。
+恢复材料不等于已验证备份。
 
 ## 使用
 
@@ -38,7 +45,19 @@ python3 skills/init-project/scripts/init_project.py apply /path/to/project
 python3 skills/init-project/scripts/init_project.py profiles
 python3 skills/init-project/scripts/init_project.py apply /path/to/project \
   --source-profile multi-stage-3d --package my_project --addon native-kernels
+python3 skills/init-project/scripts/init_project.py plan /path/to/parent --role research-parent
+python3 skills/init-project/scripts/init_project.py apply /path/to/parent --role research-parent
+python3 skills/init-project/scripts/init_project.py plan /authorized/child \
+  --role execution-child --parent-project-id PARENT_UUID --primary
 ```
+
+子项目只在明确授权的目标文件系统上使用同样选项执行apply；helper不部署服务器，也不反写总项目
+子项目清单。骨架不代表双方登记、远端可用或Git推送获准。显式声明检查用`project validate-management`。
+总项目拒绝旧`new-run`：远端实验必须记录执行子项目的源码commit，不能误用资料Git。
+精确目录及冲突边界见[骨架清单](references/skeleton-manifest.md)。
+明确要求登记时，`project register-child` 先预览所选父子声明和归档目录，再凭两份实际字节
+摘要单独apply，具体见共享管理契约。它不连接服务器、不修改子项目、不收集实验，
+也不是初始化的隐式副作用。
 
 ## 结构约定
 

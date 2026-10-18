@@ -90,7 +90,38 @@ and one detailed plan in PROJECT or SCHEDULE. README remains public-facing. It i
 separate from initialization and the short inventory overview. See
 [internal project entry](skills/organize-project/README.md).
 
-### Project overview (0.31.0 hotfix; human acceptance pending)
+### Project material and collected experiment views
+
+For collected child experiments, use a normally installed version whose
+`scholar-workflow experiment --help` exposes `collected`:
+
+```bash
+scholar-workflow experiment collected --project-root /path/to/parent --language en
+scholar-workflow experiment collected --project-root /path/to/parent --child-project-id CHILD_UUID --json
+```
+
+This prints a local, read-only navigation index, without contacting child servers.
+Configuration/conditions and recorded outcomes share each row; missing or invalid
+archives remain visible. Save Markdown at the parent root only when requested so
+its relative links resolve. It does not evaluate metric meaning or rank results.
+See the [management contract](references/project-management.md) for preview,
+registration, first reception, four-baseline updates and explicit local commit/rollback
+recovery. These commands require a normally installed version that exposes them;
+source development or a passing test is not installation evidence.
+
+For remote child code, the additive `execution-code` inventory reference retains
+child identity and relative code location without a local source clone.
+`project remote-code-plan` previews an explicitly selected existing Target/server
+declaration; it does not connect, verify remote Git or launch an editor. Check the
+installed command's help and the [context contract](references/project-context.md).
+
+Minimal local source retention uses `project code-recovery-plan` followed explicitly
+by `project retain-code` with the returned plan digest. It checks a supplied local
+self-contained Git bundle against the selected child's collected Run commits, then
+saves one bundle plus small coverage records, not a development checkout. It does
+not fetch from servers, capture uncommitted work or certify backup; see the
+[recovery procedure and gaps](references/project-management.md#selected-local-git-recovery-material).
+Confirm these commands exist in the normally installed version before use.
 
 For an initialized project, print an editable inventory template, select the actual material,
 and explicitly save it as `project-context.json` in that project. Template generation does not

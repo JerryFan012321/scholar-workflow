@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Research parent and execution child declaration",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "project_id", "kind", "children"],
+      "properties": {
+        "schema_version": {"const": 1, "type": "integer"},
+        "project_id": {"$ref": "#/$defs/project_id"},
+        "kind": {"const": "research-parent"},
+        "children": {"type": "array", "items": {"$ref": "#/$defs/child"}}
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "project_id", "kind", "parent_project_id", "primary"],
+      "properties": {
+        "schema_version": {"const": 1, "type": "integer"},
+        "project_id": {"$ref": "#/$defs/project_id"},
+        "kind": {"const": "execution-child"},
+        "parent_project_id": {"$ref": "#/$defs/project_id"},
+        "primary": {"type": "boolean"}
+      }
+    }
+  ],
+  "$defs": {
+    "project_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "child": {
+      "type": "object", "additionalProperties": false,
+      "required": ["project_id", "archive_segment", "primary"],
+      "properties": {
+        "project_id": {"$ref": "#/$defs/project_id"},
+        "archive_segment": {
+          "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$", "not": {"const": "profiles"}
+        },
+        "primary": {"type": "boolean"}
+      }
+    }
+  }
+}
