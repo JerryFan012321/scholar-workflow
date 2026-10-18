@@ -33,6 +33,15 @@
 | G17 | 构造稳定、可靠、易用且严格满足呈现契约的学术、知识库和实验 skills；第一阶段交付可复现的模范 Vault、模范项目和实验文件夹，以及可复用的外部工具交互。复现是运行期 skill 的明确能力，不只是开发记录：从明确输入经已安装产品入口得到符合版本化契约的产物；单篇样本、合成测试或规划完成不能冒称整个阶段完成。具体交付与证据见 `reproducible-exemplars-stage1.md` |
 | G18 | 以一个统一资产管理skill主动查询、登记并复用自有服务器和知识库；先读已有记录，再问真正缺失或冲突的信息。明确提供/使用的自有服务器按任务授权登记非秘密事实，知识库遵守原预览/确认边界；学者关注名单与论文来源未来接入各自权威store，不复制成通用资产数据库 |
 
+G11/G16/G17当前交付（2026-10-18）：用户已授权后，0.46.0整批能力及0.46.1说明修正
+正常发布安装，当前source4a29a47/runtime84fa3a0，125包/292插件文件与17skill身份核对
+一致，完整3072项通过。单个test合成项目已执行双角色/独立Git、父子登记、两Run十Attempt
+接收/幂等/离线读取、正常更新、受控已安装模块故障后公开CLI提交恢复及一bundle去重
+留存，本地笔记保持。PROJECT/同表条件结果/SVG和43引用核对已交付。VS Code界面控制
+超时，原生显示/链接操作和人工可读性待评；远端身份/采集/部署与WI-041未验，不据此
+完成G17或WI-055。main、服务、正式Vault/Zotero不改。详见0.46.0-release.md；以下带日期
+开发进展为历史时点，不作为当前安装能力判断。
+
 G11/G16管理方式定案（2026-10-16）：用户已确认完整本地研究总项目与远端执行子项目。
 总项目的知识、轻量文献、PROJECT/唯一详细计划、agent规则/技能、资料关联、实验分析及成果状态
 均保留，总项目只做本地资料Git、不推送；每个子项目独立远端Git，所有人工/agent代码修改在
@@ -522,10 +531,10 @@ check-bundle通过。0.41.1最小列定位修复的169项定向检查通过，�
 | INV29 | **Hub contract 约束各投影格式，而非反向适配自由格式**：唯一根是 `HubDirectory` schema 3；`/api/v1/catalog` 与 `/api/v2/*` 只能从 v3 根派生，不能形成第二事实根。知识关系来自 Zotero/Field manifest/provider，Projects 与 Tools 来自各自显式 registry；Hub 不拥有这些身份、关系或正文。Obsidian 受管文档继续使用薄 `sw_*` frontmatter 和显式 manifest，Hub 不从路径、文件名或自由 Markdown 猜语义 | v2 基线已发布；v3 breaking root 由 WI-042/WI-046 激活 |
 | INV30 | **Hub 编辑与 Vault 附件写入必须显式、受控且可检测冲突**：只允许修改由权威 Source/Field manifest/provider 登记、且仍位于对应可信 `folder_id` 根内的 Markdown/Canvas；v1/v2 兼容响应不能成为写入登记根。无自动保存，保存须携带读取时的 content revision，外部已修改则 409 停止，采用原子替换并保护 `sw_*` 身份字段；受管论文分析 Markdown/Canvas/sidecar 必须成对校验更新，不得经单文件 Hub 编辑或旧链接专用迁移拆开改写。论文 PDF/正式批注仍只由 Zotero 管理，Hub 不替换其附件；笔记图片、数据和补充文件属于 Vault asset，以显式 manifest 关联 artifact，客户端不能指定任意目标路径，不从正文 wikilink 猜关系，新增不覆盖同名文件，首版不删除或原地替换附件 | contract: hub-vault-write-boundary / outcomes: hub-explicit-edit-and-vault-assets |
 | INV31 | **Hub 只通过预登记任务控制 Codex**：任务请求只提交 allowlisted recipe/target、经核验的对象引用、最多 8 KiB brief、已批准 model_profile_id 和模型支持的 reasoning effort；旧 fast/standard/deep 兼容映射。服务端解析实际 model/cwd/sandbox/permission 与固定 argv，浏览器不能输入原始模型或执行配置。首次设置是独立的安装/目标/有界读写策略确认；只自动选择唯一匹配目标或 recipe，禁止任取首项。线程明确 create/resume/fork，固定实际模型/强度，Default 变化不修改已有线程；禁止 --last 与 merge，完整 transcript 由 Codex 持有。缺少 cmux Destination 不影响独立文件授权 | v2 内部契约已发布；论文入口/Codex 配置增强由 WI-053 实施，独立合成与真实单对象验收 pending |
-| INV32 | **科研项目共同边界与源码 profile 分离**：数据按 `dataset/<dataset-id>/{source,intermediate,prepared,metadata}` 聚合，离线工具位于 `src/utils/dataset_toolkit/`；`env/`只保存机器无关环境定义，服务器事实归全局env-records，执行位置归Target。总项目docs及研究分析本地优先，远端子项目登记自身执行事实并显式回传，不复制总项目知识真源；本地资料Git与远端源码Git分开。源码/config profile不能改写这些共同边界 | **0.28.0共同基座已发布**；2026-10-16双角色/分层回传修订待WI-055实现，未迁移真实项目 |
+| INV32 | **科研项目共同边界与源码 profile 分离**：数据按 `dataset/<dataset-id>/{source,intermediate,prepared,metadata}` 聚合，离线工具位于 `src/utils/dataset_toolkit/`；`env/`只保存机器无关环境定义，服务器事实归全局env-records，执行位置归Target。总项目docs及研究分析本地优先，远端子项目登记自身执行事实并显式回传，不复制总项目知识真源；本地资料Git与远端源码Git分开。源码/config profile不能改写这些共同边界 | **0.28.0共同基座已发布**；双角色/登记/本地分层档案能力随0.46.0发布，现用0.46.1，单个test合成项目自动验证通过；真实远端/迁移与人工仍待 |
 | INV33 | **Run / Attempt / Target 身份分离**：Run 是科学配方，以完整 commit SHA、`run.sh` 内容、resolved config、dataset version/split、seed 和机器无关环境定义确定；多个 Run 可共用 commit。Attempt 是 Run 在一个 Target 上的一次实际执行或重试，Target/GPU/hostname/时间/状态不进入 Run 身份。实验系统不以 branch、worktree 或服务器 checkout 路径替代 commit，也不把 Target 当作 Run 身份 | **0.28.0 已发布并通过 fixture 契约；未运行真实实验** |
 | INV34 | **实验档案只记录受控事实且不隐式执行**：Target profile 不保存 credential 或任意 shell command；Run 首次正式 Attempt 后其 recipe 冻结，报告、人工笔记和 artifact manifest 可继续增长。实验档案的创建、校验、索引、成果回收与迁移必须显式、幂等并保留旧文件；首批能力不得因建档或浏览而启动训练 | **0.28.0 已发布确定性档案管理；不含训练执行器** |
-| INV35 | **成果晋升与备份状态分离**：本地保留最简代码恢复材料及实验引用提交，而非日常开发clone；Run/Attempt配方、resolved config、报告、指标、参数和环境摘要必须回传。点云、代表性图像/视频、关键checkpoint按选择晋升并记录来源/哈希，大中间物可只留manifest。源码恢复包不自动包含未提交/未跟踪原创内容，promotion或包校验不等于独立备份与恢复演练通过 | promotion、跨进程no-overwrite和故障回滚已随 **0.28.0发布**；新的代码恢复/分层回传待WI-055，runtime/schema继续拒绝verified直到WI-041解锁 |
+| INV35 | **成果晋升与备份状态分离**：本地保留最简代码恢复材料及实验引用提交，而非日常开发clone；Run/Attempt配方、resolved config、报告、指标、参数和环境摘要必须回传。点云、代表性图像/视频、关键checkpoint按选择晋升并记录来源/哈希，大中间物可只留manifest。源码恢复包不自动包含未提交/未跟踪原创内容，promotion或包校验不等于独立备份与恢复演练通过 | promotion随0.28.0发布；本地bundle预检/去重留存随0.46.0发布并有限安装态验证；真实来源/采集与WI-041独立备份仍未验，runtime/schema继续拒绝verified |
 | INV36 | **运行期 skill 管真实流程与末端呈现，不管内部思考**：任务有明确业务/工具操作流程时，写清输入、依赖、动作、分支、交接、安全权限和完成条件；探索性问题没有固定流程时不人为编造步骤。skill 不规定分析框架、分类方法、思考步骤或推理顺序。末端产物的结构、层级、字段/schema、Canvas 节点/连线、语言、证据、链接、存储位置和完成状态是具体可复现的硬规则；不能为模型偏好、排版方便、生成器限制或旧测试通过而合并/省略必备项。不合格式即不通过，未实现就报告未完成，不能以近似产物冒充合格，也不授权编造事实或扩大范围 | outcomes: runtime-skill-result-contract-only / skill-input-reuse-and-conditional-dependencies / agent-reuses-owning-skill-output-contract（原则及运行文案已更新，独立行为验收 pending；论文生成器适配另项） |
 | INV37 | **知识空间采用核心文档—原子资源—附属产物三层模型**：纲领(charter)、目录(catalog)和梳理(survey)类文档构成主题的人类入口；paper、technical-document、blog-post 是可独立引用且可属于多主题的资源原子；analysis、annotations、Canvas、reading/code note 与 supplement/asset 显式隶属于一个资源或主题。Paperlist 与文献树只是 catalog/survey 的论文类视图，不反向定义整个知识库，不强制另造首页。关系使用稳定 ID，由 Knowledge manifest/provider 持有，不从路径、文件名或自由 Markdown 猜语义；Hub 如仍存在，只消费派生投影 | **0.28.0 已发布严格对象/owner schema、显式 change set 及 CAS provider apply**；去除 Hub 反向依赖为 INV60 目标态，真实全库对象迁移仍待 WI-030 |
 | INV38 | **承载论述、分析或梳理的持久知识产物必须有人类可读正文，机器状态只能是薄投影**：去掉 frontmatter、manifest/sidecar 与 Hub 后，Markdown 仍须独立表达完整论点和证据出处；Canvas、图片和数据等非正文字节由其 owner Markdown 说明，不要求复制正文。薄 `sw_*` frontmatter、显式 manifest、baseline sidecar 和可重建结构化导出可以存在，但不得把逐字段 hash、关系边、状态清单或机器 schema 混入正文，也不得形成第二份需要人工同步的知识正文。Canvas 是可编辑概览投影，不是唯一的人类版本 | **0.28.0 已发布人类优先渲染与 Markdown/Canvas/sidecar 的 CAS/journal/receipt 提交基座；一般知识文档迁移未开始** |
@@ -552,7 +561,7 @@ check-bundle通过。0.41.1最小列定位修复的169项定向检查通过，�
 | INV59 | **项目资料关联是独立、便携的薄清单**：`project-context.json` 使用自己的 schema/version，并绑定稳定 `project_id`；`project-layout.json` 仍只持有布局与 profile。关联由人或 agent 明确给出，项目内文件用安全相对路径，外部资料用稳定 provider/entity identity；显示名称不证明身份，不自动扫描关联、复制正文、同步或级联删除 | **目标态（未激活）**：WI-054；schema/model/只读CLI已写入开发树，未运行测试或发布，详见 `project-centered-refactor.md` |
 | INV60 | **内容核心不依赖网页控制面**：Project/Knowledge/Analysis 不依赖 Hub HTTP、UI、task store 或 workspace registry；Adapters 对接原生外部接口，Workflows 组合核心能力，CLI/agent/skill 只解析与呈现结果。兼容 facade 可暂保留，但不得制造第二份模型或状态真源 | **目标态（未激活）**：WI-054 分批解耦；本批不宣称全部旧依赖已移除 |
 | INV61 | **项目整合视图为可重建导航，不是事实或执行控制面**：从显式清单与项目档案生成可读 Markdown；区分已登记引用、已解析对象和未核验来源，显示可用链接、缺失与冲突。不得把登记成功冒充来源验证、实验成功或人工可读性验收；源码、Run/Attempt/Target、promotion 和 backup 状态仍归原权威记录 | **目标态（未激活）**：WI-054；仅单项目合成样本准备，真实项目与人工评鉴未执行 |
-| INV62 | **完整本地研究管理与远端执行子项目分离**：总项目保留知识、PROJECT/唯一计划、规则/skills、身份/资料关联及全部子项目实验的本地分析，资料Git不推送；所有子项目独立远端源码Git，所有代码修改在远端，只有primary可推送项目自有GitHub。本地只留最简代码恢复材料；所有实验含失败/中断均登记并按子项目/Run/Attempt回传轻量记录，身份限定、同内容幂等、冲突拒写，不用总项目commit代替子项目源码commit，不覆盖本地分析或隐式同步知识。并行工作目录隔离，实验固定commit，原生工具/agent不以Hub为前提 | **结果契约随0.45.1安装**；新hotfix已有身份/角色、登记、接收/索引、四摘要更新/恢复、execution-code定位预览和本地bundle核验/去重留存开发证据。测试记录唯一见project-management-identity-test-results.md；尚未正常安装，远端身份/采集/原生打开与人工仍待，outcome pending；真实迁移与WI-041另行授权 |
+| INV62 | **完整本地研究管理与远端执行子项目分离**：总项目保留知识、PROJECT/唯一计划、规则/skills、身份/资料关联及全部子项目实验的本地分析，资料Git不推送；所有子项目独立远端源码Git，所有代码修改在远端，只有primary可推送项目自有GitHub。本地只留最简代码恢复材料；所有实验含失败/中断均登记并按子项目/Run/Attempt回传轻量记录，身份限定、同内容幂等、冲突拒写，不用总项目commit代替子项目源码commit，不覆盖本地分析或隐式同步知识。并行工作目录隔离，实验固定commit，原生工具/agent不以Hub为前提 | **0.46.0能力及0.46.1说明修正已正常发布安装**；单个test合成父子项目已验证身份/角色/登记/接收读取/更新恢复/声明定位及bundle留存，细节唯一见0.46.0-release.md。原生VS Code与人工、远端身份/采集/部署/打开仍待，outcome pending；真实迁移与WI-041另行授权 |
 
 ## 非目标（NG）
 
@@ -602,7 +611,7 @@ check-bundle通过。0.41.1最小列定位修复的169项定向检查通过，�
 | Phase 8 | Hub Control Plane v2 历史基线 | 历史发布/测试事实保留；产品目标退役，不继续扩建。存量接口未退场前仍需安全守护；本次未核验或改变任何监听进程 |
 | Phase 9 | Hub v3 历史纠偏与兼容实现 | 2026-10-01 产品方向由 G16 取代；Hub UI/worker 专属残余验收 retired，不记 pass。知识模板、来源和真实迁移门禁独立保留；既往结果不视为本批测试 |
 | Phase 10 | 项目中心资料整合与职责解耦 | Stage A 源码已实现：独立context/schema/只读CLI与首批Knowledge公共模型/文档/Field提取；原生reader、文献树catalog与Field事务仍留兼容Hub依赖。未运行独立测试，未发布/安装、停服务或迁移真实数据。详见 `project-centered-refactor.md` |
-| Phase 11 | 完整本地研究总项目与远端执行子项目 | 结果契约已随0.45.1安装/main；新hotfix已有身份/双角色/登记/接收/索引/更新/恢复及execution-code声明定位开发证据。更新恢复快照完整3021项通过；本轮引用191项定向通过，未全仓/正常安装。远端实证、代码恢复及原生/人工仍待；真实迁移和备份独立保留 |
+| Phase 11 | 完整本地研究总项目与远端执行子项目 | 0.46.0功能与0.46.1说明修正已正常发布安装，完整3072项通过；单个test合成父子项目已验证登记/收集/读取/更新恢复及代码材料去重，PROJECT/同表比较已交付。原生VS Code显示/人工仍待，远端身份/部署/采集未验；main未合并，真实迁移与WI-041备份独立保留 |
 
 ## 未来项（记录待办，暂不实现）
 

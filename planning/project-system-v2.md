@@ -1,7 +1,10 @@
 # 科研项目系统 v2 — 改造计划
 
 > 状态：Accepted 0.6，2026-10-16。用户已确认完整本地研究总项目与远端执行子项目的管理方式（§3.6、§4、§15）；
-> 该增量仅固化设计，未实现或部署，不授权真实项目迁移。此前本地保留Primary开发clone的设想被替代。
+> 2026-10-18交付更新：双角色/登记/本地接收与读取/更新恢复/代码材料留存已随0.46.0正式发布，
+> 当前正常安装0.46.1为说明修正版；一个test合成项目自动检查完成，原生显示与人工待评。
+> 具体安装与有限验收事实唯一见0.46.0-release.md；不代表远端部署/采集或授权真实迁移。
+> 此前本地保留Primary开发clone的设想被替代。
 > 本规格继续持有 `init-project`、项目身份和实验档案，
 > 新增资料关联与职责边界由 [`project-centered-refactor.md`](project-centered-refactor.md) 细化。
 > `project-context.json` 独立于布局 manifest；旧 Hub 是兼容实现，不再是项目整合的前置条件。
@@ -639,7 +642,10 @@ CHANGELOG.md
 本批 context/overview 的完成标准独立记录在 `project-centered-refactor.md`；不因新定位就宣称旧项目迁移、
 真实实验或 verified backup 完成，也不以已经取消的 Hub 前端/worker 门禁阻挡独立内容能力的验收。
 
-## 15. 本地研究总项目／远端子项目实施增量（WI-055，部分开发中）
+## 15. 本地研究总项目／远端子项目实施增量（WI-055，已安装、部分验收）
+
+当前0.46.1及同一test对象的实际结果见0.46.0-release.md。以下各开发切片保留各自时点，
+其中“未安装/后续实现”不是现用能力结论；远端身份/部署/采集、原生打开与人工评鉴仍未完成。
 
 2026-10-18开发切片：新增独立`project-management.json` schema1，不扩展只持有身份和源码
 布局的layout schema2。总项目声明kind=research-parent、同layout的project_id和children；

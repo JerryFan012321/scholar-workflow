@@ -5,6 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Changed
+
+- **Development — project delivery receipts:** record normal 0.46.0/0.46.1
+  publication and installation, fixed runtime identity and bounded single-object
+  archive/recovery/presentation checks. Preserve pending native VS Code and human
+  review, remote-operation and backup limits; no runtime rebuild or main merge.
+
 ## [0.46.1] - 2026-10-18
 
 ### Fixed
