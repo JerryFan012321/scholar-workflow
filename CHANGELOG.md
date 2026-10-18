@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.46.1] - 2026-10-18
+
+### Fixed
+
+- **init-project:** remove stale statements that child-qualified collection is
+  unimplemented. Distinguish generic/child flat archives, the parent collection
+  commands and initialization side effects. Preserve operation permissions and
+  result formats; no implementation, schema, trigger or scientific claims change.
+
 ## [0.46.0] - 2026-10-18
 
 ### Added

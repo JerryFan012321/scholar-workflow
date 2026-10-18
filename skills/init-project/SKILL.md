@@ -47,8 +47,9 @@ an explicit migration, not generic `apply` presented as role conversion.
 
 - Use the selected role's exact skeleton; explicit generic use retains the common base. Do not
   create parallel `plan/plans`, `report/reports`, or `scripts/data` layouts.
-- The current flat `experiments/<id>/` bundle is the Run authority; indexes are derived.
-  It does not implement parent aggregation of remote children.
+- Generic/execution-child Runs retain their flat archive authority; indexes are derived.
+  Parent-qualified collection uses the shared project-management contract's separate
+  commands, not an initialization side effect.
 - Preserve `project-layout.json` identity and profile versions. A different selection requires
   `migrate-plan`; ordinary `apply` cannot change it.
 - The generic helper's new `dataset/`, `docs/`, and `experiments/` trees are local-first.
