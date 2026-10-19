@@ -1,5 +1,23 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-19：0.47.0已发布正常安装，原test单对象续验通过
+
+用户明确授权后完成source487b310/runtime6f16caa普通原子推送；293运行文件与source
+白名单完全一致，17skill完整。pipx固定runtime Git HTTPS和Codex marketplace正常安装，
+126包文件/293缓存文件逐字节一致，双manifest/direct_url/cache HEAD一致，非editable。
+版本同步后3111项完整回归、11既有警告、137.24秒；相关Ruff/三skill/锁/diff通过。
+
+只续用test原父子对象，外层及两个独立Git用codex/test-0470-delivery隔离；角色声明
+缺失fixture、零写入预览、当前摘要接入、原映射恢复、两Run十Attempt幂等重收及明确
+缺项partial/exit6通过。133原文件的内容/权限保持，两声明内容最终逐字节一致；旧
+PROJECT/报告/图未改，剩余指导/Git/布局审议不冒称完整迁移。原规则的过期能力描述
+刻意保留在合成对象中；真实毕设缺档案没有因此修好。回执唯一见0.47.0-release.md和
+0.47.0-installed-acceptance-results.md，同一Vault对象保留可读摘要、脚本与全部命令。
+
+不合并main、不切服务、无SSH或正式毕设/Vault/Zotero写入。现用0.47.0，CLI回退基线
+0.46.1/runtime84fa3a0，Codex完整降级未演练。下一步真实项目/远端原始记录核对与回收
+仍须独立授权，原VS Code与人工评鉴仍pending；G17/WI-055未完成，不重做有效旧验收。
+
 ## 2026-10-19：0.47.0 hotfix提交、发布、安装及原test续验已授权
 
 用户明确批准本批实验交付清单检查与旧项目角色声明接入的提交、正式发布、正常安装，

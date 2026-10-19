@@ -5,6 +5,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Changed
+
+- **Development — project delivery receipts:** record the authorized 0.47.0
+  runtime publication, normal pinned CLI/plugin installation and continuation of
+  the existing synthetic object through role adoption, idempotent reception and
+  required-Run checks. Preserve pending human review and real-project collection;
+  do not rebuild the same runtime or claim a main merge.
+
 ## [0.47.0] - 2026-10-19
 
 ### Changed
