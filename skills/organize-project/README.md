@@ -8,6 +8,9 @@ For a local research parent with remote execution children, follow the shared
 full knowledge, plan, guidance and analysis surface; show selected child-qualified
 results and honest remote code availability. This document task does not deploy
 children or add SSH references to the current material-inventory schema.
+A report-only project remains missing its local experiment archive. The shared
+contract defines the collection handoff and explicit required-Run check; a complete
+PROJECT document does not certify that experiment delivery is complete.
 
 ## Use
 

@@ -7,6 +7,9 @@
 已确认的“本地研究总项目／远端执行子项目”见共享[项目管理契约](../../references/project-management.md)。
 新空目录可显式选择角色；不传角色时保留通用初始化，或在重复执行时沿用已声明角色。
 已有非空通用项目不会静默转换，原接口继续兼容。
+明确要求已有项目接入角色时，按共享契约使用正常安装版的 `project adopt-role` 预览，
+再以当前摘要显式apply。只新增缺失的管理声明，保留原身份、人工规则、计划和Git策略；
+这些仍独立审议，不等于完整迁移，也不授权重跑初始化器、部署服务器或收集结果。
 
 - `assets/`、`configs/`、`env/`、`src/`、`tools/` 和 `tests/` 下的共同源码结构。
 - 本地优先的 `dataset/`、`docs/` 和 `experiments/`。
@@ -85,7 +88,8 @@ python3 skills/init-project/scripts/init_project.py plan /authorized/child \
 - 每个 `experiments/<run-id>/` 保存机器无关的 Run recipe；实际重试属于 Attempt，执行位置属于显式 Target。
 - `scholar-workflow experiment` 只负责建档、校验、索引和成果晋升；受信备份介质契约落地前，
   不会写入 backup verified，也不启动训练。
-- 新项目默认不把数据、文档和实验档案纳入源码 Git；旧项目的 tracked 状态只诊断、不自动改变。
+- 新通用／执行子项目默认不把本地数据、文档和实验档案纳入源码Git；研究总项目的资料Git
+  则保留可读文档和轻量收集档案。已有tracked／忽略策略保留，声明接入不会自动改变它们。
 
 本实现参考本地标准骨架，并对
 [sjh-skills/init-project](https://github.com/jiahao-shao1/sjh-skills/tree/main/skills/init-project)

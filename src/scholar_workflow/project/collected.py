@@ -150,8 +150,17 @@ def _read_run(namespace_fd, parent_id, child_id, segment, run_id):
     }
 
 
-def collected_overview(parent_root: str | Path, *, child_project_id: str | None = None):
+def collected_overview(parent_root: str | Path, *, child_project_id: str | None = None,
+                       required_run_ids: tuple[str, ...] = ()):
     """Index registered namespaces only; never discover children or write a derived index."""
+    if required_run_ids:
+        if child_project_id is None:
+            raise CollectedArchiveError("Required Runs need an explicit registered child selector")
+        if any(not isinstance(value, str) or not re.fullmatch(RUN_ID, value)
+               for value in required_run_ids):
+            raise CollectedArchiveError("Invalid required Run ID")
+        if len(set(required_run_ids)) != len(required_run_ids):
+            raise CollectedArchiveError("Required Run IDs must be unique")
     baseline = [read_project_bytes(parent_root, name) for name in (PROJECT_MANAGEMENT, "project-layout.json")]
     parent = load_project_management(parent_root)
     if parent.kind != "research-parent":
@@ -202,12 +211,17 @@ def collected_overview(parent_root: str | Path, *, child_project_id: str | None 
                 raise CollectedArchiveError("Project root location changed during inspection")
     if [read_project_bytes(parent_root, name) for name in (PROJECT_MANAGEMENT, "project-layout.json")] != baseline:
         raise CollectedArchiveError("Parent declaration changed during inspection")
-    partial = any(row["issues"] or row["state"] == "unavailable" or
+    found = {run["run_id"] for row in output for run in row["runs"]}
+    missing = [run_id for run_id in required_run_ids if run_id not in found]
+    partial = bool(missing) or any(row["issues"] or row["state"] == "unavailable" or
                   any(run["state"] != "verified_archive" for run in row["runs"]) for row in output)
-    return {"schema_version": 1, "parent_project_id": parent.project_id,
-            "status": "partial" if partial else "complete", "children": output,
-            "scope": {"registered_children_only": True, "child_project_id": child_project_id},
-            "execution_verification": "records_only"}
+    result = {"schema_version": 1, "parent_project_id": parent.project_id,
+              "status": "partial" if partial else "complete", "children": output,
+              "scope": {"registered_children_only": True, "child_project_id": child_project_id},
+              "execution_verification": "records_only"}
+    if required_run_ids:
+        result["required_runs"] = {"requested": list(required_run_ids), "missing": missing}
+    return result
 
 
 def _text(value):
@@ -232,6 +246,10 @@ def render_collected_overview(result, *, language="en"):
     if result["status"] == "partial":
         lines[3:3] = ["部分档案未通过检查，问题行保留。" if zh else
                       "Some archives did not pass inspection; affected rows are retained.", ""]
+    missing = result.get("required_runs", {}).get("missing", [])
+    if missing:
+        lines[3:3] = [("要求的实验档案尚未接收：" if zh else "Required Run archives not received: ")
+                      + ", ".join(_text(run_id) for run_id in missing), ""]
     states = {"planned": "待执行", "running": "运行中", "succeeded": "记录为成功",
               "failed": "失败", "interrupted": "中断"}
     for child in result["children"]:

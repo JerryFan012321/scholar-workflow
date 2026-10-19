@@ -10,6 +10,9 @@ For collected remote-child results, use the shared
 identities and source commits distinct, even when Run names match. Read-only review
 does not receive archives, fetch remote artifacts or turn missing lifecycle support
 into a claim that collection or backup succeeded.
+When a task also requires collection, its archive delivery remains a separate
+unfinished handoff until the required local evidence is received and checked.
+Remote-path prose in a report does not replace an original Run/Attempt bundle.
 
 Example request:
 
