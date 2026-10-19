@@ -1,5 +1,56 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-19：0.47.0 hotfix提交、发布、安装及原test续验已授权
+
+用户明确批准本批实验交付清单检查与旧项目角色声明接入的提交、正式发布、正常安装，
+随后仅在原test对象用Git隔离续验。解除上一轮授权阻碍；不合并main、不连接服务器、
+不改真实毕设、正式Vault或Zotero，不切换服务。先同步版本并作发行前完整回归，
+固定干净source后使用既有make-release脚本生成独立runtime，审核并普通推送，再正常
+pipx和Codex marketplace安装。实际安装身份核对成功后才执行已准备的0.47.0单对象计划。
+原0.46.1/runtime84fa3a08c43d4b6f4cb8c3f3733305dcd48a1d21为CLI回退基线；
+Codex完整降级未演练。具体授权/边界/实际回执唯一见0.47.0-release.md。
+版本同步后完整3111项通过、11既有警告，137.24秒；相关Ruff、三skill基础、锁/diff
+通过。下一步固定source并按白名单构建独立runtime，未安装前不执行test业务续验。
+
+## 2026-10-19：交付修正已完整开发回归，待0.47.0发布安装授权
+
+上一轮清单检查/交接修正属于progress：9专项、113相关通过；仍未发布/安装，不扩大
+为真实回收成功。本轮补已有schema2非空项目的显式adopt-role预览及摘要绑定apply，
+只创建缺失management声明，保留project_id/layout、AGENTS、Git规则、知识/计划和档案。
+已有同角色声明只核验，异角色/不同parent/primary冲突拒绝，不转换或覆盖；parent不能
+借此清掉源码profile。声明接入不认证原生Git拓扑、不生成第二计划、不迁移目录/规则，
+未完成项明确保留，不能称完整研究项目迁移。先固定合成输入和故障预期，再实现writer。
+测试方案见project-role-adoption-test-plan.md；不操作正式毕设、服务器或Vault。
+首批四项先红测，现28项角色/故障检查及一条旧父子接入到接收/清单的公开CLI合成组合
+通过，原UUID/所有原文件保持。收尾权限错误先红测后修正，角色29项/相关143项通过；
+最后完整unit/contract为3111 passed、11既有警告，139.53秒。module/测试Ruff、三skill
+基础/diff通过；整CLI既有TRY004保留。结果唯一见project-role-adoption-test-results.md。
+新能力未提交/发布/安装，实际0.46.1保持。已提出本批0.47.0提交/正式发布/正常安装及
+现有test对象Git隔离续验授权；未获回复不推送/安装。独立验收准备见
+0.47.0-installed-acceptance-plan.md，不合并main、不连接服务器、不改真实毕设或正式库。
+收尾离线wheel预检：126包文件逐字节一致，四模块从wheel加载、两新命令help通过，
+无开发层/当前用户路径混入。包metadata仍0.46.1，仅结构预检，不是0.47.0正式构建或
+安装态验收；没有改变CLI/cache。真实毕设复核仍缺management声明、experiments无档案，
+两执行报告明确未回收本地；本轮只读，不能据源码修正称实际项目已修复。
+
+## 2026-10-19：报告不能代替实验归档，清单检查与交接已做开发验证
+
+上一轮为progress：只读核对已登记毕设，experiments仅空profiles/targets，缺少management
+声明；两份执行报告明确写本地未收集。旧方案仍按未支持child接收指引派发，现用CLI已
+0.46.1；新安装没有迁移既有项目或回收远端档案。只读validate-management实际exit2。
+没有连接服务器、下载、修改真实项目或发送其他聊天。服务器只读核对许可仍待用户回应。
+
+源码保留普通collected查询兼容，新增显式child+repeat require-run清单检查：缺收或无效
+输出问题并exit6，不让查询complete冒称业务交付。共享运行契约明确接收/分析/汇总交接，
+轻量原始证据必须本地可读；旧项目不由generic apply静默转角色。独立预期和红测先行，
+9专项通过，collection/management/CLI/review fixture/eval共113项通过，两skill校验和改动
+模块/测试Ruff、diff通过；详见experiment-archive-delivery-test-results.md，不冒称全仓回归。
+
+下一步可安全开发旧nonempty generic项目的显式角色迁移，保留UUID、原始资料/规则及
+Git归属，先零写入预览；真实远端格式/轻量传输核对仍待当前授权。现用仍0.46.1，
+此增量未发布安装，没有在test用源码冒充安装态。清单检查不是完整远端回收，也不关闭
+迁移/服务器权限/原生人工/G17；旧论文与有效人工验收不重做。
+
 ## 2026-10-18：0.46.1已发布安装，单对象自动验收完成、人工待评
 
 当前source4a29a477f15c59322db0116e6b974c5ffccb7486，runtime/cache固定

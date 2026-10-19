@@ -5,12 +5,34 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.47.0] - 2026-10-19
+
 ### Changed
+
+- **organize-project / review-experiments:** distinguish report completion from
+  local experiment delivery. Define the selected-record handoff, required local
+  lightweight evidence, legacy-role stop and native-transfer authorization in the
+  shared management contract; preserve read-only review and accepted formats.
 
 - **Development — project delivery receipts:** record normal 0.46.0/0.46.1
   publication and installation, fixed runtime identity and bounded single-object
   archive/recovery/presentation checks. Preserve pending native VS Code and human
   review, remote-operation and backup limits; no runtime rebuild or main merge.
+
+### Added
+
+- **init-project:** explicit `project adopt-role` preview and digest-bound creation
+  of a missing management declaration in an existing schema-2 project. Preserve
+  identity, instructions, plans, source selection and Git policy; retain matching
+  registrations and refuse drift, overwrite and stale observations. Report partial
+  publication or modified staging honestly. Declaration adoption is not full
+  migration, Git verification, child registration or experiment reception.
+
+- **review-experiments:** explicit repeated `experiment collected --require-run`
+  checks for one selected registered child. Missing required or invalid archives
+  print a partial result and exit 6 without writes; ordinary navigation remains
+  compatible. The checklist is invocation scope, not another registry, execution
+  proof, metric review or automatic remote collection.
 
 ## [0.46.1] - 2026-10-18
 

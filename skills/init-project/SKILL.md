@@ -15,8 +15,12 @@ For a research parent or remote execution child, first load
 contract is required. Select `--role research-parent` or `--role execution-child`
 explicitly for a new role. See `references/skeleton-manifest.md` for role layouts and
 flags. These modes scaffold an empty chosen root, not remote deployment, child
-registration or experiment reception. An existing nonempty generic project requires
-an explicit migration, not generic `apply` presented as role conversion.
+registration or experiment reception. For an existing nonempty generic project,
+use the shared contract's explicit `project adopt-role` declaration path when the
+installed interface supports it, not generic `apply` as role conversion. That path
+preserves identity and files and reports the still-unreviewed layout/guidance/Git
+policy; it is an alternative to the new-root steps below, not a scaffold pre-step
+or a claim that full migration and archive reception are complete.
 
 ## Steps
 

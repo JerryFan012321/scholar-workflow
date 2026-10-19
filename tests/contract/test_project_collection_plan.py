@@ -538,6 +538,8 @@ def test_collected_reader_does_not_discover_unregistered_roots(sample):
     before = snapshot(parent)
     result = collected_overview(parent)
     assert result["children"][0]["state"] == "not_received"
+    assert result["status"] == "complete"  # Query scope only; no delivery checklist was supplied.
+    assert "required_runs" not in result
     assert "private.txt" not in json.dumps(result)
     assert "not received" in render_collected_overview(result, language="en")
     assert snapshot(parent) == before
@@ -548,6 +550,150 @@ def test_collected_reader_requires_registered_child_selector(sample):
     parent, _, _ = sample
     with pytest.raises(ValueError):
         collected_overview(parent, child_project_id="33333333-3333-4333-8333-333333333333")
+
+
+@pytest.mark.parametrize("empty_namespace", [False, True])
+def test_required_archives_do_not_accept_report_only_delivery(sample, monkeypatch, empty_namespace):
+    parent, child, _ = sample
+    report = parent / "docs/report/summary.md"
+    report.parent.mkdir(parents=True)
+    report.write_text("Results remain on remote-host:/results; not collected.\n")
+    if empty_namespace:
+        (parent / "experiments/main-method").mkdir(parents=True)
+    before = snapshot(parent), snapshot(child)
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("Archive delivery checking must not launch tools or load host config")
+
+    monkeypatch.setattr(cli.subprocess, "run", forbidden)
+    monkeypatch.setattr(cli.subprocess, "Popen", forbidden)
+    monkeypatch.setattr(cli, "_load_cfg", forbidden)
+    result = CliRunner().invoke(cli.main, [
+        "experiment", "collected", "--project-root", str(parent),
+        "--child-project-id", CHILD, "--require-run", RUN, "--json",
+    ])
+    assert result.exit_code == 6, result.output
+    payload = json.loads(result.stdout)
+    assert payload["status"] == "partial"
+    assert payload["required_runs"] == {"requested": [RUN], "missing": [RUN]}
+    assert payload["children"][0]["runs"] == []
+    assert (snapshot(parent), snapshot(child)) == before
+
+
+@pytest.mark.parametrize("damage", [False, True])
+def test_required_archives_check_received_evidence_not_report_claims(sample, damage):
+    parent, child, _ = sample
+    plan = plan_run_collection(parent, child, run_id=RUN)
+    receive(parent, child, plan)
+    if damage:
+        (parent / plan["destination"] / "inputs/config.json").write_text("changed\n")
+    before = snapshot(parent), snapshot(child)
+    result = CliRunner().invoke(cli.main, [
+        "experiment", "collected", "--project-root", str(parent),
+        "--child-project-id", CHILD, "--require-run", RUN, "--json",
+    ])
+    assert result.exit_code == (6 if damage else 0), result.output
+    payload = json.loads(result.stdout)
+    assert payload["required_runs"] == {"requested": [RUN], "missing": []}
+    record = payload["children"][0]["runs"][0]
+    assert record["state"] == ("invalid" if damage else "verified_archive")
+    if not damage:
+        assert record["source_commit"] == "f" * 40
+        assert len(record["attempts"]) == 5
+    assert (snapshot(parent), snapshot(child)) == before
+
+
+def test_required_archives_keep_present_runs_when_another_is_missing(sample):
+    parent, child, _ = sample
+    receive(parent, child, plan_run_collection(parent, child, run_id=RUN))
+    missing = "20261018-1300-uncollected"
+    before = snapshot(parent), snapshot(child)
+    result = CliRunner().invoke(cli.main, [
+        "experiment", "collected", "--project-root", str(parent),
+        "--child-project-id", CHILD, "--require-run", RUN,
+        "--require-run", missing, "--language", "zh",
+    ])
+    assert result.exit_code == 6, result.output
+    assert missing in result.stdout and RUN in result.stdout
+    assert "尚未接收" in result.stdout
+    assert "配置" in result.stdout and "中断" in result.stdout
+    assert (snapshot(parent), snapshot(child)) == before
+
+
+@pytest.mark.parametrize("args,message", [
+    (["--require-run", RUN], "explicit registered child selector"),
+    (["--child-project-id", CHILD, "--require-run", "../escape"], "Invalid required Run ID"),
+    (["--child-project-id", CHILD, "--require-run", RUN, "--require-run", RUN], "must be unique"),
+])
+def test_required_archives_reject_ambiguous_or_invalid_scope(sample, args, message):
+    parent, child, _ = sample
+    before = snapshot(parent), snapshot(child)
+    result = CliRunner().invoke(cli.main, [
+        "experiment", "collected", "--project-root", str(parent), *args, "--json",
+    ])
+    assert result.exit_code == 2, result.output
+    assert message in result.output
+    assert (snapshot(parent), snapshot(child)) == before
+
+
+def test_required_archives_do_not_convert_legacy_project_or_read_reports(sample):
+    parent, child, _ = sample
+    (parent / "project-management.json").unlink()
+    (parent / "report.md").write_text("All experiments completed remotely.\n")
+    before = snapshot(parent), snapshot(child)
+    result = CliRunner().invoke(cli.main, [
+        "experiment", "collected", "--project-root", str(parent),
+        "--child-project-id", CHILD, "--require-run", RUN, "--json",
+    ])
+    assert result.exit_code == 2, result.output
+    assert "project-management.json" in result.output
+    assert (snapshot(parent), snapshot(child)) == before
+
+
+def test_legacy_role_adoption_connects_to_registration_and_real_archive_reception(sample):
+    parent, child, _ = sample
+    for root, identity in ((parent, PARENT), (child, CHILD)):
+        (root / "project-management.json").unlink()
+        (root / "project-layout.json").write_text(json.dumps({
+            "schema_version": 2, "project_id": identity, "language": "python",
+            "package": None, "source_profile": None, "addons": [],
+        }))
+        (root / "AGENTS.md").write_text("Preserve existing human instructions.\n")
+        (root / ".gitignore").write_text("dataset/\ndocs/\nexperiments/\n")
+    before_parent, before_child = snapshot(parent), snapshot(child)
+    runner = CliRunner()
+
+    def command(*args):
+        result = runner.invoke(cli.main, [*args, "--json"])
+        assert result.exit_code == 0, result.output
+        return json.loads(result.stdout)
+
+    for root, role, extras in (
+        (parent, "research-parent", []),
+        (child, "execution-child", ["--parent-project-id", PARENT, "--primary"]),
+    ):
+        args = ["project", "adopt-role", "--project-root", str(root), "--role", role, *extras]
+        plan = command(*args)
+        command(*args, "--apply", "--expected-plan-sha256", plan["plan_sha256"])
+    args = ["project", "register-child", "--project-root", str(parent),
+            "--child-root", str(child), "--archive-segment", "main-method"]
+    registration = command(*args)
+    command(*args, "--apply", "--expected-parent-sha256", registration["parent_sha256"],
+            "--expected-child-sha256", registration["child_sha256"])
+    args = ["--project-root", str(parent), "--child-root", str(child), "--run-id", RUN]
+    plan = command("experiment", "collection-plan", *args)
+    command("experiment", "receive-run", *args,
+            "--expected-parent-sha256", plan["parent_sha256"],
+            "--expected-child-sha256", plan["child_sha256"],
+            "--expected-evidence-sha256", plan["evidence_sha256"])
+    collected = command("experiment", "collected", "--project-root", str(parent),
+                        "--child-project-id", CHILD, "--require-run", RUN)
+    record = collected["children"][0]["runs"][0]
+    assert record["state"] == "verified_archive" and record["source_commit"] == "f" * 40
+    assert len(record["attempts"]) == 5
+    assert collected["execution_verification"] == "records_only"
+    assert {key: snapshot(parent)[key] for key in before_parent} == before_parent
+    assert {key: snapshot(child)[key] for key in before_child} == before_child
 
 
 def test_collected_markdown_links_and_chinese_labels_are_usable(sample):

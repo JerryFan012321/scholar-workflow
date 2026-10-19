@@ -39,6 +39,8 @@ results first, co-locates their comparison conditions, uses plain language, and 
 scientific conclusions. Insufficient evidence yields a partial review, not invented
 values or a claimed successful comparison. Reader navigation and appearance remain
 pending human assessment until actually checked.
+For collected child results, apply the shared project-management delivery handoff:
+a partial report cannot close a missing local archive or replace its original records.
 
 ## Constraints
 

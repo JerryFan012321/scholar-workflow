@@ -9,6 +9,11 @@ The accepted research-parent/remote-child model is defined in the shared
 [project-management contract](../../references/project-management.md). Choose an explicit
 role for a new empty root; omission retains generic initialization, or the existing
 declared role on rerun. Existing nonempty generic projects are not converted silently.
+For an explicitly requested existing-project role, use the normally installed
+`project adopt-role` preview and digest-bound apply described in that contract.
+Only the missing management declaration is created; old identity, human instructions,
+plans and Git policy remain intact and separately reviewed. It is not full migration
+or permission to rerun the initializer, deploy remotely or collect results.
 
 - A shared source layout under `assets/`, `configs/`, `env/`, `src/`, `tools/`, and `tests/`.
 - Local-first `dataset/`, `docs/`, and `experiments/` trees.
@@ -102,8 +107,10 @@ verifies external sources. See the shared contract for supported filename and sa
   execution placement is an explicit Target.
 - `scholar-workflow experiment` creates and validates records and promotes selected artifacts. It
   never launches training or marks a backup verified before a trusted-medium contract exists.
-- New projects keep data, docs, and experiment records outside source Git; existing tracked
-  policies are preserved and only diagnosed during migration.
+- New generic/execution layouts keep local data, docs and experiment records outside
+  source Git. Research-parent management Git instead retains readable documents and
+  lightweight collected archives. Existing tracked/ignore policies are preserved,
+  not changed by declaration adoption.
 
 The workflow was independently implemented after comparing the local standard skeleton with
 [sjh-skills/init-project](https://github.com/jiahao-shao1/sjh-skills/tree/main/skills/init-project).

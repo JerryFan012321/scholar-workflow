@@ -321,6 +321,50 @@ def project_validate_management(project_root: Path, parent_root: Path | None) ->
     click.echo("Remote placement, Git policy and execution availability are not verified.")
 
 
+@project_commands.command(name="adopt-role")
+@click.option("--project-root", required=True,
+              type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.option("--role", required=True, type=click.Choice(["research-parent", "execution-child"]))
+@click.option("--parent-project-id", help="Required parent UUID for an execution child.")
+@click.option("--primary", is_flag=True, help="Declare this execution child as primary.")
+@click.option("--apply", "apply_change", is_flag=True, help="Create only with a current preview digest.")
+@click.option("--expected-plan-sha256")
+@click.option("--json", "as_json", is_flag=True)
+def project_adopt_role(project_root, role, parent_project_id, primary, apply_change,
+                       expected_plan_sha256, as_json):
+    """Preview adding a role to an existing project; do not reinitialize its contents."""
+    from scholar_workflow.project.role_adoption import (
+        ProjectRoleAdoptionError,
+        adopt_project_role,
+        plan_role_adoption,
+    )
+
+    if apply_change and not expected_plan_sha256:
+        raise InputError("Apply requires the current preview SHA-256")
+    if not apply_change and expected_plan_sha256:
+        raise InputError("A preview digest is accepted only with --apply")
+    try:
+        if apply_change:
+            result = adopt_project_role(project_root, role=role, parent_project_id=parent_project_id,
+                                        primary=primary, expected_plan_sha256=expected_plan_sha256)
+        else:
+            result = plan_role_adoption(project_root, role=role,
+                                        parent_project_id=parent_project_id, primary=primary)
+    except ProjectRoleAdoptionError as exc:
+        error_class = {5: IdentityConflictError, 6: PartialCompletionError,
+                       7: SafetyRefusalError}.get(exc.exit_code, InputError)
+        raise error_class(str(exc)) from None
+    except ValueError as exc:
+        raise InputError(str(exc)) from None
+    if as_json:
+        click.echo(json.dumps(result, indent=2))
+    else:
+        state = result["status"] if apply_change else "preview; nothing written"
+        click.echo(f"Project role declaration: {state}; existing identity retained.")
+        click.echo(f"Preview SHA-256: {result['plan_sha256']}")
+        click.echo("Guidance, Git policy, project content and archive collection remain separately reviewed.")
+
+
 @project_commands.command(name="register-child")
 @click.option("--project-root", required=True,
               type=click.Path(exists=True, file_okay=False, path_type=Path))
@@ -3111,20 +3155,26 @@ def experiment_receive_run(
 @click.option("--project-root", required=True,
               type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--child-project-id", help="Read only this explicitly registered child.")
+@click.option("--require-run", "required_run_ids", multiple=True,
+              help="Require this Run archive; repeat for the selected child's expected Runs. Partial exits 6.")
 @click.option("--language", type=click.Choice(["en", "zh"]), default="en", show_default=True)
 @click.option("--json", "as_json", is_flag=True)
-def experiment_collected(project_root: Path, child_project_id: str | None, language: str, as_json: bool) -> None:
+def experiment_collected(project_root: Path, child_project_id: str | None,
+                         required_run_ids: tuple[str, ...], language: str, as_json: bool) -> None:
     """Print a read-only qualified archive index, not a scientific comparison."""
     from scholar_workflow.project.collected import collected_overview, render_collected_overview
 
     try:
-        result = collected_overview(project_root, child_project_id=child_project_id)
+        result = collected_overview(project_root, child_project_id=child_project_id,
+                                    required_run_ids=required_run_ids)
     except ValueError as exc:
         raise InputError(str(exc)) from None
     if as_json:
         click.echo(json.dumps(result, ensure_ascii=False, indent=2))
     else:
         click.echo(render_collected_overview(result, language=language), nl=False)
+    if required_run_ids and result["status"] != "complete":
+        raise click.exceptions.Exit(6)
 
 
 @experiment.command(name="update-plan")

@@ -34,7 +34,9 @@ code/data flow, related materials and ownership/open questions. It contains dire
 honest current state, source-supported module views, lightweight literature roles
 and project-specific synthesis, experiment history and a
 single detailed plan authority. Every missing/conflicted/unverified item remains
-accounted for. Report the output location and preserved/changed files; provide
+accounted for. Apply the shared project-management delivery handoff when experiments
+are in scope: document completeness and local archive collection have separate states.
+Report the output location and preserved/changed files; provide
 explicit human assessment instructions for native navigation and appearance.
 Incomplete evidence is not fabricated completion.
 

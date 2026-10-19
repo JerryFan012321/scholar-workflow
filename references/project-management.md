@@ -104,6 +104,97 @@ shared conditions, intentional differences and corresponding results together,
 using the existing review contract. Unknown, remote-only, failed and conflicted
 evidence stays visible; collection does not itself prove a scientific conclusion.
 
+### Delivery handoff for an actual experiment task
+
+Keep three outcomes separate: execution, local archive collection, and human
+analysis. A saved `docs/report/` summary completes a document task, not collection.
+For a task that includes experiment delivery, account for each selected child/Run
+and its Attempts against the requested experiment list, including failures and
+interruptions. The list comes from the actual task/plan, not only the archives that
+happen to exist. Do not create another registry to hold it.
+
+The execution owner supplies the original recipe, child commit, captured effective
+configuration/environment, data identity, observed Attempt status/time/exit facts,
+metrics and output inventory. The parent receives those lightweight bytes under
+`experiments/<child-segment>/<run-id>/`; useful selected figures belong locally when
+their collection is requested. Large datasets, weights and other large outputs
+may remain remote with explicit manifests. A remote path or a temporary viewing
+URL is not a substitute for the local records needed to interpret a result.
+
+An authorized collection may use native file-transfer tools to stage only the
+selected nonsecret original records from a verified child. This is not a source
+development clone, broad directory sync or permission to rerun a model. Verify the
+current installed interface, parent/child declarations, source identity, selected
+bytes and destination conflicts before using the reception/update commands below.
+Neither the CLI receiver nor a read-only review opens an SSH connection for the
+agent. No host access is implied by a request to format or compare a report.
+
+The parent collection owner performs reception and reads back the local evidence;
+only then does the analysis owner derive the local report and its source links.
+When the installed help supports `--require-run`, check the explicit child and
+every required Run using the local collected reader below. Independently inspect
+the requested metrics/figures using the review contract; record integrity alone
+does not establish useful results, actual execution or scientific correctness.
+
+For an existing generic project without management declarations, use the explicit
+role-declaration adoption below when the installed help supports it. Existing files
+are not new empty roots. Unreviewed layout/guidance changes or an incompatible legacy
+record format stay unfinished prerequisites; do not rerun generic `apply`, allocate
+replacement identities, or reverse-engineer canonical records/receipts from prose.
+Old notes about unavailable capabilities must be checked against the actual installed
+version/help, not copied as current facts. Preserve original records while resolving
+format gaps; never rerun a completed experiment merely to manufacture archives.
+
+If required local evidence has not arrived, report **execution recorded; local
+collection incomplete**, name the missing items and owning handoff. Read-only
+review may still return a clearly partial report, but cannot close experiment
+delivery. Initialization alone legitimately creates empty archives and does not
+promise that any experiment has run or been collected.
+
+### Existing-project role declaration adoption
+
+Use `project adopt-role --project-root ROOT --role research-parent --json` for a
+zero-write preview of an existing full schema-2 layout. For an execution child,
+choose `--role execution-child --parent-project-id PARENT_UUID` and its explicit
+`--primary` flag where intended. Repeat those options for apply. Check the normally
+installed help; source changes alone do not supply this operation in an old package.
+
+This is declaration adoption, **not a complete project migration**. It creates only
+a missing `project-management.json`, with the existing layout UUID and schema-1
+role contract. It does not scaffold another PROJECT/plan, rewrite instructions or
+Git ignore rules, move source/data/archives, change a profile, initialize/verify Git,
+contact a host or receive experiments. Preserve existing accepted human review;
+`remaining_review` lists checks not performed by this operation, not revoked approvals.
+A parent with an existing source profile/addons requires a separate reviewed layout
+migration; this operation refuses rather than clearing those fields.
+
+The preview exposes the proposed declaration, exact create action, current selected
+root identity and bounded hashes/modes/file identities for layout, role declaration,
+AGENTS/AGENT/CLAUDE, .gitignore, PROJECT, SCHEDULE and project-context when present.
+It does not output their prose or inspect unrelated source, reports or secret files.
+Its `plan_sha256` binds this observation and requested role. Show these effects and
+remaining project-specific work before an authorized apply; changing role semantics
+is not implied by ordinary initialization, comparison or document formatting.
+
+Apply the same request with `--apply --expected-plan-sha256 HASH`. It uses the
+existing layout file's cooperative nonblocking lock, rechecks the preview and root,
+stages bounded mode-0600 bytes, then exclusively creates the missing declaration.
+Existing different role/identity/child-parent/primary declarations conflict with
+exit 5; a matching existing role is unchanged, preserving registered children.
+Unchanged checks do not create staging files or rewrite metadata. No overwrite
+fallback exists. Pause external editors/synchronizers during apply; this is not a
+cross-machine transaction or protection against every later uncooperative edit.
+
+Stale previews/busy operations refuse with exit 5; invalid options or layout fields
+with exit 2; unsafe bounded-file/publication conditions refuse with exit 7. Errors
+after publication or unknown modified staging are partial exit 6, with the actual
+declaration/staging retained for inspection rather than destructive rollback. Before
+publication, only this operation's unchanged staging is cleaned. Inspect the actual
+files and re-preview before retrying; an old successful preview is not the new state.
+Review the preserved guidance/Git policy, unique plan and layout separately. Register
+the explicit child afterward and collect original evidence via the interfaces below;
+adoption by itself cannot close those handoffs or claim a fully migrated project.
+
 ### Single-Run collection preflight
 
 `experiment collection-plan --project-root PARENT --child-root CHILD --run-id RUN`
@@ -195,6 +286,26 @@ valid children/Runs. `status: complete` means the selected read scope was inspec
 not that every child has executed, all archives have arrived, or the project is done.
 Returned scope and per-child states preserve that distinction; partial data is not
 silently turned into an empty successful experiment library.
+
+For an explicit collection checklist, repeat `--require-run RUN_ID` with a selected
+registered `--child-project-id UUID`, for example:
+
+```text
+scholar-workflow experiment collected --project-root PARENT --child-project-id CHILD_UUID --require-run RUN_A --require-run RUN_B --json
+```
+
+Check the installed help before using this additive option. JSON includes
+`required_runs: {requested: [...], missing: [...]}`; missing required Runs make the
+result partial. A damaged/pending/unavailable archive in this selected child's read
+scope also remains partial. The command prints its normal complete JSON/Markdown
+and exits 6 for a partial checklist, 0 when that scope is complete. Ambiguous scope,
+duplicate/unsafe Run IDs or absent management declarations refuse with exit 2.
+Without `--require-run`, the ordinary navigation query and JSON shape/exit behavior
+remain compatible, including an empty registered library. Its `complete` means
+query completion, not receipt of an expected experiment list. Neither mode proves
+that unregistered/unlisted remote experiments are covered or that remote-only
+metric/figure material is present locally. This check stores no checklist or index
+and does not read the human report to infer missing execution facts.
 
 The reader checks receipt identity/schema/ownership mapping/inventory hash, owned
 file hashes/sizes/modes, required directories and original child recipe/Attempt/
@@ -406,6 +517,7 @@ automation exists. Determine the installed capability before an operation:
 | Requested operation | Current interface and honest result |
 |---|---|
 | Parent/child initialization | The helper supports explicit research-parent/execution-child scaffolds in new empty roots, with separate management declarations and independent Git. See the init-project skeleton manifest for flags and required outputs. Existing nonempty generic projects are not converted. A scaffold does not register a child with its parent, deploy remotely, populate research facts or receive archives; report those remaining gaps. Legacy generic initialization remains compatible. |
+| Existing role-declaration adoption | `project adopt-role` previews an explicit role for an existing schema-2 project and creates only its absent management declaration using the current digest. Identity and all existing files remain; unchanged roles retain registered children. Instruction/Git-policy/layout migration, source-profile changes, child registration and archive reception remain separate; this is not a second initializer. Check the installed help. |
 | Child registration | `project register-child` previews and byte-CAS appends one already-declared child to an explicitly selected parent. It does not locate/contact a server or change its child declaration. Validate mutual declarations separately; no live synchronization is created. |
 | Parent archive reception and index | collection-plan previews one Run; receive-run supports first reception/identical replay; collected reads the qualified local index. update-plan/update-run provide four-baseline version changes; recovery-plan/recover-update explicitly commit or roll back a pending local journal. Check actual installed help before use. Pending markers block verified reading/replay, not prove a live process. Legacy flat commands still refuse parents; Target registration remains available. No SSH reception, automatic orphan cleanup, history correction or fabricated receipt is implied. |
 | Remote code in the material inventory | Additive context schema 1 `execution-code` identifies a registered child, safe relative code path and optional commit. `project remote-code-plan` combines one explicitly selected existing SSH Target and server ledger without connecting or writing. Target selection does not verify the remote child, path, commit, SSH alias or access. No fake local path, arbitrary URI, native open or implicit host binding; see project-context.md. Check installed help before use. |
