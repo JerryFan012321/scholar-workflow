@@ -14,6 +14,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   SVG/table/Mermaid rendering and scoped source-link clicks. Preserve pending
   human review and real-project collection; do not rebuild the same runtime or
   claim a main merge.
+- **Development — independent host inputs:** freeze a read-only input preflight
+  for the existing synthetic pair, including captured Target and actual Attempt
+  states. Record the old report's missing Target presentation; preserve the report
+  and keep independent-conversation execution pending explicit authorization.
 
 ## [0.47.0] - 2026-10-19
 
