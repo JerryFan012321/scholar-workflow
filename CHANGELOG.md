@@ -18,6 +18,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   for the existing synthetic pair, including captured Target and actual Attempt
   states. Record the old report's missing Target presentation; preserve the report
   and keep independent-conversation execution pending explicit authorization.
+- **Development — independent host review:** record the authorized installed-only
+  fresh conversation, its correct selected-result comparison and missing-Run
+  diagnosis, recovered reference reads and unchanged input/runtime files. Retain
+  one bootstrap shell-prefix deviation and pending human reader assessment; no
+  runtime change, new release, remote collection or main merge.
 
 ## [0.47.0] - 2026-10-19
 
