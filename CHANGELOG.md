@@ -10,8 +10,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 - **Development — project delivery receipts:** record the authorized 0.47.0
   runtime publication, normal pinned CLI/plugin installation and continuation of
   the existing synthetic object through role adoption, idempotent reception and
-  required-Run checks. Preserve pending human review and real-project collection;
-  do not rebuild the same runtime or claim a main merge.
+  required-Run checks. Add fresh native VS Code observations of both documents,
+  SVG/table/Mermaid rendering and scoped source-link clicks. Preserve pending
+  human review and real-project collection; do not rebuild the same runtime or
+  claim a main merge.
 
 ## [0.47.0] - 2026-10-19
 
