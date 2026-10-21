@@ -49,6 +49,28 @@ these outputs with a file-tree dump, generic status dashboard or machine metadat
   management documents and lightweight archives, not large data or code-recovery packs.
   Existing tracked content/ignore rules are not changed implicitly.
 
+### Execution-child format conformance
+
+Use the execution-child layout in the
+[skeleton manifest](../skills/init-project/references/skeleton-manifest.md), its
+selected [source profile](../skills/init-project/references/source-layout.md), and
+the [experiment record contract](../skills/init-project/references/experiment-records.md).
+The child needs its own stable identity, parent declaration, independent source Git,
+canonical project guidance and source/config/environment/data boundaries. A server
+directory name, upstream clone or role declaration alone does not establish conformance.
+Source modules follow the selected profile and actual upstream requirements, not a
+fixed module count or a forced rewrite of third-party code.
+
+Each experiment owns `experiments/<run-id>/run.yaml`, its captured inputs and
+`artifacts.yaml`; every execution owns `attempts/<attempt-id>/attempt.yaml` and its
+frozen `target.yaml`. Keep all Attempt outcomes. Native tool records may supplement
+these records, not silently replace their identity, recipe or lifecycle semantics.
+Before declaring a child ready for a new experiment, check its applicable layout,
+guidance and required record support. An empty scaffold is not an executed Run.
+For an existing incompatible child, preserve original bytes and report the missing
+declarations/fields and proposed mapping; conversion requires a separately scoped
+migration. Never invent records or reinitialize an existing root to make it pass.
+
 ## Explicit child registration
 
 Use `project register-child --project-root PARENT --child-root CHILD
@@ -103,6 +125,38 @@ Analyze and compare in the parent. Keep names, actual execution times, purpose,
 shared conditions, intentional differences and corresponding results together,
 using the existing review contract. Unknown, remote-only, failed and conflicted
 evidence stays visible; collection does not itself prove a scientific conclusion.
+
+### Timely experiment delivery
+
+For an authorized execution-and-delivery task, collect lightweight evidence at
+Run registration, Attempt start, meaningful result/status milestones, and terminal
+success, failure or interruption. Do not wait for the whole child project or a final
+report to finish. For long-running Attempts, make the running update interval and
+collection owner explicit in the existing task/plan; do not invent a universal cadence
+or another registry. Use stable captured versions and the reception/update rules below,
+not raw directory mirroring of actively changing files.
+
+Essential configuration/environment/data identities, observed status/times, metrics,
+output inventory and necessary compact result material belong in the local parent.
+Evaluate large-output exceptions by actual byte volume and transfer/storage cost,
+not filename extension. Record omitted payloads, their sizes when known, origin and
+producing Attempt in the existing artifact inventory. Keep enough lightweight evidence
+locally to interpret the result; one large output never excuses omitting the whole Run.
+Receiver safety limits are not a universal scientific retention threshold. An oversized
+selection must be prepared explicitly or reported incomplete, never silently truncated.
+
+On a failed transfer or unavailable parent, state which child/Run version was last
+received, when confirmed, and what updates remain outstanding; unknown freshness
+stays unknown. Resume the selected outstanding delivery within its existing authority
+when access returns, without duplicate executions or overwriting local analysis.
+A terminal experiment is not fully delivered until its required lightweight final
+evidence has been received and read back. Keep execution, collection and analysis
+completion separate, including when the collector missed intermediate states.
+
+These are handoff requirements, not an installed background service. Identify missing
+transport or scheduling explicitly. They do not authorize new SSH access, a daemon,
+scheduled automation, broad synchronization, or changing an existing child. A read-only
+review still reports gaps without collecting or repairing them.
 
 ### Delivery handoff for an actual experiment task
 
@@ -520,6 +574,7 @@ automation exists. Determine the installed capability before an operation:
 | Existing role-declaration adoption | `project adopt-role` previews an explicit role for an existing schema-2 project and creates only its absent management declaration using the current digest. Identity and all existing files remain; unchanged roles retain registered children. Instruction/Git-policy/layout migration, source-profile changes, child registration and archive reception remain separate; this is not a second initializer. Check the installed help. |
 | Child registration | `project register-child` previews and byte-CAS appends one already-declared child to an explicitly selected parent. It does not locate/contact a server or change its child declaration. Validate mutual declarations separately; no live synchronization is created. |
 | Parent archive reception and index | collection-plan previews one Run; receive-run supports first reception/identical replay; collected reads the qualified local index. update-plan/update-run provide four-baseline version changes; recovery-plan/recover-update explicitly commit or roll back a pending local journal. Check actual installed help before use. Pending markers block verified reading/replay, not prove a live process. Legacy flat commands still refuse parents; Target registration remains available. No SSH reception, automatic orphan cleanup, history correction or fabricated receipt is implied. |
+| Timely remote delivery | The milestone/interval and large-output rules above are required handoffs. Existing receivers operate on explicitly accessible selected records; no remote transport, automatic scheduler or freshness monitor is supplied by declaring a role or installing the skill. Report unconfigured automation and outstanding evidence rather than promising live synchronization. |
 | Remote code in the material inventory | Additive context schema 1 `execution-code` identifies a registered child, safe relative code path and optional commit. `project remote-code-plan` combines one explicitly selected existing SSH Target and server ledger without connecting or writing. Target selection does not verify the remote child, path, commit, SSH alias or access. No fake local path, arbitrary URI, native open or implicit host binding; see project-context.md. Check installed help before use. |
 | PROJECT and experiment review | Read the explicitly selected, safely accessible material and produce the existing human format. Identify remote/unavailable sources and incomplete lifecycle verification. Review does not collect, execute, edit raw records or grant access to remote roots. |
 | Code recovery and verified backup | `project code-recovery-plan` checks one supplied local self-contained bundle against selected child Run commits; `project retain-code` explicitly retains it with a current digest and immutable per-plan coverage. Check installed help first. No remote bundle creation/transfer, child origin authentication, LFS/submodule payload recovery, uncommitted-work capture, daily clone or verified-backup claim. |

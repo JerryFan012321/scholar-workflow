@@ -34,6 +34,14 @@ in `project-management.json` and require an independent Git root. No remotes are
 New parent ignore rules exclude collection recovery packages as well as code-recovery
 packs; existing ignore files are preserved. Recovery material is not verified backup.
 
+An execution child must conform to the existing role skeleton and Run/Attempt/Target
+record formats, not merely have a role declaration or upstream clone. The shared
+management contract requires lightweight delivery at registration, start, meaningful
+milestones and termination, with an explicit interval for long runs. Large payloads
+may remain remote with an inventory; required small evidence still comes home.
+These are operational requirements, not an automatic sync service. Existing-project
+conversion, transport and scheduling remain separately scoped operations.
+
 ## Usage
 
 Ask Claude Code or Codex:

@@ -7,6 +7,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **init-project / shared project management:** require execution-child conformance
+  to the existing role/profile and experiment record formats. Define timely
+  lightweight delivery at execution milestones, explicit long-run intervals,
+  size-based remote-payload exceptions and outstanding-delivery reporting.
+  Preserve legacy bytes and local analysis; do not imply automatic transport,
+  scheduling, remote deployment or adoption of an unapproved directory proposal.
 - **Development — current exemplar evidence:** reconcile the cleaned test
   documents, installed fresh-conversation review and remaining generation/human
   scope. Replace the stale empty-archive diagnosis with a bounded read-only

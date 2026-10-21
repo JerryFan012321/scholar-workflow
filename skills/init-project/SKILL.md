@@ -12,7 +12,8 @@ pointer.
 
 For a research parent or remote execution child, first load
 `${CLAUDE_PLUGIN_ROOT}/references/project-management.md`. Its role/ownership result
-contract is required. Select `--role research-parent` or `--role execution-child`
+contract is required, including execution-child conformance and timely experiment
+delivery boundaries. Select `--role research-parent` or `--role execution-child`
 explicitly for a new role. See `references/skeleton-manifest.md` for role layouts and
 flags. These modes scaffold an empty chosen root, not remote deployment, child
 registration or experiment reception. For an existing nonempty generic project,

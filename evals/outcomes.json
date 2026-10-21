@@ -2,6 +2,16 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "experiment-timely-lightweight-delivery",
+      "description": "G11/G16/G17/INV62：已授权执行与交付的任务在登记、开始、重要进展和成功/失败/中断结束时回收轻量档案，长实验在原任务/计划明确间隔和责任人，不等整批结束或报告完成。合成输入包括running→terminal更新、大型远端成果、小型指标/图和断线：必要小证据本地可读，大成果按实际体积明确保留清单，断线展示最后确认版本/时间及待回传项，不重跑/复制Run、不覆盖本地分析，不把接收器容量限制当科学留存标准或静默删文件。未配置传输/调度明确未实现，终态轻量证据未收齐则交付未完成。结构检查不证明准时自动回传、安装态one-shot或真实服务器行为，保持pending。",
+      "status": "pending"
+    },
+    {
+      "id": "execution-child-required-format-not-role-only",
+      "description": "G11/G17/INV62：远端执行子项目的合格结果同时符合既有角色骨架、显式source profile与Run/Attempt/Target档案契约，独立Git/稳定身份/父归属/指令拓扑及配置环境数据边界可核对；任意上游clone或只有角色声明不能冒充已就绪。模块数量按真实工程，不强改上游布局；所有执行含失败中断保留。原生JSON可以补充标准记录而非替代，已有不兼容格式先保原文并列身份/字段映射和缺项，不隐式初始化或编造记录。不改变已认可论文/Canvas/PROJECT格式，源码合成测试、正常安装、新宿主与真实远端验收分别取证，保持pending。",
+      "status": "pending"
+    },
+    {
       "id": "existing-project-role-adoption-preserves-identity",
       "description": "G11/G16/INV62：已有schema2非空项目显式adopt-role先零写入预览，再当前根/选定声明与规则字节绑定apply；仅exclusive创建缺失schema1管理声明，原UUID/layout/profile/人工规则/Git策略/计划/档案保留。同角色保留children，异角色/parent/primary、源码profile变更及过期预览拒绝；发布后核验/同步故障报partial，未知暂存保留，不作为完整迁移/原生Git/接收/远端已验证。与登记/接收/显式清单检查组合的合成路径、正常安装和实际项目评鉴分别取证，不以接口开发替代真实资料回收，保持pending。",
       "status": "pending"
