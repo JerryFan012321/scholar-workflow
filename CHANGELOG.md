@@ -5,6 +5,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Changed
+
+- **Development — 0.47.1 installed replay:** record successful normal publication
+  and installation, and the saved single-paper replay's remaining aspect failure.
+  Deferred repair executes once; no main analysis trio is delivered. Preserve the
+  original failure and distinguish authorized cache replacement from protected
+  research files. This record does not change the published 0.47.1 runtime.
+
 ## [0.47.1] - 2026-10-21
 
 ### Fixed
