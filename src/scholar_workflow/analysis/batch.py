@@ -69,6 +69,16 @@ def _fingerprint(request: AnalysisBatchRequest) -> str:
     return "sha256:" + sha256(encoded.encode()).hexdigest()
 
 
+def _can_repair_failed(item: AnalysisItemResult) -> bool:
+    return (
+        item.state is AnalysisState.FAILED
+        and item.repair_count == 0
+        and item.stage_path is None
+        and bool(item.diagnostics)
+        and all(finding.repairable for finding in item.diagnostics)
+    )
+
+
 class AnalysisBatchStore:
     """State-only SQLite store; it never stores paper text or generated artifacts."""
 
@@ -143,6 +153,37 @@ class AnalysisBatchStore:
                     raise KeyError(f"unknown analysis item {batch_id}/{item_id}")
                 raise AnalysisBatchConflict(
                     f"analysis item {batch_id}/{item_id} cannot be claimed from {row[0]}"
+                )
+            self._db.commit()
+        except Exception:
+            self._db.rollback()
+            raise
+        claimed = self.get_item(batch_id, item_id)
+        assert claimed is not None
+        return claimed
+
+    def claim_repair(self, batch_id: str, item_id: str) -> AnalysisItemResult:
+        """Atomically spend the one unused repair before model or staging work."""
+        try:
+            self._db.execute("BEGIN IMMEDIATE")
+            current = self.get_item(batch_id, item_id)
+            if current is None:
+                raise KeyError(f"unknown analysis item {batch_id}/{item_id}")
+            if not _can_repair_failed(current):
+                raise AnalysisBatchConflict(
+                    f"analysis item {batch_id}/{item_id} has no eligible unused repair"
+                )
+            cursor = self._db.execute(
+                """
+                UPDATE analysis_items SET state=?, repair_count=1, updated_at=?
+                WHERE batch_id=? AND item_id=? AND state=?
+                    AND repair_count=0 AND stage_path IS NULL
+                """,
+                (AnalysisState.RUNNING.value, _now(), batch_id, item_id, AnalysisState.FAILED.value),
+            )
+            if cursor.rowcount != 1:
+                raise AnalysisBatchConflict(
+                    f"analysis item {batch_id}/{item_id} repair was already claimed"
                 )
             self._db.commit()
         except Exception:
@@ -280,6 +321,12 @@ def _validate_targeted_repair(
     repaired_claims = {claim.claim_id: claim for claim in repaired.claims}
     if set(original_claims) != set(repaired_claims):
         raise ValueError("targeted repair cannot add or remove claims")
+    aspect_repair = all(finding.repairable for finding in report.findings) and any(
+        finding.code == "canvas-aspect-limit" and finding.path == "canvas/geometry"
+        for finding in report.findings
+    )
+    if aspect_repair and list(original_claims) != list(repaired_claims):
+        raise ValueError("targeted geometry repair cannot change claim order")
     repairable_claim_ids = {
         parts[2]
         for finding in report.findings
@@ -306,9 +353,14 @@ def _validate_targeted_repair(
         ):
             raise ValueError("targeted repair cannot change container state or five-branch point identities or order")
         if repaired_claim != original_claim and claim_id not in repairable_claim_ids:
-            raise ValueError(
-                f"targeted repair changed claim {claim_id!r} outside reported findings"
-            )
+            summary_fields = {"canvas_summary": True, "points": {"__all__": {"canvas_summary": True}}}
+            if not aspect_repair or (
+                repaired_claim.model_dump(exclude=summary_fields)
+                != original_claim.model_dump(exclude=summary_fields)
+            ):
+                raise ValueError(
+                    f"targeted repair changed claim {claim_id!r} outside reported findings"
+                )
 
 
 class AnalysisBatchRunner:
@@ -436,28 +488,47 @@ class AnalysisBatchRunner:
         self.store.ensure_item(batch_id, item)
         current = self.store.get_item(batch_id, item.item_id)
         assert current is not None
+        deferred_repair = repair is not None and _can_repair_failed(current)
         if current.state in {
             AnalysisState.VALIDATED,
             AnalysisState.REPAIRED,
             AnalysisState.FAILED,
-        }:
+        } and not deferred_repair:
             return current
 
         stage_dir = self.stage_root / batch_id / item.item_id
         claimed = False
+        owns_stage = False
         try:
             # A missing/rebound shared root is a batch-wide failure and must be
             # detected before this item transitions to running.  Item-local
             # components are checked only after the atomic claim, so a safety
             # failure can be recorded for this item without racing another owner.
             self._assert_stage_root()
-            self.store.claim_item(batch_id, item.item_id)
+            current = (
+                self.store.claim_repair(batch_id, item.item_id)
+                if deferred_repair else self.store.claim_item(batch_id, item.item_id)
+            )
             claimed = True
+            owns_stage = not deferred_repair
             self._assert_safe_stage_path(stage_dir)
-            self._clear_owned_stage(stage_dir)
-            bundle = self.renderer(item.document, item.note_stem)
-            self._write_stage(stage_dir, bundle)
-            report = validate_bundle(item.document, bundle, note_stem=item.note_stem)
+            if deferred_repair:
+                # The failed attempt was cleaned. A newly existing directory is
+                # not ours, even if it contains familiar stage filenames.
+                stage_dir.parent.mkdir(parents=True, exist_ok=True)
+                self._assert_safe_stage_path(stage_dir)
+                stage_dir.mkdir()
+                owns_stage = True
+                self.store.update_item(
+                    batch_id, item.item_id, AnalysisState.RUNNING, repair_count=1,
+                    diagnostics=current.diagnostics, stage_path=str(stage_dir),
+                )
+                report = ConformanceReport(ok=False, findings=current.diagnostics)
+            else:
+                self._clear_owned_stage(stage_dir)
+                bundle = self.renderer(item.document, item.note_stem)
+                self._write_stage(stage_dir, bundle)
+                report = validate_bundle(item.document, bundle, note_stem=item.note_stem)
             if report.ok:
                 self._write_baseline(
                     stage_dir,
@@ -474,20 +545,22 @@ class AnalysisBatchRunner:
                 )
                 return self.store.get_item(batch_id, item.item_id)  # type: ignore[return-value]
 
-            if repair is not None and current.repair_count == 0 and all(
-                finding.repairable for finding in report.findings
-            ):
+            if repair is not None and (deferred_repair or (
+                current.repair_count == 0 and report.findings
+                and all(finding.repairable for finding in report.findings)
+            )):
                 # Claim the one permitted repair before invoking untrusted/model-owned
                 # repair code.  A crash or exception can therefore never reset the
                 # budget and silently start a second repair in the same batch.
-                self.store.update_item(
-                    batch_id,
-                    item.item_id,
-                    AnalysisState.RUNNING,
-                    repair_count=1,
-                    diagnostics=report.findings,
-                    stage_path=str(stage_dir),
-                )
+                if not deferred_repair:
+                    self.store.update_item(
+                        batch_id,
+                        item.item_id,
+                        AnalysisState.RUNNING,
+                        repair_count=1,
+                        diagnostics=report.findings,
+                        stage_path=str(stage_dir),
+                    )
                 repaired = repair(item.document, report)
                 _validate_targeted_repair(item.document, repaired, report)
                 bundle = self.renderer(repaired, item.note_stem)
@@ -567,7 +640,7 @@ class AnalysisBatchRunner:
                     else None
                 ),
             )
-            if claimed:
+            if owns_stage:
                 try:
                     self._clear_owned_stage(stage_dir)
                 except (OSError, AnalysisStageSafetyError) as cleanup_exc:

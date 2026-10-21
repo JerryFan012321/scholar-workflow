@@ -100,7 +100,10 @@
                 "canvas_summary": {"type": ["string", "null"], "minLength": 1, "maxLength": 180, "pattern": "\\S"},
                 "canvas_image": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/canvas_image"}]},
                 "evidence": {
-                  "allOf": [{"$ref": "#/$defs/supported_quote_emphasis"}],
+                  "allOf": [
+                    {"$ref": "#/$defs/supported_quote_emphasis"},
+                    {"$ref": "#/$defs/evidence_support"}
+                  ],
                   "type": "object",
                   "additionalProperties": false,
                   "required": ["kind"],
@@ -139,7 +142,10 @@
             }
           },
           "evidence": {
-            "allOf": [{"$ref": "#/$defs/supported_quote_emphasis"}],
+            "allOf": [
+              {"$ref": "#/$defs/supported_quote_emphasis"},
+              {"$ref": "#/$defs/evidence_support"}
+            ],
             "type": "object",
             "additionalProperties": false,
             "required": ["kind"],
@@ -171,6 +177,32 @@
     }
   },
   "$defs": {
+    "evidence_support": {
+      "allOf": [
+        {
+          "if": {
+            "required": ["kind"],
+            "properties": {"kind": {"const": "author_stated"}}
+          },
+          "then": {
+            "required": ["anchor"],
+            "properties": {"anchor": {"type": "string", "minLength": 1}}
+          }
+        },
+        {
+          "if": {
+            "required": ["kind"],
+            "properties": {"kind": {"enum": [
+              "analysis_inference", "unverifiable", "not_applicable"
+            ]}}
+          },
+          "then": {
+            "required": ["detail"],
+            "properties": {"detail": {"type": "string", "minLength": 1}}
+          }
+        }
+      ]
+    },
     "canvas_image": {
       "type": "object",
       "additionalProperties": false,

@@ -3,6 +3,7 @@
   "$id": "handoff.schema.json",
   "title": "PreCompactSnapshot",
   "description": "Minimal active-job state saved at PreCompact so work survives context compaction. Named AgentHandoff historically; from_agent/to_agent are hardcoded to 'precompact' — agents do not hand off to each other.",
+  "$comment": "This snapshot does not own paper-analysis batch transitions or repair budgets; those use analysis-batch.schema.json and the separate analysis batch store. A batch repair must not reset a general acquisition job or this snapshot's last_success_state.",
   "type": "object",
   "required": ["job_id", "from_agent", "to_agent", "last_success_state", "created_at"],
   "additionalProperties": false,

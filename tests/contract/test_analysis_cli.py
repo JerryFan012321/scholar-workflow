@@ -171,6 +171,134 @@ def test_analysis_batch_cli_rejects_batch_id_reuse_with_different_input(
     assert "different request" in conflict.output
 
 
+def test_cli_can_apply_the_first_repair_after_a_failed_invocation(tmp_path, monkeypatch):
+    from scholar_workflow.analysis import batch
+    from scholar_workflow.analysis.rendering import AnalysisBundle, render_analysis
+
+    original = tmp_path / "request.json"
+    repaired = tmp_path / "repair.json"
+    request = _request("cli-deferred-repair")
+    _write_request(original, request)
+    _write_request(repaired, request)
+    calls = []
+
+    def fail_first(document, *, note_stem):
+        calls.append(document)
+        bundle = render_analysis(document, note_stem=note_stem)
+        if len(calls) == 1:
+            # Simulate one renderer defect; the real conformance checker must
+            # diagnose it, persist failure and validate the later repaired pair.
+            node = next(row for row in bundle.canvas["nodes"] if "sw-analysis-claim" in row["text"])
+            node["text"] = node["text"].replace("[[", "[")
+            return AnalysisBundle(markdown=bundle.markdown, canvas=bundle.canvas)
+        return bundle
+
+    monkeypatch.setattr(batch, "render_analysis", fail_first)
+    args = ["analysis", "batch-run", "--request", str(original),
+            "--state-db", str(tmp_path / "analysis.db"), "--stage-root", str(tmp_path / "stage")]
+    runner = CliRunner()
+    first = runner.invoke(main, args)
+    assert first.exit_code == 6
+    assert json.JSONDecoder().raw_decode(first.output)[0]["items"][0]["repair_count"] == 0
+    second = runner.invoke(main, [*args, "--repair-request", str(repaired)])
+    assert second.exit_code == 0, second.output
+    payload = json.loads(second.output)
+    assert payload["items"][0]["state"] == "repaired" and payload["items"][0]["repair_count"] == 1
+    assert len(calls) == 2
+    stage = Path(payload["items"][0]["stage_path"])
+    assert {path.name for path in stage.iterdir()} == {"analysis.md", "analysis.canvas", "analysis.baseline.json"}
+    assert runner.invoke(main, [*args, "--repair-request", str(repaired)]).output == second.output
+    assert len(calls) == 2
+
+
+def test_real_v5_geometry_failure_accepts_a_later_summary_only_cli_repair(tmp_path):
+    text = (
+        "这是一条仅用于布局验收的合成记录，不代表真实论文或实验。原始正文、全部具名子项、"
+        "条件和限制都必须保留；图形显示可以采用简要说明，也可以展示这段完整解释，但不得"
+        "删掉记录、改变顺序、修改证据或增加科学结论。此次测试只验证内容投影和文件交付。"
+    )
+    evidence = {"kind": "not_applicable", "detail": "仅验证合成布局，没有科研来源主张。"}
+    raw = {
+        "schema_version": 1, "batch_id": "cli-real-geometry-repair",
+        "items": [{
+            "item_id": "synthetic", "zotero_item_key": "SYNTH001", "note_stem": "合成修复分析",
+            "document": {
+                "schema_version": 5, "artifact_id": "analysis:paper:synthetic-geometry-cli",
+                "paper_title": "合成排版验收", "language": "zh",
+                "profile": {"kind": "whole", "framework": "reference_tree_v5", "markdown_quotes": True},
+                "claims": [{
+                    "claim_id": f"module-{index}", "role": "method",
+                    "outline_path": f"method/modules/module-{index}", "title": f"合成模块{index}",
+                    "body": text, "canvas_summary": "合成布局记录。", "evidence": evidence,
+                    "points": [{
+                        "point_id": slot, "text": text, "canvas_summary": "合成布局记录。",
+                        "evidence": evidence,
+                    } for slot in ("motivation", "method", "why-it-works", "technical-advantage")],
+                } for index in range(20)],
+            },
+        }],
+    }
+    request = AnalysisBatchRequest.model_validate(raw)
+    original_path, repair_path = tmp_path / "request.json", tmp_path / "repair.json"
+    _write_request(original_path, request)
+    changed = request.model_dump(mode="json")
+    for claim in changed["items"][0]["document"]["claims"]:
+        claim["canvas_summary"] = text
+        for point in claim["points"]:
+            point["canvas_summary"] = text
+    _write_request(repair_path, AnalysisBatchRequest.model_validate(changed))
+    args = ["analysis", "batch-run", "--request", str(original_path),
+            "--state-db", str(tmp_path / "analysis.db"), "--stage-root", str(tmp_path / "stage")]
+    runner = CliRunner()
+    first = runner.invoke(main, args)
+    assert first.exit_code == 6, first.output
+    failed = json.JSONDecoder().raw_decode(first.output)[0]["items"][0]
+    assert failed["repair_count"] == 0 and failed["stage_path"] is None
+    assert {finding["code"] for finding in failed["diagnostics"]} == {"canvas-aspect-limit"}
+    repaired = runner.invoke(main, [*args, "--repair-request", str(repair_path)])
+    assert repaired.exit_code == 0, repaired.output
+    result = json.loads(repaired.output)["items"][0]
+    assert result["state"] == "repaired" and result["repair_count"] == 1
+    baseline = json.loads((Path(result["stage_path"]) / "analysis.baseline.json").read_text())
+    assert baseline["document"] == AnalysisBatchRequest.model_validate(changed).items[0].document.model_dump(mode="json")
+
+
+def test_cli_repair_refuses_ambiguous_duplicate_artifact_identities(tmp_path):
+    request = _request("duplicate-repair-artifact")
+    other = request.items[0].model_copy(update={"item_id": "paper-two", "zotero_item_key": "SECOND01"})
+    request = request.model_copy(update={"items": [request.items[0], other]})
+    path = tmp_path / "request.json"
+    _write_request(path, request)
+    database = tmp_path / "analysis.db"
+    result = CliRunner().invoke(main, [
+        "analysis", "batch-run", "--request", str(path), "--repair-request", str(path),
+        "--state-db", str(database), "--stage-root", str(tmp_path / "stage"),
+    ])
+    assert result.exit_code == 2 and "unique original item artifact" in result.output
+    assert not database.exists()
+
+
+@pytest.mark.parametrize("field", ["zotero_item_key", "note_stem", "artifact_id"])
+def test_cli_repair_metadata_must_match_the_original_item_before_state_writes(tmp_path, field):
+    original_path, repair_path = tmp_path / "request.json", tmp_path / "repair.json"
+    request = _request("cli-repair-identity")
+    changed = request.model_dump(mode="json")
+    if field == "artifact_id":
+        changed["items"][0]["document"][field] = "analysis:paper:another-item"
+    else:
+        changed["items"][0][field] = "ANOTHER"
+    _write_request(original_path, request)
+    repair_path.write_text(json.dumps(changed))
+    database, stage = tmp_path / "analysis.db", tmp_path / "stage"
+    result = CliRunner().invoke(main, [
+        "analysis", "batch-run", "--request", str(original_path),
+        "--repair-request", str(repair_path), "--state-db", str(database), "--stage-root", str(stage),
+    ])
+    assert result.exit_code == 2, result.output
+    assert "original item" in result.output
+    assert not database.exists() and not stage.exists()
+
+
 def test_analysis_batch_audit_cli_is_read_only(tmp_path: Path) -> None:
     request_path = tmp_path / "request.json"
     state_db = tmp_path / "analysis.db"

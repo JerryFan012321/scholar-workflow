@@ -112,6 +112,84 @@ def test_checked_in_analysis_ir_schema_accepts_runtime_document() -> None:
     jsonschema.validate(_whole_document().model_dump(mode="json"), schema)
 
 
+def _evidence_payload(version: int, location: str, kind: str) -> dict:
+    evidence = {"kind": kind}
+    if kind == "author_stated":
+        evidence["anchor"] = "Section 2"
+    if kind in {"analysis_inference", "unverifiable", "not_applicable"}:
+        evidence["detail"] = "The supplied source has this explicitly stated boundary."
+    if version == 2:
+        payload = _whole_document().model_dump(mode="json")
+        payload["schema_version"] = 2
+    else:
+        payload = {
+            "schema_version": 5,
+            "artifact_id": "analysis:synthetic-evidence",
+            "paper_title": "Synthetic evidence input",
+            "language": "en",
+            "profile": {
+                "kind": "focused", "roles": ["method"],
+                "framework": "reference_tree_v5", "markdown_quotes": True,
+            },
+            "claims": [{
+                "claim_id": "overview", "role": "method", "title": "Overview",
+                "outline_path": "method/overview", "body": "A complete explanation.",
+                "evidence": {"kind": "author_stated", "anchor": "Section 2"},
+            }],
+        }
+        span = {
+            "kind": "zotero_pdf", "library_type": "personal", "library_id": "123",
+            "attachment_key": "ABCD1234", "content_hash": "sha256:" + "a" * 64,
+            "page_index": 0, "quote": "This synthetic source states its conditions.",
+        }
+        payload["claims"][0]["evidence"]["source_spans"] = [span]
+        if kind in {"author_stated", "analysis_inference"}:
+            evidence["source_spans"] = [span]
+    if location == "claim":
+        payload["claims"][0]["evidence"] = evidence
+    else:
+        payload["claims"][0]["points"] = [{
+            "point_id": "task-io", "text": "A complete point explanation.",
+            "evidence": evidence,
+        }]
+    return payload
+
+
+@pytest.mark.parametrize("version", [2, 5])
+@pytest.mark.parametrize("location", ["claim", "point"])
+@pytest.mark.parametrize("kind", [kind.value for kind in EvidenceKind])
+def test_schema_and_runtime_accept_supported_evidence_fields(version, location, kind):
+    schema = json.loads((ROOT / "contracts/analysis-ir.schema.json").read_text())
+    payload = _evidence_payload(version, location, kind)
+    AnalysisDocument.model_validate(payload)
+    jsonschema.validate(payload, schema)
+
+
+@pytest.mark.parametrize("version", [2, 5])
+@pytest.mark.parametrize("location", ["claim", "point"])
+@pytest.mark.parametrize("kind,field", [
+    ("author_stated", "anchor"), ("analysis_inference", "detail"),
+    ("unverifiable", "detail"), ("not_applicable", "detail"),
+])
+@pytest.mark.parametrize("invalid", ["missing", None, ""])
+def test_schema_rejects_evidence_missing_runtime_support(version, location, kind, field, invalid):
+    schema = json.loads((ROOT / "contracts/analysis-ir.schema.json").read_text())
+    payload = _evidence_payload(version, location, kind)
+    AnalysisDocument.model_validate(payload)
+    jsonschema.validate(payload, schema)
+    record = payload["claims"][0]
+    if location == "point":
+        record = record["points"][0]
+    if invalid == "missing":
+        del record["evidence"][field]
+    else:
+        record["evidence"][field] = invalid
+    with pytest.raises(ValidationError):
+        AnalysisDocument.model_validate(payload)
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(payload, schema)
+
+
 def test_v3_source_spans_require_traceable_support_without_breaking_legacy_ir() -> None:
     schema = json.loads(
         (ROOT / "contracts" / "analysis-ir.schema.json").read_text(encoding="utf-8")

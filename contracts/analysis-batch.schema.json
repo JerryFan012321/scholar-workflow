@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://scholar-workflow.local/contracts/analysis-batch.schema.json",
   "title": "AnalysisBatchRequest",
+  "$comment": "The original request remains fingerprint-bound. An explicit repair may atomically claim failed -> running(repair_count=1) only with unused budget, nonempty wholly repairable diagnostics and no retained stage. Completed, nonrepairable and budget-spent items replay without regeneration. A repair request preserves ordered item/Zotero/note identities; a global aspect finding permits Canvas-summary-only changes, not scientific content or topology rewrites.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "batch_id", "items"],

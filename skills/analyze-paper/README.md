@@ -150,6 +150,13 @@ the complete candidate; it never authorizes dropped or merged branches. Legacy v
 See `references/analysis-output-template.md` for the complete geometry contract. Existing v4
 pairs retain their own versioned projection and are not silently converted.
 
+In runtimes supporting dense content-fit layout, a new v5 candidate that is still
+too tall may use actual statement width to reduce wrapping. Short labels, images,
+fonts, all content and links remain unchanged; tested safe layouts favor shorter
+square routes. If text cannot supply useful width, the complete candidate still
+fails rather than acquiring empty oversized cards. Existing safe pair layouts are
+preserved. Check installed support and assess appearance separately.
+
 The legacy joint-placement, provider-bootstrap and Field legacy-cutover interfaces still
 accept v4 only. New v5 analysis support does not enable those migration routes or authorize
 Field initialization, relocation or a silent v5-to-v4 downgrade.
@@ -199,6 +206,14 @@ without grading prose style or the model's reasoning method. A failing item rece
 targeted repair. If it still fails, its staged drafts are removed after diagnostics are recorded;
 successful siblings remain available. Zotero items, PDFs, and canonical knowledge artifacts are
 never part of this rollback.
+
+In supporting runtimes, a failed item with unused budget and clean, wholly repairable
+diagnostics can receive its first explicit `--repair-request` on a later invocation.
+Keep `--request` unchanged; the separate repair file preserves item/reader targets.
+The budget is claimed atomically before callbacks and survives interruption; ordinary
+replay or a spent repair does not regenerate content. A global aspect repair permits
+Canvas-summary-only changes, not scientific rewrites. Runtime 0.47.0 lacks the deferred
+path; check installed support and the exact contract in `references/analysis-batch.md`.
 
 A conformant stage becomes canonical only through the three-file CAS commit. Markdown, Canvas,
 and the analysis sidecar share a journal and receipt; stale base hashes or symlinks fail closed,

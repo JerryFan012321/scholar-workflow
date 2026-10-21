@@ -12,6 +12,9 @@ item states are:
 queued → running → validated
                  → repaired
                  → failed
+
+failed (unused repair, safe/clean state)
+    └─ explicit targeted repair → running (repair_count = 1) → repaired / failed
 ```
 
 Run the deterministic gate with:
@@ -20,10 +23,24 @@ Run the deterministic gate with:
 scholar-workflow analysis batch-run --request <batch.json>
 ```
 
-The request must conform to `analysis-batch.schema.json`. If the host has produced one targeted
-repair IR for each failed item, pass it once with `--repair-request <batch.json>`; the persistent
-repair budget is claimed before the repair callback runs. The command exits nonzero for a partial
-or failed batch, so emitting files alone can never be interpreted as success.
+The request must conform to `analysis-batch.schema.json`. Keep this original request
+unchanged. If the host has produced a targeted repair IR, pass the separate request
+with `--repair-request <repair.json>`. It uses the same batch ID, ordered item IDs,
+Zotero keys, note stems and distinct original artifact identities; keep unselected
+successful siblings unchanged. The command exits nonzero for a partial or failed
+batch, so emitting files alone can never be interpreted as success.
+
+In a supporting runtime this option works both during the initial invocation and
+after a recorded failure with an unused repair. The latter requires nonempty,
+entirely repairable diagnostics, `repair_count: 0` and no retained stage. The store
+atomically changes that item to running with budget 1 before any callback/staging;
+competing runners cannot acquire or clean its stage. It uses the recorded findings,
+not a repeat generation of the original failed IR. A deferred repair creates a fresh
+stage exclusively: an unexpected existing directory/file or symlink is preserved
+and reported, never adopted merely because its filenames are familiar.
+
+Runtime 0.47.0 does not supply this deferred path even though it accepts the flag.
+Check the normally installed build's support; a source fix does not upgrade it.
 
 For each item:
 
@@ -36,9 +53,21 @@ For each item:
    receipt, then record `failed`. If cleanup itself fails, retain the exact stage path in state so
    the read-only audit can report the residue; never hide it by clearing the pointer.
 
-`repair_count` is persistent and never exceeds one. Replaying the same completed or failed batch
-returns its recorded result; it does not regenerate content or open another repair loop. Reusing a
-batch ID with different input is an identity conflict.
+`repair_count` is persistent and never exceeds one. Ordinary replay, successful items,
+nonrepairable/residual-stage failures and spent repairs return their recorded state
+without generation. An explicit first eligible repair is the only exception to
+failed-state replay. Callback failure or interruption does not restore its budget;
+a persisted running owner is not restarted merely because a process may have died.
+Inspect the read-only audit and preserve its stage/diagnostics. Reusing a batch ID
+with different original input is an identity conflict, not a retry mechanism.
+
+A global `canvas-aspect-limit` at `canvas/geometry` may authorize faithful
+`canvas_summary` changes on claims/points only. It does not authorize changes to
+body/point text, titles, evidence, images, identities, framework, slots or their
+order. Other repairs remain limited to the reported claim paths. No repair can
+invent evidence, remove material qualifications or bypass the hard conformance gate.
+For a repaired stage, its baseline contains the actual repaired IR; use that IR and
+the returned `repaired` source state at canonical commit, not the original failed IR.
 
 ## Canonical commit
 

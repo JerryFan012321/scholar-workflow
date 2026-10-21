@@ -2,6 +2,26 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "analysis-explicit-deferred-repair-uses-unused-budget",
+      "description": "G13/G17/INV41：同一原始request指纹的failed项，只有非空全可修复诊断、无残留指针及repair_count=0时可显式提交首次延后repair。预算原子持久领取后才回调/建暂存；同输入回放不重生成、两连接/竞争runner不能抢写、进程中断不返还预算或重启running所有者。新出现的暂存文件/符号链接保留并诊断，兄弟合格项不动。全局canvas-aspect-limit仅可调整Canvas摘要，科学正文/证据/图片/身份/顺序守恒；CLI校验原论文/正文/产物目标后才写状态，最终sidecar持有实际修复IR。合成真实v5长宽比失败经公开CLI延后摘要修复交付三文件；仍须正常安装、新宿主与真实论文/人工分别取证，当前未发布安装，本项pending。",
+      "status": "pending"
+    },
+    {
+      "id": "analysis-dense-content-fit-preserves-required-output",
+      "description": "G13/G17/INV40/INV54：新v5完整大树过纵时，保持五分支、全部实例/具名子槽、文本/来源/反链、图片和字号，仅按实际文字尝试加宽及重新测量换行/点击留白；框架短标签和图片不随之撑宽。候选仍须通过2:1/420px、同层对齐、无交叉/遮挡；在已尝试安全布局中按实际直角折线选短路线，不宣称全局最优。文字不足或几何仍不合格时完整原候选保留失败，不删分支/凑空白；已有安全文档对更新不重画。独立中英合成大树/图片/不可解负例/过宽上界/旧布局测试与安装态、原生外观和新宿主生成分别取证；当前未发布安装，本项pending。",
+      "status": "pending"
+    },
+    {
+      "id": "project-human-editable-role-operations",
+      "description": "G11/G16/G17/INV62：一个合成父项目和两个子项目（其一primary）均可通过文档化非前端入口直接编辑非秘密配置、查看帮助、生效值/来源和相对基线差异。新入口按默认→recipe→显式覆盖，已有上游规则明确保留；未知键/类型/歧义拒绝，预览不执行。父端只管资料/回收选择，不建立子源码clone或用父HEAD记实验；primary不是第三布局。子端Run冻结真实commit及生效输入，后续配置修改不改变原Run；一个入口可调用多个模块而非万能大脚本。输入/预期先冻结，源码测试、正常安装和人工改参/读回分别取证；当前统一入口未实现，本项pending，不因文档或结构检查通过宣称可用。",
+      "status": "pending"
+    },
+    {
+      "id": "project-parent-child-exchange-confirmed-evidence",
+      "description": "G11/G16/G17/INV62：合成父子任务下发、单Run running→terminal回传及父端确认分别核对。原始配方/配置/执行事实由子端持有，父端保留分析/唯一计划；收据表示实际本地读回的版本、时间与缺项，不以发送成功/mtime推断已收到。重传不重复执行或建Run，合法更新用旧receipt基线，过期/未知文件/不兼容版本拒绝且保留本地分析。必要小证据本地可读，大payload按明确Target/清单留可传Run之外；错误放在Run内仍超过接收器限制，不静默过滤。断线保持待传/待确认，不以新registry、目录镜像或报告制造同步成功。当前选择性导出/传输未实现，开发合成、正常安装、远端及人工验收独立，本项pending。",
+      "status": "pending"
+    },
+    {
       "id": "experiment-timely-lightweight-delivery",
       "description": "G11/G16/G17/INV62：已授权执行与交付的任务在登记、开始、重要进展和成功/失败/中断结束时回收轻量档案，长实验在原任务/计划明确间隔和责任人，不等整批结束或报告完成。合成输入包括running→terminal更新、大型远端成果、小型指标/图和断线：必要小证据本地可读，大成果按实际体积明确保留清单，断线展示最后确认版本/时间及待回传项，不重跑/复制Run、不覆盖本地分析，不把接收器容量限制当科学留存标准或静默删文件。未配置传输/调度明确未实现，终态轻量证据未收齐则交付未完成。结构检查不证明准时自动回传、安装态one-shot或真实服务器行为，保持pending。",
       "status": "pending"

@@ -7,13 +7,15 @@ are fixed below; no production geometry checker is used as an oracle.
 
 from copy import deepcopy
 from itertools import combinations, pairwise
+from math import ceil
 
 import pytest
 
 from scholar_workflow.analysis import complete_reference
 from scholar_workflow.analysis.complete_reference import TemplateNode, _layout_tree
+from scholar_workflow.analysis.conformance import validate_bundle
 from scholar_workflow.analysis.models import AnalysisDocument
-from scholar_workflow.analysis.rendering import render_analysis
+from scholar_workflow.analysis.rendering import AnalysisBundle, canvas_node_id, render_analysis
 from scholar_workflow.analysis.updates import create_baseline, plan_analysis_update
 
 BRANCHES = ("Abstract", "Introduction", "Method", "Experiments", "Limitation")
@@ -445,3 +447,237 @@ def test_public_v5_render_shortens_columns_without_reflowing_existing_pairs(monk
     assert plan.status == "ready" and plan.conflicts == ()
     assert plan.proposed == old
     _assert_safe_geometry(_actual_canvas_tree(plan.proposed.canvas))
+
+
+def _dense_document(language="en", *, images=False, short=False, descriptive_titles=False):
+    """Synthetic statements/locators only; counts are inputs, not a new quota."""
+    text = (
+        "Synthetic inputs and observed outputs retain their qualifications; layout must "
+        "preserve the complete statement, evidence, source links and named framework slots."
+        if language == "en" else
+        "本合成记录只用于检查排版，不代表任何真实论文结论。所选输入、执行条件、观察结果和适用"
+        "范围必须完整保留，不能为缩短图形而删除限定条件、证据、原文入口或正文反向链接。每项"
+        "模块的全部子栏目仍为独立可编辑节点，布局只可调整几何尺寸，不改写科学陈述。"
+    )
+    if short:
+        text = "Synthetic."
+    source = {
+        "kind": "zotero_pdf", "library_type": "personal", "library_id": "99999999",
+        "attachment_key": "SYNTH001", "content_hash": "sha256:" + "0" * 64,
+        "page_index": 0,
+    }
+    evidence = {
+        "kind": "author_stated", "anchor": "Synthetic physical page 1",
+        "source_spans": [{**source, "quote": "This is a complete synthetic source sentence."}],
+    }
+    families = (
+        ("abstract", "abstract/task", 1, ()),
+        ("abstract", "abstract/insight", 1, ("motivation", "advantage")),
+        ("abstract", "abstract/contributions", 4, ("summary", "advantage")),
+        ("introduction", "introduction/previous_methods", 4,
+         ("previous-method", "limitation", "technical-reason")),
+        ("introduction", "introduction/our_pipeline/contributions", 4,
+         ("purpose", "how", "advantage")),
+        ("method", "method/overview", 1, ("task-io", "steps")),
+        ("method", "method/modules", 12 if not short else 60,
+         ("motivation", "method", "why-it-works", "technical-advantage")),
+        ("experiments", "experiments/comparison", 5,
+         tuple(f"finding-{index}" for index in range(1, 6))),
+        ("experiments", "experiments/ablation", 4, ("components", "design-choices")),
+        ("limitation", "limitation/explanation", 4, ("reason-1", "reason-2")),
+    )
+    claims = []
+    for family, (role, prefix, count, slots) in enumerate(families):
+        for number in range(count):
+            claim_id = f"synthetic-{family}-{number}"
+            path = prefix if prefix in {"abstract/task", "abstract/insight", "method/overview"} else f"{prefix}/{claim_id}"
+            claims.append({
+                "claim_id": claim_id, "role": role, "outline_path": path,
+                "title": (
+                    f"Synthetic {family}-{number}: fixed inputs, recorded outputs and all "
+                    "qualifications belong to this isolated geometry case"
+                    if descriptive_titles else f"Synthetic {family}-{number}"
+                ), "body": text,
+                "canvas_summary": text, "evidence": deepcopy(evidence),
+                "points": [{
+                    "point_id": slot, "text": text, "canvas_summary": text,
+                    "evidence": deepcopy(evidence),
+                } for slot in slots],
+            })
+    if images:
+        for family, kind in ((5, "process_diagram"), (7, "experimental_table")):
+            record = next(claim for claim in claims if claim["claim_id"] == f"synthetic-{family}-0")
+            record["points"][0]["canvas_image"] = {
+                "kind": kind, "asset_id": f"synthetic:{kind}",
+                "image_path": f"attachments/{kind}.png", "sha256": "1" * 64,
+                "pixel_width": 640, "pixel_height": 240,
+                "caption": f"Synthetic {kind}", "source": deepcopy(source),
+            }
+    return AnalysisDocument.model_validate({
+        "schema_version": 5, "artifact_id": "analysis:paper:synthetic-dense-layout",
+        "paper_title": "Synthetic Dense Layout", "language": language,
+        "profile": {"kind": "whole", "framework": "reference_tree_v5", "markdown_quotes": True},
+        "claims": claims,
+    })
+
+
+def _original_dense_tree(document, note):
+    tree = complete_reference.template_tree(document, note)
+    _layout_tree(tree, expanded=True)
+    return tree
+
+
+@pytest.mark.parametrize("language", ["en", "zh"])
+@pytest.mark.parametrize("images", [False, True])
+def test_dense_v5_uses_content_width_without_losing_records_or_geometry(language, images):
+    document = _dense_document(language, images=images, descriptive_titles=language == "en")
+    frozen = document.model_dump_json()
+    note = "Synthetic Dense Analysis"
+    original = _original_dense_tree(document, note)
+    old_width, old_height = _bounds(original)
+    assert old_height > 2 * old_width  # Existing narrow-card layout is the actual failure.
+    original_markdown = complete_reference._render_markdown(document, original)
+
+    bundle = render_analysis(document, note_stem=note)
+    report = validate_bundle(document, bundle, note_stem=note)
+    assert report.ok, report.model_dump()
+    assert bundle.markdown == original_markdown
+    actual = {node["id"]: node for node in bundle.canvas["nodes"]}
+    original_nodes = _nodes(original)
+    assert set(actual) == {
+        canvas_node_id(document.artifact_id, path) for path in original_nodes
+    }
+    assert len(actual) == len(original_nodes) and len(bundle.canvas["edges"]) == len(actual) - 1
+    changed = []
+    for path, old in original_nodes.items():
+        node = actual[canvas_node_id(document.artifact_id, path)]
+        assert node["text"] == old.text and node["type"] == "text"
+        assert node["height"] <= 420 and "fontSize" not in node
+        if node["width"] != old.width:
+            assert old.kind in {"claim", "point"}
+            assert old.width < node["width"] < 4000
+            assert node["height"] <= old.height
+            changed.append(path)
+        else:
+            assert node["height"] == old.height
+    assert changed
+    expected_edges = {
+        (canvas_node_id(document.artifact_id, parent), canvas_node_id(document.artifact_id, child))
+        for parent, child in _edges(original)
+    }
+    assert {(edge["fromNode"], edge["toNode"]) for edge in bundle.canvas["edges"]} == expected_edges
+    assert document.model_dump_json() == frozen
+    tree = _actual_canvas_tree(bundle.canvas)
+    width, height = _bounds(tree)
+    assert max(width / height, height / width) <= 2
+    assert height < old_height
+    _assert_safe_geometry(tree)
+
+
+def test_dense_render_update_preserves_an_existing_safe_narrow_card_layout():
+    document, note = _dense_document(images=True, descriptive_titles=True), "Synthetic Dense Analysis"
+    old = _original_dense_tree(document, note)
+    old_nodes = _nodes(old)
+    _, height = _bounds(old)
+    factor = ceil(height / max(node.x for node in old_nodes.values()))
+    for node in old_nodes.values():
+        node.x *= factor
+    _assert_safe_geometry(old)
+    fresh = render_analysis(document, note_stem=note)
+    previous = deepcopy(fresh.canvas)
+    for path, node in old_nodes.items():
+        payload = next(row for row in previous["nodes"] if row["id"] == canvas_node_id(document.artifact_id, path))
+        payload.update(x=node.x, y=node.y, width=node.width, height=node.height)
+    accepted = AnalysisBundle(markdown=fresh.markdown, canvas=previous)
+    baseline = create_baseline(document, accepted, note_stem=note)
+    plan = plan_analysis_update(current=accepted, baseline=baseline, update=document, note_stem=note)
+    assert plan.status == "ready" and plan.conflicts == ()
+    assert plan.proposed == accepted
+
+
+def test_short_text_cannot_be_widened_into_empty_cards_to_hide_a_tall_tree():
+    document, note = _dense_document(short=True), "Synthetic Dense Analysis"
+    original = _original_dense_tree(document, note)
+    bundle = render_analysis(document, note_stem=note)
+    report = validate_bundle(document, bundle, note_stem=note)
+    assert not report.ok and "canvas-aspect-limit" in {item.code for item in report.findings}
+    actual = {node["id"]: node for node in bundle.canvas["nodes"]}
+    assert len(actual) == len(_nodes(original))
+    for path, node in _nodes(original).items():
+        row = actual[canvas_node_id(document.artifact_id, path)]
+        assert (row["text"], row["width"], row["height"]) == (node.text, node.width, node.height)
+
+
+def test_insufficient_content_width_keeps_the_complete_original_failed_candidate():
+    # This English input has enough rows that even a fully unwrapped statement
+    # cannot meet 2:1. It is a negative case, not permission to pad its cards.
+    document, note = _dense_document(), "Synthetic Dense Analysis"
+    original = _original_dense_tree(document, note)
+    bundle = render_analysis(document, note_stem=note)
+    report = validate_bundle(document, bundle, note_stem=note)
+    assert not report.ok and "canvas-aspect-limit" in {item.code for item in report.findings}
+    actual = {row["id"]: row for row in bundle.canvas["nodes"]}
+    assert len(actual) == len(_nodes(original))
+    for path, node in _nodes(original).items():
+        row = actual[canvas_node_id(document.artifact_id, path)]
+        assert (row["text"], row["x"], row["y"], row["width"], row["height"]) == (
+            node.text, node.x, node.y, node.width, node.height,
+        )
+
+
+def test_dense_width_choice_prefers_shorter_actual_routes_among_safe_trials(monkeypatch):
+    root = _original_dense_tree(_dense_document("zh", images=True), "Synthetic Dense Analysis")
+    layout = complete_reference._layout_tree
+    safe_trials = []
+
+    def route_length(tree):
+        nodes = _nodes(tree)
+        return sum(
+            abs(a[0] - b[0]) + abs(a[1] - b[1])
+            for source, target in _edges(tree)
+            for a, b in _square_segments(nodes[source], nodes[target])
+        )
+
+    def observe(tree, **options):
+        layout(tree, **options)
+        width, height = _bounds(tree)
+        if max(width / height, height / width) <= 2:
+            _assert_safe_geometry(tree)
+            safe_trials.append(route_length(tree))
+
+    monkeypatch.setattr(complete_reference, "_layout_tree", observe)
+    complete_reference._fit_dense_tree_text(root)
+    assert len(set(safe_trials)) >= 2
+    assert route_length(root) == min(safe_trials)
+
+
+def test_overwide_natural_text_still_allows_a_safe_intermediate_width(monkeypatch):
+    # Geometry-only boundary, not a valid public IR with oversized summaries
+    # or more source spans than its unchanged evidence contract permits.
+    root = _regular_tree()
+    for section in root.children:
+        parent = section.children[-1]
+        parent.children.extend([
+            _node(f"{parent.path}/extra-{index}", "point", 280, 100) for index in range(2)
+        ])
+    for node in _nodes(root).values():
+        if node.kind in {"claim", "point"}:
+            node.text = "W" * 1000
+            node.width, node.height = complete_reference._dimensions(node.text, node.kind)
+    _layout_tree(root, expanded=True)
+    old_width, old_height = _bounds(root)
+    assert old_height > 2 * old_width
+    layout, trials = complete_reference._layout_tree, []
+
+    def observe(tree, **options):
+        layout(tree, **options)
+        trials.append(_bounds(tree))
+
+    with monkeypatch.context() as inspection:
+        inspection.setattr(complete_reference, "_layout_tree", observe)
+        complete_reference._fit_dense_tree_text(root)
+    assert trials[0][0] > 2 * trials[0][1]
+    width, height = _bounds(root)
+    assert max(width / height, height / width) <= 2
+    assert all(node.height <= 420 for node in _nodes(root).values())
+    _assert_safe_geometry(root)
