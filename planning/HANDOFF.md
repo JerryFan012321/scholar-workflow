@@ -1,5 +1,26 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-21：清洁版已展示；真实项目不再是空档案，接入仍未完成
+
+上一轮为progress：按用户要求原位整理test同一父项目的PROJECT与实验报告，保留六节/
+唯一计划、条件结果同表、十Attempt和缺失Run；54链接/锚点有效，77文件仅两页变化，
+其余75内容/权限保持。VS Code实际显示新版图/表/Mermaid，PROJECT→报告、报告→
+冻结Target和条件结果锚点打开正确。检查细节留原回执，无副本/训练/发布/安装/提交；
+新版阅读意见仍待用户，不能用旧典范认可自动放行本次改写。
+
+本轮只读发现真实毕设experiments现有fantasyworld/lyra2，不再沿用19日report-only/
+空目录为当前结论。只核一个已知FantasyWorld Run：现有recipe.json、attempt.json、
+target.json、环境/输入/权重清单及process-result；后者记录退出0，不等于独立执行或
+科学验证。没有run.yaml、attempt.yaml、artifacts.yaml或.collection.json；不能从
+JSON/视频反造canonical回执。父项目management缺失，正常0.47.0 validate-management
+exit2；adopt-role只读预览成功，仅建议保留原UUID新增声明，未apply、未登记child。
+PROJECT/SCHEDULE缺失但原分组计划存在；接入不能另建冲突计划或覆盖原文。
+
+下一步先审现有JSON→标准档案的身份/字段/来源映射与缺项，再按明确授权接入；不能
+宣称所有实验都未回收或重新下载已存在文件。本轮不SSH、不改真实/test业务资料，
+不重跑有效样例、不合并main。四类完整交付及论文/项目生成类新宿主one-shot仍开放；
+已通过的独立对话仅覆盖所选实验只读比较，不推广为生成能力全部通过。G17保持active。
+
 ## 2026-10-20：新对话只读比较完成，业务结果通过、人工显示仍待
 
 用户授权后用原生create_thread新建独立projectless对话，默认模型/思考设置未覆盖。

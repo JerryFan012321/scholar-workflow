@@ -7,6 +7,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development — current exemplar evidence:** reconcile the cleaned test
+  documents, installed fresh-conversation review and remaining generation/human
+  scope. Replace the stale empty-archive diagnosis with a bounded read-only
+  observation of existing noncanonical JSON records and a declaration-only
+  adoption preview. Preserve original plans/data; no runtime or service change.
 - **Development — project delivery receipts:** record the authorized 0.47.0
   runtime publication, normal pinned CLI/plugin installation and continuation of
   the existing synthetic object through role adoption, idempotent reception and
