@@ -5,6 +5,73 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.47.1] - 2026-10-21
+
+### Fixed
+
+- **analyze-paper:** allow one explicit deferred repair of an eligible failed
+  batch item instead of silently replaying its unused failure. Atomically spend
+  the existing budget, preserve interrupted owners and foreign staging files,
+  and leave successful siblings untouched. Permit summary-only changes for a
+  global aspect finding; retain scientific content, evidence and topology.
+  Validate repair item/Zotero/note/artifact correspondence before state writes.
+  This is a source fix, not an upgrade or new installed-paper acceptance.
+- **analyze-paper:** add a content-fit fallback for new v5 trees that remain too
+  tall after bounded spacing. Widen only actual claim/point text up to measured
+  natural line widths, preserve fonts/framework/links/images, and choose shorter
+  actual square routes among safe trials. Keep complete failures when text cannot
+  fit and preserve accepted paired layouts; no installed or real-paper acceptance
+  is implied by the synthetic development checks.
+- **analyze-paper:** align public IR-schema evidence requirements with the
+  existing runtime for both claims and points: author anchors and inference/
+  availability explanations cannot be missing, null or empty. Preserve valid
+  legacy/current inputs and existing runtime/rendering behavior. An independent
+  installed-only generation exposed the mismatch; the active installation is
+  unchanged during that acceptance run.
+
+### Changed
+
+- **init-project / shared project management:** specify human-editable nonsecret
+  config, discoverable non-frontend operations and captured effective Run inputs
+  for both roles. Keep editable settings separate from generated identities,
+  frozen records and integrity receipts. Separate task handoff, child execution evidence and confirmed
+  parent receipt; preserve single authorities and local analysis. Document the
+  whole-Run collection limit and large-output placement gap. The unified launcher,
+  selective exporter and remote transport are targets, not supplied capabilities.
+- **Development — one-shot paper acceptance:** record the explicitly authorized
+  installed-only generation's actual failure, absent main trio, aspect-limit finding
+  and ineffective explicit repair replay. Keep its original IR/diagnostics, caller-only
+  expectations, 825 unchanged protected files and independent byte replay of eleven
+  source images. Source/visual acceptance and the new non-frontend project usability/
+  transfer requirements remain separate; no new command, service or migration is claimed.
+- **init-project / shared project management:** require execution-child conformance
+  to the existing role/profile and experiment record formats. Define timely
+  lightweight delivery at execution milestones, explicit long-run intervals,
+  size-based remote-payload exceptions and outstanding-delivery reporting.
+  Preserve legacy bytes and local analysis; do not imply automatic transport,
+  scheduling, remote deployment or adoption of an unapproved directory proposal.
+- **Development — current exemplar evidence:** reconcile the cleaned test
+  documents, installed fresh-conversation review and remaining generation/human
+  scope. Replace the stale empty-archive diagnosis with a bounded read-only
+  observation of existing noncanonical JSON records and a declaration-only
+  adoption preview. Preserve original plans/data; no runtime or service change.
+- **Development — project delivery receipts:** record the authorized 0.47.0
+  runtime publication, normal pinned CLI/plugin installation and continuation of
+  the existing synthetic object through role adoption, idempotent reception and
+  required-Run checks. Add fresh native VS Code observations of both documents,
+  SVG/table/Mermaid rendering and scoped source-link clicks. Preserve pending
+  human review and real-project collection; do not rebuild the same runtime or
+  claim a main merge.
+- **Development — independent host inputs:** freeze a read-only input preflight
+  for the existing synthetic pair, including captured Target and actual Attempt
+  states. Record the old report's missing Target presentation; preserve the report
+  and keep independent-conversation execution pending explicit authorization.
+- **Development — independent host review:** record the authorized installed-only
+  fresh conversation, its correct selected-result comparison and missing-Run
+  diagnosis, recovered reference reads and unchanged input/runtime files. Retain
+  one bootstrap shell-prefix deviation and pending human reader assessment; no
+  runtime change, new release, remote collection or main merge.
+
 ## [0.47.0] - 2026-10-19
 
 ### Changed

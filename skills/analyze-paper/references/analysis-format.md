@@ -146,6 +146,13 @@ The other states are `unverifiable` (当前正文通道无法核实; current ind
 material) and `not_applicable` (不适用; reason supplied). `not_reported` means supported absence, not merely a missing
 figure or table in Zotero's text index. There is no detached Evidence section, table, or node.
 
+For claims and points in every IR version, `author_stated` requires a nonempty
+`evidence.anchor`; `analysis_inference`, `unverifiable` and `not_applicable` require
+a nonempty `evidence.detail`. An inference detail states how the cited observation
+supports this interpretation and its boundary; an unavailable/not-applicable detail
+states the specific gap or reason. Source spans and a quote do not replace these
+fields. These are existing runtime requirements, also checked by the public schema.
+
 For every v4 `author_stated` or `analysis_inference` claim/point, evidence includes at least
 one `source_span`. A Zotero PDF span records library identity/type, current attachment key,
 content hash, **zero-based physical** `page_index`, optional display-only `page_label`, and an

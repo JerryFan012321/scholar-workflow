@@ -49,6 +49,115 @@ these outputs with a file-tree dump, generic status dashboard or machine metadat
   management documents and lightweight archives, not large data or code-recovery packs.
   Existing tracked content/ignore rules are not changed implicitly.
 
+### Execution-child format conformance
+
+Use the execution-child layout in the
+[skeleton manifest](../skills/init-project/references/skeleton-manifest.md), its
+selected [source profile](../skills/init-project/references/source-layout.md), and
+the [experiment record contract](../skills/init-project/references/experiment-records.md).
+The child needs its own stable identity, parent declaration, independent source Git,
+canonical project guidance and source/config/environment/data boundaries. A server
+directory name, upstream clone or role declaration alone does not establish conformance.
+Source modules follow the selected profile and actual upstream requirements, not a
+fixed module count or a forced rewrite of third-party code.
+
+Each experiment owns `experiments/<run-id>/run.yaml`, its captured inputs and
+`artifacts.yaml`; every execution owns `attempts/<attempt-id>/attempt.yaml` and its
+frozen `target.yaml`. Keep all Attempt outcomes. Native tool records may supplement
+these records, not silently replace their identity, recipe or lifecycle semantics.
+Before declaring a child ready for a new experiment, check its applicable layout,
+guidance and required record support. An empty scaffold is not an executed Run.
+For an existing incompatible child, preserve original bytes and report the missing
+declarations/fields and proposed mapping; conversion requires a separately scoped
+migration. Never invent records or reinitialize an existing root to make it pass.
+
+## Human-editable operation contract
+
+This is a required usability result, not a claim that the initializer supplies a
+new launcher or config file. All roles need direct file editing and documented CLI
+operations without a frontend or an agent translating every routine action.
+`primary` uses the same execution-child interface; it is not a third architecture.
+
+Separate editable choices from generated records. Document which settings a person
+can change, their defaults and accepted values, and the public operation that
+validates/applies them. Generated identities, frozen Run inputs, receipt checksums,
+locks and observed execution history are not routine settings to tune. A correction
+uses the owning explicit correction/migration path; editing a convenience config
+must not rewrite old experiments or make an unreceived result appear delivered.
+Ordinary help and previews show parameter values, differences, effects and useful
+file links; raw integrity details remain available in machine/diagnostic output.
+
+- The parent exposes management choices: selected children/Targets, collection
+  scope and timing, retained results and report inputs. Scientific source/config
+  development stays in the child. Reuse existing declarations and Target/server
+  records; a convenience config must not become another identity or host registry.
+- A child exposes its existing reusable config recipes/components, environment
+  requirements and actual scientific entry points. Preserve a compatible upstream
+  launcher instead of requiring its rewrite. Names, defaults, types and supported
+  overrides must be documented beside the config/entry, not available only in chat.
+- For new configurable entries, resolve defaults, the selected recipe and explicit
+  CLI overrides in that order. Show effective values and their origins before
+  execution; reject unknown/invalid parameters and ambiguous merges. Existing
+  upstream precedence may be retained if documented and captured, not guessed.
+  Credentials remain outside configs, logs and portable archives.
+- Provide a small discoverable CLI entry with subcommands or explicit stages,
+  parameter help, validation and zero-execution preview where supported. One entry
+  may call multiple modules/scripts; it does not mean a monolithic implementation
+  or a fixed number of scientific stages. Humans and agents use the same public
+  interface. Keep results/diagnostics readable; machine output is an additional mode.
+- Capture the effective inputs, entry and child commit in the owning Run; placement
+  remains the Attempt's Target. Later config edits do not change previous Runs.
+  An altered scientific recipe needs a new Run, not a different interpretation of
+  an old result. Do not make parent `new-run` record management Git as child source.
+
+Expose only implemented commands after checking the installed help. If an operation
+entry is missing, report it and propose a separately scoped implementation. Do not
+fabricate a `./project` command, create extra config trees during a read-only task,
+or advertise a scaffold as a usable scientific launcher. A thin local management
+entry, if explicitly implemented, is not a local clone of child source.
+
+## Parent/child consistency and exchange
+
+Keep authorities distinct; consistency means matching identities, versions and
+received evidence, not identical directories or bidirectional file mirroring.
+
+| Direction | Required information and boundary |
+|---|---|
+| Parent to child | Selected parent/child identity, experiment purpose and acceptance conditions, requested recipe/entry, selected Target and the minimum relevant paper/decision/rule references. A handoff requests work; it does not overwrite child source/config, freeze a recipe or inherit credentials/session history. |
+| Child to parent | Original Run/Attempt/Target records, child source commit, captured effective inputs/environment/data identity, all execution outcomes, metrics, selected useful figures and artifact inventory. This is observed evidence, not the parent's analysis or plan. |
+| Parent confirmation | The exact received child/Run version and local integrity/remaining gaps from the reception receipt and readback. A sender's upload success is not local delivery confirmation, independent execution proof or scientific acceptance. |
+
+Reuse the existing task/plan, management declarations, Run records, Targets and
+collection receipts for these facts. A transport envelope or config must not become
+a second recipe, task system, server ledger or mutable copy of both sides' truths.
+The parent may summarize child facts in PROJECT, with links and receipt freshness;
+only the child owns execution facts, while the parent owns local analysis and plans.
+
+The current schema-1 collection receipt has no reception/acknowledgment timestamp
+or sender-confirmation protocol. It proves the checked version, not when a previous
+delivery was confirmed. Report unrecorded freshness as unknown; file mtimes are not
+confirmation times. Durable timed acknowledgment needs an explicit compatible
+contract extension, not invented fields in an existing strict receipt.
+
+For an authorized transfer, stage only the explicitly selected stable record
+version, then use the collection/reception/update interfaces below. Verify identity,
+compatible record versions, file mapping, hashes/sizes and the destination baseline.
+Publish a receipt only after checking local bytes. Same-version replay is idempotent;
+new lifecycle evidence uses an explicit update, while unknown edits/identity conflicts
+stop without overwrite. Transfer failure retries delivery, not the experiment.
+Do not copy active files with a recursive mirror or delete local analysis to match
+the source. A compatibility gap is incomplete delivery, not permission to synthesize
+canonical records or silently upgrade them.
+
+Keep compact Run evidence separate from genuinely large payloads. The current
+collector reads the entire selected Run and refuses over 128 MiB; an artifact
+manifest does not exclude physical bytes still inside that tree. For new executions,
+use a declared large-output location outside the transferable Run (resolved through
+the existing Target/output contract), with producing Attempt, origin, size/hash when
+known and retention state in the artifact inventory. Existing co-located outputs
+need an explicit safe export/migration design, not silent filtering or relocation.
+No selective remote exporter, transport or scheduler is implied by this contract.
+
 ## Explicit child registration
 
 Use `project register-child --project-root PARENT --child-root CHILD
@@ -103,6 +212,38 @@ Analyze and compare in the parent. Keep names, actual execution times, purpose,
 shared conditions, intentional differences and corresponding results together,
 using the existing review contract. Unknown, remote-only, failed and conflicted
 evidence stays visible; collection does not itself prove a scientific conclusion.
+
+### Timely experiment delivery
+
+For an authorized execution-and-delivery task, collect lightweight evidence at
+Run registration, Attempt start, meaningful result/status milestones, and terminal
+success, failure or interruption. Do not wait for the whole child project or a final
+report to finish. For long-running Attempts, make the running update interval and
+collection owner explicit in the existing task/plan; do not invent a universal cadence
+or another registry. Use stable captured versions and the reception/update rules below,
+not raw directory mirroring of actively changing files.
+
+Essential configuration/environment/data identities, observed status/times, metrics,
+output inventory and necessary compact result material belong in the local parent.
+Evaluate large-output exceptions by actual byte volume and transfer/storage cost,
+not filename extension. Record omitted payloads, their sizes when known, origin and
+producing Attempt in the existing artifact inventory. Keep enough lightweight evidence
+locally to interpret the result; one large output never excuses omitting the whole Run.
+Receiver safety limits are not a universal scientific retention threshold. An oversized
+selection must be prepared explicitly or reported incomplete, never silently truncated.
+
+On a failed transfer or unavailable parent, state which child/Run version was last
+received, when confirmed, and what updates remain outstanding; unknown freshness
+stays unknown. Resume the selected outstanding delivery within its existing authority
+when access returns, without duplicate executions or overwriting local analysis.
+A terminal experiment is not fully delivered until its required lightweight final
+evidence has been received and read back. Keep execution, collection and analysis
+completion separate, including when the collector missed intermediate states.
+
+These are handoff requirements, not an installed background service. Identify missing
+transport or scheduling explicitly. They do not authorize new SSH access, a daemon,
+scheduled automation, broad synchronization, or changing an existing child. A read-only
+review still reports gaps without collecting or repairing them.
 
 ### Delivery handoff for an actual experiment task
 
@@ -520,6 +661,8 @@ automation exists. Determine the installed capability before an operation:
 | Existing role-declaration adoption | `project adopt-role` previews an explicit role for an existing schema-2 project and creates only its absent management declaration using the current digest. Identity and all existing files remain; unchanged roles retain registered children. Instruction/Git-policy/layout migration, source-profile changes, child registration and archive reception remain separate; this is not a second initializer. Check the installed help. |
 | Child registration | `project register-child` previews and byte-CAS appends one already-declared child to an explicitly selected parent. It does not locate/contact a server or change its child declaration. Validate mutual declarations separately; no live synchronization is created. |
 | Parent archive reception and index | collection-plan previews one Run; receive-run supports first reception/identical replay; collected reads the qualified local index. update-plan/update-run provide four-baseline version changes; recovery-plan/recover-update explicitly commit or roll back a pending local journal. Check actual installed help before use. Pending markers block verified reading/replay, not prove a live process. Legacy flat commands still refuse parents; Target registration remains available. No SSH reception, automatic orphan cleanup, history correction or fabricated receipt is implied. |
+| Timely remote delivery | The milestone/interval and large-output rules above are required handoffs. Existing receivers operate on explicitly accessible selected records; no remote transport, automatic scheduler or freshness monitor is supplied by declaring a role or installing the skill. Report unconfigured automation and outstanding evidence rather than promising live synchronization. |
+| Human-editable operations and exchange | The required config/CLI usability and authority/transfer boundaries above apply to every role. Existing scaffolds do not generate a unified launcher or selective remote exporter; no `./project` interface is supplied. Preserve actual upstream operations and report missing capabilities rather than inventing commands, deploying transport or mirroring folders. |
 | Remote code in the material inventory | Additive context schema 1 `execution-code` identifies a registered child, safe relative code path and optional commit. `project remote-code-plan` combines one explicitly selected existing SSH Target and server ledger without connecting or writing. Target selection does not verify the remote child, path, commit, SSH alias or access. No fake local path, arbitrary URI, native open or implicit host binding; see project-context.md. Check installed help before use. |
 | PROJECT and experiment review | Read the explicitly selected, safely accessible material and produce the existing human format. Identify remote/unavailable sources and incomplete lifecycle verification. Review does not collect, execute, edit raw records or grant access to remote roots. |
 | Code recovery and verified backup | `project code-recovery-plan` checks one supplied local self-contained bundle against selected child Run commits; `project retain-code` explicitly retains it with a current digest and immutable per-plan coverage. Check installed help first. No remote bundle creation/transfer, child origin authentication, LFS/submodule payload recovery, uncommitted-work capture, daily clone or verified-backup claim. |

@@ -104,8 +104,16 @@ schema. Concision cannot remove a material qualification or add unsupported fact
   merges slots or shrinks fonts to claim success.
 - For a tree that is too tall, aligned layer gutters may increase uniformly
   from 64 px to at most 344 px, using only the width needed for the 2:1 limit.
-  Box dimensions and vertical bands remain content-driven and unchanged. If bounded
-  spacing is insufficient, conformance still fails; spacing is not visual acceptance.
+  This spacing-only attempt leaves box dimensions and vertical bands unchanged.
+  A supporting new-candidate renderer may then widen factual claim/point cards
+  only up to their measured visible-line widths and remeasure wrapping/click space.
+  It never pads short labels, resizes images, shrinks fonts or alters content/links.
+  Try bounded content-fit widths; among tested geometrically safe layouts, prefer
+  shorter actual square routes, not merely narrower cards or endpoint distances.
+  This is not a global-optimum claim. If no safe trial fits, retain the original
+  complete failed candidate; do not create unlimited gutters or empty wide cards.
+  Safe existing paired layouts remain preserved, not silently regenerated. Check
+  installed support; source tests and spacing do not establish visual acceptance.
 - A renderer may return a noncanonical candidate for review. Baseline creation,
   batch success and canonical writes require a passing conformance report. A file
   existing is not proof of success. Source fidelity and human visual assessment are

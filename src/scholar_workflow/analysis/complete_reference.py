@@ -372,7 +372,9 @@ def _visible_lines(text: str) -> list[str]:
     return [re.sub(r"[*_#`]+", "", line) for line in visible.splitlines()]
 
 
-def _dimensions(text: str, kind: str) -> tuple[int, int]:
+def _dimensions(
+    text: str, kind: str, *, content_width_limit: int | None = 1000,
+) -> tuple[int, int]:
     if kind == "image":
         width = canvas_image_width(text)
         return width, canvas_visible_height(text, width=width)
@@ -383,9 +385,11 @@ def _dimensions(text: str, kind: str) -> tuple[int, int]:
         ),
         default=0,
     )
-    maximum = 1000 if kind in {"claim", "point"} else 440 if kind == "group" else 280
+    maximum = content_width_limit if kind in {"claim", "point"} else 440 if kind == "group" else 280
     minimum = 280 if kind in {"claim", "point"} else 104
-    width = min(maximum, max(minimum, math.ceil((28 + units * 9) / 8) * 8))
+    width = max(minimum, math.ceil((28 + units * 9) / 8) * 8)
+    if maximum is not None:
+        width = min(maximum, width)
     # The shared estimator reserves a full visible line for clicking links.
     height = _visible_height(text, minimum=0, width=width)
     return width, height
@@ -757,10 +761,88 @@ def _layout_tree(root: TemplateNode, *, expanded: bool = False) -> None:
         node.y = depth * step
 
 
+def _fit_dense_tree_text(root: TemplateNode) -> None:
+    """Try useful text width only when the normal new-tree layout is too tall."""
+    nodes = []
+    pending = [root]
+    while pending:
+        node = pending.pop()
+        nodes.append(node)
+        pending.extend(node.children)
+
+    def bounds() -> tuple[int, int]:
+        return (
+            max(node.x + node.width for node in nodes) - min(node.x for node in nodes),
+            max(node.y + node.height for node in nodes) - min(node.y for node in nodes),
+        )
+
+    width, height = bounds()
+    if height <= 2 * width:
+        return
+    flexible = [node for node in nodes if node.kind in {"claim", "point"}]
+    upper = max(
+        (_dimensions(node.text, node.kind, content_width_limit=None)[0] for node in flexible),
+        default=1000,
+    )
+    if upper <= 1000:
+        return
+    original = [(node, node.width, node.height, node.x, node.y) for node in nodes]
+    best_layout = original
+    best_score: tuple[float, int] | None = None
+
+    def restore(layout) -> None:
+        for node, width, height, x, y in layout:
+            node.width, node.height, node.x, node.y = width, height, x, y
+
+    def needs_width(limit: int) -> bool:
+        nonlocal best_layout, best_score
+        for node in flexible:
+            node.width, node.height = _dimensions(node.text, node.kind, content_width_limit=limit)
+        _layout_tree(root, expanded=True)
+        width, height = bounds()
+        too_tall = height > 2 * width or any(node.height > 420 for node in nodes)
+        if not too_tall and width <= 2 * height:
+            boxes = {
+                node.path: {"x": node.x, "y": node.y, "width": node.width, "height": node.height}
+                for node in nodes
+            }
+            edges = [{"fromNode": node.path, "toNode": child.path} for node in nodes for child in node.children]
+            if square_tree_is_clear(boxes, edges):
+                # Fixed right/left square paths have horizontal distance plus
+                # their center-to-center vertical distance, not endpoint distance.
+                length = sum(
+                    child.x - node.x - node.width
+                    + abs(child.y + child.height / 2 - node.y - node.height / 2)
+                    for node in nodes for child in node.children
+                )
+                score = (length, width * height)
+                if best_score is None or score < best_score:
+                    best_score = score
+                    best_layout = [(node, node.width, node.height, node.x, node.y) for node in nodes]
+        return too_tall
+
+    # Natural line widths bound the search: never pad a short card to make the
+    # overall rectangle pass. A too-wide upper trial can still bracket a useful
+    # intermediate width, so bisect the tallness condition before route checks.
+    if needs_width(upper):
+        restore(original)
+        return
+    lower = 1000
+    while upper - lower > 8:
+        middle = ((lower + upper) // 2 // 8) * 8
+        if needs_width(middle):
+            lower = middle
+        else:
+            upper = middle
+    needs_width(upper)
+    restore(best_layout)
+
+
 def _render_canvas(
     document: AnalysisDocument, tree: TemplateNode, *, enforce_limits: bool
 ) -> dict[str, Any]:
     _layout_tree(tree, expanded=True)
+    _fit_dense_tree_text(tree)
     nodes: list[dict[str, Any]] = []
     edges: list[dict[str, Any]] = []
 

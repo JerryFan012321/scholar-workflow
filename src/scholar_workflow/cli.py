@@ -2617,7 +2617,7 @@ def analysis() -> None:
 @click.option(
     "--repair-request",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    help="Optional second JSON request containing one targeted repaired IR per item.",
+    help="Targeted repair IRs with the same item identities; may spend an unused failed-item repair.",
 )
 @click.option("--state-db", type=click.Path(dir_okay=False, path_type=Path))
 @click.option("--stage-root", type=click.Path(file_okay=False, path_type=Path))
@@ -2653,9 +2653,18 @@ def analysis_batch_run(
             repaired_ids = [item.item_id for item in repaired.items]
             if repaired_ids != original_ids:
                 raise ValueError("repair request must contain the same ordered item IDs")
+            for original_item, repaired_item in zip(request.items, repaired.items, strict=True):
+                if (
+                    repaired_item.zotero_item_key != original_item.zotero_item_key
+                    or repaired_item.note_stem != original_item.note_stem
+                    or repaired_item.document.artifact_id != original_item.document.artifact_id
+                ):
+                    raise ValueError("repair request must preserve the original item Zotero, note and artifact identities")
             repaired_documents = {
                 item.document.artifact_id: item.document for item in repaired.items
             }
+            if len(repaired_documents) != len(request.items):
+                raise ValueError("repair request requires unique original item artifact identities")
     except (OSError, UnicodeDecodeError, ValidationError, ValueError) as exc:
         raise InputError(str(exc)) from None
 
