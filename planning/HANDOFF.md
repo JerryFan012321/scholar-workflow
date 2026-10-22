@@ -1,5 +1,24 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-22当前：0.47.2已发布安装，原输入完整交付；待人工评阅
+
+已固定source31e0143/runtime8717278，正常原子推送hotfix/release并经pipx及Codex
+marketplace安装0.47.2；126包文件/293插件文件与runtime字节权限一致，插件启用。
+main仍2e3c61f；未切换服务、创建新对话、重分析或写正式Vault/Zotero/科研服务器。
+完整开发3271项及版本同步后81项通过，未重复有效回归。发行细节唯一见0.47.2-release.md。
+
+test同一单篇对象新隔离批次vjepa2-aspect-advisory-0472只更改原request的batch_id；
+completed/validated、repair0、幂等不改stage。原V-JEPA2目录现有正文/Canvas/sidecar
+与stage逐字节相同，公开check-bundle零findings；41claims/97points/72具名槽、169span、
+11图、127锚点及138反链守恒。160nodes/159edges，7618×15233，独立几何无交叉/
+穿框/重叠、最大高411；944保护项未变。旧失败及预算0/1保持，不称旧记录被修成成功。
+
+原生Obsidian已加载当前Canvas及显示树图/正文，但自动截图滞后和noWindowsAvailable
+限制了完整GUI取证。下一步先请用户在原test路径评阅新正文和完整五分支图、放大文字
+图表并点正文反链；人工明确确认前保持pending，不继续生成另一份候选。
+原reader为zotero_native，不冒称ZotFlow；副本未canonical注册，不是新宿主one-shot。
+G17四类完整目标仍未完成。以下授权阻塞/未安装/未交付各节均为历史时点，不覆盖本节。
+
 ## 2026-10-22：0.47.2提交/发布/安装及唯一对象回放已获明确授权
 
 用户已明确同意当前0.47.2 hotfix提交、正式发布、正常安装，并只在test原V-JEPA2

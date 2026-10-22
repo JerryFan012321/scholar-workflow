@@ -1,5 +1,20 @@
 # 第一阶段当前证据核对
 
+## 当前安装与单对象交付（2026-10-22）
+
+0.47.2 source31e0143/runtime8717278已正常发布安装，126包文件/293插件文件精确一致。
+同一test对象仅另立新验证批次，原IR不变；completed/validated、repair0，重复重读无
+stage字节/mtime变化。原目录三主文件原样展示，check-bundle零findings；独立核对
+41claims/97points/72具名槽、169span、11图、127正文锚点及138静态反链守恒。
+160节点159边、7618×15233，几何对齐/无交叉穿框重叠通过，最大节点高411。
+944保护项及旧failed/预算0与1保持。当前PDF由Local API enclosure解析且hash与
+冻结来源一致；这不重新认证语义支持、摘录上下文或强调充分性。
+
+原生Obsidian已加载当前160节点Canvas，曾实际显示树和阅读模式正文；自动截图滞后与
+部分操作noWindowsAvailable，不能作为完整GUI/点击通过。人工评阅pending，reader仍
+Zotero原生；非canonical副本无登记/成对提交回执，不是新宿主one-shot。main/服务/
+正式Vault/Zotero/科研服务器未改，详见0.47.2-release.md。旧失败证据如下保持。
+
 ## 最新开发与安装态边界（2026-10-22）
 
 当前五分支/比例决定已落实：v5整体2:1只提醒，其他硬格式、来源与安全门禁不变，

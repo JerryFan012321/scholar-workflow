@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Changed
+
+- **Development — 0.47.2 installed receipt:** record normal hotfix publication,
+  pipx and marketplace installation, exact runtime identity, and the saved-input
+  V-JEPA 2 replay's complete, conformant three-file delivery with zero repairs.
+  Preserve old failures, spent budgets and protected files. Keep human review,
+  live reader clicks, canonical adoption and fresh-conversation generation pending;
+  these development receipts do not change the already published 0.47.2 build.
+
 ## [0.47.2] - 2026-10-22
 
 ### Fixed
