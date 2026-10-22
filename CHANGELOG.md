@@ -7,12 +7,23 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development — independent installed paper acceptance:** record the sole
+  authorized fresh conversation's completed, conformant three-file candidate and
+  the parent's read-only package/protection checks. Keep at least nine record-local quote
+  coverage gaps, attribution/emphasis limitations and the aspect warning explicit;
+  overall delivery remains partial, not full one-shot acceptance. Preserve the
+  approved previous package, historical failures and budgets. Native loading is
+  not visual approval; retain process-method deviations and trace-coverage limits.
+  The ten eval-schema checks pass. No runtime, publication, installation or main-merge change.
+
 - **Development — accepted replay presentation:** record the human's explicit
   approval of the current 0.47.2 candidate's overall layout/readability and one
   observed Zotero-native source link at the correct PDF page. Bind approval to
   current files; keep scientific support, canonical adoption and independent
-  fresh-conversation generation separate. Prepare the latter's bounded expected
-  result without starting a new conversation or overwriting the accepted package.
+  fresh-conversation generation separate. Freeze the latter's bounded expected
+  result; after separate human authorization, start one independent installed-
+  product conversation with protected existing files and no old answers or caller
+  coaching. Its actual outcome is recorded separately above; no runtime change.
 
 - **Development — native paper navigation receipt:** record one real Canvas-to-
   Markdown block click and folded-quote expansion in the existing 0.47.2 test
