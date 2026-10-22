@@ -1,0 +1,97 @@
+{
+  "scope": "Synthetic record-level evidence presentation review, not a real-paper analysis or batch.",
+  "language": "zh",
+  "cases": [
+    {
+      "id": "r01",
+      "statement": "在固定相机、相同物体的50次试验中，方法成功30次，即60%；运动相机条件尚未评价。",
+      "evidence_kind": "author_stated",
+      "available_source": [
+        {"id": "p1", "text": "We conducted 50 trials with a fixed camera and the same objects. The proposed method succeeded in 30 trials, corresponding to a 60% success rate. Performance with a moving camera has not been evaluated."}
+      ],
+      "presented_spans": [
+        {"source_id": "p1", "quote": "We conducted 50 trials with a fixed camera and the same objects. The proposed method succeeded in 30 trials, corresponding to a 60% success rate. Performance with a moving camera has not been evaluated.", "quote_emphasis": ["We conducted 50 trials with a fixed camera and the same objects.", "The proposed method succeeded in 30 trials, corresponding to a 60% success rate.", "Performance with a moving camera has not been evaluated."]}
+      ]
+    },
+    {
+      "id": "r02",
+      "statement": "语言对齐阶段冻结视频编码器并训练投影器；扩大设置采用4800万样本和60亿参数语言模型。",
+      "evidence_kind": "author_stated",
+      "available_source": [
+        {"id": "p2", "text": "During language alignment, we freeze the video encoder and train a projector. The enlarged setting uses 48 million samples and a six-billion-parameter language model."}
+      ],
+      "presented_spans": [
+        {"source_id": "p2", "quote": "During language alignment, we freeze the video encoder and train a projector.", "quote_emphasis": ["During language alignment, we freeze the video encoder and train a projector."]}
+      ]
+    },
+    {
+      "id": "r03",
+      "statement": "作者在固定场景中报告60%的成功率，因此这些结果不能证明任意新场景中的可靠控制。",
+      "evidence_kind": "author_stated",
+      "available_source": [
+        {"id": "p3", "text": "We evaluate in one fixed scene. The method achieves a 60% success rate in this setting."}
+      ],
+      "presented_spans": [
+        {"source_id": "p3", "quote": "We evaluate in one fixed scene. The method achieves a 60% success rate in this setting.", "quote_emphasis": ["We evaluate in one fixed scene.", "The method achieves a 60% success rate in this setting."]}
+      ]
+    },
+    {
+      "id": "r04",
+      "statement": "该结果表明，不使用语言监督进行视频预训练的编码器，也可以在后续监督对齐后支持问答。",
+      "evidence_kind": "author_stated",
+      "available_source": [
+        {"id": "p4", "text": "The video encoder is pretrained without language supervision. We subsequently align it for question answering using labeled question-answer pairs. The resulting model achieves 55% accuracy."}
+      ],
+      "presented_spans": [
+        {"source_id": "p4", "quote": "The video encoder is pretrained without language supervision. We subsequently align it for question answering using labeled question-answer pairs. The resulting model achieves 55% accuracy.", "quote_emphasis": ["The resulting model achieves 55% accuracy."]}
+      ]
+    },
+    {
+      "id": "r05",
+      "statement": "编码器在不使用标签的情况下预训练；下游分类使用带标签的线性探针。",
+      "evidence_kind": "author_stated",
+      "available_source": [
+        {"id": "p5a", "text": "We pretrain the encoder without labels."},
+        {"id": "p5b", "text": "For downstream classification, we train a linear probe using labeled examples."}
+      ],
+      "presented_spans": [
+        {"source_id": "p5a", "quote": "We pretrain the encoder without labels.", "quote_emphasis": ["We pretrain the encoder without labels."]},
+        {"source_id": "p5b", "quote": "For downstream classification, we train a linear probe using labeled examples.", "quote_emphasis": ["For downstream classification, we train a linear probe using labeled examples."]}
+      ]
+    },
+    {
+      "id": "r06",
+      "statement": "理解基准的分数本身不能证明真实机器人控制能力，因为这次评价没有控制试验。",
+      "evidence_kind": "analysis_inference",
+      "evidence_detail": "推断范围仅限这组观察：评价对象是视频分类，且没有控制试验；不声称模型实际上不能控制机器人。",
+      "available_source": [
+        {"id": "p6", "text": "We evaluate video classification on Benchmark A. We do not conduct robot-control trials in this study."}
+      ],
+      "presented_spans": [
+        {"source_id": "p6", "quote": "We evaluate video classification on Benchmark A. We do not conduct robot-control trials in this study.", "quote_emphasis": ["We evaluate video classification on Benchmark A.", "We do not conduct robot-control trials in this study."]}
+      ]
+    },
+    {
+      "id": "r07",
+      "statement": "在输入分辨率和训练预算保持不变时，加入模块使准确率从50%提高到55%。",
+      "evidence_kind": "author_stated",
+      "available_source": [
+        {"id": "p7", "text": "With input resolution and training budget held fixed, adding the module increases accuracy from 50% to 55%."}
+      ],
+      "presented_spans": [
+        {"source_id": "p7", "quote": "With input resolution and training budget held fixed, adding the module increases accuracy from 50% to 55%.", "quote_emphasis": ["With input resolution and training budget held fixed, adding the module increases accuracy from 50% to 55%."]}
+      ]
+    },
+    {
+      "id": "r08",
+      "statement": "增加训练数据带来了5个百分点的准确率提升；该提升可以完全归因于数据规模。",
+      "evidence_kind": "author_stated",
+      "available_source": [
+        {"id": "p8", "text": "The enlarged setting increases training data, input resolution, and language-model size simultaneously. Accuracy rises from 50% to 55%. We have not isolated the contribution of each change."}
+      ],
+      "presented_spans": [
+        {"source_id": "p8", "quote": "The enlarged setting increases training data, input resolution, and language-model size simultaneously. Accuracy rises from 50% to 55%. We have not isolated the contribution of each change.", "quote_emphasis": ["Accuracy rises from 50% to 55%."]}
+      ]
+    }
+  ]
+}

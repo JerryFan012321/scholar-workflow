@@ -1,0 +1,80 @@
+{
+  "scope": "One offline, read-only, record-level synthetic review using the normally installed 0.47.2 output contract; not a paper-generation acceptance.",
+  "evaluator_task": "/root/evidence_forward_probe",
+  "initial_task_count": 1,
+  "caller_followup_count": 0,
+  "fixture_hashes": {
+    "inputs.json": "f69c94f4e2b704ee73dd2c9b1fd26cbdd833b77c939f854ee13209a9f773100e",
+    "expected.json": "f0eeb15a43225a8c9aab1be02dfeef05ab7aa7fd1a160bb4daab43b00689fd20"
+  },
+  "observed_response": {
+    "cases": [
+      {
+        "id": "r01",
+        "status": "complete",
+        "reason": "摘录完整保留试验条件、次数、成功率及未评价范围；三处强调分别直接支持陈述的全部内容，整段强调有充分依据。",
+        "proposed_change": ""
+      },
+      {
+        "id": "r02",
+        "status": "incomplete",
+        "reason": "陈述包含扩大设置的样本量和模型规模，但现有摘录及强调仅支持语言对齐阶段的训练方式。",
+        "proposed_change": "将现有 quote 扩展为 p2 的完整两句，并在 quote_emphasis 中追加 \"The enlarged setting uses 48 million samples and a six-billion-parameter language model.\"。"
+      },
+      {
+        "id": "r03",
+        "status": "incomplete",
+        "reason": "原文明确报告固定场景及60%成功率；不能据此证明任意新场景中的可靠控制是分析推断，现有 author_stated 归属不准确。",
+        "proposed_change": "将 evidence_kind 改为 analysis_inference，并补充 evidence_detail：原文的评价仅涉及一个固定场景及该场景中的60%成功率，因此不能据此证明任意新场景中的可靠控制；这一判断不声称方法在新场景中必然失败。保留现有陈述、摘录与强调，摘录标题采用“原文摘录（粗体：推断依据）”。"
+      },
+      {
+        "id": "r04",
+        "status": "incomplete",
+        "reason": "摘录覆盖全部依据，但仅强调55%准确率，没有强调直接支持“无语言监督预训练”和“后续监督对齐”的原文。",
+        "proposed_change": "在现有 quote_emphasis 中追加 \"The video encoder is pretrained without language supervision.\" 和 \"We subsequently align it for question answering using labeled question-answer pairs.\"；保留现有准确率强调，使三个阶段相关的依据完整可见。"
+      },
+      {
+        "id": "r05",
+        "status": "complete",
+        "reason": "两个独立摘录分别支持无标签预训练和使用标签的下游线性探针；原文完整，强调与各自陈述对应。",
+        "proposed_change": ""
+      },
+      {
+        "id": "r06",
+        "status": "complete",
+        "reason": "正确标为分析推断，并明确推断依据及范围；摘录和强调保留视频分类评价与未开展控制试验两项观察，没有冒充作者结论。",
+        "proposed_change": ""
+      },
+      {
+        "id": "r07",
+        "status": "complete",
+        "reason": "完整原句直接支持条件、模块变化及准确率变化；强调保留输入分辨率和训练预算不变这一限定，整句强调符合契约。",
+        "proposed_change": ""
+      },
+      {
+        "id": "r08",
+        "status": "incomplete",
+        "reason": "原文同时改变数据量、输入分辨率和模型规模，并明确尚未分离各项贡献，无法支持将提升完全归因于数据规模；仅强调准确率变化还遗漏了关键限定。",
+        "proposed_change": "将 statement 改为“扩大设置同时增加训练数据、输入分辨率和语言模型规模，准确率从50%升至55%（提高5个百分点）；各项改动的贡献尚未单独分离。”保留 author_stated 和现有完整 quote，并在现有 quote_emphasis 中追加 \"The enlarged setting increases training data, input resolution, and language-model size simultaneously.\" 及 \"We have not isolated the contribution of each change.\"。"
+      }
+    ]
+  },
+  "caller_assessment": {
+    "status_classification": "8/8 match the pre-frozen oracle; four incomplete and four complete",
+    "semantic_review": "All pre-frozen required observations and permitted minimal corrections are present; assessed by caller, not an automatic semantic score.",
+    "r04_limit": "The proposal also retains score emphasis. This synthetic statement concerns supporting QA, so that related result does not contradict the frozen oracle. It does not justify retaining irrelevant metric emphasis for a different record; the required pretraining/downstream-supervision distinction is explicitly restored.",
+    "source_wording": "Proposed added quotations already occur in the provided synthetic source; no invented source or ablation is required.",
+    "integrity_tests": "20 passed: ten fixture integrity checks plus ten eval-schema checks. These are not semantic acceptance tests.",
+    "fixture_unchanged": "Verified after completion against both frozen SHA-256 values."
+  },
+  "independence_limits": "The task supplied only inputs and installed contracts, not the oracle, historical defects or paper answers. The reviewing agent completed without caller follow-up. Detailed nested tool-read history is not exposed by this collaboration result and is not claimed completely audited.",
+  "not_proven": [
+    "Full-paper generation or scientific support",
+    "Correction of the V-JEPA 2 candidate's known issues",
+    "Universal new-conversation one-shot reliability",
+    "Native reader or human visual acceptance",
+    "Canonical knowledge ownership or project/experiment readiness"
+  ],
+  "runtime_change": "none; no additional reasoning procedure, field, semantic scorer, batch repair or installation",
+  "next_development_implication": "Keep this as an independent behavioral regression baseline. Existing runtime requirements are sufficient for these cases; do not claim a production fix or accumulate duplicate rules from this pass."
+}

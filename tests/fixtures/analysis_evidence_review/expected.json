@@ -1,0 +1,14 @@
+{
+  "scope": "Caller-owned expectations frozen before execution. Never provided to the reviewing agent.",
+  "cases": {
+    "r01": {"status": "complete", "required": ["The excerpt jointly supports setup, result and untested condition.", "All three sentences may be emphasized because all directly support this statement."]},
+    "r02": {"status": "incomplete", "required": ["Identify that sample count and model size are absent from the presented excerpt, although available in the supplied source.", "Propose adding the existing complete second sentence without inventing new source text or dropping the substantive statement."]},
+    "r03": {"status": "incomplete", "required": ["Distinguish the author-reported fixed-scene result from the analyst's generalization boundary.", "Accept a minimal relabel to analysis_inference with an explanatory detail or an explicit fact/inference split; do not require an author quote containing the inferred conclusion."]},
+    "r04": {"status": "incomplete", "required": ["Identify that emphasis selects performance rather than the no-language-pretraining and supervised downstream-alignment basis.", "Retain the two-stage supervision qualification and emphasize the first two source sentences; adding bold only to the number is insufficient."]},
+    "r05": {"status": "complete", "required": ["The two source spans jointly support the record.", "Do not require each individual span to support the complete statement by itself."]},
+    "r06": {"status": "complete", "required": ["The bounded inference is explicitly labeled and its basis and limits are supplied.", "Do not turn it into an author-stated fact or demand a verbatim quote of the analyst's conclusion."]},
+    "r07": {"status": "complete", "required": ["The entire one-sentence excerpt directly supports the record, including comparison controls.", "Do not reject whole-sentence bold merely because it covers the whole passage."]},
+    "r08": {"status": "incomplete", "required": ["Reject exclusive causal attribution to dataset size because three settings changed and the source explicitly says contributions were not isolated.", "Retain the observed five-percentage-point joint-setting gain, expose comparison conditions and avoid inventing an ablation or disguising the causal assertion merely by changing its label."]}
+  },
+  "passing_rule": "All eight statuses and each case's required semantic observations must be satisfied. Wording is not fixed. Structural matching alone cannot establish a semantic pass. Scope, inputs and prior results must remain unchanged."
+}

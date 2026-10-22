@@ -7,6 +7,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development — evidence presentation forward tests:** add isolated synthetic
+  record inputs and a separate caller-owned semantic oracle for quote coverage,
+  attribution, emphasis and comparison scope, including valid multi-span evidence,
+  bounded inference and full-sentence emphasis. Fixture tests check literal source
+  integrity only; a blind host review is recorded separately and cannot certify
+  paper-wide correctness. The one blind review matches all eight frozen cases;
+  twenty fixture/eval-schema checks pass. Existing runtime contracts and accepted artifacts stay
+  unchanged; no new reasoning procedure or automatic semantic scorer.
+
 - **Development — independent installed paper acceptance:** record the sole
   authorized fresh conversation's completed, conformant three-file candidate and
   the parent's read-only package/protection checks. Keep at least nine record-local quote
