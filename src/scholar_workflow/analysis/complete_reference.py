@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import math
 import re
+import string
 import unicodedata
 from dataclasses import dataclass, field
 from typing import Any
@@ -21,7 +22,6 @@ from scholar_workflow.analysis.models import (
     CanvasImage,
 )
 from scholar_workflow.analysis.reference_rendering import (
-    _visible_height,
     reference_canvas_inline_evidence,
     reference_inline_evidence,
     reference_source_link,
@@ -102,8 +102,10 @@ _POINT_LABELS = {
         "各流程模块设计选择的影响",
     ),
 }
-_MD_LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
+_MD_LINK = re.compile(r"\[([^\\\]\r\n]*)\]\([^\s<>()]*\)")
 _WIKILINK = re.compile(r"\[\[[^\]|]+\|([^\]]+)\]\]")
+_CANVAS_LABEL = re.compile(r"^\*\*([^*`\\\[\]\r\n]+)\*\*(?!\*)")
+_CANVAS_FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 _IMAGE_EMBED = re.compile(r"(?m)^!\[[^\]\r\n]*\|([1-9][0-9]*)x([1-9][0-9]*)\]\(\./attachments/[^\r\n)]+\.png\)$")
 _MARKDOWN_IMAGE = re.compile(r"(?<!\\)!\[[^\]\r\n]*\]\(([^\r\n)]+)\)")
 _OBSIDIAN_IMAGE = re.compile(r"(?<!\\)!\[\[([^\]|\r\n]+)(?:\|[^\]\r\n]*)?\]\]")
@@ -150,7 +152,15 @@ def markdown_source_image_lines(
 
 def canvas_visible_height(text: str, *, width: int) -> int:
     """Account for declared embedded-image pixels as well as editable prose."""
-    return _visible_height(_IMAGE_EMBED.sub("", text), minimum=0, width=width) + sum(
+    columns = max(20, (width - 28) // 9)
+    wrapped = sum(
+        max(1, math.ceil(sum(
+            2 if unicodedata.east_asian_width(char) in {"W", "F"} else 1 for char in line
+        ) / columns))
+        for line in _visible_lines(_IMAGE_EMBED.sub("", text))
+    )
+    # Preserve the existing inset and full additional line for clicking links.
+    return 24 + (wrapped + 1) * 21 + sum(
         int(match[2]) for match in _IMAGE_EMBED.finditer(text)
     )
 
@@ -366,10 +376,50 @@ class TemplateNode:
     y: int = 0
 
 
+def _visible_inline(line: str) -> str:
+    """Measure emitted labels/links, keeping literal and unsupported syntax safe."""
+    label = _CANVAS_LABEL.match(line)
+    if label and label[1] == label[1].strip():
+        line = label[1] + line[label.end():]
+    visible = []
+    index = 0
+    while index < len(line):
+        if line[index] == "\\" and index + 1 < len(line) and line[index + 1] in string.punctuation:
+            visible.append(line[index + 1])
+            index += 2
+            continue
+        code = _INLINE_CODE.match(line, index) if line[index] == "`" else None
+        if code:
+            delimiter = len(code[1])
+            visible.append(code[0][delimiter:-delimiter])
+            index = code.end()
+            continue
+        link = (_WIKILINK.match(line, index) or _MD_LINK.match(line, index)) if line[index] == "[" else None
+        if link:
+            visible.append(_visible_inline(link[1]))
+            index = link.end()
+            continue
+        visible.append(line[index])
+        index += 1
+    return "".join(visible)
+
+
 def _visible_lines(text: str) -> list[str]:
-    visible = _MD_LINK.sub(r"\1", text)
-    visible = _WIKILINK.sub(r"\1", visible)
-    return [re.sub(r"[*_#`]+", "", line) for line in visible.splitlines()]
+    visible = []
+    fence = None
+    for line in text.splitlines():
+        marker = _CANVAS_FENCE.match(line)
+        if fence is not None:
+            visible.append(line)
+            if (marker and marker[1][0] == fence[0] and len(marker[1]) >= len(fence)
+                    and not line[marker.end():].strip()):
+                fence = None
+        elif marker:
+            fence = marker[1]
+            visible.append(line)
+        else:
+            visible.append(_visible_inline(line))
+    return visible
 
 
 def _dimensions(
@@ -390,8 +440,7 @@ def _dimensions(
     width = max(minimum, math.ceil((28 + units * 9) / 8) * 8)
     if maximum is not None:
         width = min(maximum, width)
-    # The shared estimator reserves a full visible line for clicking links.
-    height = _visible_height(text, minimum=0, width=width)
+    height = canvas_visible_height(text, width=width)
     return width, height
 
 
@@ -889,13 +938,7 @@ def _render_canvas(
         raise ValueError(
             "Complete-reference Canvas has a node taller than 420 px; supply a faithful concise summary"
         )
-    width = max(node["x"] + node["width"] for node in nodes) - min(node["x"] for node in nodes)
-    height = max(node["y"] + node["height"] for node in nodes) - min(node["y"] for node in nodes)
-    if max(width / height, height / width) > 2:
-        raise ValueError(
-            f"Complete-reference Canvas cannot satisfy the 2:1 geometry limit ({width}x{height}); "
-            "required slots have not been merged, hidden, or dropped"
-        )
+    # Whole-tree aspect is advisory; the conformance report retains its warning.
     return {"nodes": nodes, "edges": edges}
 
 

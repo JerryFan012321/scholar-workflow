@@ -154,8 +154,15 @@ In runtimes supporting dense content-fit layout, a new v5 candidate that is stil
 too tall may use actual statement width to reduce wrapping. Short labels, images,
 fonts, all content and links remain unchanged; tested safe layouts favor shorter
 square routes. If text cannot supply useful width, the complete candidate still
-fails rather than acquiring empty oversized cards. Existing safe pair layouts are
-preserved. Check installed support and assess appearance separately.
+retains its original shape rather than acquiring empty oversized cards. In runtimes
+implementing the aspect-advisory policy, exceeding the 2:1 target produces a warning,
+not failure or automatic repair. Keep the complete five-branch single Canvas;
+alignment, crossing, occlusion, height, click space and evidence/link errors still
+block conformance. Warnings remain visible in batch diagnostics, audits and package
+checks and do not establish human readability. Existing safe pair layouts are
+preserved. Runtime 0.47.1 and earlier retain the hard aspect gate; verify installed
+support and assess appearance separately. Saved failures and repair budgets are
+not changed by upgrading.
 
 The legacy joint-placement, provider-bootstrap and Field legacy-cutover interfaces still
 accept v4 only. New v5 analysis support does not enable those migration routes or authorize
@@ -208,10 +215,11 @@ successful siblings remain available. Zotero items, PDFs, and canonical knowledg
 never part of this rollback.
 
 In supporting runtimes, a failed item with unused budget and clean, wholly repairable
-diagnostics can receive its first explicit `--repair-request` on a later invocation.
+error diagnostics can receive its first explicit `--repair-request` on a later invocation.
 Keep `--request` unchanged; the separate repair file preserves item/reader targets.
 The budget is claimed atomically before callbacks and survives interruption; ordinary
-replay or a spent repair does not regenerate content. A global aspect repair permits
+replay or a spent repair does not regenerate content. Warnings do not grant or block
+error-authorized repairs. A historical error-severity global aspect repair permits
 Canvas-summary-only changes, not scientific rewrites. Runtime 0.47.0 lacks the deferred
 path; check installed support and the exact contract in `references/analysis-batch.md`.
 

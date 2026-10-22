@@ -70,12 +70,13 @@ def _fingerprint(request: AnalysisBatchRequest) -> str:
 
 
 def _can_repair_failed(item: AnalysisItemResult) -> bool:
+    errors = [finding for finding in item.diagnostics if finding.severity == "error"]
     return (
         item.state is AnalysisState.FAILED
         and item.repair_count == 0
         and item.stage_path is None
-        and bool(item.diagnostics)
-        and all(finding.repairable for finding in item.diagnostics)
+        and bool(errors)
+        and all(finding.repairable for finding in errors)
     )
 
 
@@ -321,15 +322,16 @@ def _validate_targeted_repair(
     repaired_claims = {claim.claim_id: claim for claim in repaired.claims}
     if set(original_claims) != set(repaired_claims):
         raise ValueError("targeted repair cannot add or remove claims")
-    aspect_repair = all(finding.repairable for finding in report.findings) and any(
+    errors = [finding for finding in report.findings if finding.severity == "error"]
+    aspect_repair = all(finding.repairable for finding in errors) and any(
         finding.code == "canvas-aspect-limit" and finding.path == "canvas/geometry"
-        for finding in report.findings
+        for finding in errors
     )
     if aspect_repair and list(original_claims) != list(repaired_claims):
         raise ValueError("targeted geometry repair cannot change claim order")
     repairable_claim_ids = {
         parts[2]
-        for finding in report.findings
+        for finding in errors
         if finding.repairable
         and len(parts := finding.path.split("/")) >= 3
         and parts[0] in {"markdown", "canvas"}
@@ -545,9 +547,10 @@ class AnalysisBatchRunner:
                 )
                 return self.store.get_item(batch_id, item.item_id)  # type: ignore[return-value]
 
+            errors = [finding for finding in report.findings if finding.severity == "error"]
             if repair is not None and (deferred_repair or (
-                current.repair_count == 0 and report.findings
-                and all(finding.repairable for finding in report.findings)
+                current.repair_count == 0 and errors
+                and all(finding.repairable for finding in errors)
             )):
                 # Claim the one permitted repair before invoking untrusted/model-owned
                 # repair code.  A crash or exception can therefore never reset the

@@ -158,10 +158,15 @@ def geometry_findings(canvas: dict[str, Any], expected: dict[str, Any]) -> list[
     )
     if max(width / height, height / width) > 2:
         findings.append(
-            _finding(
-                "canvas-aspect-limit",
-                "canvas/geometry",
-                f"Managed bounds {width}×{height} exceed the approved 2:1 aspect limit.",
+            ConformanceFinding(
+                code="canvas-aspect-limit",
+                path="canvas/geometry",
+                message=(
+                    f"Managed bounds {width}×{height} exceed the 2:1 layout target; "
+                    "retain the complete tree and assess readability in the editor."
+                ),
+                severity="warning",
+                repairable=False,
             )
         )
 
@@ -500,7 +505,9 @@ def validate_complete_bundle(
                 )
             )
     findings.extend(geometry_findings(canvas, expected.canvas))
-    return ConformanceReport(ok=not findings, findings=findings)
+    return ConformanceReport(
+        ok=not any(finding.severity == "error" for finding in findings), findings=findings,
+    )
 
 
 __all__ = ["geometry_findings", "square_segments", "validate_complete_bundle"]

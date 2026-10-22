@@ -32,7 +32,7 @@ batch, so emitting files alone can never be interpreted as success.
 
 In a supporting runtime this option works both during the initial invocation and
 after a recorded failure with an unused repair. The latter requires nonempty,
-entirely repairable diagnostics, `repair_count: 0` and no retained stage. The store
+entirely repairable error-severity diagnostics, `repair_count: 0` and no retained stage. The store
 atomically changes that item to running with budget 1 before any callback/staging;
 competing runners cannot acquire or clean its stage. It uses the recorded findings,
 not a repeat generation of the original failed IR. A deferred repair creates a fresh
@@ -46,7 +46,7 @@ For each item:
 
 1. Build the complete Markdown/Canvas pair under the batch's controlled staging directory.
 2. Run hard conformance before any canonical Vault write or catalog registration.
-3. When all findings are repairable, allow one targeted repair and run conformance once more.
+3. When errors exist and all errors are repairable, allow one targeted repair and run conformance once more.
 4. On success, retain the staged pair for the later commit boundary and record `validated` or
    `repaired`.
 5. On failure, persist structured diagnostics first, delete only files owned by that item's stage
@@ -61,7 +61,16 @@ a persisted running owner is not restarted merely because a process may have die
 Inspect the read-only audit and preserve its stage/diagnostics. Reusing a batch ID
 with different original input is an identity conflict, not a retry mechanism.
 
-A global `canvas-aspect-limit` at `canvas/geometry` may authorize faithful
+A warning-only result passes conformance, retains every warning in item diagnostics
+and leaves `repair_count: 0`. From 0.47.2's v5 aspect-advisory policy,
+an otherwise safe complete tree beyond 2:1 receives a warning, not automatic repair.
+Warnings neither block a repair authorized by errors nor grant extra edit authority.
+Pair audits, package checks and staged updates must retain their warning severity;
+report warnings and outstanding human assessment, not unqualified visual success.
+Runtime 0.47.1 and earlier retain the hard aspect gate. Upgrading does not rewrite
+saved failures, reset spent repairs or automatically regenerate any item.
+
+A historical error-severity `canvas-aspect-limit` at `canvas/geometry` may authorize faithful
 `canvas_summary` changes on claims/points only. It does not authorize changes to
 body/point text, titles, evidence, images, identities, framework, slots or their
 order. Other repairs remain limited to the reported claim paths. No repair can

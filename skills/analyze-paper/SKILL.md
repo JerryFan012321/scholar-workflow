@@ -93,7 +93,8 @@ new template. Report an unsupported-version limitation rather than substituting 
    annotations, and literature trees as separate artifacts; never infer relations from prose.
    For a portable exemplar, also use `${CLAUDE_PLUGIN_ROOT}/references/canvas-registration.md`
    to declare its already-owned Canvas in the Source manifest; this does not regenerate the pair.
-8. Return each pair's paths, profile/scope, validation state, and every source gap or conflict.
+8. Return each pair's paths, profile/scope, validation state, and every warning,
+   source gap or conflict. A nonblocking layout reminder is not human visual approval.
 
 ## Constraints
 

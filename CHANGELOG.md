@@ -5,6 +5,51 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.47.2] - 2026-10-22
+
+### Fixed
+
+- **analyze-paper:** use consistent v5 visible-text measurement for width and
+  height. Do not count emitted bold-label markers or link targets as visible
+  rows; retain literal/escaped/code symbols, image pixels and the additional
+  click line. Keep v4 behavior and the original fixed geometry-mutation inputs.
+  This development fix does not solve every dense tree or constitute installed
+  paper acceptance; alignment, height and routing limits remain intact. The
+  separately approved v5 aspect-advisory change is described below.
+- **analyze-paper:** keep the complete five-branch v5 tree when its overall
+  bounds exceed the 2:1 layout target. Surface a non-repairable warning through
+  conformance, batch diagnostics, audits and package checks, not a failure or
+  automatic repair. Preserve hard content/source/geometry checks and manual
+  layouts. Only error findings grant or block repair authority; preserve v1–v4
+  behavior, saved historical failures and spent budgets. This development change
+  is not installed-product or human acceptance.
+
+### Changed
+
+- **Development — next installed acceptance:** freeze a proposed single-object
+  replay of the saved input under the new aspect policy, preserving historical
+  failed states and budgets. Record that the saved reader is Zotero-native, not
+  ZotFlow, so layout replay cannot establish the latter's integration. Publication,
+  installation and one new isolated validation run were explicitly approved;
+  their actual receipts remain separate from this plan and from human acceptance.
+
+- **Development — failed-paper visibility:** distinguish an in-memory complete
+  candidate from a readable delivered package. Record the absent explicit review
+  export while preserving intentional failed-stage cleanup, canonical validation
+  and the existing repair budget; no new command or execution is supplied.
+
+- **Development — dense-tree feasibility:** preserve the current single-tree
+  contract while adding independent fixed-box counterexamples for disjoint-band
+  height and bounded gutters. Record a read-only content-size lower bound for
+  the saved paper input and request an explicit overflow-format decision; do not
+  infer general impossibility, change geometry gates or replay the real batch.
+
+- **Development — 0.47.1 installed replay:** record successful normal publication
+  and installation, and the saved single-paper replay's remaining aspect failure.
+  Deferred repair executes once; no main analysis trio is delivered. Preserve the
+  original failure and distinguish authorized cache replacement from protected
+  research files. This record does not change the published 0.47.1 runtime.
+
 ## [0.47.1] - 2026-10-21
 
 ### Fixed

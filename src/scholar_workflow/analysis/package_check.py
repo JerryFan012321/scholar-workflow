@@ -137,7 +137,7 @@ def check_package(
             ))
     return {
         "schema_version": 1,
-        "status": "conformant" if not findings else "nonconformant",
+        "status": "nonconformant" if any(f.severity == "error" for f in findings) else "conformant",
         "read_only": True,
         "paper_title": document.paper_title,
         "ir_version": document.schema_version,
@@ -196,7 +196,11 @@ def package_check_markdown(report: dict[str, Any], *, language: str) -> str:
         *[f"- {_text(name)}" for name in report["files"]], "",
         "## 问题（工具原始诊断）" if zh else "## Findings (original tool diagnostics)", "",
     ]
-    lines += [f"- {_text(row['code'])}: {_text(row['message'])}" for row in report["findings"]] or [
+    severity_labels = {"warning": "提醒", "error": "错误"} if zh else {"warning": "Warning", "error": "Error"}
+    lines += [
+        f"- {severity_labels[row['severity']]} — {_text(row['code'])}: {_text(row['message'])}"
+        for row in report["findings"]
+    ] or [
         "无。" if zh else "None."
     ]
     lines += ["", "## 未由本次检查证明" if zh else "## Not established by this check", "",

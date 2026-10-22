@@ -98,26 +98,37 @@ schema. Concision cannot remove a material qualification or add unsupported fact
   rectangle overlaps alone is not enough.
 - Text boxes fit measured visible text plus approximately one click line. All actual
   records and framework labels remain present; there is no count quota to satisfy.
-  The 420 px maximum node height and 2:1 maximum overall aspect ratio remain visual
-  checks, not a reason to reject the IR or delete branches. An unsafe candidate keeps
-  its complete content and reports the actual layout conflict; it never hides records,
-  merges slots or shrinks fonts to claim success.
+  The 420 px maximum node height remains a hard check. Overall 2:1 aspect is only
+  a layout target: a supporting runtime returns `canvas-aspect-limit` at
+  `canvas/geometry` with `severity: warning` and `repairable: false`, not a failure.
+  It preserves one complete five-branch graph and all instances. This warning never
+  spends a repair, grants content-edit authority or proves human readability.
+  Alignment, crossing, clipping, image size, sources and backlinks remain hard checks.
+  An unsafe candidate keeps its complete content and reports the actual conflict;
+  it never hides records, merges slots or shrinks fonts to claim success.
 - For a tree that is too tall, aligned layer gutters may increase uniformly
-  from 64 px to at most 344 px, using only the width needed for the 2:1 limit.
+  from 64 px to at most 344 px, using only the width needed for the 2:1 target.
   This spacing-only attempt leaves box dimensions and vertical bands unchanged.
   A supporting new-candidate renderer may then widen factual claim/point cards
   only up to their measured visible-line widths and remeasure wrapping/click space.
   It never pads short labels, resizes images, shrinks fonts or alters content/links.
   Try bounded content-fit widths; among tested geometrically safe layouts, prefer
   shorter actual square routes, not merely narrower cards or endpoint distances.
-  This is not a global-optimum claim. If no safe trial fits, retain the original
-  complete failed candidate; do not create unlimited gutters or empty wide cards.
+  This is not a global-optimum claim. If no trial meets the aspect target, retain
+  the original complete candidate with its warning; do not create unlimited gutters
+  or empty wide cards. Other hard geometry errors still fail conformance.
   Safe existing paired layouts remain preserved, not silently regenerated. Check
   installed support; source tests and spacing do not establish visual acceptance.
 - A renderer may return a noncanonical candidate for review. Baseline creation,
   batch success and canonical writes require a passing conformance report. A file
   existing is not proof of success. Source fidelity and human visual assessment are
   separate, explicitly reported checks.
+
+From 0.47.2, conformance passes when no error-severity finding exists; warnings remain visible
+in item diagnostics, pair audits and explicit package checks. Ordinary replay keeps
+recorded state and repair counts, including historical errors. Runtime 0.47.1 and
+earlier still enforce aspect as an error; verify normally installed support before
+using the advisory behavior. V1–v4 retain their own versioned geometry contracts.
 
 ## Unique Canvas source targets
 

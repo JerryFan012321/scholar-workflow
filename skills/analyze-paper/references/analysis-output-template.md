@@ -123,6 +123,12 @@ corresponding-challenge or corresponding-contribution axis.
   coordinates. Boxes fit their visible content plus roughly one extra line for clicks;
   text, source links and backlinks must not be clipped or obscured. Readability and
   editability remain subject to explicit human assessment in Obsidian.
+  Keep one complete five-branch Canvas, not an overview with branch subfiles.
+  The overall 2:1 aspect ratio is a layout target, not a hard pass/fail condition:
+  in supporting runtimes, exceeding it produces a nonblocking warning and retains
+  the complete graph. Do not omit content, shrink fonts or pad cards to silence it.
+  Alignment, non-crossing, non-occlusion, readable text and click space remain hard
+  requirements. Report the warning and pending human readability assessment.
 - Preserve stable identities, safe human layout and unrelated user-created nodes.
   One paper's Markdown, Canvas and sidecar remain together in its mapped paper folder;
   the Zotero PDF stays in Zotero. Existing pairs are not bulk regenerated or migrated
@@ -182,7 +188,10 @@ to conceal expanded nodes.
 The current v5 interface imposes no semantic-record or generated-node count quota.
 If readable geometry conflicts with required content, retain the complete candidate
 and report the actual layout conflict instead of merging named slots or dropping
-content. Layout failure is not permission to reduce the paper's branch count.
+content. Aspect-only warnings do not block conformance; other hard geometry failures
+still do. Neither is permission to reduce the paper's branch count. Check installed
+support: 0.47.1 and earlier retain their historical hard aspect gate. A source fix
+does not upgrade them or reclassify a saved failed batch.
 An explicit format conversion preserves prior source/claim content and follows the
 ordinary paired review and conflict protections; it is not an automatic refresh.
 
