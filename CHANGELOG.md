@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development — accepted replay presentation:** record the human's explicit
+  approval of the current 0.47.2 candidate's overall layout/readability and one
+  observed Zotero-native source link at the correct PDF page. Bind approval to
+  current files; keep scientific support, canonical adoption and independent
+  fresh-conversation generation separate. Prepare the latter's bounded expected
+  result without starting a new conversation or overwriting the accepted package.
+
 - **Development — native paper navigation receipt:** record one real Canvas-to-
   Markdown block click and folded-quote expansion in the existing 0.47.2 test
   candidate. Preserve Advanced Canvas's permitted metadata and unchanged analysis
@@ -16,8 +23,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 - **Development — 0.47.2 installed receipt:** record normal hotfix publication,
   pipx and marketplace installation, exact runtime identity, and the saved-input
   V-JEPA 2 replay's complete, conformant three-file delivery with zero repairs.
-  Preserve old failures, spent budgets and protected files. Keep human review,
-  live reader clicks, canonical adoption and fresh-conversation generation pending;
+  Preserve old failures, spent budgets and protected files. Keep canonical adoption
+  and fresh-conversation generation pending, with native and human results separate;
   these development receipts do not change the already published 0.47.2 build.
 
 ## [0.47.2] - 2026-10-22
