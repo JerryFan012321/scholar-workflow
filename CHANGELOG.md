@@ -19,6 +19,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development — 0.47.3 offline package preflight:** verify the fixed source's
+  runtime whitelist, wheel source bytes, RECORD entries, versions and entry point
+  without publishing, installing or executing a real-paper candidate. Keep this
+  preparation distinct from installed acceptance and unresolved source-support gaps.
+
 - **Development — evidence presentation forward tests:** add isolated synthetic
   record inputs and a separate caller-owned semantic oracle for quote coverage,
   attribution, emphasis and comparison scope, including valid multi-span evidence,
