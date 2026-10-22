@@ -7,6 +7,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development — native paper navigation receipt:** record one real Canvas-to-
+  Markdown block click and folded-quote expansion in the existing 0.47.2 test
+  candidate. Preserve Advanced Canvas's permitted metadata and unchanged analysis
+  content; do not equate this bounded observation with all-link, PDF-reader,
+  scientific, human or fresh-conversation acceptance. No runtime change.
+
 - **Development — 0.47.2 installed receipt:** record normal hotfix publication,
   pipx and marketplace installation, exact runtime identity, and the saved-input
   V-JEPA 2 replay's complete, conformant three-file delivery with zero repairs.

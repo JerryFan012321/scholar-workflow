@@ -1,5 +1,19 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-23增量：当前候选一处原生正文反链与摘录展开通过
+
+上一目标轮为实际progress：0.47.2发布/安装、原IR回放与可见三文件交付已完成。
+本轮仅操作该test现有候选，真实点击Canvas任务节点反链，打开exact分析文件并定位
+零基line17（独立核其claim-a-task锚点在第18行）；默认折叠摘录在实时阅览和阅读视图
+均展开，完整保存原句及strong证据可见，已有真实阅读截图。只证明这一处交互，不称
+全部138反链、PDF页级/reader或人工通过；没有重分析/渲染或新增对话。
+正文/baseline仍与stage字节相同；Advanced Canvas仅自动追加受限metadata，数组
+内容和图完全保持，公开check-bundle仍conformant。保留此编辑器信息，不手改图或
+ack baseline；原交付逐字节记录是历史事实，当前Canvas hash应看test原对象的
+_验收/native-navigation-0472.json。新候选整体美观/可读与点击评阅仍待用户。
+没有实现/发布新版本、合并main、改正式Vault/Zotero或连接服务器。G17完整四类交付、
+canonical采用和新宿主one-shot仍未完成；不以局部原生通过替代人工、扩大权限或重跑业务。
+
 ## 2026-10-22当前：0.47.2已发布安装，原输入完整交付；待人工评阅
 
 已固定source31e0143/runtime8717278，正常原子推送hotfix/release并经pipx及Codex
