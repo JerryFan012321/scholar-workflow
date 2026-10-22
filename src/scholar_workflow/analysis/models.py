@@ -264,7 +264,7 @@ class Evidence(BaseModel):
     anchor: str | None = Field(default=None, min_length=1, max_length=512)
     detail: str | None = Field(default=None, min_length=1, max_length=2048)
     source_spans: list[SourceSpan] = Field(
-        default_factory=list, max_length=8, exclude_if=lambda value: not value
+        default_factory=list, exclude_if=lambda value: not value
     )
 
     @model_validator(mode="after")
@@ -551,6 +551,8 @@ class AnalysisDocument(BaseModel):
                 if any(re.search(r"!\[|<img\b", text, re.IGNORECASE) for text in projected):
                     raise ValueError("Canvas image embeds must use typed canvas_image; Markdown crops require a plain Canvas summary")
             for record in (claim, *claim.points):
+                if self.schema_version < 4 and len(record.evidence.source_spans) > 8:
+                    raise ValueError("IR v1-v3 evidence has too many source spans")
                 if any(span.quote_emphasis for span in record.evidence.source_spans) and (
                     not is_reference_tree or not self.profile.markdown_quotes
                 ):
@@ -635,7 +637,7 @@ class AnalysisDocument(BaseModel):
                     for char in "\r\n"
                 ):
                     raise ValueError("IR v4 evidence labels must be single-line")
-                if len(evidence.source_spans) > 3:
+                if self.schema_version == 4 and len(evidence.source_spans) > 3:
                     raise ValueError("IR v4 evidence has too many inline source spans")
                 if self.profile.markdown_quotes:
                     quotes = [span.quote for span in evidence.source_spans if span.quote is not None]

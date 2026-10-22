@@ -121,7 +121,6 @@
                     "detail": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048},
                     "source_spans": {
                       "type": "array",
-                      "maxItems": 8,
                       "items": {"oneOf": [
                         {"$ref": "#/$defs/zotero_pdf_span"},
                         {"$ref": "#/$defs/vault_markdown_span"}
@@ -163,7 +162,6 @@
               "detail": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048},
               "source_spans": {
                 "type": "array",
-                "maxItems": 8,
                 "items": {"oneOf": [
                   {"$ref": "#/$defs/zotero_pdf_span"},
                   {"$ref": "#/$defs/vault_markdown_span"}
@@ -372,9 +370,14 @@
     "reference_canvas_evidence": {
       "properties": {
         "anchor": {"maxLength": 160, "pattern": "^[^\\r\\n]*$"},
-        "detail": {"maxLength": 180, "pattern": "^[^\\r\\n]*$"},
-        "source_spans": {"maxItems": 3}
+        "detail": {"maxLength": 180, "pattern": "^[^\\r\\n]*$"}
       }
+    },
+    "reference_canvas_evidence_v4": {
+      "allOf": [
+        {"$ref": "#/$defs/reference_canvas_evidence"},
+        {"properties": {"source_spans": {"maxItems": 3}}}
+      ]
     },
     "v3_traceable_evidence": {
       "if": {"properties": {"kind": {"enum": ["author_stated", "analysis_inference"]}}},
@@ -517,7 +520,11 @@
         }},
         "claims": {"items": {"properties": {
           "role": {"enum": ["task", "input", "workflow", "output", "boundary"]},
-          "outline_path": {"const": null}
+          "outline_path": {"const": null},
+          "evidence": {"properties": {"source_spans": {"maxItems": 8}}},
+          "points": {"items": {"properties": {
+            "evidence": {"properties": {"source_spans": {"maxItems": 8}}}
+          }}}
         }}}
       }}
     },
@@ -542,14 +549,14 @@
                 "title": {"maxLength": 120, "pattern": "^[^\\r\\n]*$"},
                 "body": {"not": {"pattern": "(?:^|\\n)#{1,6}\\s|sw-analysis-claim"}},
                 "canvas_summary": {"maxLength": 180, "pattern": "^[^\\r\\n]*$"},
-                "evidence": {"$ref": "#/$defs/reference_canvas_evidence"},
+                "evidence": {"$ref": "#/$defs/reference_canvas_evidence_v4"},
                 "points": {"items": {"properties": {
                   "text": {"not": {"type": "string", "pattern": "sw-analysis-claim"}},
                   "canvas_summary": {
                     "pattern": "^[^\\r\\n]*$",
                     "not": {"type": "string", "pattern": "sw-analysis-claim"}
                   },
-                  "evidence": {"$ref": "#/$defs/reference_canvas_evidence"}
+                  "evidence": {"$ref": "#/$defs/reference_canvas_evidence_v4"}
                 }}}
               }},
               {"if": {"properties": {"body": {"minLength": 181}}},

@@ -83,6 +83,10 @@ From 0.41.2, v5 can explicitly select `profile.canvas_unique_sources: true` to a
 repeating identical source links within a Canvas node while retaining separate Markdown
 excerpts and all source spans. Existing pairs require an explicit whole format update;
 omitting the option preserves the old projection. See `references/analysis-v5-format.md`.
+From 0.47.3, v5 records have no fixed source-span count quota, so complete compound
+steps can retain their separately located sources. Every passage remains validated;
+byte-size and actual Canvas geometry limits still apply. Earlier installations and
+v1–v4 retain their existing limits. See the same versioned interface.
 From 0.41.3, optional v5 `profile.canvas_note_path` explicitly targets the paired note inside
 its containing Vault, avoiding ambiguous same-named notes. Canonical writes verify the
 actual authorized location; moved copies report required rebinding instead of rewriting
