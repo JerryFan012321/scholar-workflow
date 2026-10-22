@@ -19,6 +19,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development — acceptance handoff:** record the unresolved next-release and
+  candidate-write authorization after safe source validation and offline preflight.
+  Preserve the full goal, installed 0.47.2, accepted artifacts and historical results;
+  no additional product or business operation is implied by automatic continuation.
+
 - **Development — 0.47.3 offline package preflight:** verify the fixed source's
   runtime whitelist, wheel source bytes, RECORD entries, versions and entry point
   without publishing, installing or executing a real-paper candidate. Keep this
