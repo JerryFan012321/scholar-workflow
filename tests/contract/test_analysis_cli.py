@@ -211,7 +211,7 @@ def test_cli_can_apply_the_first_repair_after_a_failed_invocation(tmp_path, monk
     assert len(calls) == 2
 
 
-def test_real_v5_geometry_failure_accepts_a_later_summary_only_cli_repair(tmp_path):
+def test_real_v5_aspect_advisory_passes_without_spending_a_summary_repair(tmp_path):
     text = (
         "这是一条仅用于布局验收的合成记录，不代表真实论文或实验。原始正文、全部具名子项、"
         "条件和限制都必须保留；图形显示可以采用简要说明，也可以展示这段完整解释，但不得"
@@ -251,16 +251,16 @@ def test_real_v5_geometry_failure_accepts_a_later_summary_only_cli_repair(tmp_pa
             "--state-db", str(tmp_path / "analysis.db"), "--stage-root", str(tmp_path / "stage")]
     runner = CliRunner()
     first = runner.invoke(main, args)
-    assert first.exit_code == 6, first.output
-    failed = json.JSONDecoder().raw_decode(first.output)[0]["items"][0]
-    assert failed["repair_count"] == 0 and failed["stage_path"] is None
-    assert {finding["code"] for finding in failed["diagnostics"]} == {"canvas-aspect-limit"}
-    repaired = runner.invoke(main, [*args, "--repair-request", str(repair_path)])
-    assert repaired.exit_code == 0, repaired.output
-    result = json.loads(repaired.output)["items"][0]
-    assert result["state"] == "repaired" and result["repair_count"] == 1
+    assert first.exit_code == 0, first.output
+    result = json.loads(first.output)["items"][0]
+    assert result["state"] == "validated" and result["repair_count"] == 0
+    assert [(f["code"], f["severity"], f["repairable"]) for f in result["diagnostics"]] == [
+        ("canvas-aspect-limit", "warning", False),
+    ]
+    repeated = runner.invoke(main, [*args, "--repair-request", str(repair_path)])
+    assert repeated.exit_code == 0 and repeated.output == first.output
     baseline = json.loads((Path(result["stage_path"]) / "analysis.baseline.json").read_text())
-    assert baseline["document"] == AnalysisBatchRequest.model_validate(changed).items[0].document.model_dump(mode="json")
+    assert baseline["document"] == request.items[0].document.model_dump(mode="json")
 
 
 def test_cli_repair_refuses_ambiguous_duplicate_artifact_identities(tmp_path):

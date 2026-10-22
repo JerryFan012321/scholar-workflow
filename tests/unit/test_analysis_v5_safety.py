@@ -53,9 +53,11 @@ INPUT_HASHES = {
     "canvas-mutations.json": "309d0d2960fce11df9230f3290aad5e50e4fac44a1ab6c9312e4a34dc49dd7e9",
     "focused-limitation.json": "1551b7b837bb6713cfaa703187da23d8d85f0e4c51d23aa6ad0ac37999c9dbdb",
     "geometry-mutations.json": "1fa29ce6f02dca72099a091867b1151449e8bc473ae2c088c1e628b2862287e7",
+    "geometry-base-0471.json": "5df6e8a4af240487ae194abe659e1a52ee15e3a4691411f298548dffdcc3b582",
     "human-edge-mutations.json": "2f6346f5b3d0bd8b82f5df4ed6a3983305b3155121c3855446f01a1292fb0913",
     "point-prose-mutations.json": "53d6378874a0e447aebb61277ec9d7ce089c8a1b895f3c394c29ebf68fd7ef52",
-    # N-18 now reports its real layout conflict, not the retired content quota.
+    # These frozen cases record the historical aspect failure. Current v5 tests
+    # explicitly assert the approved advisory policy without rewriting the inputs.
     # All paper, mutation and geometry inputs above remain byte-for-byte frozen.
     "manifest.json": "737f6076a1541e58955b7d149761ad4458a80659a1963e4769fbc3ffec743710",
 }
@@ -238,7 +240,18 @@ def _fixed_geometry_state(
     spec = _input("geometry-mutations.json")
     base = spec["base_canvas"]
     assert base["ir_sha256"] == INPUT_HASHES["../analysis_v5_toy.json"]
-    document, bundle, baseline, paths = _base_state(tmp_path)
+    document = _document()
+    bundle = render_analysis(document, note_stem=NOTE_STEM)
+    frozen = _input("geometry-base-0471.json")
+    assert frozen["source_commit"] == "d0a56b2f469c4c85e39d06102d67b678f0c94e08"
+    assert frozen["canvas_sha256"] == GEOMETRY_CANVAS_HASH
+    assert set(frozen["geometry"]) == {node["id"] for node in bundle.canvas["nodes"]}
+    # Keep the original mutation inputs, coordinates and full Canvas hash.
+    # Fresh renderers may measure text differently; that must not redefine them.
+    for node in bundle.canvas["nodes"]:
+        node.update(frozen["geometry"][node["id"]])
+    baseline = create_baseline(document, bundle, note_stem=NOTE_STEM)
+    paths = _write_state(tmp_path / "current", document, bundle, baseline)
     raw = paths["canvas"].read_bytes()
     assert sha256(raw).hexdigest() == base["sha256"] == GEOMETRY_CANVAS_HASH, (
         "Fixed Canvas base mismatch: stop before applying any geometry mutation"
@@ -257,6 +270,16 @@ def _fixed_geometry_state(
     reference = _case(spec, "G-02")["mutation"]["reference_node"]
     assert {key: nodes[reference["id"]][key] for key in reference} == reference
     return document, bundle, baseline, paths, spec
+
+
+def test_frozen_geometry_pair_survives_new_text_measurement_unchanged(tmp_path: Path) -> None:
+    document, current, baseline, paths, _ = _fixed_geometry_state(tmp_path)
+    with _unchanged_files(paths):
+        plan = plan_analysis_update(
+            current=current, baseline=baseline, update=document, note_stem=NOTE_STEM,
+        )
+        assert plan.status == "ready" and plan.conflicts == ()
+        assert plan.proposed == current
 
 
 def test_u01_focused_method_preserves_all_four_unselected_branches(tmp_path: Path) -> None:
@@ -441,7 +464,7 @@ def test_version_cutover_requires_explicit_migration_and_leaves_current_bytes(
 
 
 @pytest.mark.parametrize("case_id", ["G-01", "G-02", "G-03"])
-def test_fixed_geometry_mutation_reports_its_specific_contract_failure(
+def test_fixed_geometry_mutation_reports_its_specific_diagnostic(
     tmp_path: Path, case_id: str
 ) -> None:
     document, current, _, paths, spec = _fixed_geometry_state(tmp_path)
@@ -478,7 +501,13 @@ def test_fixed_geometry_mutation_reports_its_specific_contract_failure(
     paths["canvas"].write_bytes(_json_bytes(canvas))
     with _unchanged_files(paths):
         report = validate_bundle(document, _read_pair(paths), note_stem=NOTE_STEM)
-        _assert_finding(report, case["expected"]["finding"])
+        if case_id == "G-03":
+            assert report.ok
+            assert [(f.code, f.severity, f.repairable) for f in report.findings] == [
+                (case["expected"]["finding"], "warning", False),
+            ]
+        else:
+            _assert_finding(report, case["expected"]["finding"])
         assert "invalid-json-canvas-contract" not in {f.code for f in report.findings}
 
 
@@ -554,7 +583,7 @@ def test_g04_focused_limitation_keeps_exact_source_and_a_compact_editable_tree(t
         assert max(width / height, height / width) <= 2
 
 
-def test_n18_preserves_all_slots_but_reports_the_real_layout_conflict(tmp_path: Path) -> None:
+def test_n18_preserves_all_slots_and_reports_the_aspect_advisory(tmp_path: Path) -> None:
     payload = _input("budget-40-modules.json")
     assert len(payload["claims"]) == 40
     assert [claim["claim_id"] for claim in payload["claims"]] == [
@@ -593,10 +622,12 @@ def test_n18_preserves_all_slots_but_reports_the_real_layout_conflict(tmp_path: 
     assert not baseline_path.exists()
     with _unchanged_files(paths):
         report = validate_bundle(document, _read_pair(paths), note_stem=NOTE_STEM)
-        _assert_finding(report, "canvas-aspect-limit")
+        assert report.ok
+        assert [(f.code, f.severity, f.repairable) for f in report.findings] == [
+            ("canvas-aspect-limit", "warning", False),
+        ]
         assert all(finding.code != "canvas-node-limit" for finding in report.findings)
-        with pytest.raises(AnalysisUpdateError, match="canvas-aspect-limit"):
-            create_baseline(document, bundle, note_stem=NOTE_STEM)
+        assert create_baseline(document, bundle, note_stem=NOTE_STEM).document == document
         assert not baseline_path.exists()
 
 

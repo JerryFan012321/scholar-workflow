@@ -242,13 +242,13 @@ def test_seventy_independent_records_reach_the_paired_projection(capacity):
     bundle, baseline = render_analysis_projection(document, note_stem="Expanded capacity sample")
     assert validate_bundle(document, bundle, note_stem="Expanded capacity sample").ok
     assert 96 < len(bundle.canvas["nodes"]) <= 192
-    # Independent dimensions captured before the fix: 3056 x 8250. Only gutters
-    # may change; tall-node readability and the complete vertical bands remain.
+    # The former 8250px height counted the i-p label's bold markers as an extra
+    # 21px line. Correct that visible-row count; keep every record and click line.
     nodes = bundle.canvas["nodes"]
     width = max(node["x"] + node["width"] for node in nodes) - min(node["x"] for node in nodes)
     height = max(node["y"] + node["height"] for node in nodes) - min(node["y"] for node in nodes)
-    assert height == 8250
-    assert 4125 <= width <= 4131
+    assert height == 8250 - 21
+    assert 4115 <= width <= 4121
     assert len(baseline.generated_node_ids) == len(bundle.canvas["nodes"])
     for index in range(1, 9):
         for slot in ("motivation", "method", "why-it-works", "technical-advantage"):

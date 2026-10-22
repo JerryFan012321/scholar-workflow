@@ -95,6 +95,48 @@ def _put_at(root, positions):
         node.x, node.y = positions[path]
 
 
+@pytest.mark.parametrize(
+    ("modules", "minimum_height", "can_fit"),
+    [(1, 2248, True), (2, 4408, False), (3, 6568, False), (6, 13048, False)],
+)
+def test_disjoint_bands_can_be_infeasible_without_any_content_loss_or_crossing(
+    modules, minimum_height, can_fit,
+):
+    """A fixed-box geometric bound, not a paper-size quota or rendered snapshot."""
+    root = _node("root", "root", 200, 70, "Paper")
+    for branch, label in enumerate(BRANCHES):
+        section = _node(f"section-{branch}", "section", 200, 70, label)
+        for module in range(modules):
+            parent = _node(f"section-{branch}/module-{module}", "group", 200, 70)
+            parent.children = [
+                _node(f"{parent.path}/point-{point}", "point", 280, 100)
+                for point in range(4)
+            ]
+            section.children.append(parent)
+        root.children.append(section)
+    frozen, topology = _unchanged_fields(root), _edges(root)
+    # Four 100px leaves + three 8px gaps: 424px per module. Five
+    # sections have (modules-1)*8px gaps; four root gaps add 128px.
+    assert 5 * (modules * 424 + (modules - 1) * 8) + 4 * 32 == minimum_height
+    # Even all three gutters at 344px allow only 1912px of width.
+    maximum_width = 3 * 200 + 280 + 3 * 344
+    assert maximum_width == 1912
+
+    _layout_tree(root, expanded=True)
+
+    width, height = _bounds(root)
+    assert len(_nodes(root)) == 6 + 25 * modules
+    assert height == minimum_height and width <= maximum_width
+    assert _unchanged_fields(root) == frozen and _edges(root) == topology
+    _assert_safe_geometry(root)
+    if can_fit:
+        assert (width, height) == (1126, 2248)
+        assert height <= 2 * width
+    else:
+        assert width == maximum_width
+        assert height > 2 * maximum_width
+
+
 def _positions(root):
     return {path: (node.x, node.y) for path, node in _nodes(root).items()}
 
@@ -600,7 +642,10 @@ def test_short_text_cannot_be_widened_into_empty_cards_to_hide_a_tall_tree():
     original = _original_dense_tree(document, note)
     bundle = render_analysis(document, note_stem=note)
     report = validate_bundle(document, bundle, note_stem=note)
-    assert not report.ok and "canvas-aspect-limit" in {item.code for item in report.findings}
+    assert report.ok
+    assert [(item.code, item.severity, item.repairable) for item in report.findings] == [
+        ("canvas-aspect-limit", "warning", False),
+    ]
     actual = {node["id"]: node for node in bundle.canvas["nodes"]}
     assert len(actual) == len(_nodes(original))
     for path, node in _nodes(original).items():
@@ -608,14 +653,17 @@ def test_short_text_cannot_be_widened_into_empty_cards_to_hide_a_tall_tree():
         assert (row["text"], row["width"], row["height"]) == (node.text, node.width, node.height)
 
 
-def test_insufficient_content_width_keeps_the_complete_original_failed_candidate():
+def test_insufficient_content_width_keeps_the_complete_original_candidate_with_warning():
     # This English input has enough rows that even a fully unwrapped statement
-    # cannot meet 2:1. It is a negative case, not permission to pad its cards.
+    # cannot meet 2:1. The advisory is not permission to pad its cards.
     document, note = _dense_document(), "Synthetic Dense Analysis"
     original = _original_dense_tree(document, note)
     bundle = render_analysis(document, note_stem=note)
     report = validate_bundle(document, bundle, note_stem=note)
-    assert not report.ok and "canvas-aspect-limit" in {item.code for item in report.findings}
+    assert report.ok
+    assert [(item.code, item.severity, item.repairable) for item in report.findings] == [
+        ("canvas-aspect-limit", "warning", False),
+    ]
     actual = {row["id"]: row for row in bundle.canvas["nodes"]}
     assert len(actual) == len(_nodes(original))
     for path, node in _nodes(original).items():

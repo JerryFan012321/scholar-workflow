@@ -683,7 +683,7 @@ def test_n10_generated_node_overlap_is_rejected() -> None:
     _reject(document, bundle, canvas)
 
 
-def test_n11_single_axis_three_to_one_stretch_is_rejected() -> None:
+def test_n11_single_axis_three_to_one_stretch_is_advisory() -> None:
     document, bundle = _render()
     canvas = _changed_canvas(bundle)
     nodes = canvas["nodes"]
@@ -697,7 +697,10 @@ def test_n11_single_axis_three_to_one_stretch_is_rejected() -> None:
     report = validate_bundle(
         document, AnalysisBundle(markdown=bundle.markdown, canvas=canvas), note_stem=NOTE_STEM
     )
-    assert "canvas-aspect-limit" in {finding.code for finding in report.findings}
+    assert report.ok
+    assert [(finding.code, finding.severity, finding.repairable) for finding in report.findings] == [
+        ("canvas-aspect-limit", "warning", False),
+    ]
 
 
 def test_n12_node_height_above_420_is_rejected() -> None:
