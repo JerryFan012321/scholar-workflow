@@ -5,6 +5,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Changed
+
+- **Development — authorized 0.47.3 installed acceptance:** record the actual
+  runtime-only publication and normal CLI/marketplace installation, then one
+  public preservation-stage update and CAS review-copy handoff for fifteen
+  evidence records. Preserve prose, complete slots, images, graph geometry,
+  previous approval and the original partial one-shot result. Keep the editor's
+  metadata-only Canvas save, authorized old-cache removal, pending human review
+  and noncanonical status explicit; no new runtime change or main merge.
+
 ## [0.47.3] - 2026-10-23
 
 ### Fixed

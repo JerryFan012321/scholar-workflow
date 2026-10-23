@@ -1,5 +1,30 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-23当前：0.47.3已发布安装，fresh候选定向修正已交付
+
+固定source629f430/runtime4619360已正常推送hotfix/release，main仍2e3c61f。
+CLI经pipx固定runtime、Codex经既有marketplace正常安装0.47.3；126包文件、293插件
+payload与release字节/权限核对通过，安装器自身.git不计入payload，不手工删缓存。
+原3343完整及版本同步后79定向回归仍有效，不重做全集。详见0.47.3-release.md。
+
+仅修正test原fresh-0472候选15条evidence，保留全部正文/槽位/图像/reader；九处
+补证共新增26span，现247段均匹配对应索引物理页，七处混合判断明确分析推断。
+source/provider不存在的审阅副本只用exact-byte内部before/resources三文件供安装版
+stage-update保图暂存，再独立三文件CAS交回原路径；不虚构provider或canonical提交。
+新批次completed/validated、repair0；公开check-bundle conformant，仅原4760×19813
+比例warning。183nodes/182edges全部坐标/宽高/样式/连线不变，11图、172反链保持。
+Advanced Canvas随后仅增受支持的空frontmatter metadata并重编码；当前图与stage
+不再物理字节相同，但nodes/edges全同，未覆盖回旧编码或改基线骗过CAS。
+739项旧业务保护无变化；获批正常安装移除了293个旧插件cache路径，原1032全清单
+因此不再整体通过，保留旧记录并分开报告，不refreeze。原认可包、失败和repair预算不变。
+
+Obsidian已加载当前pair，完整摘录实际展开且粗体可见；截图只取已核当前路径。
+新修正版人工、实际新增页点击及其余科学支持仍待；原独立生成one-shot继续partial，
+不得用定向修正改称独立新宿主已通过。唯一当前说明在test工作根repair-0473/RESULTS.md。
+没有重开/追加native对话、写正式Vault/Zotero、登记归属、切换服务或合并main。
+G17继续active；下一步等用户评阅新改摘录/边界，不能重复请求旧认可包人工通过。
+下节“已获授权待执行”及更早等待授权为历史时点，不覆盖本节。
+
 ## 2026-10-23当前：0.47.3发布安装与fresh候选定向修正已获授权
 
 用户在上一条明确范围后回复“授权”。现可正常发布/安装0.47.3，并仅定向修正test
