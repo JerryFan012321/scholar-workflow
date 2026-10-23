@@ -5,6 +5,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.47.3] - 2026-10-23
+
 ### Fixed
 
 - **analyze-paper:** remove the fixed source-span count quota from v5 compound
@@ -12,7 +14,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
   eight-span cap. Keep v1–v3's eight-span and v4's three-span compatibility boundaries,
   per-span source validation, quote/emphasis fidelity, byte-size and actual geometry
   checks and saved artifacts unchanged. Model and JSON Schema agree; source entries
-  and folded passages remain present. Prepared as 0.47.3, not yet published/installed.
+  and folded passages remain present. Installed acceptance remains a separate check.
   Sixty-two targeted and 3343 full unit/contract checks pass, including late-source
   validation, complete public staging, idempotency, changed-input refusal and actual
   overheight rejection. These source tests do not certify the real paper candidate.
