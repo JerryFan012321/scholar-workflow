@@ -5,6 +5,72 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.47.3] - 2026-10-23
+
+### Fixed
+
+- **analyze-paper:** remove the fixed source-span count quota from v5 compound
+  claims and points instead of inheriting v4's three-span restriction or the shared
+  eight-span cap. Keep v1–v3's eight-span and v4's three-span compatibility boundaries,
+  per-span source validation, quote/emphasis fidelity, byte-size and actual geometry
+  checks and saved artifacts unchanged. Model and JSON Schema agree; source entries
+  and folded passages remain present. Installed acceptance remains a separate check.
+  Sixty-two targeted and 3343 full unit/contract checks pass, including late-source
+  validation, complete public staging, idempotency, changed-input refusal and actual
+  overheight rejection. These source tests do not certify the real paper candidate.
+
+### Changed
+
+- **Development — acceptance handoff:** record the unresolved next-release and
+  candidate-write authorization after safe source validation and offline preflight.
+  Preserve the full goal, installed 0.47.2, accepted artifacts and historical results;
+  no additional product or business operation is implied by automatic continuation.
+
+- **Development — 0.47.3 offline package preflight:** verify the fixed source's
+  runtime whitelist, wheel source bytes, RECORD entries, versions and entry point
+  without publishing, installing or executing a real-paper candidate. Keep this
+  preparation distinct from installed acceptance and unresolved source-support gaps.
+
+- **Development — evidence presentation forward tests:** add isolated synthetic
+  record inputs and a separate caller-owned semantic oracle for quote coverage,
+  attribution, emphasis and comparison scope, including valid multi-span evidence,
+  bounded inference and full-sentence emphasis. Fixture tests check literal source
+  integrity only; a blind host review is recorded separately and cannot certify
+  paper-wide correctness. The one blind review matches all eight frozen cases;
+  twenty fixture/eval-schema checks pass. Existing runtime contracts and accepted artifacts stay
+  unchanged; no new reasoning procedure or automatic semantic scorer.
+
+- **Development — independent installed paper acceptance:** record the sole
+  authorized fresh conversation's completed, conformant three-file candidate and
+  the parent's read-only package/protection checks. Keep at least nine record-local quote
+  coverage gaps, attribution/emphasis limitations and the aspect warning explicit;
+  overall delivery remains partial, not full one-shot acceptance. Preserve the
+  approved previous package, historical failures and budgets. Native loading is
+  not visual approval; retain process-method deviations and trace-coverage limits.
+  The ten eval-schema checks pass. No runtime, publication, installation or main-merge change.
+
+- **Development — accepted replay presentation:** record the human's explicit
+  approval of the current 0.47.2 candidate's overall layout/readability and one
+  observed Zotero-native source link at the correct PDF page. Bind approval to
+  current files; keep scientific support, canonical adoption and independent
+  fresh-conversation generation separate. Freeze the latter's bounded expected
+  result; after separate human authorization, start one independent installed-
+  product conversation with protected existing files and no old answers or caller
+  coaching. Its actual outcome is recorded separately above; no runtime change.
+
+- **Development — native paper navigation receipt:** record one real Canvas-to-
+  Markdown block click and folded-quote expansion in the existing 0.47.2 test
+  candidate. Preserve Advanced Canvas's permitted metadata and unchanged analysis
+  content; do not equate this bounded observation with all-link, PDF-reader,
+  scientific, human or fresh-conversation acceptance. No runtime change.
+
+- **Development — 0.47.2 installed receipt:** record normal hotfix publication,
+  pipx and marketplace installation, exact runtime identity, and the saved-input
+  V-JEPA 2 replay's complete, conformant three-file delivery with zero repairs.
+  Preserve old failures, spent budgets and protected files. Keep canonical adoption
+  and fresh-conversation generation pending, with native and human results separate;
+  these development receipts do not change the already published 0.47.2 build.
+
 ## [0.47.2] - 2026-10-22
 
 ### Fixed

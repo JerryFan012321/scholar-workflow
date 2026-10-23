@@ -36,6 +36,16 @@ protection retain `analysis-format.md` and the shared source/storage policies.
 
 ## Outline paths and independent points
 
+From 0.47.3, v5 claims and points have no fixed source-span count quota. All supplied
+passages remain in the Markdown and their source entries remain in Canvas; only
+explicit identical-link deduplication changes the view. Earlier installations still
+reject more than three spans. Check installed support before staging a compound
+record such as the complete Overview steps. The existing source, quotation,
+identity, byte-size and actual geometry checks still apply; no count quota does not
+guarantee that every record fits a safe text box. Report an actual conflict without
+omitting evidence or splitting the required steps. V1–v3 retain eight spans per
+record, v4 retains three, and saved outputs remain unchanged.
+
 Each claim has a stable `claim_id`, role and unique `outline_path`. `<slug>` is a
 lowercase alphanumeric/hyphen identifier, not an absolute path or a display title.
 Each supplied point has its own stable `point_id`, text, evidence and block anchor.
