@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **Development — stage-one completion evidence:** align the current exemplar
+  contract and audit with the installed 0.47.3 correction and bounded read-only
+  checks of existing knowledge, project, experiment and native-tool artifacts.
+  Preserve historical approvals and partial one-shot evidence. Keep formal
+  production migration and registration of every review copy separate from the
+  actual exemplar requirements; do not add false completion gates or new runtime work.
+
 - **Development — authorized 0.47.3 installed acceptance:** record the actual
   runtime-only publication and normal CLI/marketplace installation, then one
   public preservation-stage update and CAS review-copy handoff for fifteen
