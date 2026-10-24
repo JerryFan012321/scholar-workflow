@@ -8,7 +8,14 @@
 unit/contract合成回归，再固定干净source；原开发结果不冒称本轮安装/人工已通过。
 当轮输入、预期与影响见research-resource-tracking-acceptance.md，发布回执见0.48.0-release.md。
 当前完整3558项通过（157.21秒、11既有警告）；本批Ruff/diff与独立发布审查通过。
-下一步固定source与runtime并正常安装，再执行单来源；这些尚未执行的步骤不记通过。
+发布构建source047c8f1/runtime3f1f0df已普通atomic push，pipx及marketplace正常安装0.48.0；
+137包文件/RECORD与310插件payload核齐，main未动。实际单来源由独立上下文仅用安装版
+在test新对象执行，结果与人工评鉴尚不记通过。具体实据见0.48.0-release.md。
+实际单来源功能现已通过：53首次可见、重复not_modified/0新事件、1已选待归档读回；
+15JSON回执和真实安装版表格核对通过，正确Obsidian阅读视图已观察。首次stdout截断和
+原生截图定位/绘制偏差如实保留；用户可读性/原文点击仍待评鉴，其他类型/整体目标不升级。
+test仅新对象23文件局部Git a656fb1，_state排除，原有改动保留；10项收尾schema通过。
+本轮不再重跑业务；向用户展示来源动态.md并等人工反馈。后续新增真实关注/调度/归档另议。
 
 ## 2026-10-24当前：进入研究来源与资源跟踪开发，不续改正式库
 

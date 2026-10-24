@@ -19,17 +19,21 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 
 ### WI-056: Research resources, publication channels and incremental updates
 
-- **Status**: in progress; developer implementation, not published or installed.
-- **Evidence**: 0.48.0 candidate has 160 new synthetic checks and 3555 full
-  unit/contract passes (11 existing warnings); bounded independent replay 29 passes.
-  Offline wheel matches 134 source Python files and both console entries. This
-  does not prove live sources, installed operation or new-dialog reproduction.
+- **Status**: in progress; 0.48.0 published and normally installed; single-source
+  installed functional check and native report display verified; human assessment pending.
+- **Evidence**: current full unit/contract 3558 passes (11 existing warnings).
+  Source047c8f1/runtime3f1f0df published without main merge; pinned pipx and Codex
+  marketplace installs verified against 137 package files and 310 plugin payloads.
+  Independent installed RSS task observed53 initially discovered entries, repeated
+  with not_modified/0 emitted events, and read back one selected-not-archived entry.
+  Initial full check stdout was truncated; complete subsequent public reads are
+  retained separately, not fabricated as the first response. See0.48.0-release.md.
 - **Scope**: researcher blogs, lab/company/startup research pages, releases and
   model metadata. Explicit subscription authority, adapters, incremental state,
   human-readable results and a runtime Skill. Keep existing paper/Field/project
   contracts and their unfinished acceptance requirements.
-- **Next action**: isolated synthetic registration/check tests; then separately
-  authorized normal installation and one controlled test-Vault reproduction.
+- **Next action**: show the single test report in Obsidian and obtain human
+  readability/link assessment; retain distinct evidence for other channel types.
   Model-family dossiers, selected-resource handoff and explicit scheduling remain
   full-direction requirements, not completed by a green feed test.
 - **Related**: G1, G12, G17–G19, INV63, NG23; research-resource-tracking.md.

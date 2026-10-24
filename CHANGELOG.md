@@ -5,6 +5,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Changed
+
+- **Development — 0.48.0 delivery:** record authorized runtime-only hotfix publication,
+  normal pinned pipx/marketplace installation and exact installed payload checks.
+  Preserve the two audit-script false positives as diagnostics, not product failures.
+  Record one independent installed RSS check, repeat/deduplication, disposition
+  read-back and native report display, retaining initial stdout truncation and
+  window/paint capture limitations. Human and other-provider acceptance remain
+  separate; no main merge or formal library writes.
+
 ## [0.48.0] - 2026-10-24
 
 ### Added
