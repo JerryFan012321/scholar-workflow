@@ -30,6 +30,11 @@ Local API。主题召回由 Local API 全字段/全文 quicksearch 加宿主模�
 项目引用不改变资料原有归属。显式复制是另一种操作：副本获得目标身份并独立演化；两者均不建立
 隐藏同步、跨域覆盖或级联删除。
 
+对于明确选定的官方网页，0.47.5补齐真实Zotero书目与带段落锚点的 `Source.md` 归档：
+`knowledge document-plan` 预览、`knowledge register-document` 登记单个新归属，不要求PDF；
+沿用同目录内完整正文与五分支分析树。未公开技术细节不从另一篇论文补写，详见
+[网页原文登记与分析](references/document-registration.md)。
+
 0.43.0 起，schema 2 的领域清单可以保留指向既有知识对象的引用及用途。
 `knowledge list --resolve-references` 可选显示声明归属和文件诊断，不打开阅读器或创建副本。
 schema 1 保持原样；`knowledge reference-plan/reference` 提供单条增删预览与确认，

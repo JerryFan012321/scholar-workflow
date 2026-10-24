@@ -173,6 +173,7 @@ def create_baseline(
                 complete_claim_markdown_lines(
                     claim, language, reader=document.reader,
                     markdown_quotes=document.profile.markdown_quotes,
+                    material_kind=document.material_kind,
                     markdown_folded_quotes=document.profile.markdown_folded_quotes,
                     markdown_source_images=document.profile.markdown_source_images,
                     label=label, heading_level=heading_level,
@@ -253,6 +254,8 @@ def _merged_document(
         )
     if baseline.profile.framework != update.profile.framework:
         raise AnalysisUpdateError("analysis update cannot change its framework")
+    if baseline.material_kind != update.material_kind:
+        raise AnalysisUpdateError("analysis update cannot change its source material kind")
     if baseline.schema_version == 5:
         # Retain the saved compatibility marker; it no longer selects capacity.
         update = update.model_copy(update={"capacity": baseline.capacity})
@@ -344,6 +347,7 @@ def _merged_document(
             schema_version=baseline.schema_version,
             artifact_id=baseline.artifact_id,
             paper_title=baseline.paper_title,
+            material_kind=baseline.material_kind,
             language=baseline.language,
             profile=profile,
             reader=baseline.reader,

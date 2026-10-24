@@ -361,6 +361,7 @@ def validate_complete_bundle(
             markdown_quotes=True,
             markdown_folded_quotes=document.profile.markdown_folded_quotes,
             markdown_source_images=document.profile.markdown_source_images,
+            material_kind=document.material_kind,
             label=claim_labels[claim.claim_id],
         )
         for line in lines:

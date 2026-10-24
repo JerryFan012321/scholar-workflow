@@ -1,5 +1,21 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-24当前：已获准最小补齐网页原文登记与分析提交
+
+用户已允许补齐真实缺口，随后发布正常安装hotfix并在test继续Genie3单对象验收。
+复用现有Source/Field、provider、CAS/journal及v5五分支；新增明确的非论文原文登记，
+不放宽paper/imported PDF验证，不伪造attachment或provider。网页的原始版本、URL、
+hash和块锚点须可核，正式分析提交核对实际文档owner与来源；已入库YXRF38IE不重复创建。
+仍保留充分正文、简短Canvas、折叠摘录和原来几何/安全边界；受版权限制的网页摘录需
+明确受限而非编造引用或将结构通过冒称科学支持。先合成定向与完整unit/contract，
+再固定干净源码、runtime-only构建、正常发布安装；仅test新对象复现，不改旧47输入、
+正式Vault/旧论文、main、服务或服务器。授权不扩大为整库迁移或自动人工通过。
+
+0.47.5最小实现已完成；3395项完整覆盖初跑3393通过/2失败，经修正后123项受影响回归
+及--lf两项均通过，旧47输入零变化。独立复核的跨段落/假锚点与网页误标问题已修，
+新CLI公开完整链通过；下一步固定源码、runtime-only发布、pipx/marketplace安装，复用
+test现存已登记Source/Field新建Genie3单元，不另初始化知识库。实据见0.47.5-release.md。
+
 ## 2026-10-24续验：Genie3 Webpage已获准入库，网页分析暴露真实能力缺口
 
 用户已明确允许官方介绍作为Webpage入库并在test分析。正常0.47.4公开zotero ingest

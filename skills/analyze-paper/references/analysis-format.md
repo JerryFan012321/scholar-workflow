@@ -192,6 +192,10 @@ support this field. The excerpt follows that statement in the human Markdown, wi
 span's page/annotation or block link; it is not a separate Evidence section or a bibliography.
 For an inference, quote the source observation it rests on, not an invented author conclusion.
 
+For an explicitly registered non-paper webpage, the v5-only restricted-quotation
+branch in `analysis-v5-format.md` retains exact source links and visibly declares
+copyright/permission omissions. It does not change this ordinary paper/PDF contract.
+
 Keep the original spelling, punctuation, qualifications, and language. A translation or
 paraphrase remains analysis prose, not the exact quote. An ordinary prose excerpt must contain
 at least one complete source sentence that a reader can understand on its own, including the

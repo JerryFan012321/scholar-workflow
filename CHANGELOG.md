@@ -5,6 +5,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.47.5] - 2026-10-24
+
+### Fixed
+
+- **ingest-resource / analyze-paper:** close the selected official-webpage source
+  registration and v5 commit gap without inventing a PDF. Register a real Zotero
+  webpage/blog bibliography and exact block-addressable Source.md using explicit
+  Source/Field ownership, digest-bound CAS and recoverable publication. Bind source
+  hashes and precise block/quotation checks to paired commit, retaining full prose,
+  the complete editable five-branch tree and existing paper/PDF protections.
+  Explicitly attributed copyright/permission omissions keep verified webpage links
+  and a visible notice rather than fabricating quotations; ordinary paper excerpts
+  retain their existing contract. Installation and real-source/human acceptance
+  remain separate from synthetic checks.
+
 ### Changed
 
 - **Development — 0.47.4 installed acceptance:** record normal hotfix/release

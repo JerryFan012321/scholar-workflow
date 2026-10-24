@@ -263,12 +263,22 @@ class Evidence(BaseModel):
     kind: EvidenceKind
     anchor: str | None = Field(default=None, min_length=1, max_length=512)
     detail: str | None = Field(default=None, min_length=1, max_length=2048)
+    quotation_omitted_reason: Literal["copyright_or_permission"] | None = Field(
+        default=None, exclude_if=lambda value: value is None,
+    )
     source_spans: list[SourceSpan] = Field(
         default_factory=list, exclude_if=lambda value: not value
     )
 
     @model_validator(mode="after")
     def validate_support(self) -> Evidence:
+        if self.quotation_omitted_reason is not None and (
+            self.kind not in {EvidenceKind.AUTHOR_STATED, EvidenceKind.ANALYSIS_INFERENCE}
+            or not self.source_spans
+            or any(not isinstance(span, VaultMarkdownSpan) or span.quote is not None
+                   for span in self.source_spans)
+        ):
+            raise ValueError("Restricted quotations require supported registered Markdown sources without quotes")
         if any(span.quote_emphasis for span in self.source_spans) and self.kind not in {
             EvidenceKind.AUTHOR_STATED, EvidenceKind.ANALYSIS_INFERENCE,
         }:
@@ -480,6 +490,9 @@ class AnalysisDocument(BaseModel):
     schema_version: Literal[1, 2, 3, 4, 5]
     artifact_id: str = Field(pattern=r"^analysis:[^\s]+$")
     paper_title: str = Field(min_length=1, max_length=1000)
+    material_kind: Literal["paper", "webpage"] = Field(
+        default="paper", exclude_if=lambda value: value == "paper",
+    )
     language: Literal["en", "zh"] | None = None
     profile: AnalysisProfile
     reader: AnalysisReader | None = None
@@ -498,6 +511,8 @@ class AnalysisDocument(BaseModel):
 
     @model_validator(mode="after")
     def validate_projection(self) -> AnalysisDocument:
+        if self.material_kind != "paper" and self.schema_version != 5:
+            raise ValueError("Explicit webpage material requires IR v5")
         if self.schema_version == 5 and re.search(r"!\[|<img\b", self.paper_title, re.IGNORECASE):
             raise ValueError("Canvas image embeds must use typed canvas_image, not the paper title")
         if self.capacity is not None and self.schema_version != 5:
@@ -551,6 +566,10 @@ class AnalysisDocument(BaseModel):
                 if any(re.search(r"!\[|<img\b", text, re.IGNORECASE) for text in projected):
                     raise ValueError("Canvas image embeds must use typed canvas_image; Markdown crops require a plain Canvas summary")
             for record in (claim, *claim.points):
+                if record.evidence.quotation_omitted_reason is not None and (
+                    self.schema_version != 5 or self.material_kind != "webpage"
+                ):
+                    raise ValueError("Restricted Markdown quotations require IR v5")
                 if self.schema_version < 4 and len(record.evidence.source_spans) > 8:
                     raise ValueError("IR v1-v3 evidence has too many source spans")
                 if any(span.quote_emphasis for span in record.evidence.source_spans) and (
@@ -646,7 +665,7 @@ class AnalysisDocument(BaseModel):
                     if evidence.kind in {
                         EvidenceKind.AUTHOR_STATED,
                         EvidenceKind.ANALYSIS_INFERENCE,
-                    } and not quotes:
+                    } and not quotes and evidence.quotation_omitted_reason is None:
                         raise ValueError(
                             "Markdown source quotations require an excerpt for each supported claim/point"
                         )

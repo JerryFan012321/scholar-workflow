@@ -16,6 +16,26 @@ Existing declared packages, including `resources/papers/`, stay in place.
 The segment is persisted with the resource mapping. Existing flat files remain readable and are
 not moved by an ordinary analysis update.
 
+## Explicit official-webpage analysis
+
+An explicitly selected official webpage/blog can use the same v5 five-branch result
+after its real Zotero `webpage` / `blogPost` identity and original-text `Source.md`
+have been registered. The [document registration contract](../../references/document-registration.md)
+owns that separate operation and its installed `knowledge document-plan/register-document`
+commands. The source snapshot, analysis, Canvas and sidecar share one mapped resource
+folder; the snapshot remains separate from the analysis prose. Every source span
+uses the returned resource ID and exact registered block, not a made-up PDF/page.
+
+Identify the result as an analysis of that webpage, not a complete paper. Keep the
+five branches; undisclosed architecture, training details or experiments do not
+become invented claims. The source/quotation boundary in
+`references/analysis-v5-format.md` permits `quotation_omitted_reason` only for
+rights-limited v5 records backed solely by registered Markdown: retain exact source
+links and explain why an excerpt is not displayed. Other retained excerpts keep
+their full-context and emphasis rules; paper/PDF quotation requirements are unchanged.
+Webpage media cannot be disguised as PDF-backed Canvas images. Conformance,
+source support and human reading assessment remain separate checks.
+
 ## Output model
 
 The current required format is the reference image's five-section tree in both artifacts:
@@ -64,7 +84,7 @@ Zotero PDF spans link to a physical page or an existing annotation; registered V
 spans link to a block. Both links appear inline in Markdown and Canvas alongside the Canvas-to-note
 backlink. Page links are not exact text selections, and source identity/revision must be verified
 separately from structural conformance.
-New analyses also include short verbatim source excerpts immediately below the supported
+New paper analyses also include short verbatim source excerpts immediately below the supported
 statement in Markdown, each with its own page/block link. Original wording and language are
 retained. Ordinary prose quotes include a complete source sentence and enough adjacent context
 to understand its subject, conditions and qualifications, not isolated keywords or figure labels;
@@ -249,6 +269,9 @@ installing a weekly schedule remains an explicit operational choice.
 Paper identity and metadata come from Zotero, and paper text comes from Zotero indexed full text.
 Missing figures, tables, or equations become explicit source gaps. Code repositories are read only
 when requested and are never executed, built, or installed.
+The selected official-webpage branch instead reads its registered original snapshot
+under the shared [source policy](../../references/source-policy.md); this is not a
+fallback source for a missing paper PDF or an authority to broaden the chosen source.
 
 The Markdown/Canvas pair remains separate from annotations and literature-tree artifacts. Machine
 identity stays in thin frontmatter, the sidecar, and Vault manifests rather than overwhelming

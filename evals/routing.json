@@ -2,6 +2,20 @@
   "description": "Skill routing eval — verifies correct skill is triggered for each input type",
   "cases": [
     {
+      "id": "selected-official-webpage-ingestion",
+      "input": "把这个已选官方模型介绍作为Webpage加入Zotero，并把原文登记到已选Source和Field；不要下载其他论文或生成分析",
+      "expected_skill": "ingest-resource",
+      "must_not_trigger": "analyze-paper",
+      "comment": "官方网页是用户选择的原子来源；书目与原文登记分别交付，不走论文PDF替代下载"
+    },
+    {
+      "id": "selected-official-webpage-analysis",
+      "input": "按论文分析格式分析这份已入库且已登记原文的官方Webpage，保留完整五分支和简短Canvas；原文没有的训练和实验细节不要编造",
+      "expected_skill": "analyze-paper",
+      "must_not_trigger": "ingest-resource",
+      "comment": "显式选用同一分析格式；原文来自已登记快照，不是重做入库或把网页称为完整论文"
+    },
+    {
       "id": "research-assets-unified-registration-and-reuse",
       "input": "管理我的科研资产：把明确提供的自有服务器记到本地，以后使用时先查记录；同时列出现有知识库",
       "expected_skill": "manage-assets"

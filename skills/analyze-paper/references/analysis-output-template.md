@@ -151,6 +151,8 @@ corresponding-challenge or corresponding-contribution axis.
 
 Scope, evidence states, reader verification, paired conflict/CAS protection and source
 ownership retain the boundaries in `analysis-format.md` and the shared policies.
+Explicit non-paper webpages retain this framework with the source/quotation boundary
+in `analysis-v5-format.md`; an official introduction is not an undisclosed full paper.
 A focused result declares its selected branches; it must not silently remove sibling
 branches or be presented as a complete whole-paper result.
 

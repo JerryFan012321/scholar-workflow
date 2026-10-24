@@ -88,6 +88,8 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
   单篇新owner登记的契约由 `references/paper-registration.md` 持有；只创建新论文目录，
   不把旧审阅副本或裸provider初始化冒充登记。根Field `.` 的新目录路径直接从resources
   起算，成对提交仍独立核实实际Source/Field及provider owner。
+  用户选定官方网页的非论文原文登记见 `references/document-registration.md`；保留真实
+  文档身份、原文hash与段落定位，不伪造PDF或借此改变论文入库/全文来源规则。
 - 真实 Field 多文件迁移只可在外部编辑器/同步器停写窗口中执行，靠逐文件 CAS、持久 journal 和条件恢复
   达成可恢复的逻辑事务；不能宣称文件系统硬原子或把恢复快照称为已验证备份。旧论文分析改写须同时
   守恒旧 Markdown 未标记正文及每个字段、旧 Canvas 节点/边，并让候选 Markdown/Canvas/sidecar 通过

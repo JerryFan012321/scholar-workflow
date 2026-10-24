@@ -302,6 +302,7 @@ def complete_claim_markdown_lines(
     markdown_source_images: bool = False,
     label: str | None = None,
     include_points: bool = True,
+    material_kind: str = "paper",
 ) -> list[str]:
     """Containers have headings, not fabricated statements or claim anchors."""
     label = label or complete_claim_label(claim, language)
@@ -312,7 +313,7 @@ def complete_claim_markdown_lines(
                 "",
                 (
                     f"{_claim_statement(claim, summary=False, label=label)} "
-                    f"{reference_inline_evidence(claim.evidence, language, reader=reader)} "
+                    f"{reference_inline_evidence(claim.evidence, language, reader=reader, material_kind=material_kind)} "
                     f"^claim-{claim.claim_id}"
                 ),
             ]
@@ -332,7 +333,7 @@ def complete_claim_markdown_lines(
                 ["", f"{'#' * (heading_level + 1)} {complete_point_label(claim, slot, language)}"]
             )
             if point := points.get(slot):
-                lines.extend(["", _point_markdown_line(claim, point, language, reader=reader)])
+                lines.extend(["", _point_markdown_line(claim, point, language, reader=reader, material_kind=material_kind)])
                 if markdown_quotes:
                     lines.extend(
                         reference_source_quote_lines(
@@ -351,9 +352,10 @@ def _point_markdown_line(
     language: str,
     *,
     reader: AnalysisReader | None,
+    material_kind: str = "paper",
 ) -> str:
     return (
-        f"{point.text} {reference_inline_evidence(point.evidence, language, reader=reader)} "
+        f"{point.text} {reference_inline_evidence(point.evidence, language, reader=reader, material_kind=material_kind)} "
         f"^{point_anchor(claim, point)}"
     )
 
@@ -634,6 +636,8 @@ def _render_markdown(document: AnalysisDocument, tree: TemplateNode) -> str:
     language = document.language or "en"
     is_en = language == "en"
     scope = "Whole paper" if is_en else "全文"
+    if document.material_kind == "webpage":
+        scope = "Selected official webpage; not a full paper" if is_en else "选定的官方网页（非完整论文）"
     if document.profile.kind.value == "focused":
         prefix = "Focused: " if is_en else "局部："
         scope = prefix + ", ".join(SECTION_LABELS[child.role][language] for child in tree.children)
@@ -647,7 +651,10 @@ def _render_markdown(document: AnalysisDocument, tree: TemplateNode) -> str:
         f"sw_analysis_language: {language}",
         "---",
         "",
-        f"# {document.paper_title}{': Paper Analysis' if is_en else '：论文分析'}",
+        f"# {document.paper_title}" + (
+            (": Webpage Analysis" if is_en else "：网页分析") if document.material_kind == "webpage"
+            else (": Paper Analysis" if is_en else "：论文分析")
+        ),
         "",
         f"> {'Scope' if is_en else '分析范围'}: {scope}",
     ]
@@ -663,7 +670,7 @@ def _render_markdown(document: AnalysisDocument, tree: TemplateNode) -> str:
                 [
                     f"{'#' * level} {node.label}",
                     "",
-                    _point_markdown_line(node.claim, node.point, language, reader=document.reader),
+                    _point_markdown_line(node.claim, node.point, language, reader=document.reader, material_kind=document.material_kind),
                 ]
             )
             lines.extend(
@@ -688,6 +695,7 @@ def _render_markdown(document: AnalysisDocument, tree: TemplateNode) -> str:
                     markdown_source_images=document.profile.markdown_source_images,
                     label=node.label,
                     include_points=False,
+                    material_kind=document.material_kind,
                 )
             )
         else:

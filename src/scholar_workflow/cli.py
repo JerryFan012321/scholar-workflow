@@ -3997,6 +3997,62 @@ def _canvas_selection_options(command):
     return command
 
 
+def _document_selection_options(command):
+    for name in ("source-id", "field-id", "item-key", "segment", "source-url", "retrieved-at"):
+        command = click.option("--" + name, required=True)(command)
+    command = click.option("--markdown", "markdown_path", required=True,
+                           type=click.Path(path_type=Path))(command)
+    return click.option("--language", type=click.Choice(["en", "zh"]), default="en")(command)
+
+
+@knowledge.command(name="document-plan")
+@_document_selection_options
+@click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
+def knowledge_document_plan(fmt: str, **selection) -> None:
+    """Zero-write plan for one explicit archived webpage, without a PDF."""
+    from scholar_workflow.adapters.zotero_local import ZoteroLocalAdapter
+    from scholar_workflow.knowledge.presentation import _text
+    from scholar_workflow.workflows.register_document import document_plan
+
+    try:
+        with ZoteroLocalAdapter() as zotero:
+            plan = document_plan(_local_field_service().registry, zotero, **selection)
+    except (RuntimeError, OSError, ValueError, TypeError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    if fmt == "json":
+        click.echo(json.dumps(plan, ensure_ascii=False, indent=2))
+    else:
+        zh = selection["language"] == "zh"
+        click.echo("# 网页原文登记方案\n" if zh else "# Document source registration plan\n")
+        click.echo(_text(plan["document"]["title"]) + "\n")
+        click.echo(("新增原文：" if zh else "New source note: ") + plan["owner_path"])
+        click.echo(("来源：" if zh else "Source: ") + selection["source_url"])
+        click.echo(("确认摘要：\n" if zh else "Confirmation digest:\n") + plan["approved_digest"])
+        click.echo("尚未写入；原文登记不代表分析或科学验收完成。" if zh else
+                   "Nothing written; source registration is not analysis or scientific acceptance.")
+
+
+@knowledge.command(name="register-document")
+@_document_selection_options
+@click.option("--approved-digest", required=True)
+@click.option("--yes", is_flag=True)
+def knowledge_register_document(approved_digest: str, yes: bool, **selection) -> None:
+    """CAS-register the reviewed new source note, navigation and provider owner."""
+    from scholar_workflow.adapters.zotero_local import ZoteroLocalAdapter
+    from scholar_workflow.workflows.register_document import register_document
+
+    if not yes:
+        click.confirm("登记已审阅的网页原文？" if selection["language"] == "zh" else
+                      "Register the reviewed document source?", abort=True, err=True)
+    try:
+        with ZoteroLocalAdapter() as zotero:
+            result = register_document(_local_field_service().registry, zotero,
+                                       approved_digest=approved_digest, **selection)
+    except (RuntimeError, OSError, ValueError, TypeError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    click.echo(json.dumps(result, ensure_ascii=False, indent=2))
+
+
 @knowledge.command(name="canvas-plan")
 @_canvas_selection_options
 @click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")

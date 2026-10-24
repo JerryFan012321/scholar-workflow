@@ -37,8 +37,11 @@
         "resource_id": {"type": "string", "minLength": 1, "maxLength": 256},
         "kind": {"enum": ["paper", "technical_document", "blog_post"]},
         "title": {"type": "string", "minLength": 1, "maxLength": 1000},
-        "markdown_path": {"$ref": "#/$defs/markdown_path"}
-      }
+        "markdown_path": {"$ref": "#/$defs/markdown_path"},
+        "markdown_sha256": {"type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$"}
+      },
+      "if": {"properties": {"kind": {"const": "paper"}}},
+      "then": {"properties": {"markdown_sha256": {"type": "null"}}}
     },
     "core_document": {
       "type": "object",
