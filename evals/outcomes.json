@@ -217,6 +217,11 @@
       "status": "pending"
     },
     {
+      "id": "analysis-standalone-prose-and-concise-canvas",
+      "description": "单对象呈现验收：Canvas保留完整五分支与忠实短摘要，Markdown独立解释方法/参数/模块层次和真实性、指标口径，比较条件/结果/判断同处；重要源图与折叠摘录支撑而不代替解释，不设思考顺序或篇幅/图数/模块配额。2026-10-24正常安装0.47.3公开stage-update修订test fresh V-JEPA2的63处正文，Canvas字节及183节点182边、247段摘录/强调、11图、172反链保持，check-bundle通过且原长图warning保留。test Git e7c6909的正文hash787de36b获用户明确‘很满意正文’；此pass仅确认该版正文阅读体验与短图保全，不认证全篇科学支持、正式归属或未来宿主一次生成。新skill规范仍Unreleased，G17及独立生成partial不提升；见planning/readable-analysis-prose-test.md。",
+      "status": "pass"
+    },
+    {
       "id": "knowledge-installed-native-document-open",
       "description": "G17：安装版 knowledge reader/open 识别子目录 Source 的唯一 Obsidian Vault，原生打开其既有 Markdown/Canvas；无需Hub、workspace或CLI设置，registry与正文不变。实际显示、编辑和点击需会话明确人工确认；不能代替论文provider归属、canonical提交或ZotFlow本机能力验收。",
       "status": "pending"

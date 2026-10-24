@@ -252,6 +252,58 @@ def _record_anchor(claim_id: str, point_id: str | None) -> str:
     return f"point-{len(claim_id)}-{claim_id}-{point_id}" if point_id else f"claim-{claim_id}"
 
 
+@pytest.mark.parametrize("record_kind", ["claim", "point"])
+def test_concise_canvas_summary_never_replaces_full_analysis_prose(record_kind: str) -> None:
+    """Check retention and projection, not the semantic quality of the explanation."""
+    payload = _payload()
+    claim = _claim(payload, "m-1")
+    point = _point(payload, "m-1", "method")
+    point_id = "method" if record_kind == "point" else None
+    target = point if point_id else claim
+    field = "text" if point_id else "body"
+    separator = " " if point_id else "\n\n"
+    explanation = (
+        "The module takes three scalar measurements and computes their arithmetic mean."
+        + separator
+        + "It subtracts that same mean from each input, producing three centered values "
+        "before aggregation. Subtracting the same quantity preserves pairwise differences; "
+        "this is an arithmetic explanation, not evidence of performance on real measurements."
+    )
+    evidence = deepcopy(point["evidence"])
+    evidence.update(
+        kind="analysis_inference",
+        detail="Arithmetic interpretation of the synthetic mean-subtraction operation only.",
+    )
+    if not point_id:
+        claim["container"] = False
+    target.update({field: explanation, "canvas_summary": "Center the three inputs.", "evidence": evidence})
+    document = AnalysisDocument.model_validate(payload)
+    before = render_analysis(document, note_stem=NOTE_STEM)
+    node_id = _record_node_id(claim, point_id)
+    before_node = next(node for node in before.canvas["nodes"] if node["id"] == node_id)
+
+    assert explanation in before.markdown
+    assert "Center the three inputs." in before_node["text"]
+    assert explanation not in before_node["text"]
+    assert validate_bundle(document, before, note_stem=NOTE_STEM).ok
+
+    target["canvas_summary"] = "Subtract the shared mean before aggregation."
+    updated_document = AnalysisDocument.model_validate(payload)
+    after = render_analysis(updated_document, note_stem=NOTE_STEM)
+    after_node = next(node for node in after.canvas["nodes"] if node["id"] == node_id)
+    assert target[field] == explanation
+    assert after.markdown == before.markdown
+    assert target["canvas_summary"] in after_node["text"]
+    assert "Center the three inputs." not in after_node["text"]
+    assert "zotero://open-pdf/" in after_node["text"]
+    assert _record_anchor(claim["claim_id"], point_id) in after_node["text"]
+    assert [node["id"] for node in after.canvas["nodes"]] == [
+        node["id"] for node in before.canvas["nodes"]
+    ]
+    assert after.canvas["edges"] == before.canvas["edges"]
+    assert validate_bundle(updated_document, after, note_stem=NOTE_STEM).ok
+
+
 def _render() -> tuple[AnalysisDocument, AnalysisBundle]:
     document = _document()
     return document, render_analysis(document, note_stem=NOTE_STEM)

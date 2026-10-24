@@ -7,6 +7,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **analyze-paper / human presentation / experiment review:** distinguish full,
+  independently readable analysis prose from concise Canvas navigation. Require
+  useful method, parameter and metric explanations, explicit evidence-supported
+  judgments and relevant source figures without replacing explanation with names,
+  quotations or galleries. Preserve the existing framework, source protections and
+  body/summary interface; add synthetic retention checks and keep semantic/human
+  acceptance separate. Load the prose contract explicitly on the ordinary skill
+  route; keep comparison conditions, results and judgments together, and do not
+  report an outline-only body as a finished readable analysis. Record the user's
+  approval of the single installed V-JEPA 2 prose revision without promoting the
+  historical one-shot result. All 3345 unit/contract checks pass; runtime loading
+  and packaging boundaries are independently reviewed. No new installation or schema change.
+
 - **Development — stage-one completion evidence:** align the current exemplar
   contract and audit with the installed 0.47.3 correction and bounded read-only
   checks of existing knowledge, project, experiment and native-tool artifacts.

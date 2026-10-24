@@ -229,6 +229,13 @@
       "comment": "明确要求 canonical 论文解析树与 Markdown+Canvas 文档对 → analyze-paper;格式约束投影结果,不规定模型如何思考"
     },
     {
+      "id": "analyze-paper-full-prose-short-tree",
+      "input": "把这篇已入库论文写成能独立读懂的详尽分析正文，保留简短的完整五分支Canvas，条件和结果放一起",
+      "expected_skill": "analyze-paper",
+      "must_not_trigger": "build-literature-tree",
+      "comment": "单篇正文与解析树的呈现要求，不是跨论文文献树；正文/短摘要分别投影，加载共享呈现和所属模板，不规定内部思考顺序"
+    },
+    {
       "id": "analyze-paper-selected-batch",
       "input": "把我选中的这批已入库论文逐篇分析，每篇都生成解析树并检查格式",
       "expected_skill": "analyze-paper",

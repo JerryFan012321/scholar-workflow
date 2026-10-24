@@ -79,6 +79,13 @@ corresponding-challenge or corresponding-contribution axis.
 - Markdown uses the same five-branch order and the named nested slots, with complete,
   independently readable explanations. The selected English or Chinese presentation
   language governs its framework labels and the Canvas labels consistently.
+  Apply the standalone-explanation requirements in the shared
+  `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`: full analysis prose explains the method,
+  parameters, comparison meaning and supported judgment rather than repeating
+  tree labels or relying on source quotations to teach the missing explanation.
+  The template's explicitly one-sentence slots remain concise; they do not make
+  Method, Experiments or the rest of the body a one-sentence outline. Preserve
+  connected explanations inside the required slots, without extra framework headings.
 - Markdown also shows verified source-region images beside the analysis they support:
   include selected key process figures and result tables in the corresponding Method
   and Experiments text, not only in Canvas. Relevant paragraph crops may supplement
@@ -95,6 +102,11 @@ corresponding-challenge or corresponding-contribution axis.
 - Each fact-bearing node retains its own concise text, inline evidence, verified
   original-source entry and exact Markdown-block backlink. Evidence is not a separate
   branch. Canvas summaries must not add facts or lose material qualifications.
+  Brevity belongs to this projection, not to the paired analysis. Store the full
+  explanation in claim `body` / point `text`, and its faithful short navigation
+  text separately in `canvas_summary`. Do not shorten the analysis to fit a node
+  or paste full paragraphs into the tree. A source excerpt supports the analysis;
+  it is not a replacement for the analyst's explanation in the analysis language.
 - Verbatim, original-language short quotations appear next to their own statement
   in Markdown only, with the same source-location link. Canvas retains source links
   and evidence, but does not repeat quotations or add quotation nodes. Quote text
@@ -200,3 +212,7 @@ required subslots and parent-child edges, point-local evidence/links/backlinks, 
 nodes and readable geometry. Passing quotation tests or an older layout fixture does
 not establish new-template conformity. Scientific source fidelity and installed-product
 human assessment remain separate from structural conformance.
+Readability also requires the body to deliver the standalone explanations above;
+present headings, excerpts and images do not compensate for an outline-only analysis.
+An exemplar's approval establishes its presentation baseline, not a fixed length,
+paper-specific module/image count or proof that future analyses will pass without review.

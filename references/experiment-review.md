@@ -125,6 +125,14 @@ exact record meaning matters. Artifact IDs, byte counts, hashes and validation
 vocabulary belong in supplementary records, not repeated result cells. Preserve
 usable source and failure-log links.
 
+Apply the standalone-explanation requirements in `human-presentation.md` to the
+comparison narrative, not only the table captions. Explain which system component
+changed and what each metric comparison actually tests. The conclusion must judge
+the selected evidence against the stated experiment purpose/acceptance conditions,
+not merely list scores or defer every judgment as future work. Keep control-supported
+findings, analyst interpretation and unresolved causes distinct; do not invent an
+acceptance threshold, real execution or measurement provenance.
+
 ## Metric evidence and comparison semantics
 
 - The current archive has no universal metrics payload schema. Read the explicitly
