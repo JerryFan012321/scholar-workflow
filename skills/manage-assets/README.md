@@ -11,5 +11,6 @@ Show/check commands and exact update semantics are in the shared
 
 Servers remain in the configured personal ledger; knowledge remains in the existing
 Source/Field registry and Vault manifests. No remote login or Vault migration is
-implied. The first implementation covers servers and knowledge; recommendation
-watchlists and paper-source providers are not yet aggregated by the assets CLI.
+implied. `assets list --kind research` also queries the non-paper channel authority;
+`track-research` owns its registration/check workflow. Recommendation author IDs
+and paper-feed settings remain in `recommend.yml`, without automatic migration.

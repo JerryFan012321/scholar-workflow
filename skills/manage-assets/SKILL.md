@@ -37,10 +37,12 @@ registration, reader resolution and actual use separately.
 
 ## Supported boundary
 
-Servers and registered Knowledge Sources/Fields have local CLI interfaces. Known
-Obsidian Vaults are a separate read-only native inventory. Scholar watchlists and
-paper-source settings retain their existing recommendation store; this slice does
-not add those providers to `assets list` or create a generic asset registry.
+Servers, registered Knowledge Sources/Fields and non-paper research channels have
+local CLI interfaces. Known Obsidian Vaults are a separate read-only native inventory.
+`assets list --kind research` reads the real channel store; maintenance/checks follow
+`track-research` and the shared research-tracking contract. Semantic Scholar
+watchlists and the four paper feeds retain `recommend.yml`; they are not migrated
+or duplicated into the research-channel store.
 
 ## Constraints
 

@@ -5,6 +5,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.48.0] - 2026-10-24
+
+### Added
+
+- **track-research / manage-assets:** develop explicit non-paper channel
+  registration and incremental observation for selected blogs, institutional pages,
+  GitHub releases and public model lists. Keep subscription authority separate from
+  Knowledge Sources and the paper watchlist. Add `scholar-research` acquisition,
+  local research operations and a derived assets view. Baselines, revisions,
+  failures and dispositions stay distinct. No automatic ingestion, downloads,
+  scheduling or paper/Canvas change. Publication, installation, real-source and
+  fresh-dialog acceptance are not implied by this development batch.
+  Both CLI entrypoints expose package versions; install/update guidance distinguishes
+  host marketplace metadata from the matching runtime package and forbids treating
+  a source/cache wrapper as installed-version proof.
+
 ### Changed
 
 - **Development — 0.47.5 installed acceptance:** record normal runtime-only hotfix

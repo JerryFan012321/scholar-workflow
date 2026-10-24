@@ -1,5 +1,41 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-24最新：0.48.0提交、发布、安装与test单来源验收已获授权
+
+用户对明确范围回复“ok”：在当前独立hotfix提交本批，通过原脚本构建runtime-only产物，
+普通推送并正常安装CLI和Codex插件，核对实际身份后只在test做Lil’Log单来源验收。
+不合并main、不修改正式Vault/Zotero/L1 cache、不创建监控或切换服务。先跑当前完整
+unit/contract合成回归，再固定干净source；原开发结果不冒称本轮安装/人工已通过。
+当轮输入、预期与影响见research-resource-tracking-acceptance.md，发布回执见0.48.0-release.md。
+当前完整3558项通过（157.21秒、11既有警告）；本批Ruff/diff与独立发布审查通过。
+下一步固定source与runtime并正常安装，再执行单来源；这些尚未执行的步骤不记通过。
+
+## 2026-10-24当前：进入研究来源与资源跟踪开发，不续改正式库
+
+上一轮只读核实：现有四源推荐只产论文候选，没有博客、机构、模型的跨次更新状态。
+用户已转向丰富非论文知识资源管理；本轮在既有独立hotfix工作树实现具名渠道登记、
+增量观察和可读动态，固化可调用Skill。开发输入只用合成fixture；不自动迁移recommend.yml，
+不修改正式Vault/Zotero或L1 cache登记，不启动监控，不发布安装/合并main。
+公开只读网页和模型元数据不等于论文PDF下载例外、权重下载或代码执行许可。
+本轮完整目标与接口/测试计划见research-resource-tracking.md；旧Genie3单对象及G17
+one-shot缺口继续如实保留，不能因新能力开发而改记通过。
+
+开发候选0.48.0现有track-research、research本地登记/处置和scholar-research一次检查，
+支持RSS/Atom/指定网页/GitHub releases/HF模型列表。安装诊断补齐前完整3555项
+通过（154.76秒，11既有警告），独立网络/链接复验29项通过；补齐后本批163项
+定向通过（2.25秒），未重复全集。scholar-research现支持--version；双语安装说明
+要求包与插件同运行版本，不能以marketplace更新或缓存脚本代替包安装。重建离线wheel
+与134个源码文件和两console入口核齐；仅开发构建，不是正常产品安装。源码/两manifest版本
+一致，当前正常PATH CLI仍0.47.5；未提交、推送、安装或合并main。
+安全审计中DNS私网/重绑定、Atom xml:base及is_global非单播例外已修；日期噪声、
+重复渠道、失败诊断、历史来源快照和坏记录假空列表都有独立用例。原分析/项目/实验
+实现及对应Skill零diff。详见research-resource-tracking-results.md；下一步需明确
+0.48.0正常hotfix提交/发布/安装权限，再test单对象与真实来源/新宿主/人工验收，
+不能从本轮绿色推导G17/G19完成或自动建立监控。模型档案/归档交接/明确调度仍待。
+已只读核查8个官方候选，Lil’Log RSS输入可读；未登记关注或运行候选插件。
+首个安装后单来源的输入、预期、影响和人工评阅方案已写入
+research-resource-tracking-acceptance.md。该方案尚未执行，仍待0.48.0发布安装授权。
+
 ## 2026-10-24最新：0.47.5已发布安装，Genie3因另一正式库登记异常停在零写计划
 
 source6a21171/runtime e6fc63c已正常hotfix/release发布、pipx及Codex marketplace安装；

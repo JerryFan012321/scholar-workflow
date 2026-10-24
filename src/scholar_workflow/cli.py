@@ -18,6 +18,7 @@ import click
 
 from scholar_workflow import __version__
 from scholar_workflow.config import DEFAULT_HOME
+from scholar_workflow.research.cli import research
 
 
 class InputError(click.ClickException):
@@ -3709,7 +3710,7 @@ def _asset_output(payload: dict, *, fmt: str, language: str, server: bool = Fals
 
 
 @assets.command(name="list")
-@click.option("--kind", type=click.Choice(["all", "server", "knowledge"]), default="all")
+@click.option("--kind", type=click.Choice(["all", "server", "knowledge", "research"]), default="all")
 @click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
 @click.option("--language", type=click.Choice(["zh", "en"]), default="zh")
 def assets_list(kind: str, fmt: str, language: str) -> None:
@@ -3722,6 +3723,10 @@ def assets_list(kind: str, fmt: str, language: str) -> None:
     if kind in {"all", "knowledge"}:
         state_root = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME))
         providers["knowledge"] = knowledge_inventory(state_root / "hub" / "sources.json")
+    if kind in {"all", "research"}:
+        from scholar_workflow.assets.inventory import research_inventory
+        state_root = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME))
+        providers["research"] = research_inventory(state_root)
     payload = {
         "schema_version": 1,
         "status": ("partial" if any(provider["status"] in {"invalid", "unavailable", "partial"}
@@ -4382,3 +4387,6 @@ def knowledge_open(source_id: str, relative_path: str, fmt: str, language: str) 
     click.echo(json.dumps(result, ensure_ascii=False, indent=2) if fmt == "json" else
                (f"已请求 Obsidian 打开：{relative_path}；实际显示仍待人工评鉴。" if language == "zh" else
                 f"Requested Obsidian open: {relative_path}; visible result awaits human assessment."))
+
+
+main.add_command(research)

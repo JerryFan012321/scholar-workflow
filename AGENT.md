@@ -4,7 +4,7 @@
 
 ```
 5 Agents: intake / lineage / knowledge / feed / audit（任务级自足单元，skill 可跨 agent 复用；无固定单向 handoff，显式跨 agent 协作由宿主 LLM 或 agent-collaboration 编排）
-17 Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / analyze-paper / manage-assets / env-setup / agent-collaboration / init-project / organize-project / config-setup / project-backlog / review-experiments（manage-assets与agent-collaboration为所有宿主/agent共享；其余独立入口用户直呼）
+18 Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / track-research / analyze-paper / manage-assets / env-setup / agent-collaboration / init-project / organize-project / config-setup / project-backlog / review-experiments（manage-assets与agent-collaboration为所有宿主/agent共享；其余独立入口用户直呼）
 2 Host manifests: .claude-plugin/plugin.json / .codex-plugin/plugin.json（同名、同版本；共享 skills/hooks，MCP 配置保持等价）
 确定性 CLI: src/scholar_workflow/ + bin/(scholar-workflow, zotero-annotations.py, recommend-papers.py)
 Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入(create/import/元数据)均经 `scholar-workflow zotero` 命令;主题召回用 Local API 全字段/全文 quicksearch 后由宿主模型排序,不自建向量库;任何组件都不得直接读取或写入 zotero.sqlite
@@ -24,6 +24,7 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
 | `analysis/` | 论文分析 IR、Markdown/Canvas 渲染、证据、conformance 与分析更新 |
 | `adapters/` | 外部工具接口，不拥有项目/知识布局或第二份事实源 |
 | `assets/` | 私有服务器台账操作与跨类型只读资产概览；知识身份继续由knowledge持有，不建第二份清单 |
+| `research/` | 非论文研究渠道订阅、观察状态及动态呈现；不拥有原文知识或替代论文推荐配置 |
 | `workflows/` | 组合核心能力完成明确任务，不维护另一套权威状态 |
 | CLI / agents / skills | 薄调用入口、任务边界和可观察结果契约 |
 | `hub/` | 历史服务/UI/任务的兼容边界；不再驱动新能力，不作为核心模块的必要前提 |
@@ -74,6 +75,9 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
 - 资产管理由manage-assets统一查询/登记/复用入口持有，先查已有台账与Source/Field后再问缺项。
   明确提供或选用的自有服务器按任务授权登记非秘密事实；偶遇主机不自动收集。服务器、知识库、
   推荐关注名单/来源保留各自事实源，不建第二套通用registry；具体流程唯一持于references/asset-management.md。
+- 非论文研究渠道由track-research持有明确订阅与增量观察，运行契约唯一见references/research-tracking.md。
+  本地Vault的Knowledge Source与网上发布渠道不同；发现/选中不是入库。既有recommend.yml论文源和
+  S2作者名单不迁移，论文/Canvas格式不改；外部获取走独立scholar-research入口，不建立Hub或隐式调度。
 - 历史 Hub 项目文件写操作只限显式注册项目的 `docs/`，请求只接受 `project_id + docs 相对路径`；删除进入
   `.scholar-workflow/trash/docs/`，Hub 不执行 Git 写操作。Destination 的选择不得改变该授权结果。
 - Knowledge Source/Field 必须动态登记：用户选择 Vault/目录后先生成零写入 preview，每次明确选择并
@@ -347,6 +351,7 @@ Agent 之间没有固定 handoff 图。默认完成自己的任务并把结果�
 | （无 agent，用户直呼） | 宿主中立的 Git 项目骨架初始化 | init-project |
 | （无 agent，用户直呼） | 内部 PROJECT 资料入口、模块图与唯一计划 | organize-project |
 | （无 agent，用户直呼） | 已选实验档案的只读整理与比较 | review-experiments |
+| （无 agent，用户直呼） | 非论文博客、机构与模型渠道登记和增量动态 | track-research |
 | （无 agent，用户直呼） | 插件配置（config.yml 读写 + 初始化） | config-setup |
 | （无 agent，用户直呼） | 项目工作队列（planning/BACKLOG.md） | project-backlog |
 

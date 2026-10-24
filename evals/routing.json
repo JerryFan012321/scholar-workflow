@@ -2,6 +2,24 @@
   "description": "Skill routing eval — verifies correct skill is triggered for each input type",
   "cases": [
     {
+      "id": "research-channels-incremental-tracking",
+      "input": "关注这个实验室博客和公司的模型发布渠道，登记后检查新增和旧页面变化；不要自动入库或创建定时任务",
+      "expected_skill": "track-research",
+      "must_not_trigger": "recommend-papers"
+    },
+    {
+      "id": "research-tracking-not-daily-paper-feed",
+      "input": "从现有论文推荐源推荐今天值得读的arXiv论文，不修改我的非论文渠道订阅",
+      "expected_skill": "recommend-papers",
+      "must_not_trigger": "track-research"
+    },
+    {
+      "id": "research-tracking-not-selected-page-ingest",
+      "input": "把这个已经选中的官方网页加入Zotero并归档原文，不关注它后续的更新",
+      "expected_skill": "ingest-resource",
+      "must_not_trigger": "track-research"
+    },
+    {
       "id": "selected-official-webpage-ingestion",
       "input": "把这个已选官方模型介绍作为Webpage加入Zotero，并把原文登记到已选Source和Field；不要下载其他论文或生成分析",
       "expected_skill": "ingest-resource",

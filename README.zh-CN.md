@@ -16,6 +16,12 @@ Zotero 操作。Zotero 适配器只连接 Zotero 10+ 的回环 Local API;其他�
 Local API。主题召回由 Local API 全字段/全文 quicksearch 加宿主模型排序完成,不需要 MCP server
 或本地向量库。破坏性动作仍需批准。**Obsidian** 保存知识笔记与派生索引;**Notion** 保存可选投影。
 
+非论文研究动态由独立的 `scholar-research` 获取；本地 `scholar-workflow research` 命令不抓取网站。
+可用 [track-research](skills/track-research/README.zh-CN.md) 管理所选研究者博客、机构网页、
+代码发布及模型列表：`research sources list/register` 查询或登记，`scholar-research check` 检查一次，
+`research updates/mark` 阅读并标记动态。首次建立基线，失败保留诊断，选中不等于入库；
+不要求 Hub、源码目录或定时服务，不下载模型权重。本批尚须独立完成发布安装和真实来源验收。
+
 ### 内容与项目归属
 
 - **Knowledge System** 以人类可读 Markdown 为正文。论文、重要技术文档和 Blog 是原子资源；
@@ -398,6 +404,7 @@ snapshot 不是 verified backup；真正备份仍需要独立介质和恢复演�
 | check-consistency | 跨系统一致性审计(只读) |
 | export-annotations | 把某篇论文的 Zotero 批注整理成结构化 vault 笔记 |
 | recommend-papers | 每日多源论文 feed + NotebookLM 略读 → 推荐清单 |
+| track-research | 所选博客、机构网页、代码发布及模型列表 → 增量动态 |
 | analyze-paper | 把论文详细分析投影为 Markdown + 可编辑 Canvas 文档对 |
 | manage-assets | 先查已有记录，再登记和复用自有服务器与知识库 |
 | env-setup | 搭建并查阅个人 API-key / SSH 服务器 env-records 台账 |
@@ -467,12 +474,25 @@ Obsidian已知Vault、已登记Source和论文归属分别报告。详见[资产
    ```
    安装后新开 Claude Code 或 Codex 会话,让 bundled skills 与 hooks 生效。
 
-2. **装 CLI**(提供 skill 调用的 `scholar-workflow` 命令):
+2. **安装 Python 包**（提供两个 CLI 命令，无需源码目录）：
    ```bash
-   pip install -e .        # 从 clone 安装
-   # 或:pipx install scholar-workflow
+   pipx install "git+https://github.com/JerryFan012321/scholar-workflow.git@release"
    ```
-   验证:`scholar-workflow --help`。
+   包与宿主插件必须来自同一个已发布的运行版本。需要可复现验收时，将 `release`
+   替换为发布回执中的已批准 runtime commit。只安装 marketplace 插件不会安装或更新这个包。
+   在宿主实际使用的环境中核对：
+   ```bash
+   command -v scholar-workflow
+   command -v scholar-research
+   scholar-workflow --version
+   scholar-research --version
+   scholar-workflow research --help
+   scholar-research check --help
+   ```
+   两个版本都应与已加载插件的 manifest 一致。命令缺失或版本不符时应修正安装，
+   不改用源码或缓存中的脚本绕过。版本号一致也不能证明构建相同；验收仍需保留
+   runtime commit、命令及解释器路径。开发者可以在 checkout 中使用 `pip install -e .`，
+   但这不属于正式安装态验收。
 
 3. **建配置。** 直接在对话中说「配置 scholar-workflow」,`config-setup`
    skill 会替你执行;或手动跑:
@@ -500,10 +520,16 @@ Obsidian已知Vault、已登记Source和论文归属分别报告。详见[资产
 
 ## 更新
 
-两个宿主 manifest(`.claude-plugin/plugin.json` 与 `.codex-plugin/plugin.json`)共用同一版本
-(改动见 [CHANGELOG.md](./CHANGELOG.md))。刷新 marketplace 或拉取最新 `release` 分支,
-若 CLI 版本有变则重跑 `pip install -e .`(或 `pipx upgrade
-scholar-workflow`)。你的 `config.yml` 与凭证在仓库之外,更新不受影响。
+两个宿主 manifest（`.claude-plugin/plugin.json` 与 `.codex-plugin/plugin.json`）共用同一版本
+（改动见 [CHANGELOG.md](./CHANGELOG.md)）。更新宿主插件后，从同一个已发布的运行版本重装包：
+
+```bash
+pipx install --force "git+https://github.com/JerryFan012321/scholar-workflow.git@release"
+```
+
+固定版本验收时用已批准 runtime commit 替换 `release`，新开宿主会话后，重复上面的
+命令、路径和版本核对。Marketplace 更新和 Python 包更新是两件事，不能相互代替。
+你的 `config.yml` 与凭证留在仓库之外。
 
 ## 使用
 

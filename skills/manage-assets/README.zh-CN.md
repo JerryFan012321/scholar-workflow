@@ -13,5 +13,6 @@
 知识库先查已登记 Source/Field，必要时再查 Obsidian 已知 Vault；不能把“Obsidian 有这个
 Vault”当成“插件已登记”或“论文有正式归属”。新登记仍先显示范围和预览，不静默登记整个 Vault。
 
-本轮接通服务器与知识库；学者关注名单和论文资源来源后续接入，继续使用推荐系统原有配置。
+`assets list --kind research` 还可查询非论文研究渠道；登记和检查由 `track-research` 持有。
+原 Semantic Scholar 学者 ID 和论文 feed 继续使用 `recommend.yml`，不自动迁移或重复登记。
 具体命令和边界见[资产管理契约](../../references/asset-management.md)。

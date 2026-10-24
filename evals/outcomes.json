@@ -2,6 +2,11 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "research-resource-incremental-tracking",
+      "description": "G19/INV63：正常安装版Skill在独立test对象登记博客、机构发布渠道和模型列表，验证首次基线、重复、新增、修订、304、失败恢复、分页拒绝及停用。动态有实际时间/原文链接和可读处置，关注/发现/选中/归档分离，不改论文Canvas。合成、安装、受控实际来源、新对话一次调用和人工阅读分别取证；模型档案、选中归档与明确调度的完整方向不缩小。",
+      "status": "pending"
+    },
+    {
       "id": "selected-official-webpage-source-and-analysis-delivery",
       "description": "G12/G13/G17：一个明确选择的官方Webpage拥有真实Zotero网页书目、已登记Source/Field中带块锚点且hash绑定的Source.md；分析Markdown/可编辑Canvas/sidecar通过安装版公开接口交付。正文详尽、Canvas简短，五分支与具名槽保留，未披露内容不编造；逐点链接回真实原文块，版权/授权省略仅遵循版本化网页接口且保持明确提示，PDF规则不变。书目、原文登记、成对提交、来源支持、原生链接和人工阅读分别取证；源码/schema检查不能证明独立宿主一次生成或完整G17。",
       "status": "pending"

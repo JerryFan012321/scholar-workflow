@@ -53,9 +53,10 @@ def test_empty_list_is_read_only_and_both_providers_remain_visible(tmp_path: Pat
     result = invoke(state, "list", "--format", "json")
     assert result.exit_code == 0, result.output
     payload = json.loads(result.output)
-    assert set(payload["providers"]) == {"server", "knowledge"}
+    assert set(payload["providers"]) == {"server", "knowledge", "research"}
     assert payload["providers"]["server"]["status"] == "unavailable"
     assert payload["providers"]["knowledge"]["status"] == "uninitialized"
+    assert payload["providers"]["research"]["status"] == "uninitialized"
     assert not state.exists()
 
 
