@@ -85,6 +85,13 @@
       "must_not_write": true
     },
     {
+      "id": "review-single-experiment-readable-report",
+      "input": "整理这条Run已选Attempt的实验结果报告，解释配置、指标和结果是否支持实验目的；只返回可独立阅读的正文，不运行实验或改项目",
+      "expected_skill": "review-experiments",
+      "must_not_trigger": "organize-project",
+      "must_not_write": true
+    },
+    {
       "id": "experiment-review-not-project-initialization",
       "input": "Initialize a new Git-managed project with the standard research skeleton",
       "expected_skill": "init-project",

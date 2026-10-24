@@ -28,6 +28,14 @@ artifacts. Missing units/protocols do not silently inherit another Run's metadat
 Remote-only results remain unavailable without a separate acquisition request.
 No common metric JSON schema or significance claim is invented.
 
+Single-experiment reports and comparisons both need an independently readable body,
+not only a score table or figure gallery. The shared
+[explanation contract](../../references/human-presentation.md#standalone-explanations)
+covers methods, parameter meanings, metric questions and useful figures. Explain
+what the evidence supports against the experiment's purpose, what failed and what
+remains unknown. A compact overview does not make the full report equally terse;
+one selected result does not require an invented baseline or control.
+
 Multi-experiment reviews include a compact table of names, recorded execution
 times, purposes, configuration variables and results. Few variables appear inline;
 many use key differences plus inspected captured-config links. Shared conditions,

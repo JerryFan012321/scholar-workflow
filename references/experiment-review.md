@@ -1,8 +1,8 @@
 # Experiment Review Result Contract
 
-Applies to read-only reviews of selected project experiments, including comparisons
-embedded or linked from a private PROJECT.md. Run/Attempt/Artifact records retain
-their existing authority. README.md remains the external presentation document;
+Applies to read-only reviews of selected project experiments, whether a single result
+or a comparison, including those embedded or linked from a private PROJECT.md.
+Run/Attempt/Artifact records retain their existing authority. README.md remains the external presentation document;
 reviewing or saving a report does not authorize publishing internal project facts.
 Record lifecycle rules remain in `skills/init-project/references/experiment-records.md`.
 Saved project-local reports use VS Code as their primary reader. Load
@@ -126,9 +126,19 @@ vocabulary belong in supplementary records, not repeated result cells. Preserve
 usable source and failure-log links.
 
 Apply the standalone-explanation requirements in `human-presentation.md` to the
-comparison narrative, not only the table captions. Explain which system component
-changed and what each metric comparison actually tests. The conclusion must judge
-the selected evidence against the stated experiment purpose/acceptance conditions,
+full report body, for both single-experiment reviews and comparisons. That contract
+owns the method, parameter, metric and figure explanations; a compact overview,
+config link, quotation or figure caption cannot supply explanations missing from
+the body. The reader must be able to understand the experiment and judge its result
+without code, conversation history or oral clarification. Concise tables and project
+summaries do not impose their brevity on the report; no fixed length or image quota
+replaces the explanation required by the selected evidence.
+
+For a single selected result, keep its recorded conditions and outcome together;
+do not invent a baseline, control or delta to fit a comparison. For a comparison,
+identify the tested component and what stayed unchanged, using the existing
+conditions/results table. Judge the evidence against the stated purpose and any
+recorded acceptance conditions: say what is supported, failed or still inconclusive,
 not merely list scores or defer every judgment as future work. Keep control-supported
 findings, analyst interpretation and unresolved causes distinct; do not invent an
 acceptance threshold, real execution or measurement provenance.
@@ -164,6 +174,9 @@ acceptance threshold, real execution or measurement provenance.
 The report is a derived human view, not a new authority or synchronized result store.
 Default delivery is the conversation; an explicitly saved report may be linked from
 PROJECT.md without changing Run recipes, human notes or raw artifacts. Keep existing
-documents unchanged unless their update was explicitly requested. A report can be
-structurally complete while its comparison is partial; label both honestly. Automated
-fact checks do not certify reader navigation or visual usability.
+documents unchanged unless their update was explicitly requested. Distinguish
+structural coverage, evidence integrity/support and explanatory readability. A report
+can be structurally complete while its comparison is partial; missing necessary
+explanations also leave the report incomplete even when its tables and links are
+valid. Label these states honestly. Automated fact checks do not certify standalone
+readability, reader navigation or visual usability.

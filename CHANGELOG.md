@@ -5,7 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.47.4] - 2026-10-24
+
 ### Changed
+
+- **review-experiments:** apply the shared standalone-explanation contract explicitly
+  to single-result reports as well as comparisons. Compact tables, figures and
+  source links do not replace a full explanatory body or evidence-supported verdict.
+  Keep conditions/results together without inventing controls; distinguish structural
+  coverage, evidence support and readability. Preserve VS Code presentation, record
+  authority and read-only scope; add a single-result routing case. No report rewrite,
+  experiment execution, schema change or installation is included.
 
 - **analyze-paper / human presentation / experiment review:** distinguish full,
   independently readable analysis prose from concise Canvas navigation. Require

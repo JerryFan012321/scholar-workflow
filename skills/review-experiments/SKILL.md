@@ -8,6 +8,8 @@ description: Review or compare explicitly selected project Run/Attempt results a
 Return a human-readable experiment review using the shared experiment-review result
 contract. Existing Run/Attempt/Artifact bundles remain authoritative; the report is
 a derived view, not a metric store or new experiment index.
+Apply the shared presentation contract's standalone explanations to the full report,
+including a review of one result; the overview table is not the explanatory body.
 For selected remote-child results collected under a research parent, load the
 shared project-management contract. Keep child-qualified identities and every
 selected outcome distinct; review only the supplied safe evidence and report
@@ -35,10 +37,12 @@ collection/lifecycle gaps rather than fetching or rewriting records.
 Every selected Run/Attempt and requested metric is accounted for, with usable source
 links or explicit unavailable/conflicted reasons. The report follows the required
 sections in the shared result contract, puts conclusions and supported visual
-results first, co-locates their comparison conditions, uses plain language, and distinguishes recorded results from
-scientific conclusions. Insufficient evidence yields a partial review, not invented
-values or a claimed successful comparison. Reader navigation and appearance remain
-pending human assessment until actually checked.
+results first, co-locates their conditions, uses plain language, and distinguishes
+recorded results from scientific conclusions. Separate structural coverage, evidence
+support and explanatory readability: tables, plots and valid links alone do not make
+a finished report when necessary explanations are missing. Insufficient evidence
+yields a partial review, not invented values or a claimed successful comparison.
+Reader navigation and appearance remain pending human assessment until actually checked.
 For collected child results, apply the shared project-management delivery handoff:
 a partial report cannot close a missing local archive or replace its original records.
 
