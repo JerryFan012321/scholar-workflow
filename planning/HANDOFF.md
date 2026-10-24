@@ -1,5 +1,21 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-24续验：Genie3 Webpage已获准入库，网页分析暴露真实能力缺口
+
+用户已明确允许官方介绍作为Webpage入库并在test分析。正常0.47.4公开zotero ingest
+先查重后创建YXRF38IE（personal17685951），沿用世界模型/视频与交互式世界生成
+DV47CJPE；读回确认为webpage、两位作者/日期/URL/集合正确、children空，没有假PDF。
+当前官方公告原始HTML、defuddle结果及清洗文本保存在test本轮_验收/genie3-source，
+逐字节hash核齐，不只留tmp；源页声明2025发布/2026修改，非2025历史存档。
+
+安装契约实核：metadata-only Webpage可建，但公开paper-plan/register-paper要求
+真实imported PDF；v4/v5正式提交共同要求paper owner。没有非论文原文的公开登记
+入口；v5的vault_markdown证据虽可表示块锚点，不能伪造未登记的artifact/provider。
+因此Genie3正文/Canvas尚未生成，网页分析复现不通过。未启动假批次、未造PDF、
+未以源码或手画近似绕过，也未把书目成功说成分析完成。需用户决定是否将网页/
+技术文档登记与分析提交作为后续最小插件补齐；本轮没有开发、发布、安装或合并。
+旧47输入最终零改动；原实验报告和人工/原生待验保持。说明及入库/来源回执在test。
+
 ## 2026-10-24当前回执：0.47.4已正常发布安装，实验报告已展示，Genie3待来源选择
 
 source856efeb/runtime1ca3544已普通推送，CLI与Codex marketplace正常安装0.47.4，

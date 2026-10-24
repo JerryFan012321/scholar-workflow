@@ -10,9 +10,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 - **Development — 0.47.4 installed acceptance:** record normal hotfix/release
   publication and CLI/marketplace installation with exact runtime bytes. Preserve
   the bounded independent synthetic report, unchanged old inputs and its unfulfilled
-  arithmetic-detail/native-reader checks. The user-selected Genie 3 sample remains
-  pending a source/ingestion decision; no substitution, Zotero write or paper success
-  is implied. No main merge or additional runtime change.
+  arithmetic-detail/native-reader checks. After the user's subsequent approval,
+  create and read back one official Genie 3 Webpage through the installed CLI.
+  Preserve its source materials, but record the missing non-paper source-registration
+  and analysis-commit path instead of inventing a PDF/owner or claiming analysis success.
+  No main merge or additional runtime change.
 
 ## [0.47.4] - 2026-10-24
 
