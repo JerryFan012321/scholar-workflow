@@ -41,13 +41,17 @@ new template. Report an unsupported-version limitation rather than substituting 
    `references/analysis-v5-format.md` for a new five-branch analysis, or
    `references/analysis-format.md` for an existing v4 pair. Declare the supported version/framework explicitly;
    the existing v4 interface is for compatibility, not proof of new-template support.
+   Also load `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md` for the
+   independently readable prose requirements; they apply to every analysis, not only a review pass.
    Declare `whole` or the exact `focused` section subset,
    select `en` or `zh` consistently, and place each new paper's companion note,
    `<paper>分析.md` / `<paper>解析树.canvas` pair, and sidecar together under
    `resources/<persistently-mapped-paper-segment>/` in that Field. Existing
    `resources/papers/` packages and flat pairs stay in place until a separately reviewed relocation.
 5. Project claims and separately attributable points through the versioned IR into both
-   artifacts. The Markdown remains independently readable; the required Canvas expands the
+   artifacts. Keep the full explanation in `body` / `text` and a separate faithful
+   short `canvas_summary` for navigation; tree brevity is not a prose-length target.
+   The Markdown remains independently readable; the required Canvas expands the
    reference image's named subslots into separate editable nodes, each keeping its inline
    evidence, original-source link and exact Markdown-block backlink.
    Resolve the pair's explicit companion-note route as defined in
@@ -95,6 +99,9 @@ new template. Report an unsupported-version limitation rather than substituting 
    to declare its already-owned Canvas in the Source manifest; this does not regenerate the pair.
 8. Return each pair's paths, profile/scope, validation state, and every warning,
    source gap or conflict. A nonblocking layout reminder is not human visual approval.
+   Keep structural conformance, source support and prose-readability results distinct.
+   If essential explanations remain missing, report the analysis as incomplete rather
+   than treating a conformant tree or present quotations as a finished readable article.
 
 ## Constraints
 

@@ -1,5 +1,9 @@
 # analyze-paper（论文分析）
 
+分析正文是详尽、连贯且能独立读懂的说明，Canvas只是简短导航。完整解释保存在
+`body`／`text`，图中文字另放`canvas_summary`；原文摘录和图片负责佐证，不能代替正文解释。
+方法、参数、指标与结果判定，以及原图的使用要求见共享[呈现规范](../../references/human-presentation.md)。
+
 已有资料包可以直接只读检查，不必重新生成：
 
 ```bash

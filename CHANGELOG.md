@@ -5,6 +5,46 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.47.4] - 2026-10-24
+
+### Changed
+
+- **review-experiments:** apply the shared standalone-explanation contract explicitly
+  to single-result reports as well as comparisons. Compact tables, figures and
+  source links do not replace a full explanatory body or evidence-supported verdict.
+  Keep conditions/results together without inventing controls; distinguish structural
+  coverage, evidence support and readability. Preserve VS Code presentation, record
+  authority and read-only scope; add a single-result routing case. No report rewrite,
+  experiment execution, schema change or installation is included.
+
+- **analyze-paper / human presentation / experiment review:** distinguish full,
+  independently readable analysis prose from concise Canvas navigation. Require
+  useful method, parameter and metric explanations, explicit evidence-supported
+  judgments and relevant source figures without replacing explanation with names,
+  quotations or galleries. Preserve the existing framework, source protections and
+  body/summary interface; add synthetic retention checks and keep semantic/human
+  acceptance separate. Load the prose contract explicitly on the ordinary skill
+  route; keep comparison conditions, results and judgments together, and do not
+  report an outline-only body as a finished readable analysis. Record the user's
+  approval of the single installed V-JEPA 2 prose revision without promoting the
+  historical one-shot result. All 3345 unit/contract checks pass; runtime loading
+  and packaging boundaries are independently reviewed. No new installation or schema change.
+
+- **Development — stage-one completion evidence:** align the current exemplar
+  contract and audit with the installed 0.47.3 correction and bounded read-only
+  checks of existing knowledge, project, experiment and native-tool artifacts.
+  Preserve historical approvals and partial one-shot evidence. Keep formal
+  production migration and registration of every review copy separate from the
+  actual exemplar requirements; do not add false completion gates or new runtime work.
+
+- **Development — authorized 0.47.3 installed acceptance:** record the actual
+  runtime-only publication and normal CLI/marketplace installation, then one
+  public preservation-stage update and CAS review-copy handoff for fifteen
+  evidence records. Preserve prose, complete slots, images, graph geometry,
+  previous approval and the original partial one-shot result. Keep the editor's
+  metadata-only Canvas save, authorized old-cache removal, pending human review
+  and noncanonical status explicit; no new runtime change or main merge.
+
 ## [0.47.3] - 2026-10-23
 
 ### Fixed

@@ -1,5 +1,11 @@
 # analyze-paper
 
+The analysis body is a connected, detailed explanation; Canvas is its short
+navigation view. `body` / `text` retain the explanation and `canvas_summary`
+contains the separate tree wording. Quotations and source images support that
+prose rather than replacing it. See the [presentation contract](../../references/human-presentation.md)
+for method/parameter/metric explanations, evidence-supported judgment and source-image use.
+
 Create a persistent analysis of one already-ingested paper, or a separate analysis pair for each
 paper in a selected batch. Every result has a human-readable Obsidian Markdown note and an editable
 JSON Canvas projection.

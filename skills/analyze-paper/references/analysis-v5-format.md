@@ -88,9 +88,15 @@ its arbitrary `title` or detail is not shown as an unsupported fact. It has no c
 block anchor or own source entry. Its points remain independently attributable records.
 Non-container claims require a nonblank body and their own evidence/backlink.
 
-Claims/points use faithful concise summaries when their body exceeds 180 characters.
-Their visible title, summary and inline source labels remain bounded by the checked
-schema. Concision cannot remove a material qualification or add unsupported facts.
+Claim `body` and point `text` contain the full analysis explanation; `canvas_summary`
+is only its faithful concise Canvas projection. The existing 180-character rule
+requires a separate summary for longer text, not a 180-character target for the
+Markdown body. Retain the explanation in the original field rather than replacing
+it with the summary. Claim bodies may contain paragraphs; point text retains its
+existing single-paragraph interface but may contain multiple explanatory sentences.
+Visible titles, summaries and inline source labels remain bounded by the checked
+schema. Summary brevity cannot remove a material qualification or add unsupported
+facts. Field capacity is not a prescribed prose length or permission to pad content.
 
 ## Observable rendering and conformance
 
