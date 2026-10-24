@@ -34,6 +34,48 @@ protection retain `analysis-format.md` and the shared source/storage policies.
 - Schema: `${CLAUDE_PLUGIN_ROOT}/contracts/analysis-ir.schema.json`; baseline:
   `${CLAUDE_PLUGIN_ROOT}/contracts/analysis-baseline.schema.json`.
 
+## Explicit webpage sources (supporting runtimes)
+
+An explicitly selected official introduction can be analyzed as a webpage, not as
+an unavailable full paper. Register its real Zotero `webpage`/`blogPost` bibliography
+and its archived Markdown through the shared `document-registration.md` interface.
+Retain the same five-branch framework and complete explanations; unreported methods,
+parameters and experiments remain unfilled or explicitly unavailable, not invented.
+Declare document-level `material_kind: webpage`; omission retains the old paper
+interface and serialization. New webpage output names its actual material type and
+scope rather than claiming "Whole paper". Ordinary paired updates preserve this
+kind and cannot relabel a paper as a webpage or the reverse.
+
+The registered `Source.md` is the atomic resource's original-text note. A
+`vault_markdown` span uses its actual Source UUID, atomic `resource_id` in
+`artifact_id`, Source-relative path and standalone block ID. This is a document
+identity, not a synthetic analysis artifact. The manifest's `markdown_sha256` binds
+the exact note bytes. Canonical v5 commit checks this owner, bytes, block and every
+supplied quotation before and during publication; changes require a reviewed source
+update, not manual provider repair. No PDF, attachment key or ZotFlow reader is
+invented. Registration and conformance do not prove that a downloaded snapshot is
+complete, current or faithful to its remote original; report capture gaps separately.
+Archived source notes use standalone `^block-id` lines immediately after their
+source paragraph. Each ID is unique; blank-separated paragraphs are separate blocks.
+Code fences and HTML comments do not declare a source block. This narrow source
+format does not claim support for every Obsidian list/table/HTML block grammar.
+
+Applicable copyright/permission limits still govern quotations. When a supported
+webpage claim cannot display an excerpt within those limits, its evidence may set
+`quotation_omitted_reason: copyright_or_permission`, with verified `vault_markdown`
+spans and no `quote` or `quote_emphasis` on those spans. The Markdown explicitly
+states the omission next to the claim and retains its source-block links. This
+is not `not_reported`, missing evidence, or permission to invent a quote. Selected
+permitted quotations keep the ordinary complete-sentence, folding and direct-evidence
+emphasis contract. The exception is v5-only and cannot weaken a PDF paper's quote
+contract; paper-owner canonical commits reject it. Older inputs and saved pairs
+serialize unchanged when the optional field is absent.
+
+The current typed `canvas_image` source remains Zotero PDF only. Do not disguise
+webpage images as PDF crops or promise unsupported Canvas images. Relevant webpage
+media can be linked with attribution in the body, subject to permission and actual
+inspection; a media URL alone proves neither its contents nor reuse rights.
+
 ## Outline paths and independent points
 
 From 0.47.3, v5 claims and points have no fixed source-span count quota. All supplied

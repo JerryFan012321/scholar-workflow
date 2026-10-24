@@ -34,6 +34,12 @@ The external write dependencies are:
   multi-phase import.
 - A non-paper technical document goes to the registered Vault target in
   `resource-model.md`, with its source, time, and hash recorded.
+- For an explicitly selected official webpage or blog post, use the separate
+  `${CLAUDE_PLUGIN_ROOT}/references/document-registration.md` branch: confirm or
+  create its real Zotero `webpage` / `blogPost` bibliography without a PDF, then
+  register the authorized original-text snapshot in its selected Source/Field.
+  Bibliographic creation and snapshot registration have separate receipts;
+  neither is a paper import or a completed analysis.
 
 ## Write gates
 
@@ -65,3 +71,4 @@ collection membership for the batch. Pause only for:
 - `${CLAUDE_PLUGIN_ROOT}/references/identity-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md`
+- `${CLAUDE_PLUGIN_ROOT}/references/document-registration.md` — only for a user-selected official webpage/blog snapshot.

@@ -21,6 +21,22 @@ Three acquisition phases:
 Downloaded PDFs go only to `paper_inbox`; technical documents only to the Vault. All
 Zotero access is via its loopback Local API — the plugin never writes `zotero.sqlite`.
 
+## A selected official webpage or blog
+
+When the requested source is an official webpage rather than a paper, keep it as a
+real Zotero `webpage` / `blogPost` bibliography without inventing a PDF. If the user
+also requests a source snapshot, register the authorized original Markdown in the
+selected Source/Field as `resources/<stable-segment>/Source.md`. The installed
+`knowledge document-plan` and `register-document` commands bind its item identity,
+URL, retrieval time, source-block anchors and hash through a reviewed digest and
+recoverable transaction. See the [document registration contract](../../references/document-registration.md)
+for inputs, commands, conflicts and handoff.
+
+Bibliographic creation, source registration and a later paired analysis have separate
+results. This branch does not download a paper from a non-arXiv source or turn an
+announcement into a complete technical report. A public image/text URL is not an
+open license; preserve the source's reuse restrictions and extraction gaps.
+
 ## When the request includes a reading index
 
 Import, collection membership, Knowledge owner registration and index update have

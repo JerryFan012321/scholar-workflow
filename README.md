@@ -39,6 +39,12 @@ Project references leave source ownership unchanged. An explicitly requested doc
 different: it receives destination identity and evolves independently. Neither operation creates
 hidden synchronization, source overwrite or cascading deletion.
 
+An explicitly selected official webpage can also have a real Zotero bibliography
+and an archived, block-addressable `Source.md`. `knowledge document-plan` and
+`knowledge register-document` register one new owner without a PDF; the ordinary
+v5 analysis pair remains beside it. Missing technical disclosure is not filled
+from another paper. See [webpage registration and use](references/document-registration.md).
+
 From 0.43.0, schema-2 Fields can retain qualified references to existing
 knowledge objects and their purpose. `knowledge list --resolve-references` optionally shows
 declared ownership and file diagnostics without opening readers or creating copies. Schema 1

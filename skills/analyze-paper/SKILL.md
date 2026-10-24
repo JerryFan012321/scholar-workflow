@@ -15,11 +15,31 @@ The explicit v5 interface is `references/analysis-v5-format.md`. Use it only whe
 installed runtime supports v5; the older four-branch v4 renderer does not satisfy the
 new template. Report an unsupported-version limitation rather than substituting v4.
 
+## Selected official webpage branch
+
+An explicitly requested official webpage/blog analysis uses the same v5 output
+framework, full readable prose and short Canvas summaries, but declares its source
+as a webpage rather than a complete paper. Resolve its real Zotero `webpage` /
+`blogPost` item and registered `Source.md` through
+`${CLAUDE_PLUGIN_ROOT}/references/document-registration.md`. Read that hash-bound
+snapshot as the text source; no PDF key or indexed-paper body is invented.
+If registration is requested but missing, use that contract before paired commit;
+unrequested ingestion or source creation remains outside the analysis request.
+
+Keep all five branches and named slots. A page's omitted architecture, training
+details or quantitative experiments do not authorize invented modules/results;
+structural slots may stay unfilled. Cite each supported record with its exact
+registered source block. For rights-limited excerpts, use only the installed v5
+`quotation_omitted_reason` interface described in `analysis-v5-format.md` and the
+shared source policy; PDF excerpts keep their existing rules. A webpage figure
+does not become a PDF-backed `canvas_image`: use only actually supported, owned
+image interfaces and report unavailable image projection without fabricating a span.
+
 ## Workflow contract
 
 1. Resolve the requested, already-ingested Zotero item with
    `scholar-workflow zotero search`; disambiguate multiple matches.
-2. Read its attachment identity and indexed paper text with
+2. For a paper, read its attachment identity and indexed text with
    `scholar-workflow zotero get <item-key> --children` and
    `scholar-workflow zotero fulltext <attachment-key>`. Zotero indexed full text is the
    paper-body channel; missing tables, figures, or equations are reported as source gaps.
@@ -112,8 +132,9 @@ a canonical commit. Replay uses the installed public CLI, not a private renderer
 
 - Each paper receives its own Markdown/Canvas pair and conformance result; a batch never merges
   analyses or lets one failed item roll back a conformant sibling.
-- Zotero indexed full text is the paper-text channel; repository code is an optional,
-  read-only implementation aid and never a metadata or paper-text source.
+- Zotero indexed full text is the paper-text channel; the explicitly selected
+  webpage branch instead uses its registered original snapshot. Repository code
+  is an optional, read-only implementation aid and never a metadata or body-text source.
 - One paper has one evolving analysis note and one evolving analysis canvas. Section/node
   revision is allowed; whole-artifact replacement is not.
 - Analysis, annotations, and literature trees remain separate artifacts with separate
@@ -143,4 +164,5 @@ a canonical commit. Replay uses the installed public CLI, not a private renderer
 - `references/analysis-batch.md` — load for multi-paper analysis or an existing-pair update.
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/source-policy.md`
+- `${CLAUDE_PLUGIN_ROOT}/references/document-registration.md` — only for an explicitly selected official webpage/blog.
 - `${CLAUDE_PLUGIN_ROOT}/references/canvas-registration.md` — only for a requested portable exemplar.

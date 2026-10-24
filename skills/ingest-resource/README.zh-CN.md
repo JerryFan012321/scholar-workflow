@@ -15,6 +15,17 @@
 下载的论文 PDF 只进 `paper_inbox`,技术文档只进 Vault。所有 Zotero 访问都经 Local API,
 插件绝不直接写 `zotero.sqlite`。
 
+## 明确选定的官方网页或Blog
+
+来源是官方网页而非论文时，Zotero保留真实的`webpage`／`blogPost`书目，不虚构PDF。
+用户同时要求归档原文时，在选定Source/Field中将获准归档的原文Markdown登记为
+`resources/<稳定目录段>/Source.md`。安装版`knowledge document-plan`与
+`register-document`通过已审摘要和可恢复事务，绑定条目身份、网址、取得时间、
+原文块锚点与hash。输入、命令、冲突及分析交接见[原文登记契约](../../references/document-registration.md)。
+
+书目入库、原文登记和后续成对分析分别核验。这不放宽非arXiv论文下载规则，也不把一篇
+发布介绍冒称完整技术报告；能访问图片或正文网址不等于取得开放许可，仍保留实际使用限制及提取缺口。
+
 ## 同时要求更新阅读索引时
 
 入库、分类归属、知识库论文登记和索引更新分别核验。按明确选择的现有格式完成所需部分，

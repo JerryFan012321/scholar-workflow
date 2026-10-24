@@ -23,6 +23,20 @@ scholar-workflow analysis check-bundle /论文目录绝对路径 \
 分析 Markdown、Canvas 和 sidecar；PDF 仍由 Zotero 管理。目录段与资源 ID 的映射须持久记录。
 旧resources/papers论文包与平铺文件继续原位读取，普通分析更新不会顺手搬迁。
 
+## 明确选择官方网页作分析来源
+
+用户选定官方网页或Blog时，在其真实Zotero `webpage`／`blogPost`书目和原文
+`Source.md`完成登记后，仍采用v5完整五分支。独立的原文登记与安装版
+`knowledge document-plan/register-document`入口见[原文登记契约](../../references/document-registration.md)。
+原文快照、分析、Canvas和sidecar同处一个映射后的资源目录，原文不混入分析正文。
+每条来源使用登记回执的resource ID和精确原文块，不虚构PDF、附件key或页码。
+
+结果须明确是这份网页的分析，而非完整论文。五分支保留，未披露的架构、训练细节或实验
+不编造成事实。`references/analysis-v5-format.md`的`quotation_omitted_reason`仅允许
+在v5纯已登记Markdown来源中，因版权/授权限制说明未展示摘录，同时保留同点精确原文入口。
+其余保留摘录继续满足完整语境和直接证据加粗要求，论文/PDF摘录规则不变。
+网页媒体不能伪装成PDF来源的Canvas图片；格式符合、来源支持及人工阅读分别验收。
+
 ## 输出模型
 
 当前要求的输出格式在 Markdown 和 Canvas 中采用用户新提供的五分支框架：
@@ -59,7 +73,7 @@ Canvas 按原图把每项 challenge/contribution/module 的具名子项展开为
 PDF 可跳到物理页或已有批注，已登记的
 Vault Markdown 可跳到具体块。原文链接与 Canvas→正文反链同处；页级跳转不冒充逐句选中，来源的
 身份、版本和归属核验也不能由结构 conformance 代替。
-新分析正文在对应论点或逐点论据下方附**原文摘录**，并链接到同一原文页或段落。
+新论文分析正文在对应论点或逐点论据下方附**原文摘录**，并链接到同一原文页或段落。
 摘录保留原语言和原措辞；中文分析可以引用英文原句，意译或译文不冒充逐字引用。
 普通论述至少保留一个完整原句，必要时带相邻原句，交代主语、条件与限制；关键词、半句或孤立
 图号不算可读摘录。图表/公式需完整题注、定义或有标签的结果及必要原文解释。
@@ -189,6 +203,8 @@ Canvas metadata，先显式运行 `analysis acknowledge-canvas-metadata`，保�
 
 论文身份和元数据以 Zotero 为准，论文正文来自 Zotero 索引全文。索引缺失的图、表或公式会记录为
 来源缺口。只有用户明确要求时才只读查看论文代码仓库，绝不运行、构建或安装其中内容。
+明确选定的官方网页分支改读已登记的原文快照，并遵守共享[来源规则](../../references/source-policy.md)；
+它不是缺论文PDF时的替代下载源，也不授权扩大到其他网页或模型版本。
 
 Markdown/Canvas 分析对与批注、文献树保持分立。机器身份只放在薄 frontmatter、sidecar 和 Vault
 manifest 中，不淹没人类正文。旧 v1–v3 含标记文件只作兼容读取，不静默重写。

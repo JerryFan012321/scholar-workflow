@@ -5,6 +5,7 @@ from __future__ import annotations
 import fcntl
 import json
 import os
+import re
 import secrets
 import stat
 from collections.abc import Callable, Iterator
@@ -44,6 +45,7 @@ from scholar_workflow.analysis.models import (
     AnalysisCommitRequest,
     KnowledgeArtifactChange,
     KnowledgeChangeSet,
+    VaultMarkdownSpan,
 )
 from scholar_workflow.analysis.rendering import AnalysisBundle
 from scholar_workflow.analysis.updates import (
@@ -57,6 +59,7 @@ from scholar_workflow.knowledge.fields import (
     FieldService,
     KnowledgeSourceRegistry,
 )
+from scholar_workflow.knowledge.source_blocks import source_paragraphs
 from scholar_workflow.models import ResourceKind
 
 
@@ -1397,10 +1400,23 @@ def _assert_v4_provider_preconditions(
         raise AnalysisCommitSafetyError(
             "IR v4 paper folder has no unique manifest owner matching resource_id"
         )
-    if owners[0].kind is not ResourceKind.PAPER:
+    document_owner = (
+        request.document.schema_version == 5
+        and request.document.material_kind == "webpage"
+        and owners[0].kind in {ResourceKind.TECHNICAL_DOCUMENT, ResourceKind.BLOG_POST}
+        and owners[0].markdown_sha256 is not None
+    )
+    if owners[0].kind is not ResourceKind.PAPER and not document_owner:
         raise AnalysisCommitSafetyError(
             "IR v4 paper folder owner must be a declared paper resource"
         )
+    if owners[0].kind is ResourceKind.PAPER and any(
+        record.evidence.quotation_omitted_reason is not None
+        for claim in request.document.claims for record in (claim, *claim.points)
+    ):
+        raise AnalysisCommitSafetyError("Restricted webpage quotations cannot weaken the paper quotation contract")
+    if owners[0].kind is ResourceKind.PAPER and request.document.material_kind != "paper":
+        raise AnalysisCommitSafetyError("Paper owner cannot be relabeled as webpage material")
     catalog_paper = next(
         (
             resource
@@ -1411,13 +1427,58 @@ def _assert_v4_provider_preconditions(
     )
     if (
         catalog_paper is None
-        or catalog_paper.kind is not ResourceKind.PAPER
+        or catalog_paper.kind is not owners[0].kind
         or catalog_paper.zotero.item_key != request.zotero_item_key
+        or (document_owner and catalog_paper.zotero.attachment_key is not None)
     ):
         raise AnalysisCommitSafetyError(
             "IR v4 Zotero item key differs from the provider paper"
         )
     _assert_v4_target_ownership(request, snapshot)
+
+
+def _assert_document_sources(
+    root: Path, descriptor: int, request: AnalysisCommitRequest,
+    snapshot: KnowledgeProviderSnapshot | None, source_id: str | None,
+) -> None:
+    """Bind a non-paper analysis to its actual registered, unchanged source note.
+
+    The atomic document ID is the Markdown span identity; it is not a fabricated
+    analysis artifact or a PDF. Paper and legacy source handling stay unchanged.
+    """
+    if snapshot is None or request.document.material_kind != "webpage":
+        return
+    owner = next((row for row in snapshot.manifest.atomic_resources
+                  if row.resource_id == request.resource_id), None)
+    if owner is None or owner.kind is ResourceKind.PAPER:
+        return
+    match = re.fullmatch(r"document:zotero:([1-9][0-9]*):([23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8})",
+                         owner.resource_id)
+    if (request.document.schema_version != 5 or source_id is None or match is None
+            or match[2] != request.zotero_item_key or owner.markdown_sha256 is None):
+        raise AnalysisCommitSafetyError("Document analysis requires a registered v5 source identity and hash")
+    payload = _read_target_regular(root, descriptor, owner.markdown_path)
+    if _sha256_bytes(payload) != owner.markdown_sha256:
+        raise AnalysisCommitConflict("Registered document source bytes changed; review its source registration")
+    try:
+        text = payload.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise AnalysisCommitSafetyError("Registered document source is not UTF-8") from exc
+    # Each block ends at its standalone Obsidian anchor. Never satisfy a quote
+    # with an unrelated occurrence elsewhere in the archived source.
+    try:
+        blocks = source_paragraphs(text)
+    except ValueError as exc:
+        raise AnalysisCommitSafetyError(str(exc)) from exc
+    for claim in request.document.claims:
+        for record in (claim, *claim.points):
+            for span in record.evidence.source_spans:
+                if (not isinstance(span, VaultMarkdownSpan) or str(span.source_id) != source_id
+                        or span.artifact_id != owner.resource_id or span.vault_path != owner.markdown_path
+                        or span.block_id not in blocks):
+                    raise AnalysisCommitSafetyError("Document source span differs from its registered owner or block")
+                if span.quote is not None and span.quote not in blocks[span.block_id]:
+                    raise AnalysisCommitSafetyError("Document quotation is absent from its exact source block")
 
 
 def _assert_v4_target_ownership(
@@ -1610,6 +1671,7 @@ def _commit_analysis_bundle_locked(
         _commit_lock(root, root_identity) as vault_descriptor,
     ):
         _assert_canvas_image_assets(root, vault_descriptor, request)
+        _assert_document_sources(root, vault_descriptor, request, provider_snapshot, source_id)
         if source_id is not None:
             # Field registration uses the same Vault inode lock for manifest
             # replacement; recheck after locking, before any canonical write.
@@ -1812,6 +1874,7 @@ def _commit_analysis_bundle_locked(
                     )
                 if fault_inject is not None:
                     fault_inject(f"before-replace:{relative_path}")
+                _assert_document_sources(root, vault_descriptor, request, provider_snapshot, source_id)
                 identity = _atomic_write_target(
                     root,
                     vault_descriptor,
@@ -1830,6 +1893,7 @@ def _commit_analysis_bundle_locked(
             if fault_inject is not None:
                 fault_inject("before-receipt")
             _assert_canvas_image_assets(root, vault_descriptor, request)
+            _assert_document_sources(root, vault_descriptor, request, provider_snapshot, source_id)
             _atomic_write_state(
                 state_layout,
                 state_layout.receipts_descriptor,

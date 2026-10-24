@@ -92,12 +92,12 @@ _WIKILINK = re.compile(r"\[\[[^\]|]+\|([^\]]+)\]\]")
 _HTML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 
 
-def reference_evidence_text(evidence: Evidence, language: str) -> str:
+def reference_evidence_text(evidence: Evidence, language: str, *, material_kind: str = "paper") -> str:
     if language == "zh":
         labels = {
             EvidenceKind.AUTHOR_STATED: f"作者明确陈述 · {evidence.anchor}",
             EvidenceKind.ANALYSIS_INFERENCE: f"分析推断 · {evidence.detail}",
-            EvidenceKind.NOT_REPORTED: "论文未报告",
+            EvidenceKind.NOT_REPORTED: "原文未报告" if material_kind == "webpage" else "论文未报告",
             EvidenceKind.UNVERIFIABLE: f"当前正文通道无法核实 · {evidence.detail}",
             EvidenceKind.NOT_APPLICABLE: f"不适用 · {evidence.detail}",
         }
@@ -105,7 +105,7 @@ def reference_evidence_text(evidence: Evidence, language: str) -> str:
         labels = {
             EvidenceKind.AUTHOR_STATED: f"Author-stated · {evidence.anchor}",
             EvidenceKind.ANALYSIS_INFERENCE: f"Analysis inference · {evidence.detail}",
-            EvidenceKind.NOT_REPORTED: "Not reported in the paper",
+            EvidenceKind.NOT_REPORTED: "Not reported in the source" if material_kind == "webpage" else "Not reported in the paper",
             EvidenceKind.UNVERIFIABLE: f"Unavailable in the current text channel · {evidence.detail}",
             EvidenceKind.NOT_APPLICABLE: f"Not applicable · {evidence.detail}",
         }
@@ -156,9 +156,10 @@ def reference_source_link(
 
 
 def reference_inline_evidence(
-    evidence: Evidence, language: str, *, reader: AnalysisReader | None = None
+    evidence: Evidence, language: str, *, reader: AnalysisReader | None = None,
+    material_kind: str = "paper",
 ) -> str:
-    suffix = f"〔{reference_evidence_text(evidence, language)}〕"
+    suffix = f"〔{reference_evidence_text(evidence, language, material_kind=material_kind)}〕"
     if evidence.source_spans:
         suffix += " " + " ".join(
             reference_source_link(span, language, reader=reader)
@@ -282,6 +283,13 @@ def reference_source_quote_lines(
     Escape source syntax so quotations cannot create links, HTML, or block identities.
     """
     lines: list[str] = []
+    if evidence.quotation_omitted_reason is not None:
+        notice = (
+            "因版权或授权限制未展示逐字摘录；请打开同点原文链接核对。"
+            if language == "zh" else
+            "Verbatim excerpt omitted for copyright or permission limits; follow the adjacent source link."
+        )
+        lines.extend(["", f"{indent}*{notice}*"])
     for span in evidence.source_spans:
         if span.quote is None:
             continue

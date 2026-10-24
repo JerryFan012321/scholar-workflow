@@ -10,6 +10,7 @@
     "capacity": {"enum": ["expanded", null]},
     "artifact_id": {"type": "string", "pattern": "^analysis:[^\\s]+$"},
     "paper_title": {"type": "string", "minLength": 1, "maxLength": 1000},
+    "material_kind": {"enum": ["paper", "webpage"], "default": "paper"},
     "language": {"type": ["string", "null"], "enum": ["en", "zh", null]},
     "reader": {
       "oneOf": [
@@ -101,6 +102,7 @@
                 "canvas_image": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/canvas_image"}]},
                 "evidence": {
                   "allOf": [
+                    {"$ref": "#/$defs/restricted_quotation"},
                     {"$ref": "#/$defs/supported_quote_emphasis"},
                     {"$ref": "#/$defs/evidence_support"}
                   ],
@@ -119,6 +121,7 @@
                     },
                     "anchor": {"type": ["string", "null"], "minLength": 1, "maxLength": 512},
                     "detail": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048},
+                    "quotation_omitted_reason": {"enum": ["copyright_or_permission", null]},
                     "source_spans": {
                       "type": "array",
                       "items": {"oneOf": [
@@ -142,6 +145,7 @@
           },
           "evidence": {
             "allOf": [
+              {"$ref": "#/$defs/restricted_quotation"},
               {"$ref": "#/$defs/supported_quote_emphasis"},
               {"$ref": "#/$defs/evidence_support"}
             ],
@@ -160,6 +164,7 @@
               },
               "anchor": {"type": ["string", "null"], "minLength": 1, "maxLength": 512},
               "detail": {"type": ["string", "null"], "minLength": 1, "maxLength": 2048},
+              "quotation_omitted_reason": {"enum": ["copyright_or_permission", null]},
               "source_spans": {
                 "type": "array",
                 "items": {"oneOf": [
@@ -392,7 +397,12 @@
           "quote": {"type": ["string", "null"], "minLength": 1, "pattern": "\\S"}
         }}}}},
         {
-          "if": {"properties": {"kind": {"enum": ["author_stated", "analysis_inference"]}}},
+          "if": {"allOf": [
+            {"properties": {"kind": {"enum": ["author_stated", "analysis_inference"]}}},
+            {"not": {"required": ["quotation_omitted_reason"], "properties": {
+              "quotation_omitted_reason": {"const": "copyright_or_permission"}
+            }}}
+          ]},
           "then": {
             "required": ["source_spans"],
             "properties": {"source_spans": {"contains": {
@@ -402,6 +412,20 @@
           }
         }
       ]
+    },
+    "restricted_quotation": {
+      "if": {"required": ["quotation_omitted_reason"], "properties": {
+        "quotation_omitted_reason": {"const": "copyright_or_permission"}
+      }},
+      "then": {
+        "required": ["source_spans"],
+        "properties": {
+          "kind": {"enum": ["author_stated", "analysis_inference"]},
+          "source_spans": {"minItems": 1, "items": {"properties": {
+            "kind": {"const": "vault_markdown"}, "quote": {"type": "null"}
+          }}}
+        }
+      }
     },
     "zotero_pdf_span": {
       "type": "object",
@@ -455,6 +479,25 @@
     }
   },
   "allOf": [
+    {
+      "if": {"required": ["material_kind"], "properties": {"material_kind": {"const": "webpage"}}},
+      "then": {"properties": {"schema_version": {"const": 5}}},
+      "else": {"properties": {"claims": {"items": {"properties": {
+        "evidence": {"properties": {"quotation_omitted_reason": {"type": "null"}}},
+        "points": {"items": {"properties": {"evidence": {"properties": {
+          "quotation_omitted_reason": {"type": "null"}
+        }}}}}
+      }}}}}
+    },
+    {
+      "if": {"properties": {"schema_version": {"enum": [1, 2, 3, 4]}}},
+      "then": {"properties": {"claims": {"items": {"properties": {
+        "evidence": {"properties": {"quotation_omitted_reason": {"type": "null"}}},
+        "points": {"items": {"properties": {"evidence": {"properties": {
+          "quotation_omitted_reason": {"type": "null"}
+        }}}}}
+      }}}}}
+    },
     {
       "if": {"not": {"properties": {
         "schema_version": {"enum": [4, 5]},

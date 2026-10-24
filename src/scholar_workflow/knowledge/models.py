@@ -12,7 +12,6 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from scholar_workflow.models import ResourceKind
 
-
 ATOMIC_RESOURCE_KINDS = (
     ResourceKind.PAPER,
     ResourceKind.TECHNICAL_DOCUMENT,
@@ -67,10 +66,15 @@ class KnowledgeAtomicResource(BaseModel):
     ]
     title: str = Field(min_length=1, max_length=1000)
     markdown_path: str
+    markdown_sha256: str | None = Field(
+        default=None, pattern=r"^sha256:[0-9a-f]{64}$", exclude_if=lambda value: value is None,
+    )
 
     @model_validator(mode="after")
     def validate_path(self) -> KnowledgeAtomicResource:
         self.markdown_path = _validate_vault_path(self.markdown_path, suffix=".md")
+        if self.kind is ResourceKind.PAPER and self.markdown_sha256 is not None:
+            raise ValueError("Paper ownership cannot substitute a Markdown hash for its PDF identity")
         return self
 
 

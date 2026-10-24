@@ -190,6 +190,20 @@ def _assert_unused_paper(snapshot: KnowledgeProviderSnapshot, paper: dict, *,
                          existing_owner_id: str | None = None) -> None:
     """Compare explicit identities, never a title or an unqualified item key."""
     for resource in snapshot.catalog.resources:
+        document_identity = re.fullmatch(
+            r"document:zotero:([1-9][0-9]*):([23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8})",
+            resource.resource_id,
+        )
+        if document_identity is not None:
+            if resource.kind not in {ResourceKind.TECHNICAL_DOCUMENT, ResourceKind.BLOG_POST} or (
+                resource.zotero.item_key != document_identity[2]
+            ):
+                raise FieldRegistryError("Registered document identity has a conflicting resource kind or key")
+            if (document_identity[1] == paper["library_id"]
+                    and document_identity[2] == paper["item_key"]
+                    and resource.resource_id != existing_owner_id):
+                raise FieldRegistryError("Resource already has a registered document owner")
+            continue
         identity = _PAPER_ID.fullmatch(resource.resource_id)
         if resource.kind != ResourceKind.PAPER:
             if identity is not None:
