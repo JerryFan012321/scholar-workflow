@@ -21,6 +21,8 @@ Canonical rule for where every object lives. Applies to all skills and agents.
 | Machine Notion projections | Original Zotero/Vault/project records | one-way summaries and stable native links; no second content store |
 | Plugin runtime state (mappings, cursors, jobs, audit) | State store | `SCHOLAR_WORKFLOW_HOME` |
 | Personal server metadata and recorded environments | Existing private env-records ledger | configured `env_records_root/servers.yaml`; not a generic asset database |
+| Non-paper research channel subscriptions | Private configuration | `research-sources.yml`; existing paper watchlists remain in `recommend.yml` |
+| Channel observation checkpoints and event dispositions | Private state | `research/tracking.json`; identifiers, hashes, source validators and brief event metadata, never fetched bodies or Zotero mirrors |
 
 ## Invariants
 

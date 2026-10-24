@@ -110,6 +110,7 @@ not a claim that an existing renderer proves a global shortest layout.
 | Topic library, literature tree and paper ledger | `skills/build-literature-tree/references/field-library-format.md` (current 01/02/03/04 profile); legacy concept projections retain `contracts/literature-tree.schema.json`; contribution/evolution preview uses the skill's `references/evolution-preview.md` and `contracts/literature-evolution.schema.json` |
 | Annotation note | `skills/export-annotations/SKILL.md` |
 | Reading Report | `skills/recommend-papers/SKILL.md` |
+| Research channel and update tables | `research-tracking.md` |
 | Consistency audit report | `skills/check-consistency/SKILL.md` |
 | Obsidian and Notion projections | `skills/sync-projections/references/obsidian-index-format.md` and `notion-schema.md` |
 | Project material overview | `references/project-context.md` |

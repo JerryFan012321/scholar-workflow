@@ -35,12 +35,18 @@ Registered-folder availability does not prove a native reader works or paper own
 | Known native Vault | Obsidian's own Vault inventory | read-only lookup; not a file-access grant |
 | Scholar watchlist | global/project `recommend.yml` watchlist | existing `recommend-papers` author-ID workflow; not yet an assets CLI provider |
 | Paper discovery/recommendation sources | existing `recommend.yml` sources and source-policy | existing recommendation configuration; not yet an assets CLI provider |
+| Non-paper research publication channels | `research-sources.yml` | assets read-only overview; `track-research` owns registration and observation |
 
 Adding a future asset type adds its real lookup/write adapter and result contract;
 it does not copy that type into a generic registry. Zotero remains authoritative for
 papers and attachments. Project Targets keep their own execution/output/environment
 snapshots and reference server aliases, not credentials or another server inventory.
 A registered Target is not proof that its alias exists or a remote connection works.
+
+For explicitly selected researcher blogs, lab/company pages, releases or model
+lists, `assets list --kind research` reads their actual authority. Load
+`research-tracking.md` for registration/checks; no second generic asset entry,
+automatic paper-watchlist migration, knowledge registration or scheduled task.
 
 ## Server capture, maintenance and reuse
 

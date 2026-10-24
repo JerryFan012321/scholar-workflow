@@ -15,6 +15,8 @@ deterministic CLI (`src/scholar_workflow/`) performs testable file and Zotero op
 Its Zotero adapter connects only to Zotero 10+'s loopback Local API; other outbound access
 is scoped and declared — `apply` fetches PDFs from arXiv, and the separate
 `bin/notion-project.py` / `bin/recommend-papers.py` reach their own declared services.
+The optional `scholar-research` entry checks explicitly registered public research
+channels; local `scholar-workflow research` operations do not fetch websites.
 **Zotero is the authoritative library** — metadata, existence checks, indexed full text,
 and additive writes use the official Local API. Topic recall combines Local API full-text
 quicksearch with host-model ranking; no MCP server or local vector database is required.
@@ -22,6 +24,15 @@ Destructive actions still require your approval. **Obsidian** holds knowledge no
 derived indexes; **Notion** holds an optional cross-device projection.
 
 ### Content and project ownership
+
+For non-paper updates, use [track-research](skills/track-research/README.md):
+`research sources list/register` manages selected blogs, institutional pages,
+release repositories and model lists; `scholar-research check` observes them once;
+`research updates/mark` reviews retained events. The first success establishes a
+baseline, failures remain visible, and selection does not automatically ingest.
+No Hub, scheduled service, source checkout or model-weight download is required.
+See [source and update contract](references/research-tracking.md). Publication and
+installed acceptance of the current development batch remain separate.
 
 - **Knowledge System** keeps readable Markdown as the primary knowledge artifact. Papers,
   technical documents, and blog posts are atomic resources; analyses, Canvas overviews, and
@@ -481,6 +492,7 @@ flows instead of treating a compatibility response as write authority.
 | check-consistency | Audit cross-system consistency (read-only) |
 | export-annotations | Turn a paper's Zotero annotations into a structured vault note |
 | recommend-papers | Daily multi-source paper feed + NotebookLM skim → Reading Report |
+| track-research | Selected blogs, institutional pages, releases and model lists → incremental updates |
 | analyze-paper | Project detailed paper analysis into paired Markdown + editable Canvas |
 | manage-assets | Query, register and reuse owned servers and knowledge libraries |
 | env-setup | Scaffold — and consult — a personal API-key / SSH-server env-records ledger |
@@ -557,12 +569,27 @@ keep their recommendation store and are not yet providers in `assets list`.
    Start a new Claude Code or Codex session after installation so bundled skills and hooks
    are loaded.
 
-2. **Install the CLI** (provides the `scholar-workflow` command the skills call):
+2. **Install the Python package** (provides both CLI commands; no source checkout required):
    ```bash
-   pip install -e .        # from a clone
-   # or: pipx install scholar-workflow
+   pipx install "git+https://github.com/JerryFan012321/scholar-workflow.git@release"
    ```
-   Verify: `scholar-workflow --help`.
+   Use the same published runtime revision as the host plugin. For reproducible
+   acceptance, replace `release` with the approved runtime commit from the release
+   receipt. Marketplace installation alone does not install or update this package.
+   Verify the resolved commands in the host environment:
+   ```bash
+   command -v scholar-workflow
+   command -v scholar-research
+   scholar-workflow --version
+   scholar-research --version
+   scholar-workflow research --help
+   scholar-research check --help
+   ```
+   Both versions must match the loaded plugin manifest. Missing commands or version
+   mismatches require an installation correction, not a source/cache-script fallback.
+   Matching labels alone do not prove a pinned build; retain the runtime commit and
+   launcher/interpreter paths for acceptance. Developers may use `pip install -e .`
+   from their checkout; that is not normal installed-plugin acceptance.
 
 3. **Create the config.** Ask in-conversation ("configure scholar-workflow") and the
    `config-setup` skill runs it for you, or do it directly:
@@ -593,10 +620,17 @@ keep their recommendation store and are not yet providers in `assets list`.
 ## Updating
 
 The host manifests (`.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`) share one
-version (see [CHANGELOG.md](./CHANGELOG.md) for what changed). Refresh the marketplace or
-pull the latest `release` branch, then re-run `pip install -e .`
-(or `pipx upgrade scholar-workflow`) if the CLI version changed. Your `config.yml` and any
-credentials live outside the repo and are unaffected by updates.
+version (see [CHANGELOG.md](./CHANGELOG.md) for what changed). Refresh the host plugin
+and reinstall the package from the same published runtime revision:
+
+```bash
+pipx install --force "git+https://github.com/JerryFan012321/scholar-workflow.git@release"
+```
+
+For pinned acceptance use the approved runtime commit instead of `release`, then
+repeat the command/path/version checks above in a new host session. Updating the
+marketplace and updating the Python package are separate operations; neither proves
+the other was updated. Your `config.yml` and credentials remain outside the repo.
 
 ## Usage
 

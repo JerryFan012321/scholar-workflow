@@ -69,6 +69,18 @@ def _cell(value: object) -> str:
     return html.escape(" ".join(str(value if value is not None else "—").split())).replace("|", "\\|")
 
 
+def research_inventory(root: Path) -> dict:
+    """Derive a view of the actual subscription authority, never a duplicate store."""
+    from scholar_workflow.research import ResearchError, read_sources
+
+    try:
+        return read_sources(root)
+    except ResearchError:
+        return {"schema_version": 1, "status": "unavailable", "revision": None,
+                "channels": [], "diagnostics": [{"code": "research_registry_invalid",
+                "message": "Research source registration is unavailable or invalid."}]}
+
+
 def _status(value: str, zh: bool) -> str:
     labels = {
         "available": ("可查询", "Available"),
@@ -132,6 +144,10 @@ def inventory_markdown(payload: dict, *, language: str) -> str:
     zh = language == "zh"
     lines = ["# 本地资产" if zh else "# Local assets", ""]
     for kind, provider in payload["providers"].items():
+        if kind == "research":
+            from scholar_workflow.research.presentation import sources_markdown
+            lines.append(sources_markdown(provider, language=language).replace("# ", "## ", 1))
+            continue
         lines += ["## 服务器" if zh and kind == "server" else
                   "## 知识库" if zh else "## Servers" if kind == "server" else "## Knowledge", ""]
         if kind == "server":
