@@ -1,5 +1,19 @@
 # HANDOFF — 从这里接着干
 
+## 2026-10-24最新：0.47.5已发布安装，Genie3因另一正式库登记异常停在零写计划
+
+source6a21171/runtime e6fc63c已正常hotfix/release发布、pipx及Codex marketplace安装；
+128包文件与296插件payload核齐，main未合并。3395项完整覆盖初跑2失败，修正后相关123及
+--lf2均通过，详见0.47.5-release.md（保留初跑及审计脚本偏差，不改记首次全绿）。
+
+已用新安装skill独立准备Genie3官方网页原文/中文内容，不重复入库YXRF38IE。新抓取时刻真实、
+与旧raw正文相同；只恢复所选test同目录host设备号，15原文件及owner/catalog未改。
+之后document-plan仍被正式库L1 cache for projects的跨Source ownership拒绝；只读rebind-plan
+另发现registered artifact hash差异。该正式库未获本轮写授权，故不自动修复/批量重绑。
+Genie3资源目录/batch/commit/apply/Canvas尚无，repair0/1；仅6487字符非canonical内容输入，
+不能称实际分析或视觉/科学验收通过。test回执在原插件验收-0.47.4/_验收/genie3-0475。
+旧47输入零变化；下一步须用户决定是否纳入该正式库的受控登记修复，不重跑旧业务或重装。
+
 ## 2026-10-24当前：已获准最小补齐网页原文登记与分析提交
 
 用户已允许补齐真实缺口，随后发布正常安装hotfix并在test继续Genie3单对象验收。

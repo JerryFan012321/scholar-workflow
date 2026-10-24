@@ -5,6 +5,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Changed
+
+- **Development — 0.47.5 installed acceptance:** record normal runtime-only hotfix
+  publication, pinned pipx/marketplace installation and exact payload verification.
+  Preserve synthetic first-run failures and successful targeted rechecks. The one
+  Genie 3 source-capture attempt is current and retained, but canonical registration
+  is blocked by another formal Source's binding/artifact drift; do not modify it,
+  fabricate ownership or claim a generated/accepted analysis. No main merge.
+
 ## [0.47.5] - 2026-10-24
 
 ### Fixed
