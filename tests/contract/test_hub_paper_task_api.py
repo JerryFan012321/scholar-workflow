@@ -106,17 +106,22 @@ def test_paper_related_and_preview_serialize_only_controlled_references(api_serv
     assert request(server, "/api/v3/paper-documents/preview-one/content")["content"].startswith("# Fixture")
 
 
-def test_codex_preview_requires_session_and_model_preferences_use_ids(api_server):
+def test_codex_preview_and_preferences_are_retired(api_server):
     server, setup = api_server
     with pytest.raises(urllib.error.HTTPError) as error:
         request(server, "/api/v3/codex/setup", token=False)
     assert error.value.code == 403
-    assert request(server, "/api/v3/codex/setup")["candidates"][0]["candidate_id"] == "candidate-one"
-    result = request(server, "/api/v3/task-options/preferences", body={
-        "model_profile_id": "default", "reasoning_effort": "high",
-    })
-    assert result["selected_reasoning_effort"] == "high"
-    assert len(setup.requests) == 1
+    for path, body in [("/api/v3/codex/setup", None),
+                       ("/api/v3/task-options/preferences", {"model_profile_id": "default",
+                                                             "reasoning_effort": "high"})]:
+        with pytest.raises(urllib.error.HTTPError) as error:
+            request(server, path, body=body)
+        assert error.value.code == 410
+        assert json.load(error.value)["code"] == "codex_control_retired"
+    assert setup.requests == []
+    options = request(server, "/api/v3/task-options")
+    assert options["retired"] is True
+    assert options["model_profiles"] == []
 
 
 @pytest.mark.parametrize("extra", ["model", "cwd", "command", "sandbox", "permission", "environment"])
@@ -134,7 +139,7 @@ def test_preferences_and_setup_refuse_raw_execution_configuration(api_server, ex
             body[extra] = "arbitrary"
         with pytest.raises(urllib.error.HTTPError) as error:
             request(server, path, body=body)
-        assert error.value.code == 409
+        assert error.value.code == 410
     assert setup.requests == []
 
 
@@ -146,12 +151,20 @@ def test_setup_confirmation_and_preferences_require_same_origin_token(api_server
         with pytest.raises(urllib.error.HTTPError) as error:
             request(server, "/api/v3/codex/setup", body=body, **options)
         assert error.value.code == 403
-    assert request(server, "/api/v3/codex/setup", body=body)["configured"] is True
-    assert setup.requests[0]["candidate_id"] == "candidate-one"
+    with pytest.raises(urllib.error.HTTPError) as error:
+        request(server, "/api/v3/codex/setup", body=body)
+    assert error.value.code == 410
+    assert setup.requests == []
 
 
-def test_folder_picker_endpoint_never_accepts_browser_paths(api_server):
+@pytest.mark.parametrize("path,body", [
+    ("/api/v3/execution-targets/preview", {"path": "/arbitrary"}),
+    ("/api/v3/execution-targets/preview", {}),
+    ("/api/v3/execution-targets/confirm", {"candidate_token": "legacy-candidate"}),
+])
+def test_codex_folder_setup_is_retired_without_picker_or_confirmation(api_server, path, body):
     server, _ = api_server
     with pytest.raises(urllib.error.HTTPError) as error:
-        request(server, "/api/v3/execution-targets/preview", body={"path": "/arbitrary"})
-    assert error.value.code == 409
+        request(server, path, body=body)
+    assert error.value.code == 410
+    assert json.load(error.value)["retired"] is True

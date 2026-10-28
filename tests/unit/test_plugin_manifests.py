@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -67,4 +66,11 @@ def test_skill_inventory_uses_collaboration_not_review_workflows():
 
     assert "agent-collaboration" in skill_names
     assert "init-project" in skill_names
-    assert skill_names.isdisjoint({"project-review", "code-review"})
+    assert skill_names.isdisjoint({"project-review", "code-review", "project-backlog"})
+
+
+def test_developer_backlog_is_kept_outside_runtime_discovery():
+    developer_skill = ROOT / "dev-guide/skills/project-backlog/SKILL.md"
+
+    assert developer_skill.is_file()
+    assert not (ROOT / "skills/project-backlog").exists()

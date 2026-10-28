@@ -42,7 +42,6 @@ from scholar_workflow.hub.routing import (
 )
 from scholar_workflow.hub.server import start_hub_server
 from scholar_workflow.hub.tasks import (
-    CodexCapabilities,
     TaskRecipe,
     TaskRecipeRegistry,
     TaskRecipeRegistryDocument,
@@ -314,7 +313,7 @@ def test_router_loss_does_not_stop_hub_reading_or_vault_capability(tmp_path: Pat
     )
     try:
         port = server.server_address[1]
-        assert _request(port, "/hub/").status == 200
+        assert _request(port, "/api/v3/health").status == 200
         directory = json.loads(_request(port, "/api/v3/directory").read())
         assert directory["capabilities"]["cmux_launches"]["available"] is False
         assert directory["capabilities"]["vault_writes"]["available"] is True
@@ -539,7 +538,7 @@ def test_field_navigation_reads_only_manifest_declared_markdown(tmp_path: Path):
         server.server_close()
 
 
-def test_v3_task_api_exposes_only_public_contract_and_strict_action_request(tmp_path: Path):
+def test_retired_task_api_never_dispatches_even_with_injected_service(tmp_path: Path):
     storage = tmp_path / "storage"
     vault = tmp_path / "vault"
     storage.mkdir()
@@ -557,8 +556,10 @@ def test_v3_task_api_exposes_only_public_contract_and_strict_action_request(tmp_
         port = server.server_address[1]
         targets = json.loads(_request(port, "/api/v3/execution-targets").read())
         actions = json.loads(_request(port, "/api/v3/task-actions").read())
-        assert targets == {"targets": tasks.public_targets()}
-        assert actions == {"actions": tasks.public_actions()}
+        assert targets["targets"] == []
+        assert actions["actions"] == []
+        assert targets["retired"] is True
+        assert actions["available"] is False
         serialized = json.dumps({"targets": targets, "actions": actions})
         assert "registered_root_id" not in serialized
         assert "cwd" not in serialized
@@ -579,67 +580,29 @@ def test_v3_task_api_exposes_only_public_contract_and_strict_action_request(tmp_
             "effort": "standard",
             "idempotency_key": "request-123",
         }
-        created = _request(
-            port,
-            "/api/v3/tasks",
-            method="POST",
-            data=json.dumps(body).encode(),
-            headers=headers,
-        )
-        assert created.status == 202
-        assert json.loads(created.read())["terminal_routed"] is True
-        request = tasks.requests[0][1]
-        assert request.destination_id == "dst_12345678"
-        assert request.target_id == "target:project"
-        assert request.brief == "Inspect the registered target"
+        for path in ("/api/v3/tasks", "/api/v3/tasks/task-123/resume",
+                     "/api/v3/tasks/task-123/fork", "/api/v3/task-runs/run-123/cancel"):
+            with pytest.raises(urllib.error.HTTPError) as error:
+                _request(port, path, method="POST", data=json.dumps(body).encode(), headers=headers)
+            assert error.value.code == 410
+            payload = json.load(error.value)
+            assert payload["code"] == "codex_control_retired"
+        assert tasks.requests == []
 
-        with pytest.raises(urllib.error.HTTPError) as error:
-            _request(
-                port,
-                "/api/v3/tasks",
-                method="POST",
-                data=json.dumps({**body, "cwd": "/tmp"}).encode(),
-                headers=headers,
-            )
-        assert error.value.code == 422
-
-        resumed = _request(
-            port,
-            "/api/v3/tasks/task-123/resume",
-            method="POST",
-            data=json.dumps({**body, "idempotency_key": "request-124"}).encode(),
-            headers=headers,
-        )
-        assert resumed.status == 202
-        forked = _request(
-            port,
-            "/api/v3/tasks/task-123/fork",
-            method="POST",
-            data=json.dumps({**body, "idempotency_key": "request-125"}).encode(),
-            headers=headers,
-        )
-        assert forked.status == 202
+        health = json.loads(_request(port, "/api/v3/health").read())
+        assert health["task_execution"] is False
+        assert "retired" in health["worker_capabilities"]["detail"].lower()
 
         status = json.loads(_request(port, "/api/v3/tasks/task-123").read())
         assert status[0]["run_id"] == "run-123"
         run = json.loads(_request(port, "/api/v3/task-runs/run-123").read())
         assert run["state"] == "running"
-        cancelled = json.loads(
-            _request(
-                port,
-                "/api/v3/task-runs/run-123/cancel",
-                method="POST",
-                data=b"{}",
-                headers=headers,
-            ).read()
-        )
-        assert cancelled["state"] == "cancelled"
     finally:
         server.shutdown()
         server.server_close()
 
 
-def test_default_hub_loads_only_explicit_task_runtime(tmp_path: Path, monkeypatch):
+def test_legacy_runtime_cannot_reactivate_default_hub_task_service(tmp_path: Path, monkeypatch):
     home = tmp_path / "home"
     hub_state = home / "hub"
     storage = tmp_path / "storage"
@@ -719,12 +682,12 @@ def test_default_hub_loads_only_explicit_task_runtime(tmp_path: Path, monkeypatc
             source_registry_path=sources.path,
         )
     )
-    monkeypatch.setattr(
-        "scholar_workflow.hub.tasks.CodexCapabilityProbe.probe",
-        lambda _self: CodexCapabilities(
-            available=True, create=True, resume=True, fork=True
-        ),
-    )
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError("Historical runtime must not load a Codex execution service")
+
+    monkeypatch.setattr("scholar_workflow.hub.tasks.CodexCapabilityProbe.probe", forbidden)
+    monkeypatch.setattr("scholar_workflow.hub.task_control.TaskControlService", forbidden)
+    monkeypatch.setattr("scholar_workflow.hub.codex_setup.CodexSetupService", forbidden)
     server = start_hub_server(
         port=0,
         storage_root=storage,
@@ -743,22 +706,15 @@ def test_default_hub_loads_only_explicit_task_runtime(tmp_path: Path, monkeypatc
         directory = json.loads(_request(port, "/api/v3/directory").read())
         actions = json.loads(_request(port, "/api/v3/task-actions").read())
         targets_payload = json.loads(_request(port, "/api/v3/execution-targets").read())
-        assert health["task_execution"] is True
-        assert health["worker_capabilities"]["task_execution"] is True
-        assert directory["capabilities"]["codex_tasks"]["available"] is True
-        assert len(actions["actions"]) == 1
-        assert actions["actions"][0]["allowed_target_ids"] == ["fixture-project"]
-        assert targets_payload["targets"][0]["target_id"] == "fixture-project"
-        task_service = server.runtime.task_service
-        assert task_service._slot_id(
-            raw_workspace="workspace-1",
-            fingerprint="sha256:" + "a" * 64,
-            target_id="fixture-project",
-        ) != task_service._slot_id(
-            raw_workspace="workspace-1",
-            fingerprint="sha256:" + "b" * 64,
-            target_id="fixture-project",
-        )
+        assert health["task_execution"] is False
+        assert health["worker_capabilities"]["task_execution"] is False
+        assert directory["capabilities"]["codex_tasks"]["available"] is False
+        assert actions["actions"] == []
+        assert targets_payload["targets"] == []
+        assert server.runtime.task_service is None
+        assert server.runtime.task_service_factory is None
+        assert server.runtime.codex_setup_service is None
+        assert state.runtime_path.exists()
         exposed = json.dumps((directory, actions, targets_payload), ensure_ascii=False)
         for forbidden in (str(project_root), str(executable), "private-model", "sandbox"):
             assert forbidden not in exposed
@@ -789,7 +745,7 @@ def test_default_hub_loads_only_explicit_task_runtime(tmp_path: Path, monkeypatc
             _request(mismatched.server_address[1], "/api/v3/health").read()
         )
         assert health["task_execution"] is False
-        assert "registries" in health["worker_capabilities"]["detail"]
+        assert "retired" in health["worker_capabilities"]["detail"].lower()
     finally:
         mismatched.shutdown()
         mismatched.server_close()

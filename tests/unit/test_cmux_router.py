@@ -123,16 +123,16 @@ def test_router_round_trip_uses_private_record_and_fixed_verbs(tmp_path, monkeyp
                 "worker_123",
             ]
         )
-        client.new_terminal_worker(
-            workspace_id="workspace:7",
-            working_directory=tmp_path,
-            command=command,
-            focus=False,
-        )
+        with pytest.raises(CmuxControlError, match="retired"):
+            client.new_terminal_worker(
+                workspace_id="workspace:7",
+                working_directory=tmp_path,
+                command=command,
+                focus=False,
+            )
         assert backend.calls == [
             ("open", str(document), "workspace:7"),
             ("codex", "workspace:7", tmp_path),
-            ("terminal", "workspace:7", tmp_path, command, False),
         ]
     finally:
         stop.set()
@@ -167,7 +167,7 @@ def test_router_rejects_wrong_generation_auth_and_shell_recipe(tmp_path, monkeyp
             )
             response = cmux_router._receive(connection, cmux_router._MAX_RESPONSE)
         assert response == {"ok": False, "error": "router authentication failed"}
-        with pytest.raises(CmuxControlError, match="allowed recipe"):
+        with pytest.raises(CmuxControlError, match="retired"):
             client.new_terminal_worker(
                 workspace_id="workspace:7",
                 working_directory=tmp_path,

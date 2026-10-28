@@ -1,6 +1,12 @@
 # project-backlog
 
-A project management skill for maintaining the persistent work-item queue at `planning/BACKLOG.md`.
+A development-only skill for maintaining Scholar Workflow's work-item queue at
+`planning/BACKLOG.md`. It is not included in the installed research plugin.
+
+Load `dev-guide/skills/project-backlog/SKILL.md` from the development checkout for an
+explicit request. Paths resolve against that checkout, not the research project in
+the caller's working directory. Research project plans keep their existing authority
+in PROJECT, SCHEDULE or the selected project plan.
 
 ## What it does
 

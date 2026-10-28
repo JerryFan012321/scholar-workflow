@@ -17,6 +17,35 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 
 ## Active Items
 
+
+### WI-057: Native-tool separation, asset units and project skill boundaries
+
+- **Status**: in-progress
+- **Priority**: p1
+- **Type**: refactor
+- **Decision, 2026-10-28**: retire embedded Codex activation and freeze self-built
+  Hub/explorer product work; preserve accepted Skill outputs and all existing data.
+  Pull reviewable lightweight experiment results from the local parent; model,
+  weights and checkpoint files stay remote. Knowledge registration/upper-level
+  organization uses complete paper/blog/document asset units and explicit context;
+  monitoring lists keep their own stores. Multidimensional viewing/editing remains
+  open for discussion and its records are retained.
+- **Current batch**: disable historical task activation, remove HTTP prerequisites
+  from supported Field content transactions, separate development/runtime Skills,
+  and define generic project-management versus project-specific task Skills.
+- **Boundaries**: no remote connections, real collection/migration, existing paper
+  edits, process shutdown, publication/installation or main merge. Do not replace
+  missing selective export/SSH transport with remote-path-only reports.
+- **Evidence**: separation checks365 passed; website/API/wheel checks253 passed
+  and final compatibility checks86 passed. The new-Source inventory handoff now
+  covers actual paper/document registration and project-reference resolution.
+  Current full unit/contract4010 passed with exact wheel and headless browser
+  checks, no skips; synthetic dependency and request-lifetime isolation are fixed.
+  These overlapping runs are not summed. Candidate0.50.0 is not published or
+  installed; current execution state is HANDOFF top. Result filtering/remote pull
+  and complete non-paper exploration identity remain unresolved requirements.
+- **Related**: G11/G12/G16/G20, INV31/35/60/65/66; native-tool-separation.md.
+
 ### WI-056: Research resources, publication channels and incremental updates
 
 - **Status**: in progress; 0.48.0 published and normally installed; single-source

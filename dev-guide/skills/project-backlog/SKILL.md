@@ -5,7 +5,12 @@ description: Manage this repository's persistent work queue in planning/BACKLOG.
 
 # project-backlog
 
-`planning/BACKLOG.md` is the sole work-item store.
+This is a Scholar Workflow **development-only** skill. Load it from the development
+checkout for an explicit backlog request; it is not an installed research capability.
+Resolve the checkout containing this skill before reading or writing its backlog.
+Do not apply it to the caller's research project or initialize a queue there.
+
+`planning/BACKLOG.md`, relative to that checkout, is the sole work-item store.
 
 ## Operations
 

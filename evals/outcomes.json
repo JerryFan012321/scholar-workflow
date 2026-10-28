@@ -2,8 +2,28 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "legacy-hub-website-retirement",
+      "description": "旧Hub静态HTML/JS/CSS不再分发；页面和资源GET/HEAD返回明确退役，open-hub无服务/窗口副作用。目录、health、PDF与原生打开兼容能力保留，状态和已认可正文/Canvas不变，不删除独立探索数据或自动启动替代界面。源码回归与正常安装分别取证。",
+      "status": "pending"
+    },
+    {
+      "id": "native-tool-separation-without-hub",
+      "description": "G16/INV31/INV60：合成历史配置不能通过CLI/HTTP/worker入口激活Codex；一个明确Source/Field的本地plan、跨进程apply和中断恢复不依赖HTTP/cmux/token，保持身份/CAS/journal与旧数据。源码检查、正常安装和真实操作各自取证，不改旧论文或停止既有进程。",
+      "status": "pending"
+    },
+    {
+      "id": "runtime-and-project-skill-distribution",
+      "description": "INV66：真实合成Git打包验证开发backlog仅留开发层，运行发现/产物不包含它；三类Skill和项目管理/执行职责明确，共用已认可格式，不生成项目占位Skill或迁移真实项目。源码打包不代替正常安装。",
+      "status": "pending"
+    },
+    {
+      "id": "knowledge-asset-units-and-operation-boundaries",
+      "description": "INV65：论文/Blog/文档沿用完整资产单元及明确上下文作最小登记对象；上层引用单元，附属文件保留可直接查看编辑的入口。管理/分析/查看/编辑分别报告；Lab/渠道名单独立存储。规则固化不冒称统一多类型CLI或新查看编辑界面已经完成。",
+      "status": "pending"
+    },
+    {
       "id": "knowledge-explorer-edit-query-navigation",
-      "description": "G12/G17/G20/INV64：在一个独立test对象中，正常安装版可添加自定义维度（不强制第五维）、填写单多值及work/record作用域、同条record联合筛选并保存查询；B1/T1与B2/T2不拼成B1/T2。论文单元为最小独立对象，从已登记provider整包引用；多个定位/评价记录仍只一个单元，不自由创建标题卡片、拆包或重分配身份。条件结果和作者/独立/本地/分析来源同处，关系有依据且可有分支，时间不冒充继承，邻接context不算命中；按明确可排序单值属性排列，未知不当零值。两端列出同一完整明确资产及缺失/外链未核验状态；Markdown导出只stdout，原论文Markdown/Canvas/sidecar/原文/图片字节不变。外部修改后请求重读，过期revision拒绝覆盖。0.49.0候选开发中的核心/CLI/HTTP/UI与文档规范不代表已正常安装、原生打开、双端便利性或人工评鉴；网页快照、跟踪入库桥接、定时agent及自动写回Obsidian未由本项冒称完成。",
+      "description": "2026-10-28方向更新：自建探索网页已取消，本条旧界面验收不转为pass；已有数据/结构测试与0.49.0安装历史保留。多维查看与编辑方式继续讨论；以下是历史范围：G12/G17/G20/INV64：在一个独立test对象中，正常安装版可添加自定义维度（不强制第五维）、填写单多值及work/record作用域、同条record联合筛选并保存查询；B1/T1与B2/T2不拼成B1/T2。论文单元为最小独立对象，从已登记provider整包引用；多个定位/评价记录仍只一个单元，不自由创建标题卡片、拆包或重分配身份。条件结果和作者/独立/本地/分析来源同处，关系有依据且可有分支，时间不冒充继承，邻接context不算命中；按明确可排序单值属性排列，未知不当零值。两端列出同一完整明确资产及缺失/外链未核验状态；Markdown导出只stdout，原论文Markdown/Canvas/sidecar/原文/图片字节不变。外部修改后请求重读，过期revision拒绝覆盖。0.49.0候选开发中的核心/CLI/HTTP/UI与文档规范不代表已正常安装、原生打开、双端便利性或人工评鉴；网页快照、跟踪入库桥接、定时agent及自动写回Obsidian未由本项冒称完成。",
       "status": "pending"
     },
     {
@@ -153,7 +173,7 @@
     },
     {
       "id": "knowledge-new-source-inventory-and-single-paper-owner",
-      "description": "G2/G12/G16/G17：新Source登记明确初始化bound空provider、Field及host registry，原文不收编；已有Source挂接不猜空。跨Source按规范Zotero文库/item身份查重，外部声明读集及恢复/逐成员/完成重放均核验。2026-10-09独立预期先于实现，27项Source初始化、28项owner边界及1项真实spawn双进程竞争已通过；并发只产生一个owner，失败方清单/原文保持。运行说明与结果分离，未发布安装，真实单对象安装态仍待验；Field引用写入与完整G17不因此完成。见planning/source-inventory-initialization-test-results.md和paper-owner-uniqueness-test-results.md。",
+      "description": "G2/G12/G16/G17：新Source登记明确初始化bound空provider、Field及host registry，原文不收编；已有Source挂接不猜空。本地Field事务首次创建Source也须在公布主机登记前交付provider，使后续真实paper/document-plan及项目引用可用；初始化进入plan/journal与中断恢复，旧格式日志保留，未知或丢失既有清单不重造。源码回归与正常安装单对象验收独立。跨Source按规范Zotero文库/item身份查重，外部声明读集及恢复/逐成员/完成重放均核验。历史2026-10-09独立预期先于实现，27项Source初始化、28项owner边界及1项真实spawn双进程竞争已通过；并发只产生一个owner，失败方清单/原文保持。当时运行说明与结果分离、安装待验；当前精确交付状态见HANDOFF顶部，Field引用写入与完整G17不因此完成。见planning/source-inventory-initialization-test-results.md和paper-owner-uniqueness-test-results.md。",
       "status": "pending"
     },
     {
@@ -490,7 +510,7 @@
     {
       "id": "hub-v3-installed-service-lifecycle",
       "lifecycle": "compatibility-only",
-      "description": "历史 G15/INV51：安装包驱动 open-hub/start/status/stop/restart/doctor，动态 loopback 端口与 mode-0600 discovery 自证 executable/build/PID/generation/log，未知监听器或 PID 不得被终止；不依赖源码目录。旧状态未重新评审，保持 pending；0.29.0/0.30.0 的历史安装事实见 HANDOFF，不据此推定全部 canary 已通过。服务仍存在时安全要求继续适用，但不再是无服务项目总览的产品前提。",
+      "description": "2026-10-28更新：open-hub网站入口已退役，当前仅保留兼容服务的start/status/stop/restart/doctor及API/PDF身份安全。此前包含网站启动的验收不转为pass；以下为历史范围：历史 G15/INV51：安装包驱动 open-hub/start/status/stop/restart/doctor，动态 loopback 端口与 mode-0600 discovery 自证 executable/build/PID/generation/log，未知监听器或 PID 不得被终止；不依赖源码目录。旧状态未重新评审，保持 pending；0.29.0/0.30.0 的历史安装事实见 HANDOFF，不据此推定全部 canary 已通过。服务仍存在时安全要求继续适用，但不再是无服务项目总览的产品前提。",
       "status": "pending"
     },
     {

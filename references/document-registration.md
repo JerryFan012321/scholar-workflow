@@ -1,5 +1,9 @@
 # Selected official webpage ownership and source snapshot
 
+The article and its explicitly associated source/context form one asset unit;
+see `asset-units.md`. Source snapshots and later analyses are members of that
+unit, while a monitored publication channel keeps its separate tracking record.
+
 Use for a user-selected official webpage/blog with a real Zotero `webpage` or
 `blogPost` bibliographic item and no paper PDF. This branch registers the authorized
 original text as a Knowledge resource; it is not paper ingestion, a PDF substitute,

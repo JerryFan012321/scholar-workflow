@@ -99,17 +99,14 @@ def _request(
     return urllib.request.urlopen(request)
 
 
-def test_hub_shell_and_catalog_are_served_with_security_headers(hub_server):
+def test_catalog_and_health_remain_available_without_the_retired_website(hub_server):
     _server, port = hub_server
-    page = _request(port, "/hub/")
-    assert b"Scholar Workflow" in page.read()
-    assert page.headers["Content-Security-Policy"]
-    assert page.headers["X-Content-Type-Options"] == "nosniff"
-
     response = _request(port, "/api/v1/catalog")
     payload = json.loads(response.read())
     assert payload["schema_version"] == 1
     assert "Access-Control-Allow-Origin" not in response.headers
+    assert response.headers["Content-Security-Policy"]
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
 
     health = json.loads(_request(port, "/api/v1/health").read())
     assert health["status"] == "ok"
@@ -119,53 +116,33 @@ def test_hub_shell_and_catalog_are_served_with_security_headers(hub_server):
     assert "open-hub-verified-binding-v1" not in health["capabilities"]
 
 
-def test_hub_static_ui_keeps_editing_and_attachments_secondary(hub_server):
+@pytest.mark.parametrize("path", [
+    "/hub", "/hub/", "/hub/?artifact=analysis",
+    "/hub/assets/index.html", "/hub/assets/hub.js", "/hub/assets/hub.css",
+    "/hub/assets/../server.py",
+])
+def test_retired_website_and_static_assets_return_explicit_gone(hub_server, path):
     _server, port = hub_server
-    html = _request(port, "/hub/").read().decode("utf-8")
-    script = _request(port, "/hub/assets/hub.js").read().decode("utf-8")
-
-    assert 'id="preview-editor-layout"' in html
-    assert 'id="preview-live-content"' in html
-    assert '<details class="attachment-slot">' in html
-    assert '<details class="attachment-slot" open' not in html
-    assert "innerHTML" not in script
-    assert "renderReadable" in script
-    assert "renderTable" in script
-    assert 'node("strong")' in script
-    assert 'byId("preview-edit").hidden = editing || !fieldDocument' in script
-    assert 'upload.disabled = true' in script
-    assert 'byId("attachment-upload-label").hidden = true' in script
-    assert "uploadAttachments" not in script
-    assert "method: \"PUT\"" in script  # Field v3 saves remain available.
+    with pytest.raises(urllib.error.HTTPError) as error:
+        _request(port, path)
+    assert error.value.code == 410
+    assert error.value.headers["Content-Security-Policy"]
+    assert error.value.headers["X-Content-Type-Options"] == "nosniff"
+    assert error.value.headers["Content-Type"].startswith("application/json")
+    payload = json.load(error.value)
+    assert payload["code"] == "hub_ui_retired"
+    assert payload["retired"] is True
+    assert "Obsidian" in payload["error"]
 
 
-def test_hub_static_ui_exposes_destination_without_global_binding(hub_server):
+@pytest.mark.parametrize("path", ["/hub/", "/hub/assets/hub.js"])
+def test_retired_website_head_returns_gone_without_a_body(hub_server, path):
     _server, port = hub_server
-    html = _request(port, "/hub/").read().decode("utf-8")
-    script = _request(port, "/hub/assets/hub.js").read().decode("utf-8")
-
-    assert 'id="workspace-select"' in html
-    assert "默认打开位置" in html
-    assert 'id="cmux-status"' in html
-    assert 'id="hub-actions"' in html
-    assert "/api/v3/destinations" in script
-    assert "/api/v3/actions/" in script
-    assert "/api/v3/fields/" in script
-    assert "/api/v3/fields/select" in script
-    assert "/api/v3/fields/confirm" in script
-    assert "home_revision" in script
-    assert "relative_path" in script
-    assert 'body: "{}"' in script
-    assert "candidate_token: preview.candidate_token" in script
-    assert "浏览器不会接收或提交绝对路径" in html
-    assert "state.actions.__hub__" in script
-    assert "window.confirm" in script
-    assert "启动空白 Codex" not in script
-    assert "只决定浏览器、终端和 Codex 窗口在哪里出现" in script
-    assert "/api/v2/workspaces/nonce" not in script
-    assert "/api/v2/workspaces/bind" not in script
-    assert "operations.bound" not in script
-    assert "pdfLink" not in script
+    with pytest.raises(urllib.error.HTTPError) as error:
+        _request(port, path, method="HEAD")
+    assert error.value.code == 410
+    assert error.value.headers["Content-Type"].startswith("application/json")
+    assert error.value.read() == b""
 
 
 def test_pdf_supports_head_and_single_byte_range(hub_server):

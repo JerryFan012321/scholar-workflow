@@ -4,7 +4,7 @@
 
 ```
 5 Agents: intake / lineage / knowledge / feed / audit（任务级自足单元，skill 可跨 agent 复用；无固定单向 handoff，显式跨 agent 协作由宿主 LLM 或 agent-collaboration 编排）
-19 Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / track-research / explore-knowledge / analyze-paper / manage-assets / env-setup / agent-collaboration / init-project / organize-project / config-setup / project-backlog / review-experiments（manage-assets与agent-collaboration为所有宿主/agent共享；其余独立入口用户直呼）
+18 Runtime Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / track-research / explore-knowledge / analyze-paper / manage-assets / env-setup / agent-collaboration / init-project / organize-project / config-setup / review-experiments（manage-assets与agent-collaboration为所有宿主/agent共享；其余独立入口用户直呼）。project-backlog仅属dev-guide/skills开发层，不进入运行插件。
 2 Host manifests: .claude-plugin/plugin.json / .codex-plugin/plugin.json（同名、同版本；共享 skills/hooks，MCP 配置保持等价）
 确定性 CLI: src/scholar_workflow/ + bin/(scholar-workflow, zotero-annotations.py, recommend-papers.py)
 Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入(create/import/元数据)均经 `scholar-workflow zotero` 命令;主题召回用 Local API 全字段/全文 quicksearch 后由宿主模型排序,不自建向量库;任何组件都不得直接读取或写入 zotero.sqlite
@@ -15,16 +15,19 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
 
 以一个科研项目的完整资料上下文为使用中心：代码、相关论文、分析笔记、实验及成果可读、可追溯、
 可按需调用。集中展现不等于集中存储或集中执行；现有编辑器、文献管理器、终端与 agent 宿主持有
-各自原生能力。2026-10-25明确恢复有限的知识关系界面：可扩展维度、条件化比较、关系编辑和
-完整资产导航；cmux只是浏览器打开位置，同一论文单元在Obsidian及界面可见，不改其正文和Canvas。
-模型配置页、Codex任务控制及通用研究桌面仍不在产品范围，历史Hub目标退役事实保持。
+各自原生能力。2026-10-28用户否定自建Hub及独立探索网页方向，停止扩建其前端、会话与控制层。
+保留可扩展维度、条件化记录、关系和完整资产引用；多维查看/编辑方式继续讨论，不先选新界面。
+Skill、内容格式与确定性校验保留，原生工具对接采用必要的薄适配器。
+内置Codex配置、任务和worker入口退役；外部Codex/cmux仍由宿主持有其执行与会话。
+旧Hub静态网站及open-hub打开入口退役，不分发HTML/JS/CSS，也不自动跳到替代界面；
+保留尚有兼容用途的API/PDF、服务身份诊断与停止能力，不删除登记或恢复日志。
 
 | 模块 | 唯一业务责任 |
 |---|---|
 | `project/` | 项目身份/布局、显式资料引用清单、Run/Attempt/Target/Artifact 档案 |
 | `knowledge/` | 知识对象身份、归属、导航、公共模型与文档契约；探索维度/条件记录/关系/查询持于独立外围清单 |
 | `analysis/` | 论文分析 IR、Markdown/Canvas 渲染、证据、conformance 与分析更新 |
-| `adapters/` | 外部工具接口与薄本地知识探索HTTP/UI，不拥有项目/知识布局或第二份事实源 |
+| `adapters/` | 原生外部工具的薄接口；旧探索HTTP/UI只待退场，不拥有项目/知识布局或第二份事实源 |
 | `assets/` | 私有服务器台账操作与跨类型只读资产概览；知识身份继续由knowledge持有，不建第二份清单 |
 | `research/` | 非论文研究渠道订阅、观察状态及动态呈现；不拥有原文知识或替代论文推荐配置 |
 | `workflows/` | 组合核心能力完成明确任务，不维护另一套权威状态 |
@@ -41,6 +44,8 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
 - 项目管理定案（2026-10-16）：本地保留完整研究总项目及不推送的资料Git；
   所有执行子项目的代码/Git开发与运行均在远端，只有primary可推送项目自有GitHub，本地只留最简恢复材料。
   所有实验按子项目回传轻量档案，在本地分析；保留项目知识、唯一计划、规则/skills和既有呈现契约。
+  成果由本地主项目主动拉取，只接收可供人识别、阅读与分析的配置、指标、图表和必要记录；
+  model/模型权重/checkpoint文件留远端，不进入本地实验成果包。记录其定位不冒充已收到成果。
   skill运行结果细则唯一见references/project-management.md，实现增量见planning/project-system-v2.md §15；
   初始化、双方登记、接收/读取、更新恢复和代码留存是各自明确的操作，不互相代替或自动串行。
   使用前检查正常安装CLI的版本/帮助；当前交付与验收事实只由planning/HANDOFF及版本回执持有，
@@ -53,6 +58,10 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
   不由设计确认推导真实迁移、远端写入、发布安装或verified backup授权。
 - **Knowledge System** 持有 Vault 核心文档、原子资源、附属产物、analysis result contract 和
   knowledge relations；批量产物逐项通过 conformance gate，失败不得记成功。
+- 论文、Blog及其他知识文档按完整资产单元登记和上层管理，沿用现有resource/owner身份；
+  正文、Canvas、批注、图片和上下文均由明确归属/引用关联，不被拆成平级知识单元。
+  管理、分析、查看、编辑分别授权和报告，唯一契约见references/asset-units.md。
+  Source/Field是容器与定位；实验室名单、订阅等独立文档/数据库不冒充知识单元登记。
 - 多维知识探索由explore-knowledge及references/knowledge-exploration.md持有：默认四维可扩展，
   论文单元是最小独立组织/导航/比较对象；复用既有owner及完整声明资产，不创建标题卡片、
   不把论点/Canvas/批注等内部资产拆成论文节点；同单元多维、多评价仍只一个对象。
@@ -61,8 +70,8 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
   保留作者报告、独立评价、本地复现与分析判断的区别。图与Obsidian导航复用明确资产引用，
   缺失/外链未核验可见；本批不修改论文正文、Canvas、sidecar、原文和图片。
   界面/CLI共享revision检查，外部编辑后重读，冲突拒绝覆盖；Markdown导出只stdout，
-  不自动写论文包或导航文档。新界面独立于旧Hub，不恢复Codex控制或workspace权限门禁。
-- 探索页面的测试/日常环境及自由接入契约唯一见references/vault-connections.md：同一产品代码，
+  不自动写论文包或导航文档。旧探索数据保留，界面查看/编辑设计待讨论；不恢复Codex控制。
+- 历史探索页面的测试/日常隔离契约仍保护现存路径，唯一见references/vault-connections.md：
   显式隔离state、登记与会话，测试仅允许指定test根且关闭外部原生集成。不得复制正式登记到测试
   环境后暴露正式目录。日常可连接明确选择的安全Vault/子目录；安全阅读、完整论文引用和受管
   更新分层检查。只读连接仅改当前环境host登记，必要正文调整只预览；未知Markdown不冒充论文。
@@ -119,8 +128,8 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
   不得静默遗漏预览中的旧文档。受管分析 Markdown/Canvas/sidecar 不得经单文件 Hub 编辑器改写。
   本地操作员的事务入口虽已接入开发树，真实 JEPA 的 Provider+Field 联合事务及停写验收仍未完成，
   不能仅凭上述内容批准据此迁移。
-- 兼容命令 `scholar-workflow open-hub` 从已安装包启动或安全重启受管服务，经 mode 0600 discovery 发现动态端口，
-  并把调用者当前 cmux workspace 记为默认打开位置（若存在）。服务不得依赖 code repo root；
+- `scholar-workflow open-hub` 明确退役，在启动服务或打开窗口前拒绝；旧网站不再分发。
+  尚有兼容用途的服务从已安装包运行，经 mode 0600 discovery 发现动态端口，不依赖 code repo root；
   `hub start/status/stop/restart/doctor` 必须显示并核验真实 executable、build、PID、generation 与日志。
   受管进程的启停身份握手不得依赖 Zotero、其他 provider 或 cmux 路由的健康；详细能力诊断与
   生命周期身份探针分离，慢速诊断不能让存活的 HTTP 服务被误判为未知进程。
@@ -162,12 +171,9 @@ Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入
 - 新论文的资料笔记、分析 Markdown、Canvas 和 sidecar 同处 Field 内
   `resources/<stable-paper-segment>/`；PDF 仍归 Zotero。目录段须与资源 ID 持久映射，旧
   resources/papers与平铺产物原位兼容，正式搬迁需显式CAS/恢复事务及链接清理，不能靠普通分析更新顺手移动。
-- 历史 Hub TaskRecipe 只接受 allowlisted target、已验证的上下文 EntityRef、最多 8 KiB 的 bounded brief、
-  已批准的 `model_profile_id` 和该模型支持的 reasoning effort；`fast/standard/deep` 仅作旧请求兼容。
-  浏览器不能提交命令、cwd/path、原始 model、sandbox、permission、环境变量或任意 config。
-  首次设置另经用户确认安装候选、模型目录、目标及有界的读写策略，不在任务请求中开放权限配置。
-  模型目录不是账号可调用性证明；已有线程固定实际模型和思考强度，改变配置须新建或显式 fork。
-  这些仅维护旧入口安全，不代表继续建设内置 Codex；不修补本次已被用户取消的非 Git 任务入口。
+- 历史Hub的Codex写入/执行入口返回明确退役结果，旧配置不得重启任务控制或worker。
+  历史Task/Run/线程材料保留可读；退役不删除Codex原生历史、不自动终止未知进程。
+  普通原生打开、资料读取和文件事务不因Codex退役而禁用。
 - 论文卡片相关文件只由 manifest/provider 的明确归属产生，按需加载；同名不证明同一论文。
   缺失文件保留诊断，Markdown 可正文预览及 Obsidian 打开，Canvas 在 Obsidian 编辑；
   ZotFlow 来源笔记与 Scholar 分析分属不同 writer。cmux 原 PDF 动作明确不含 Zotero 数据库批注。
@@ -292,6 +298,11 @@ methodology (stable); `planning/` is the per-phase **"what to build / goals / ha
 - Runtime docs describe *what the plugin does*, not *how to develop it*. A skill's
   `## References` section lists exactly which runtime files to load — it must never
   point into `dev-guide/` or `planning/`.
+- Development-only skills live under `dev-guide/skills/`, outside runtime discovery
+  and release payloads. Generic research/project skills ship in `skills/`; actual
+  research projects own their task-specific skills and reference shared contracts.
+  Project-management versus project-task responsibilities are defined only in
+  `references/project-skills.md`; do not duplicate templates or personal targets.
 - `planning/GOALS.md` — the living **intent layer**: upstream goals, long-term
   invariants, non-goals, phase status. Continuously updated, never archived. It is
   the north star; `evals/` guards each goal by its stable ID (G/INV/NG).
@@ -369,7 +380,7 @@ Agent 之间没有固定 handoff 图。默认完成自己的任务并把结果�
 | （无 agent，用户直呼） | 非论文博客、机构与模型渠道登记和增量动态 | track-research |
 | （无 agent，用户直呼） | 可扩展多维定位、条件比较、关系编辑与完整资产导航 | explore-knowledge |
 | （无 agent，用户直呼） | 插件配置（config.yml 读写 + 初始化） | config-setup |
-| （无 agent，用户直呼） | 项目工作队列（planning/BACKLOG.md） | project-backlog |
+| （仅插件开发层） | 本仓库开发工作队列，不随运行插件发布 | dev-guide/skills/project-backlog |
 
 ## CLI 退出码
 

@@ -7,6 +7,39 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **development isolation:** give synthetic HTTP/browser fixtures explicit private
+  state and reference/reader/Vault dependencies, and drain request handlers before
+  restoring test patches. Keep actual Vault/environment integration checks separate.
+
+- **knowledge registration:** include genuinely new Source inventory initialization
+  in the local Field transaction plan and recovery checks, publishing the inventory
+  before host registration. Reuse the same deterministic empty-provider definition
+  as ordinary Source creation. Preserve existing/lost inventories, legacy journals,
+  and staged relocations; keep absolute host paths out of shared public plan metadata.
+  Add downstream paper ownership/project-reference and selected webpage/blog checks,
+  with interruption, collision and unknown-state refusal cases. Prepare0.50.0 as a
+  development candidate; normal release/installation remain separate.
+
+- **Hub website retirement:** remove the obsolete static HTML/JS/CSS payload;
+  return explicit retirement responses for page/assets and refuse `open-hub`
+  before starting services or opening windows. Keep existing API/PDF delivery,
+  native-tool actions, service diagnostics and saved state. No replacement
+  website, installed service switch or content migration is implied.
+
+- **native-tool separation:** retire the embedded Codex activation direction,
+  separate local Field content operations from Hub service prerequisites, and
+  isolate plugin-development Skills from research runtime distribution. Source
+  validation and installed acceptance are recorded separately.
+- **knowledge asset units:** define whole paper/blog/document ownership with
+  explicit context and separate management, analysis, viewing and editing;
+  monitored-channel and watchlist stores remain independent. Preserve current
+  identities and accepted paper/Canvas formats; multidimensional interaction
+  design remains open.
+- **project management:** require local-parent pulling of human-reviewable
+  experiment results, excluding model/weights/checkpoint files; distinguish
+  generic management Skills from project-owned execution task Skills. Selective
+  export and real SSH transfer are not claimed as implemented.
+
 - **explore-knowledge:** record normal 0.49.0 marketplace/CLI installation and
   isolated installed-page verification. User assessment remains independent.
 

@@ -1,16 +1,16 @@
-"""Contract tests for the cmux-first ``open-hub`` CLI entry point."""
+"""Retired front-end entry, with independent cmux and API service contracts."""
 from __future__ import annotations
 
 import subprocess
+import webbrowser
 from pathlib import Path
-from urllib.parse import parse_qs, urlsplit
 
+import pytest
 from click.testing import CliRunner
 
 from scholar_workflow import cli
 from scholar_workflow.cli import main
 from scholar_workflow.hub import lifecycle
-from scholar_workflow.hub.actions import CmuxUnavailable
 from scholar_workflow.hub.cmux import CmuxControl
 
 
@@ -86,127 +86,38 @@ def test_cmux_terminal_worker_uses_server_owned_command_and_target_cwd(tmp_path)
     assert kwargs["text"] is True
 
 
-def _managed_record(tmp_path: Path, *, port: int = 45678):
-    return lifecycle.HubDiscoveryRecord(
-        schema_version=1,
-        service_name="scholar-workflow-hub",
-        pid=4242,
-        port=port,
-        executable="/installed/python",
-        package_version="0.29.0",
-        build_hash="sha256:" + "a" * 64,
-        protocol_version=3,
-        service_generation="service_1234567890abcdef",
-        started_at="2026-09-23T00:00:00Z",
-        log_path=str((tmp_path / "hub.log").resolve()),
-    )
+@pytest.mark.parametrize("inside_cmux", [False, True])
+@pytest.mark.parametrize("instance", [None, "instance_A234567890abcdef"])
+def test_open_hub_is_retired_before_any_runtime_or_browser_side_effect(
+    tmp_path: Path, monkeypatch, inside_cmux: bool, instance: str | None,
+):
+    home = tmp_path / "unused-home"
+    calls: list[str] = []
 
+    def forbidden(*_args, **_kwargs):
+        calls.append("unexpected effect")
+        raise AssertionError("retired open-hub must not initialize or launch anything")
 
-def _use_managed_record(monkeypatch, record):
-    monkeypatch.setattr(cli, "_ensure_hub_router", lambda *_args: None)
-    monkeypatch.setattr(
-        lifecycle,
-        "HubServiceManager",
-        lambda: type(
-            "Manager",
-            (),
-            {"ensure_running": lambda self: record},
-        )(),
-    )
+    monkeypatch.setattr(lifecycle, "HubServiceManager", forbidden)
+    for name in ("_optional_cmux_context", "_ensure_hub_router",
+                 "_register_default_destination", "_resolve_cmux_executable"):
+        monkeypatch.setattr(cli, name, forbidden)
+    monkeypatch.setattr(webbrowser, "open", forbidden)
+    monkeypatch.setattr(cli.subprocess, "run", forbidden)
+    monkeypatch.setattr(cli.subprocess, "Popen", forbidden)
+    env = _cmux_env(home)
+    if not inside_cmux:
+        env.update({"CMUX_WORKSPACE_ID": "", "CMUX_SOCKET_PATH": ""})
+    args = ["open-hub"] if instance is None else ["open-hub", "--instance", instance]
 
+    result = CliRunner().invoke(main, args, env=env)
 
-def test_open_hub_uses_exact_cmux_argv_and_no_shell(tmp_path, monkeypatch):
-    home = _configured_home(tmp_path)
-    record = _managed_record(tmp_path)
-    _use_managed_record(monkeypatch, record)
-    cmux = tmp_path / "cmux"
-    cmux.write_text("", encoding="utf-8")
-    cmux.chmod(0o755)
-    calls: list[tuple[list[str], dict[str, object]]] = []
-    destinations: list[tuple[int, str, str]] = []
-    monkeypatch.setattr(
-        cli,
-        "_register_default_destination",
-        lambda port, instance, workspace: destinations.append(
-            (port, instance, workspace)
-        )
-        or True,
-    )
-    monkeypatch.setattr(cli, "_resolve_cmux_executable", lambda: cmux)
-
-    def runner(argv, **kwargs):
-        calls.append((argv, kwargs))
-        return _completed()
-
-    monkeypatch.setattr(cli.subprocess, "run", runner)
-    result = CliRunner().invoke(
-        main,
-        ["open-hub", "--instance", "instance_A234567890abcdef"],
-        env=_cmux_env(home),
-    )
-
-    expected_url = (
-        "http://127.0.0.1:45678/hub/?instance=instance_A234567890abcdef"
-    )
-    assert result.exit_code == 0, result.output
-    assert destinations == [(45678, "instance_A234567890abcdef", "workspace:7")]
-    assert "default opening place" in result.output
-    assert len(calls) == 1
-    argv, kwargs = calls[0]
-    assert argv == [
-        str(cmux),
-        "open",
-        expected_url,
-        "--workspace",
-        "workspace:7",
-        "--focus",
-        "true",
-    ]
-    assert kwargs["shell"] is False
-    assert kwargs["check"] is False
-    assert kwargs["capture_output"] is True
-    assert kwargs["text"] is True
-    assert kwargs["env"]["CMUX_SOCKET_PATH"] == "/tmp/cmux-session/socket"
-    assert "SCHOLAR_WORKFLOW_NOTION_TOKEN" not in kwargs["env"]
-    assert "/tmp/cmux-session/socket" not in expected_url
-    assert str(home) not in expected_url
-    assert "must-not-appear-in-the-url" not in expected_url
-
-
-def test_open_hub_generates_a_url_safe_opaque_instance(tmp_path, monkeypatch):
-    home = _configured_home(tmp_path)
-    record = _managed_record(tmp_path)
-    _use_managed_record(monkeypatch, record)
-    calls: list[list[str]] = []
-    destinations: list[tuple[int, str, str]] = []
-    monkeypatch.setattr(
-        cli,
-        "_register_default_destination",
-        lambda port, instance, workspace: destinations.append(
-            (port, instance, workspace)
-        )
-        or True,
-    )
-    monkeypatch.setattr(cli, "_resolve_cmux_executable", lambda: Path("/safe/cmux"))
-
-    def runner(argv, **_kwargs):
-        calls.append(argv)
-        return _completed()
-
-    monkeypatch.setattr(cli.subprocess, "run", runner)
-    result = CliRunner().invoke(main, ["open-hub"], env=_cmux_env(home))
-
-    assert result.exit_code == 0, result.output
-    parsed = urlsplit(calls[0][2])
-    instance = parse_qs(parsed.query)["instance"][0]
-    assert parsed.scheme == "http"
-    assert parsed.hostname == "127.0.0.1"
-    assert parsed.port == 45678
-    assert parsed.path == "/hub/"
-    assert instance.startswith("hub_")
-    assert len(instance) >= 24
-    assert all(char.isalnum() or char in "_-" for char in instance)
-    assert destinations == [(45678, instance, "workspace:7")]
+    assert result.exit_code == 3, result.output
+    assert "retired" in result.output.lower()
+    assert "knowledge explore" in result.output
+    assert calls == []
+    assert not home.exists()
+    assert "must-not-appear-in-the-url" not in result.output
 
 
 def test_serve_hub_canary_routes_to_ephemeral_mode(monkeypatch):
@@ -223,103 +134,34 @@ def test_serve_hub_canary_routes_to_ephemeral_mode(monkeypatch):
     assert calls == [{"port_override": 0, "canary": True}]
 
 
-def test_open_hub_outside_cmux_remains_readable(tmp_path, monkeypatch):
-    home = _configured_home(tmp_path)
-    record = _managed_record(tmp_path)
-    _use_managed_record(monkeypatch, record)
-    opened: list[str] = []
-    monkeypatch.setattr(cli.webbrowser, "open", lambda url, new=0: opened.append(url) or True)
+def test_serve_hub_foreground_prints_api_and_health_not_frontend(tmp_path, monkeypatch):
+    import threading
 
-    result = CliRunner().invoke(
-        main,
-        ["open-hub"],
-        env={
-            "SCHOLAR_WORKFLOW_HOME": str(home),
-            "CMUX_WORKSPACE_ID": "",
-            "CMUX_SOCKET_PATH": "",
-        },
-    )
+    from scholar_workflow.hub import server as server_module
+
+    home = _configured_home(tmp_path)
+    calls: list[str] = []
+
+    class Server:
+        server_address = ("127.0.0.1", 45678)
+
+        def shutdown(self):
+            calls.append("shutdown")
+
+    class StopImmediately:
+        def wait(self):
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(server_module, "start_hub_server", lambda **_kwargs: Server())
+    monkeypatch.setattr(threading, "Event", StopImmediately)
+    result = CliRunner().invoke(main, ["serve-hub", "--port", "0"],
+                               env={"SCHOLAR_WORKFLOW_HOME": str(home)})
 
     assert result.exit_code == 0, result.output
-    assert len(opened) == 1
-    assert opened[0].startswith("http://127.0.0.1:45678/hub/?instance=hub_")
-    assert "choose a cmux destination" in result.output
-
-
-def test_open_hub_starts_managed_service_automatically(tmp_path, monkeypatch):
-    home = _configured_home(tmp_path)
-    record = _managed_record(tmp_path)
-    starts: list[bool] = []
-    routed: list[str] = []
-    monkeypatch.setattr(
-        lifecycle,
-        "HubServiceManager",
-        lambda: type(
-            "Manager",
-            (),
-            {
-                "ensure_running": lambda self: starts.append(True) or record
-            },
-        )(),
-    )
-    monkeypatch.setattr(
-        cli,
-        "_ensure_hub_router",
-        lambda _record, workspace: routed.append(workspace),
-    )
-    calls: list[list[str]] = []
-    monkeypatch.setattr(cli, "_register_default_destination", lambda *_args: True)
-    monkeypatch.setattr(cli, "_resolve_cmux_executable", lambda: Path("/safe/cmux"))
-    monkeypatch.setattr(
-        cli.subprocess,
-        "run",
-        lambda argv, **_kwargs: calls.append(argv) or _completed(),
-    )
-
-    result = CliRunner().invoke(main, ["open-hub"], env=_cmux_env(home))
-
-    assert result.exit_code == 0, result.output
-    assert starts == [True]
-    assert routed == ["workspace:7"]
-    assert calls[0][2].startswith("http://127.0.0.1:45678/hub/")
-
-
-def test_open_hub_maps_missing_cmux_to_dependency_error(tmp_path, monkeypatch):
-    home = _configured_home(tmp_path)
-    _use_managed_record(monkeypatch, _managed_record(tmp_path))
-    monkeypatch.setattr(cli, "_register_default_destination", lambda *_args: True)
-
-    def missing():
-        raise CmuxUnavailable("cmux CLI was not found")
-
-    monkeypatch.setattr(cli, "_resolve_cmux_executable", missing)
-    result = CliRunner().invoke(main, ["open-hub"], env=_cmux_env(home))
-
-    assert result.exit_code == 3
-    assert "cmux CLI was not found" in result.output
-
-
-def test_open_hub_maps_cmux_failure_to_external_service_without_fallback(
-    tmp_path, monkeypatch
-):
-    home = _configured_home(tmp_path)
-    _use_managed_record(monkeypatch, _managed_record(tmp_path))
-    calls: list[list[str]] = []
-    monkeypatch.setattr(cli, "_register_default_destination", lambda *_args: True)
-    monkeypatch.setattr(cli, "_resolve_cmux_executable", lambda: Path("/safe/cmux"))
-
-    def runner(argv, **_kwargs):
-        calls.append(argv)
-        return _completed(1, "No live cmux socket found")
-
-    monkeypatch.setattr(cli.subprocess, "run", runner)
-    result = CliRunner().invoke(main, ["open-hub"], env=_cmux_env(home))
-
-    assert result.exit_code == 8
-    assert "No live cmux socket found" in result.output
-    assert len(calls) == 1
-    assert calls[0][0] == "/safe/cmux"
-    assert "/usr/bin/open" not in calls[0]
+    assert "http://127.0.0.1:45678/api/v3/directory" in result.output
+    assert "http://127.0.0.1:45678/api/v3/health" in result.output
+    assert "/hub/" not in result.output
+    assert calls == ["shutdown"]
 
 
 def test_open_hub_rejects_non_opaque_instance_before_probe(tmp_path):

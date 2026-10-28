@@ -8,9 +8,9 @@ import urllib.request
 from copy import deepcopy
 
 from scholar_workflow.adapters import exploration_readers
-from scholar_workflow.adapters.knowledge_explorer import make_server
 from scholar_workflow.adapters.zotero_local import ZoteroAttachmentLocator
 from scholar_workflow.knowledge.exploration import default_data
+from tests.contract.explorer_fixture import fixture_server as make_server
 
 
 def test_http_reader_gate_preserves_page_and_rejects_replaced_bytes(tmp_path, monkeypatch):

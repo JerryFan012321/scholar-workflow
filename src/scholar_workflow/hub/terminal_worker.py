@@ -37,8 +37,6 @@ from pydantic import Field, field_validator, model_validator
 
 from scholar_workflow.hub.cmux import minimal_child_environment
 from scholar_workflow.hub.directory import ProjectRegistry
-from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
-from scholar_workflow.knowledge.catalog_models import HubModel
 from scholar_workflow.hub.routing import ExecutionTargetRegistry
 from scholar_workflow.hub.tasks import (
     CodexCapabilities,
@@ -56,6 +54,8 @@ from scholar_workflow.hub.tasks import (
     task_configuration_fingerprint,
     task_request_fingerprint,
 )
+from scholar_workflow.knowledge.catalog_models import HubModel
+from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
 
 _OPAQUE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$")
 _THREAD_ID = re.compile(
@@ -1483,27 +1483,15 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = _parser().parse_args(argv)
-    try:
-        state = TerminalWorkerState(args.state_root)
-        worker = TerminalSlotWorker.from_state(
-            state=state,
-            slot_id=args.slot,
-            generation=args.generation,
-        )
-        worker.run_forever()
-    except (OSError, ValueError, TerminalWorkerError, TaskContractError) as exc:
-        print(
-            json.dumps(
-                {
-                    "type": "scholar_workflow.worker.unavailable",
-                    "detail": str(exc),
-                }
-            ),
-            file=sys.stderr,
-        )
-        return 3
-    return 0
+    """Reject legacy launcher commands without touching a queue or starting a process."""
+    from scholar_workflow.hub import CODEX_CONTROL_RETIRED_REASON
+
+    _parser().parse_args(argv)
+    print(json.dumps({
+        "type": "scholar_workflow.worker.retired",
+        "detail": CODEX_CONTROL_RETIRED_REASON,
+    }), file=sys.stderr)
+    return 7
 
 
 __all__ = [

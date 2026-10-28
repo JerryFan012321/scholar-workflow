@@ -25,6 +25,12 @@ or permission to rerun the initializer, deploy remotely or collect results.
 
 It does **not** create Claude Code agents, Codex agents, or hooks.
 
+Project-scoped `.agents/skills/` starts empty. Add a skill only for a requested
+reusable project operation; it reuses the installed research formats and supplies
+that project's own commands/configs and acceptance conditions. Plugin development
+skills are separate and are not installed here. See
+[the project skill boundary](../../references/project-skills.md).
+
 For `research-parent`, the source/config/env/data/tool/test trees above are omitted.
 The parent instead keeps tracked notes/planning/reports, lightweight child archives,
 an empty six-section PROJECT with its one inline plan, public README, empty context
@@ -37,8 +43,10 @@ packs; existing ignore files are preserved. Recovery material is not verified ba
 An execution child must conform to the existing role skeleton and Run/Attempt/Target
 record formats, not merely have a role declaration or upstream clone. The shared
 management contract requires lightweight delivery at registration, start, meaningful
-milestones and termination, with an explicit interval for long runs. Large payloads
-may remain remote with an inventory; required small evidence still comes home.
+milestones and termination, with an explicit interval for long runs. The parent
+pulls the selected configuration, metrics, figures and necessary logs; models,
+weights and checkpoints remain execution assets outside local result delivery.
+Required small evidence still comes home.
 These are operational requirements, not an automatic sync service. Existing-project
 conversion, transport and scheduling remain separately scoped operations.
 

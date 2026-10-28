@@ -9,6 +9,11 @@ Attempt 和指标后，返回带档案链接的 Markdown 报告；选择有歧�
 若原任务还要求回收实验，必须另行完成本地原始档案接收与核对；报告中写出服务器路径
 不能代替 Run/Attempt。共享契约说明交接与明确实验清单的检查方法。
 
+本 Skill 是通用管理分析，与项目内执行任务 Skill 分开，详见
+[项目 Skill 边界](../../references/project-skills.md)。收集由本地父项目另行主动拉取：
+配置、指标、图表和必要日志保存在本地，模型、权重和 checkpoint 仍属于执行资产。
+本 Skill 不提供选择性导出或 SSH 传输，也不因整理报告而执行它们。
+
 例如：
 
 > 对比选定的 baseline 和 variant Run，采用各自 primary Attempt 的 accuracy

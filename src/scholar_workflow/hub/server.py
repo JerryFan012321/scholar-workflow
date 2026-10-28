@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-import mimetypes
 import os
 import re
 import secrets
@@ -12,17 +11,15 @@ import threading
 from dataclasses import asdict, dataclass, replace
 from html import escape
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from importlib import resources
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import parse_qs, quote, unquote, urlencode, urlparse
 
-from pydantic import ValidationError
-
 from scholar_workflow import __version__
 from scholar_workflow.adapters.obsidian import VaultPathError, safe_vault_path
 from scholar_workflow.adapters.zotero_local import ZoteroLocalAdapter, ZoteroLocalError
+from scholar_workflow.hub import CODEX_CONTROL_RETIRED_REASON
 from scholar_workflow.hub.actions import (
     ActionKind,
     CatalogActionService,
@@ -91,7 +88,6 @@ from scholar_workflow.hub.project_docs import (
     ProjectDocumentService,
     ProjectPathError,
 )
-from scholar_workflow.hub.routing import TaskActionRequest
 from scholar_workflow.hub.vault import VaultCatalogProvider
 from scholar_workflow.hub.workspaces import (
     WorkspaceBindingCoordinator,
@@ -121,20 +117,12 @@ _V3_CAPABILITIES = (
     "field-transaction-plan-v1",
     "direct-paper-actions-v1",
     "paper-related-documents-v1",
-    "codex-guided-setup-v1",
     _DESTINATION_CAPABILITY,
-    "trusted-execution-targets-v1",
 )
 _MAX_V2_WRITE_BYTES = 2 * 1024 * 1024 + 16 * 1024
-_MAX_TASK_REQUEST_BYTES = 12 * 1024
 _MAX_LEGACY_PROPOSAL_REQUEST_BYTES = 8 * 1024 * 1024
 _FIELD_REVIEW_TTL_SECONDS = 30 * 60
 OPERATOR_CREDENTIAL_NAME = "field-operator.json"
-_STATIC_TYPES = {
-    ".css": "text/css; charset=utf-8",
-    ".js": "text/javascript; charset=utf-8",
-    ".svg": "image/svg+xml",
-}
 _INLINE_ASSET_TYPES = {
     "application/json",
     "application/pdf",
@@ -334,6 +322,9 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         if not self._request_origin_allowed():
             return
         path = urlparse(self.path).path
+        if path in {"/hub", "/hub/"} or path.startswith("/hub/assets/"):
+            self._respond_retired_ui()
+            return
         if path.startswith("/api/v3/pdfs/zotero/") and path.endswith("/content"):
             self._handle_v3_pdf(path, send_body=False)
             return
@@ -351,12 +342,10 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             return
         parsed = urlparse(self.path)
         path = parsed.path
-        if path in {"/hub", "/hub/"}:
-            self._serve_static("index.html")
+        if path in {"/hub", "/hub/"} or path.startswith("/hub/assets/"):
+            self._respond_retired_ui()
         elif path == "/hub/item":
             self._handle_typed_item_landing(parsed.query)
-        elif path.startswith("/hub/assets/"):
-            self._serve_static(path.removeprefix("/hub/assets/"))
         elif path == "/api/v1/session":
             self._respond_json(200, {"csrf_token": self.server.runtime.session_token})
         elif path == "/api/v1/catalog":
@@ -380,24 +369,17 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         elif path == "/api/v3/destinations":
             self._handle_v3_destinations(parsed.query)
         elif path == "/api/v3/execution-targets":
-            service = self.server.runtime.task_service
-            setup = self.server.runtime.codex_setup_service
-            targets = (service.public_targets() if service is not None else
-                       setup.public_targets() if setup is not None else [])
-            self._respond_json(200, {"targets": [_model_payload(row) for row in targets]})
+            self._respond_json(200, {**self._retired_codex_payload(), "targets": []})
         elif path == "/api/v3/task-options":
-            setup = self.server.runtime.codex_setup_service
-            payload = setup.public_options() if setup is not None else {
-                "available": False, "model_profiles": [], "default_profile_id": None,
-                "reason": "Codex setup is unavailable",
-            }
-            self._respond_json(200, payload)
+            self._respond_json(200, {
+                **self._retired_codex_payload(),
+                "model_profiles": [],
+                "default_profile_id": None,
+            })
         elif path == "/api/v3/codex/setup":
             self._handle_v3_codex_setup(confirm=False)
         elif path == "/api/v3/task-actions":
-            service = self.server.runtime.task_service
-            actions = service.public_actions() if service is not None else []
-            self._respond_json(200, {"actions": [_model_payload(row) for row in actions]})
+            self._respond_json(200, {**self._retired_codex_payload(), "actions": []})
         elif path.startswith("/api/v3/tasks/"):
             self._handle_v3_task_status(path)
         elif path.startswith("/api/v3/task-runs/"):
@@ -918,83 +900,32 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             return
         self._respond_json(200, payload)
 
-    def _handle_v3_codex_setup(self, *, confirm: bool) -> None:
-        from scholar_workflow.hub.codex_setup import CodexSetupConfirmRequest, CodexSetupError
+    @staticmethod
+    def _retired_codex_payload() -> dict[str, Any]:
+        return {
+            "available": False,
+            "retired": True,
+            "code": "codex_control_retired",
+            "reason": CODEX_CONTROL_RETIRED_REASON,
+        }
 
-        service = self.server.runtime.codex_setup_service
-        if service is None:
-            self._respond_json(503, {"error": "Codex setup is unavailable"})
-            return
+    def _respond_retired_codex(self) -> None:
         if not self._require_session_token():
             return
-        try:
-            if confirm:
-                body = self._read_v2_json_body(maximum_bytes=64 * 1024)
-                if body is None:
-                    return
-                request = CodexSetupConfirmRequest.model_validate(body)
-                with self.server.task_configuration_lock:
-                    payload = service.confirm(request)
-                    factory = self.server.runtime.task_service_factory
-                    if factory is not None:
-                        self.server.runtime = replace(self.server.runtime, task_service=factory())
-            else:
-                payload = service.preview()
-        except (CodexSetupError, OSError, RuntimeError, TypeError, ValueError) as exc:
-            self._respond_json(409, {"error": str(exc)})
-            return
-        self._respond_json(200, payload)
+        self._respond_json(410, {
+            **self._retired_codex_payload(),
+            "ok": False,
+            "error": CODEX_CONTROL_RETIRED_REASON,
+        })
+
+    def _handle_v3_codex_setup(self, *, confirm: bool) -> None:
+        self._respond_retired_codex()
 
     def _handle_v3_task_preferences(self) -> None:
-        if not self._require_session_token():
-            return
-        service = self.server.runtime.codex_setup_service
-        if service is None:
-            self._respond_json(503, {"error": "Codex model choices are unavailable"})
-            return
-        try:
-            body = self._read_v2_json_body(maximum_bytes=4096)
-            if body is None:
-                return
-            if set(body) != {"model_profile_id", "reasoning_effort"}:
-                raise ValueError("Expected an approved model profile and reasoning effort only")
-            _require_string_fields(body, "model_profile_id", "reasoning_effort")
-            payload = service.save_preferences(body["model_profile_id"], body["reasoning_effort"])
-        except (OSError, RuntimeError, TypeError, ValueError) as exc:
-            self._respond_json(409, {"error": str(exc)})
-            return
-        self._respond_json(200, payload)
+        self._respond_retired_codex()
 
     def _handle_v3_execution_folder(self, *, confirm: bool) -> None:
-        from scholar_workflow.hub.routing import ExecutionTargetError
-
-        if not self._require_session_token():
-            return
-        service = self.server.runtime.execution_folder_setup
-        if service is None:
-            self._respond_json(503, {"error": "Execution folder selection is unavailable"})
-            return
-        try:
-            body = self._read_v2_json_body(maximum_bytes=4096)
-            if body is None:
-                return
-            if confirm:
-                if set(body) != {"candidate_token"} or not isinstance(body["candidate_token"], str):
-                    raise ValueError("Expected a folder candidate token only")
-                payload = {"target": service.confirm(body["candidate_token"])}
-            else:
-                if body:
-                    raise ValueError("Folder selection does not accept client paths")
-                picker = self.server.runtime.folder_picker
-                if picker is None:
-                    raise ValueError("System folder picker is unavailable")
-                selected = (picker.choose(prompt="Choose a working folder for Codex")
-                            if isinstance(picker, SystemFolderPicker) else picker.choose())
-                payload = {"preview": service.preview(selected)}
-        except (ExecutionTargetError, FieldRegistryError, OSError, TypeError, ValueError) as exc:
-            self._respond_json(409, {"error": str(exc)})
-            return
-        self._respond_json(200, payload)
+        self._respond_retired_codex()
 
     def _handle_v3_destinations(self, query: str) -> None:
         registry = self.server.runtime.destination_registry
@@ -1607,17 +1538,9 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             except (CmuxControlError, ValueError):
                 pass
         log_path = str(runtime.log_path) if runtime.log_path is not None else None
-        task_service = runtime.task_service
-        task_available = bool(getattr(task_service, "available", False))
-        task_detail = (
-            None
-            if task_available
-            else getattr(task_service, "unavailable_reason", None)
-            or "Codex task runtime is not configured"
-        )
+        task_available = False
+        task_detail = CODEX_CONTROL_RETIRED_REASON
         capabilities = list(_V3_CAPABILITIES)
-        if task_available:
-            capabilities.append("codex-tasks-v1")
         return {
             "status": "ok",
             "service": {"name": "scholar-workflow-hub", "version": package_version},
@@ -1925,95 +1848,8 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             raise TypeError("Expected a Field proposal JSON object")
         return body
 
-    def _read_task_json_body(self) -> dict[str, Any] | None:
-        if self.headers.get("Content-Type", "").split(";", 1)[0] != "application/json":
-            self._respond_text(415, "Expected application/json")
-            return None
-        try:
-            length = int(self.headers.get("Content-Length", "0"))
-        except ValueError as exc:
-            raise ValueError("Invalid content length") from exc
-        if length < 0:
-            raise ValueError("Invalid content length")
-        if length > _MAX_TASK_REQUEST_BYTES:
-            self._respond_text(413, "Task request body is too large")
-            return None
-        try:
-            encoded = self.rfile.read(length)
-            if len(encoded) != length:
-                raise ValueError("Incomplete task request body")
-            body = json.loads(encoded)
-        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-            raise ValueError("Invalid JSON") from exc
-        if not isinstance(body, dict):
-            raise TypeError("Expected a JSON object")
-        return body
-
     def _handle_v3_task_dispatch(self, path: str) -> None:
-        # A setup confirmation must not race a reservation using its previous policy snapshot.
-        with self.server.task_configuration_lock:
-            self._handle_v3_task_dispatch_locked(path)
-
-    def _handle_v3_task_dispatch_locked(self, path: str) -> None:
-        if not self._require_session_token():
-            return
-        service = self.server.runtime.task_service
-        if service is None or not bool(getattr(service, "available", False)):
-            reason = (
-                getattr(service, "unavailable_reason", None)
-                if service is not None
-                else None
-            )
-            self._respond_json(
-                503,
-                {"ok": False, "error": reason or "Codex task execution is unavailable"},
-            )
-            return
-        try:
-            body = self._read_task_json_body()
-            if body is None:
-                return
-            request = TaskActionRequest.model_validate(body)
-        except ValidationError as exc:
-            self._respond_json(
-                422,
-                {
-                    "ok": False,
-                    "error": "Task request does not match the public contract",
-                    "details": exc.errors(include_url=False, include_input=False),
-                },
-            )
-            return
-        except (TypeError, ValueError) as exc:
-            self._respond_text(400, str(exc))
-            return
-        try:
-            if path == "/api/v3/tasks":
-                result = service.create(request)
-            else:
-                segments = path.strip("/").split("/")
-                if len(segments) != 5 or segments[:3] != ["api", "v3", "tasks"]:
-                    self._respond_text(404, "Not found")
-                    return
-                task_id = unquote(segments[3])
-                if segments[4] == "resume":
-                    result = service.resume(task_id, request)
-                elif segments[4] == "fork":
-                    result = service.fork(task_id, request)
-                else:
-                    self._respond_text(404, "Not found")
-                    return
-        except KeyError:
-            self._respond_text(404, "Unknown task, action, target, or destination")
-            return
-        except ValueError as exc:
-            self._respond_json(409, {"ok": False, "error": str(exc)})
-            return
-        except RuntimeError as exc:
-            self._respond_json(503, {"ok": False, "error": str(exc)})
-            return
-        payload = _model_payload(result)
-        self._respond_json(200 if payload.get("reused") else 202, payload)
+        self._respond_retired_codex()
 
     def _handle_v3_task_status(self, path: str) -> None:
         segments = path.strip("/").split("/")
@@ -2022,7 +1858,8 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             return
         service = self.server.runtime.task_service
         if service is None:
-            self._respond_text(503, "Codex task execution is unavailable")
+            self._respond_json(410, {**self._retired_codex_payload(),
+                "error": "Historical task files are retained; no live task controller is loaded"})
             return
         try:
             result = service.task_status(unquote(segments[3]))
@@ -2038,7 +1875,8 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             return
         service = self.server.runtime.task_service
         if service is None:
-            self._respond_text(503, "Codex task execution is unavailable")
+            self._respond_json(410, {**self._retired_codex_payload(),
+                "error": "Historical task files are retained; no live task controller is loaded"})
             return
         try:
             result = service.run_status(unquote(segments[3]))
@@ -2048,35 +1886,7 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         self._respond_json(200, _model_payload(result))
 
     def _handle_v3_task_cancel(self, path: str) -> None:
-        if not self._require_session_token():
-            return
-        segments = path.strip("/").split("/")
-        if (
-            len(segments) != 5
-            or segments[:3] != ["api", "v3", "task-runs"]
-            or segments[4] != "cancel"
-        ):
-            self._respond_text(404, "Not found")
-            return
-        try:
-            body = self._read_task_json_body()
-            if body is None:
-                return
-            if body:
-                raise ValueError("Task cancellation accepts no fields")
-        except (TypeError, ValueError) as exc:
-            self._respond_text(400, str(exc))
-            return
-        service = self.server.runtime.task_service
-        if service is None:
-            self._respond_text(503, "Codex task execution is unavailable")
-            return
-        try:
-            result = service.cancel(unquote(segments[3]))
-        except (KeyError, ValueError):
-            self._respond_text(404, "Unknown task run")
-            return
-        self._respond_json(200, _model_payload(result))
+        self._respond_retired_codex()
 
     def _request_origin_allowed(self, *, require_origin: bool = False) -> bool:
         host = self.headers.get("Host", "")
@@ -2095,20 +1905,15 @@ class HubRequestHandler(BaseHTTPRequestHandler):
             return False
         return True
 
-    def _serve_static(self, relative_name: str) -> None:
-        if not relative_name or "/" in relative_name or "\\" in relative_name:
-            self._respond_text(404, "Not found")
-            return
-        try:
-            asset = resources.files("scholar_workflow.hub.static").joinpath(relative_name)
-            data = asset.read_bytes()
-        except (FileNotFoundError, ModuleNotFoundError):
-            self._respond_text(404, "Not found")
-            return
-        content_type = _STATIC_TYPES.get(Path(relative_name).suffix)
-        if content_type is None:
-            content_type = mimetypes.guess_type(relative_name)[0] or "application/octet-stream"
-        self._respond_bytes(200, data, content_type)
+    def _respond_retired_ui(self) -> None:
+        self._respond_json(410, {
+            "retired": True,
+            "code": "hub_ui_retired",
+            "error": (
+                "The legacy Hub website is retired. Use Obsidian, Zotero, cmux or VS Code; "
+                "compatibility APIs and local PDF reading remain available."
+            ),
+        })
 
     def _handle_typed_item_landing(self, query: str) -> None:
         parameters = parse_qs(query, keep_blank_values=True)
@@ -2186,9 +1991,9 @@ class HubRequestHandler(BaseHTTPRequestHandler):
                     "阅读 PDF</a></p>"
                 )
         elif reference.item_type == "artifact":
-            artifact_query = urlencode({"artifact": reference.item_id})
+            content_path = f"/api/v1/artifacts/{quote(reference.item_id, safe='')}/content"
             entry = (
-                f'<p><a href="/hub/?{escape(artifact_query, quote=True)}">在 Hub 中阅读</a></p>'
+                f'<p><a href="{escape(content_path, quote=True)}">读取文档内容</a></p>'
             )
             kind = item.get("kind")
             vault_path = item.get("vault_path")
@@ -2199,7 +2004,6 @@ class HubRequestHandler(BaseHTTPRequestHandler):
         document = (
             "<!doctype html><html lang=\"zh-CN\"><head><meta charset=\"utf-8\">"
             f"<title>{title} · Scholar Workflow</title></head><body>"
-            '<nav><a href="/hub/">返回 Hub</a></nav>'
             f"<main><h1>{title}</h1>{''.join(details)}"
             f"<p><code>{identity}</code></p>{entry}</main></body></html>"
         ).encode()
@@ -2719,27 +2523,9 @@ def start_hub_server(
     if resolved_transaction_service.field_service is not resolved_field_service:
         raise ValueError("Field transaction and Field services must share one candidate store")
     zotflow_adapter = RegisteredSourceZotFlowAdapter(resolved_field_service.registry)
-    from scholar_workflow.hub.codex_setup import CodexSetupService
-    from scholar_workflow.hub.routing import ExecutionTargetRegistry
-    from scholar_workflow.hub.target_setup import ExecutionFolderSetup
-
-    execution_targets = ExecutionTargetRegistry(
-        home / "hub" / "execution-targets.json",
-        project_registry=project_registry,
-        source_registry=resolved_field_service.registry,
-    )
-    resolved_codex_setup = codex_setup_service or CodexSetupService(
-        home / "hub", project_registry=project_registry,
-        source_registry=resolved_field_service.registry,
-        target_registry=execution_targets,
-    )
-    resolved_folder_setup = ExecutionFolderSetup(
-        resolved_field_service.registry, execution_targets,
-    )
     destination_holder: dict[str, DestinationRegistry | None] = {
         "registry": destination_registry
     }
-    task_holder: dict[str, Any | None] = {"service": task_service}
 
     def current_capabilities() -> CapabilityMatrix:
         vault_available = False
@@ -2792,14 +2578,8 @@ def start_hub_server(
             zotero_reason = None
         except ZoteroLocalError as exc:
             zotero_reason = str(exc)
-        active_task_service = task_holder["service"]
-        task_available = bool(getattr(active_task_service, "available", False))
-        task_reason = (
-            None
-            if task_available
-            else getattr(active_task_service, "unavailable_reason", None)
-            or "Run `scholar-workflow hub codex configure` to enable Codex tasks"
-        )
+        task_available = False
+        task_reason = CODEX_CONTROL_RETIRED_REASON
         return CapabilityMatrix(
             vault_writes=CapabilityStatus(
                 available=vault_available,
@@ -2899,8 +2679,8 @@ def start_hub_server(
         folder_picker=folder_picker or SystemFolderPicker(),
         task_service=task_service,
         paper_related_service=paper_related_service,
-        codex_setup_service=resolved_codex_setup,
-        execution_folder_setup=resolved_folder_setup,
+        codex_setup_service=None,
+        execution_folder_setup=None,
         zotero_adapter_factory=zotero_adapter_factory,
         binding_registry=resolved_bindings,
         binding_coordinator=binding_coordinator,
@@ -2959,101 +2739,11 @@ def start_hub_server(
             adapter_factory=zotero_adapter_factory, zotflow_adapter=zotflow_adapter,
         )
 
-        def context_exists(ref: Any) -> bool:
-            try:
-                if ref.provider_id == "zotero":
-                    with zotero_adapter_factory() as adapter:
-                        item = adapter.get_item(ref.entity_id)
-                    if not isinstance(item, dict):
-                        return False
-                    data = item.get("data", {})
-                    if (not isinstance(data, dict) or item.get("deleted") or data.get("deleted")
-                            or item.get("key") != ref.entity_id):
-                        return False
-                    item_type = data.get("itemType")
-                    if ref.entity_type in {"attachment", "note", "annotation"}:
-                        return item_type == ref.entity_type
-                    return (ref.entity_type == "paper" and bool(item_type)
-                            and item_type not in {"attachment", "note", "annotation"})
-                if ref.provider_id == "field-manifest":
-                    return ref.entity_type == "field" and any(row.get("field_id") == ref.entity_id and row.get("available")
-                               for row in resolved_field_service.list_fields())
-                if ref.provider_id == "project-registry":
-                    if ref.entity_type != "project":
-                        return False
-                    project_registry.resolve(ref.entity_id)
-                    return True
-                if ref.provider_id == "tool-registry":
-                    return ref.entity_type == "tool" and any(row.tool_id == ref.entity_id and row.enabled
-                               for row in tool_registry.load())
-                return related_service.contains_ref(ref)
-            except (OSError, ValueError, RuntimeError):
-                return False
-
-        def load_task_service() -> Any | None:
-            if task_service is not None:
-                task_holder["service"] = task_service
-                return task_service
-            from scholar_workflow.hub.task_control import TaskControlService
-            from scholar_workflow.hub.tasks import (
-                CodexCommandBuilder,
-                TaskCoordinator,
-                TaskRecipeRegistry,
-                TaskStore,
-            )
-            from scholar_workflow.hub.terminal_worker import (
-                TerminalWorkerError,
-                TerminalWorkerState,
-            )
-
-            hub_state = home / "hub"
-            worker_state = TerminalWorkerState(hub_state / "task-worker")
-            resolved_task_service = None
-            if worker_state.runtime_path.exists() or worker_state.runtime_path.is_symlink():
-                try:
-                    worker_config = worker_state.current_runtime()
-                    recipes = TaskRecipeRegistry(hub_state / "task-recipes.json")
-                    targets = ExecutionTargetRegistry(
-                        hub_state / "execution-targets.json",
-                        project_registry=project_registry,
-                        source_registry=resolved_field_service.registry,
-                    )
-                    store = TaskStore(hub_state / "tasks.json")
-                    commands = CodexCommandBuilder(
-                        codex_executable=worker_config.resolved_codex_executable(),
-                        target_registry=targets,
-                        safety_policies=recipes.safety_policy_map(),
-                        model_profiles=recipes.model_profile_map(),
-                    )
-                    coordinator = TaskCoordinator(
-                        recipes=recipes,
-                        store=store,
-                        commands=commands,
-                    )
-                    resolved_task_service = TaskControlService(
-                        recipes=recipes,
-                        targets=targets,
-                        store=store,
-                        coordinator=coordinator,
-                        destinations=resolved_destinations,
-                        cmux=control,
-                        worker_state=worker_state,
-                        worker_generation=worker_config.generation,
-                        context_resolver=context_exists,
-                    )
-                except (OSError, ValueError, TerminalWorkerError):
-                    resolved_task_service = None
-            task_holder["service"] = resolved_task_service
-            return resolved_task_service
-
-        resolved_task_service = load_task_service()
         server.runtime = replace(
             runtime,
             action_service=resolved_action_service,
             destination_registry=resolved_destinations,
-            task_service=resolved_task_service,
             paper_related_service=related_service,
-            task_service_factory=load_task_service,
         )
     if operator_path is not None and operator_token is not None:
         try:

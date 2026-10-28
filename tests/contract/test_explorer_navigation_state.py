@@ -10,6 +10,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from tests.contract.explorer_fixture import fixture_server
+
 
 @pytest.mark.parametrize("scenario", [
     "comparison-native", "comparison-native-denied", "removed-poll", "removed-reload",
@@ -89,7 +91,7 @@ def test_browser_navigation_state(tmp_path, monkeypatch, scenario):
     monkeypatch.setattr(knowledge_explorer, "shutil", SimpleNamespace(
         which=lambda _name: "/synthetic/native-opener", copyfileobj=shutil.copyfileobj,
     ))
-    server, token = knowledge_explorer.make_server(tmp_path, reader_gate=ReaderGate())
+    server, token = fixture_server(tmp_path, reader_gate=ReaderGate())
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:

@@ -5,14 +5,14 @@ import http.client
 import json
 import os
 import re
-import secrets
 import stat
-import subprocess
-import webbrowser
+
+# Retain module attributes used by existing callers' no-launch guards.
+import subprocess as subprocess  # noqa: PLC0414
+import webbrowser as webbrowser  # noqa: PLC0414
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from urllib.parse import urlencode
 
 import click
 
@@ -1235,8 +1235,8 @@ def project_literature_tree_cmd(input_file, dry_run: bool) -> None:
 def serve_links() -> None:
     """Retired fixed-listener entry point retained for an explicit diagnostic."""
     raise DependencyError(
-        "`serve-links` is retired in Hub v3; use `scholar-workflow hub start` "
-        "or `scholar-workflow open-hub`."
+        "`serve-links` is retired; use native Zotero/Obsidian resource links. "
+        "Only legacy API clients need the explicit `scholar-workflow hub start` service."
     )
 
 
@@ -1572,194 +1572,30 @@ def _read_legacy_field_package(handle: object) -> dict[str, object]:
     return package
 
 
-@hub_lifecycle.group(name="field-transaction")
-def hub_field_transaction() -> None:
-    """Plan one Field as a group; commit only with a local operator."""
-
-
-@hub_field_transaction.command(name="plan")
-@click.option("--field-root", default=None, help="Choose this relative Field root after folder selection.")
-@click.option("--candidate-token", default=None, help="Use a prior Hub folder-selection candidate.")
-@click.option("--field-id", default=None, help="Field ID from that exact candidate preview.")
-def hub_field_transaction_plan(
-    field_root: str | None,
-    candidate_token: str | None,
-    field_id: str | None,
-) -> None:
-    """Read only: inspect the full Field change set and exact approval digest."""
-    record = _managed_field_hub_record()
-    if (candidate_token is None) != (field_id is None):
-        raise InputError("--candidate-token and --field-id must be provided together")
-    if candidate_token is not None:
-        if field_root is not None:
-            raise InputError("--field-root cannot accompany an existing candidate")
-        selected_token, selected_id = candidate_token, field_id
-    else:
-        selected = _field_hub_request(record.port, "/api/v3/fields/select", payload={})
-        preview = selected.get("preview")
-        if not isinstance(preview, dict):
-            raise ExternalServiceError("Field preview response was invalid")
-        rows = preview.get("fields")
-        if not isinstance(rows, list):
-            raise ExternalServiceError("Field preview response was invalid")
-        matches = [
-            row for row in rows
-            if isinstance(row, dict)
-            and (field_root is None or row.get("relative_root") == field_root)
-        ]
-        if len(matches) != 1:
-            roots = [row.get("relative_root") for row in rows if isinstance(row, dict)]
-            raise InputError(
-                "Choose exactly one Field with --field-root; candidates: "
-                + ", ".join(str(root) for root in roots)
-            )
-        selected_token, selected_id = preview.get("candidate_token"), matches[0].get("field_id")
-        if not isinstance(selected_token, str) or not isinstance(selected_id, str):
-            raise ExternalServiceError("Field preview identity was invalid")
-    result = _field_hub_request(
-        record.port,
-        "/api/v3/field-transactions/plan",
-        payload={"candidate_token": selected_token, "field_id": selected_id},
-    )
-    plan = result.get("plan")
-    if not isinstance(plan, dict):
-        raise ExternalServiceError("Field transaction plan response was invalid")
-    click.echo(json.dumps({**plan, "candidate_token": selected_token}, ensure_ascii=False, sort_keys=True))
-
-
-@hub_field_transaction.command(name="legacy-preview")
-@click.argument("candidate_token")
-@click.argument("field_id")
-@click.option(
-    "--package-file",
-    required=True,
-    type=click.File("rb"),
-    help="Trusted local JSON proposal (or - for stdin); never sent by a browser.",
-)
-def hub_field_transaction_legacy_preview(
-    candidate_token: str,
-    field_id: str,
-    package_file: object,
-) -> None:
-    """Read-only mechanical cutover review for one legacy analysis pair."""
-    package = _read_legacy_field_package(package_file)
-    record = _managed_field_hub_record()
-    response = _field_hub_request(
-        record.port,
-        "/api/v3/field-transactions/legacy/preview",
-        payload={"candidate_token": candidate_token, "field_id": field_id, "package": package},
-        operator_token=_field_operator_token(record),
-    )
-    click.echo(json.dumps(response, ensure_ascii=False, sort_keys=True))
-
-
-@hub_field_transaction.command(name="legacy-stage")
-@click.argument("candidate_token")
-@click.argument("field_id")
-@click.option(
-    "--package-file",
-    required=True,
-    type=click.File("rb"),
-    help="The same trusted local JSON proposal reviewed in legacy-preview.",
-)
-@click.option(
-    "--approved-cutover-digest",
-    required=True,
-    help="Exact cutover_digest from the reviewed read-only preview.",
-)
-@click.option(
-    "--field-definition-file",
-    type=click.File("rb"),
-    default=None,
-    help="Optional reviewed Field navigation/home override as local JSON.",
-)
-def hub_field_transaction_legacy_stage(
-    candidate_token: str,
-    field_id: str,
-    package_file: object,
-    approved_cutover_digest: str,
-    field_definition_file: object | None,
-) -> None:
-    """Unavailable until Provider and Field share a recovery journal."""
+def _field_transaction_moved(*_args, **_kwargs) -> None:
     raise DependencyError(
-        "Legacy analysis staging is unavailable until Provider and Field changes "
-        "share one recoverable transaction journal; use legacy-preview for read-only review"
+        "Field content transactions moved to scholar-workflow knowledge field-transaction; "
+        "plan with --source-id ID or --root ABSOLUTE_FOLDER and --field-root RELATIVE, "
+        "then apply the reviewed JSON plan file. No Hub service or session is required. "
+        "Old browser candidate/plan tokens are not portable; prepare a fresh local plan. "
+        "Existing recovery journals remain available through the local recover command."
     )
 
 
-@hub_field_transaction.command(name="apply")
-@click.argument("plan_token")
-@click.option("--approved-digest", required=True, help="Exact plan_digest from the reviewed plan.")
-@click.option(
-    "--external-writers-paused",
-    is_flag=True,
-    help="Human assertion: Obsidian and sync writers are paused; the CLI cannot detect this.",
-)
-def hub_field_transaction_apply(
-    plan_token: str,
-    approved_digest: str,
-    external_writers_paused: bool,
-) -> None:
-    """Commit the reviewed plan in a manually arranged quiet writer window."""
-    if not external_writers_paused:
-        raise SafetyRefusalError("External Field writers must be paused before apply")
-    if not click.confirm(
-        "Confirm external editors/sync are stopped and this exact digest was reviewed?",
-        default=False,
-    ):
-        raise SafetyRefusalError("Field transaction was not confirmed")
-    record = _managed_field_hub_record()
-    operator_token = _field_operator_token(record)
-    response = _field_hub_request(
-        record.port,
-        "/api/v3/field-transactions/apply",
-        payload={"plan_token": plan_token, "approved_digest": approved_digest},
-        operator_token=operator_token,
-    )
-    result = response.get("result")
-    if not isinstance(result, dict):
-        raise ExternalServiceError("Field transaction apply response was invalid")
-    click.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+@hub_lifecycle.group(name="field-transaction", invoke_without_command=True)
+def hub_field_transaction() -> None:
+    """Compatibility notice: use native knowledge field-transaction commands."""
+    _field_transaction_moved()
 
 
-@hub_field_transaction.command(name="recover")
-@click.argument("source_id")
-@click.argument("field_id")
-@click.option("--confirm-recovery", is_flag=True, help="Confirm conditional rollback/completion.")
-@click.option(
-    "--external-writers-paused",
-    is_flag=True,
-    help="Human assertion: Obsidian and sync writers are paused; the CLI cannot detect this.",
-)
-def hub_field_transaction_recover(
-    source_id: str,
-    field_id: str,
-    confirm_recovery: bool,
-    external_writers_paused: bool,
-) -> None:
-    """Conditionally recover only this interrupted Field, preserving conflicts."""
-    if not confirm_recovery:
-        raise SafetyRefusalError("Explicit --confirm-recovery is required")
-    if not external_writers_paused:
-        raise SafetyRefusalError("External Field writers must be paused before recovery")
-    if not click.confirm("Inspect the pending Field journal and conditionally recover it?", default=False):
-        raise SafetyRefusalError("Field recovery was not confirmed")
-    record = _managed_field_hub_record()
-    operator_token = _field_operator_token(record)
-    response = _field_hub_request(
-        record.port,
-        "/api/v3/field-transactions/recover",
-        payload={
-            "source_id": source_id,
-            "field_id": field_id,
-            "external_writers_paused": True,
-        },
-        operator_token=operator_token,
-    )
-    result = response.get("result")
-    if not isinstance(result, dict):
-        raise ExternalServiceError("Field recovery response was invalid")
-    click.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+for _legacy_field_command in ("plan", "legacy-preview", "legacy-stage", "apply", "recover"):
+    hub_field_transaction.add_command(click.Command(
+        _legacy_field_command,
+        callback=_field_transaction_moved,
+        params=[click.Argument(["legacy_args"], nargs=-1, type=click.UNPROCESSED)],
+        context_settings={"ignore_unknown_options": True, "allow_extra_args": True},
+        help="Moved to knowledge field-transaction; browser tokens require a fresh local plan.",
+    ))
 
 
 @hub_lifecycle.group(name="field-migration")
@@ -1768,7 +1604,7 @@ def hub_field_migration() -> None:
 
 
 def _field_migration_service():
-    from scholar_workflow.hub.field_migration import FieldMigrationService
+    from scholar_workflow.knowledge.field_migration import FieldMigrationService
     from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
 
     root = _hub_state_root() / "hub"
@@ -1785,7 +1621,7 @@ def hub_field_migration_plan(source_id: str, field_id: str) -> None:
     """Read only: show the exact Field file set, link changes, and plan digest."""
     from dataclasses import asdict
 
-    from scholar_workflow.hub.field_migration import FieldMigrationError
+    from scholar_workflow.knowledge.field_migration import FieldMigrationError
     from scholar_workflow.knowledge.fields import FieldRegistryError
 
     try:
@@ -1819,7 +1655,7 @@ def hub_field_migration_apply(
     """Re-plan and CAS-apply one approved Field in a quiet writer window."""
     from dataclasses import asdict
 
-    from scholar_workflow.hub.field_migration import FieldMigrationError
+    from scholar_workflow.knowledge.field_migration import FieldMigrationError
     from scholar_workflow.knowledge.fields import FieldRegistryError
 
     service = _field_migration_service()
@@ -1855,7 +1691,7 @@ def hub_field_migration_recover(source_id: str, field_id: str) -> None:
     """Explicitly conditionally restore an interrupted Field migration."""
     from dataclasses import asdict
 
-    from scholar_workflow.hub.field_migration import FieldMigrationError
+    from scholar_workflow.knowledge.field_migration import FieldMigrationError
     from scholar_workflow.knowledge.fields import FieldRegistryError
 
     try:
@@ -2102,7 +1938,7 @@ def hub_target_add_project(project_id: str, target_id: str) -> None:
 
 @hub_lifecycle.group(name="codex")
 def hub_codex() -> None:
-    """Configure the server-owned Codex task recipe and inspect its capability."""
+    """Inspect retained legacy metadata; built-in Codex control is retired."""
 
 
 @hub_codex.command(name="configure")
@@ -2110,12 +1946,12 @@ def hub_codex() -> None:
     "--executable",
     required=True,
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
-    help="Explicit absolute Codex executable; PATH is never scanned by the Hub.",
+    help="Legacy option retained only to report that built-in Codex control is retired.",
 )
 @click.option(
     "--model",
     required=True,
-    help="Approve a local model for server-owned profiles; task requests use profile IDs.",
+    help="Legacy option; model configuration is owned by the external Codex host.",
 )
 @click.option(
     "--sandbox",
@@ -2124,42 +1960,17 @@ def hub_codex() -> None:
     show_default=True,
 )
 def hub_codex_configure(executable: Path, model: str, sandbox: str) -> None:
-    """CLI fallback: approve an explicit installation, model and existing targets."""
-    from scholar_workflow.hub.codex_setup import CodexSetupService
-    from scholar_workflow.hub.directory import ProjectRegistry
-    from scholar_workflow.hub.routing import ExecutionTargetRegistry
-    from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
+    """Refuse the old configuration command without probing or writing state."""
+    from scholar_workflow.hub import CODEX_CONTROL_RETIRED_REASON
 
-    root = _hub_state_root() / "hub"
-    projects = ProjectRegistry(root / "projects.json")
-    sources = KnowledgeSourceRegistry(root / "sources.json")
-    targets = ExecutionTargetRegistry(
-        root / "execution-targets.json", project_registry=projects, source_registry=sources,
-    )
-    service = CodexSetupService(
-        root, project_registry=projects, source_registry=sources, target_registry=targets,
-    )
-    try:
-        target_ids = [row["target_id"] for row in service.public_targets()
-                      if row.get("available", True)]
-        result = service.register_explicit(
-            executable=executable.expanduser(), model=model, sandbox=sandbox,
-            target_ids=target_ids,
-        )
-    except (OSError, RuntimeError, ValueError) as exc:
-        raise SafetyRefusalError(str(exc)) from None
-    # A running HTTP service owns its task-service snapshot; CLI registration is out of process.
-    click.echo(json.dumps({
-        "configured": result["configured"], "available": True,
-        "recipe_id": _DEFAULT_TASK_RECIPE_ID, "allowed_target_ids": target_ids,
-        "efforts": ["fast", "standard", "deep"], "restart_required": True,
-    }, ensure_ascii=False, sort_keys=True))
+    raise SafetyRefusalError(CODEX_CONTROL_RETIRED_REASON)
 
 
 @hub_codex.command(name="status")
 def hub_codex_status() -> None:
-    """Probe the private Codex registration without executing a task."""
-    from scholar_workflow.hub.tasks import CodexCapabilityProbe, TaskRecipeRegistry
+    """Read retained registration metadata without probing or launching Codex."""
+    from scholar_workflow.hub import CODEX_CONTROL_RETIRED_REASON
+    from scholar_workflow.hub.tasks import TaskRecipeRegistry
     from scholar_workflow.hub.terminal_worker import (
         TerminalWorkerError,
         TerminalWorkerState,
@@ -2167,10 +1978,19 @@ def hub_codex_status() -> None:
 
     root = _hub_state_root() / "hub"
     state = TerminalWorkerState(root / "task-worker")
+    configured = state.runtime_path.exists() or state.runtime_path.is_symlink()
+    recipes = []
+    history_error = None
     try:
+        if not configured:
+            raise FileNotFoundError
         runtime = state.current_runtime()
-        capabilities = CodexCapabilityProbe(runtime.resolved_codex_executable()).probe()
-        recipes = TaskRecipeRegistry(runtime.recipe_registry_path).load()
+        recipes = [
+            recipe.recipe_id
+            for recipe in TaskRecipeRegistry(runtime.recipe_registry_path).load().recipes
+        ]
+    except FileNotFoundError:
+        pass
     except (
         OSError,
         KeyError,
@@ -2178,18 +1998,20 @@ def hub_codex_status() -> None:
         json.JSONDecodeError,
         ValueError,
         TerminalWorkerError,
-    ) as exc:
-        raise DependencyError("Codex task runtime is not configured or is invalid") from exc
+    ):
+        history_error = "Retained Codex registration is invalid; files were not changed"
     click.echo(
         json.dumps(
             {
-                "configured": True,
-                "available": capabilities.available,
-                "create": capabilities.create,
-                "resume": capabilities.resume,
-                "fork": capabilities.fork,
-                "recipes": [recipe.recipe_id for recipe in recipes.recipes],
-                "detail": capabilities.detail,
+                "configured": configured,
+                "available": False,
+                "retired": True,
+                "create": False,
+                "resume": False,
+                "fork": False,
+                "recipes": recipes,
+                "detail": CODEX_CONTROL_RETIRED_REASON,
+                "history_error": history_error,
             },
             ensure_ascii=False,
             sort_keys=True,
@@ -2422,78 +2244,15 @@ def hub_managed_doctor(as_json: bool) -> None:
     help="Optional URL-safe opaque id for this Hub browser instance.",
 )
 def open_hub(instance: str | None) -> None:
-    """Start the managed Hub and open it, with cmux as an optional destination."""
-    from scholar_workflow.hub.actions import CmuxUnavailable
-    from scholar_workflow.hub.cmux import CmuxControlError
-    from scholar_workflow.hub.lifecycle import HubLifecycleError, HubServiceManager
-
-    manager = HubServiceManager()
-    cmux_context = _optional_cmux_context()
-    try:
-        record = manager.ensure_running()
-    except HubLifecycleError as exc:
-        raise _lifecycle_failure(exc) from None
-    instance_id = instance or f"hub_{secrets.token_urlsafe(18)}"
-
-    if cmux_context is None:
-        port = record.port
-        url = f"http://127.0.0.1:{port}/hub/?{urlencode({'instance': instance_id})}"
-        if not webbrowser.open(url, new=2):
-            raise ExternalServiceError(
-                "The managed Hub is running, but the system browser did not open"
-            )
-        click.echo(
-            f"[ok] Hub opened at {url}; choose a cmux destination only for launch actions"
-        )
-        return
-
-    workspace_id, socket_path = cmux_context
-    port = record.port
-    try:
-        _ensure_hub_router(record, workspace_id)
-        registered = _register_default_destination(port, instance_id, workspace_id)
-    except CmuxControlError as exc:
-        raise DependencyError(f"Hub is readable, but cmux routing failed: {exc}") from None
-    if not registered:
-        raise ExternalServiceError("Managed Hub does not support cmux destinations")
-    url = f"http://127.0.0.1:{port}/hub/?{urlencode({'instance': instance_id})}"
-    try:
-        executable = _resolve_cmux_executable()
-    except CmuxUnavailable as exc:
-        raise DependencyError(str(exc)) from None
-
-    argv = [
-        str(executable),
-        "open",
-        url,
-        "--workspace",
-        workspace_id,
-        "--focus",
-        "true",
-    ]
-    try:
-        result = subprocess.run(
-            argv,
-            shell=False,
-            timeout=_CMUX_TIMEOUT_SECONDS,
-            env=_cmux_child_env(workspace_id, socket_path),
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except subprocess.TimeoutExpired:
-        raise ExternalServiceError(
-            f"cmux did not respond within {_CMUX_TIMEOUT_SECONDS:g} seconds"
-        ) from None
-    except OSError as exc:
-        raise DependencyError(f"Could not execute cmux: {exc}") from None
-    if result.returncode != 0:
-        detail = (result.stderr or result.stdout or "").strip()[:500]
-        raise ExternalServiceError(
-            f"cmux could not open the Hub: "
-            f"{detail or f'exit status {result.returncode}'}"
-        )
-    click.echo("[ok] Hub opened; current cmux workspace is the default opening place")
+    """Retired legacy Hub front end; use the native knowledge explorer instead."""
+    del instance
+    raise DependencyError(
+        "The legacy Hub front end and open-hub are retired. "
+        "Use `scholar-workflow knowledge explore --root ABSOLUTE_FOLDER` "
+        "for the file-based knowledge explorer, or native knowledge commands for content. "
+        "API service status and diagnostics remain available through `hub status` and `hub doctor`. "
+        "No service, cmux router or browser was started."
+    )
 
 
 def _serve_hub_foreground(
@@ -2544,7 +2303,8 @@ def _serve_hub_foreground(
             server.server_close()
             raise
     click.echo(
-        f"research-hub on http://{host}:{port}/hub/  "
+        f"Hub API: http://{host}:{port}/api/v3/directory  "
+        f"health: http://{host}:{port}/api/v3/health  "
         f"(storage: {cfg.link_service.storage_root})  "
         f"{'CANARY · EPHEMERAL  ' if canary else ''}Ctrl-C to stop"
     )
@@ -3850,6 +3610,133 @@ def assets_server_register(spec: Path, expected_revision: str | None,
 @main.group(name="knowledge")
 def knowledge() -> None:
     """Register knowledge folders and explore file-backed research relationships."""
+
+
+def _local_field_transactions():
+    from scholar_workflow.knowledge.fields import KnowledgeSourceRegistry
+    from scholar_workflow.workflows.field_transaction import LocalFieldTransactions
+
+    root = Path(os.environ.get("SCHOLAR_WORKFLOW_HOME", DEFAULT_HOME)).expanduser().absolute()
+    return LocalFieldTransactions(
+        KnowledgeSourceRegistry(root / "hub" / "sources.json"),
+        # Keep the installed Hub's existing journal location for recovery.
+        state_root=root / "runtime" / "field-transactions-private",
+    )
+
+
+def _local_field_selection(command):
+    command = click.option("--source-id", help="Explicit registered Source identity.")(command)
+    command = click.option("--root", type=click.Path(path_type=Path),
+                           help="Explicitly select a folder for registration instead.")(command)
+    return click.option("--field-root", help="Exact relative unregistered Field root.")(command)
+
+
+@knowledge.group(name="field-transaction")
+def knowledge_field_transaction() -> None:
+    """Native Field enrollment and recovery; no Hub listener or cmux required.
+
+    Existing registered Field link cleanup remains knowledge field-migration.
+    """
+
+
+@knowledge_field_transaction.command(name="plan")
+@_local_field_selection
+@click.option("--proposal-file", type=click.File("rb"), default=None,
+              help="Optional local JSON: field, staged_bundle, relocations, link_rewrites.")
+def knowledge_field_transaction_plan(source_id, root, field_root, proposal_file) -> None:
+    """Read only: print a reviewed JSON plan, including the exact local selection."""
+    try:
+        result = _local_field_transactions().plan(
+            source_id=source_id, root=root, field_root=field_root,
+            proposal=None if proposal_file is None else _read_legacy_field_package(proposal_file),
+        )
+    except (ValueError, OSError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    click.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@knowledge_field_transaction.command(name="legacy-preview")
+@_local_field_selection
+@click.option("--package-file", required=True, type=click.File("rb"),
+              help="Trusted local JSON proposal (or - for stdin); read-only review.")
+def knowledge_field_transaction_legacy_preview(source_id, root, field_root, package_file) -> None:
+    """Review legacy Markdown/Canvas conservation locally, without staging."""
+    try:
+        result = _local_field_transactions().legacy_preview(
+            _read_legacy_field_package(package_file), source_id=source_id,
+            root=root, field_root=field_root,
+        )
+    except (ValueError, OSError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    click.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@knowledge_field_transaction.command(name="legacy-stage")
+def knowledge_field_transaction_legacy_stage() -> None:
+    """Unavailable until Provider and Field share a recovery journal."""
+    raise DependencyError(
+        "Legacy analysis staging is unavailable until Provider and Field changes "
+        "share one recoverable transaction journal; use legacy-preview for read-only review"
+    )
+
+
+@knowledge_field_transaction.command(name="apply")
+@click.argument("plan_file", type=click.File("rb"))
+@click.option("--approved-digest", required=True, help="Exact reviewed plan_digest.")
+@click.option("--external-writers-paused", is_flag=True,
+              help="Human assertion: external editors/sync are paused.")
+def knowledge_field_transaction_apply(plan_file, approved_digest, external_writers_paused) -> None:
+    """Re-plan from the local JSON request and CAS-apply the exact approved digest."""
+    from dataclasses import asdict
+
+    if not external_writers_paused:
+        raise SafetyRefusalError("External Field writers must be paused before apply")
+    if not click.confirm("Confirm external editors/sync are stopped and this digest was reviewed?",
+                         default=False):
+        raise SafetyRefusalError("Field transaction was not confirmed")
+    try:
+        result = _local_field_transactions().apply(
+            _read_legacy_field_package(plan_file), approved_digest=approved_digest,
+            external_writers_paused=True,
+        )
+    except (ValueError, OSError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    payload = asdict(result)
+    payload["recovery_snapshot"] = str(result.recovery_snapshot)
+    click.echo(json.dumps(payload, ensure_ascii=False, sort_keys=True))
+
+
+@knowledge_field_transaction.command(name="recover")
+@click.argument("source_id")
+@click.argument("field_id")
+@click.option("--confirm-recovery", is_flag=True)
+@click.option("--external-writers-paused", is_flag=True)
+def knowledge_field_transaction_recover(source_id, field_id, confirm_recovery,
+                                        external_writers_paused) -> None:
+    """Conditionally recover the existing private Field journal."""
+    from dataclasses import asdict
+
+    if not confirm_recovery:
+        raise SafetyRefusalError("Explicit --confirm-recovery is required")
+    if not external_writers_paused:
+        raise SafetyRefusalError("External Field writers must be paused before recovery")
+    if not click.confirm("Inspect the pending Field journal and conditionally recover it?",
+                         default=False):
+        raise SafetyRefusalError("Field recovery was not confirmed")
+    try:
+        result = _local_field_transactions().recover(
+            source_id, field_id, external_writers_paused=True,
+        )
+    except (ValueError, OSError) as exc:
+        raise SafetyRefusalError(str(exc)) from None
+    payload = asdict(result)
+    if result.recovery_snapshot is not None:
+        payload["recovery_snapshot"] = str(result.recovery_snapshot)
+    click.echo(json.dumps(payload, ensure_ascii=False, sort_keys=True))
+
+
+# Retain the original registered-Field link-cleanup command and journal schema.
+knowledge.add_command(hub_field_migration, name="field-migration")
 
 
 _exploration_commands(knowledge)

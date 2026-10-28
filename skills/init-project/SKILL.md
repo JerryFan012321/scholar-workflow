@@ -8,6 +8,11 @@ description: Initialize or retrofit a Git-managed project with the standard host
 `AGENTS.md` is canonical. `CLAUDE.md` imports it and `AGENT.md` is a compatibility
 pointer.
 
+The empty `.agents/skills/` directory is for this research project's own reusable
+operations, not copies of plugin-development or generic research skills. When
+project skills are requested, follow the shared project-skills contract; ordinary
+initialization does not generate task skills or install remote runtime support.
+
 ## Research parent and execution child requests
 
 For a research parent or remote execution child, first load
@@ -95,6 +100,7 @@ keeps its own recipe and scientific facts rather than adopting the example's dat
 
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/project-management.md` — required for research parent / execution child requests
+- `${CLAUDE_PLUGIN_ROOT}/references/project-skills.md` — when adding or organizing project-specific skills
 - `${CLAUDE_PLUGIN_ROOT}/references/project-context.md` — when explicitly organizing project materials
 - `references/skeleton-manifest.md`
 - `references/source-layout.md`

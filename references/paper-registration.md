@@ -1,5 +1,9 @@
 # Explicit Single-Paper Ownership
 
+The managed object is the complete paper asset unit defined in `asset-units.md`.
+Its companion and supporting files share one owner; this registration step does
+not itself generate or certify an analysis.
+
 Use for an already-ingested Zotero paper that has no Knowledge owner yet, inside
 an explicitly registered writable Source/Field. This operation creates a new paper
 companion note and its inventory/navigation declaration, not an analysis, migration,

@@ -8,8 +8,8 @@ import urllib.request
 
 import pytest
 
-from scholar_workflow.adapters.knowledge_explorer import make_server
 from scholar_workflow.knowledge.exploration import ExplorationStore, default_data
+from tests.contract.explorer_fixture import fixture_server as make_server
 
 PNG = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aR1kAAAAASUVORK5CYII=")

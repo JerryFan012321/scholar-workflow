@@ -834,7 +834,9 @@ def test_restart_can_explicitly_recover_interrupted_field(tmp_path: Path, monkey
         link_resolver=lambda key: f"zotero://open-pdf/library/items/{key}",
     )
     snapshot = next(service.state_root.rglob("originals-*.zip"))
-    assert json.loads((snapshot.parent / "pending.json").read_text())["schema_version"] == 2
+    journal = json.loads((snapshot.parent / "pending.json").read_text())
+    assert journal["schema_version"] == 4
+    assert journal["field_schema_version"] == 2
     safe_snapshot = snapshot.read_bytes()
     snapshot.write_bytes(b"corrupt")
     with pytest.raises(FieldTransactionError, match="writers must be paused"):

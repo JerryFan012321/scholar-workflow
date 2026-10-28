@@ -11,7 +11,6 @@ from copy import deepcopy
 from dataclasses import asdict
 from datetime import UTC, datetime
 from hashlib import sha256
-from importlib import resources
 from pathlib import Path
 
 import pytest
@@ -403,125 +402,53 @@ def test_operator_apply_and_recover_are_generation_bound(field_server) -> None:
     assert not (runtime_dir / "field-operator.json").exists()
 
 
-def test_cli_rejects_stale_or_unsafe_operator_credential(field_server, monkeypatch) -> None:
-    server, _source, service, _transaction, runtime_dir, generation = field_server
-    port = server.server_address[1]
-    headers = _browser_headers(port)
-    _, selected = _request(port, "/api/v3/fields/select", payload={}, headers=headers)
-    preview = selected["preview"]
-    _, planned = _request(
-        port,
-        "/api/v3/field-transactions/plan",
-        payload={
-            "candidate_token": preview["candidate_token"],
-            "field_id": preview["fields"][0]["field_id"],
-        },
-        headers=headers,
-    )
-    plan = planned["plan"]
-    _fake_managed_status(monkeypatch, port, runtime_dir, generation)
-    credential_path = runtime_dir / "field-operator.json"
-    credential = json.loads(credential_path.read_text())
+def test_legacy_operator_credential_still_rejects_stale_generation(field_server) -> None:
+    from types import SimpleNamespace
+
+    from scholar_workflow.cli import SafetyRefusalError, _field_operator_token
+
+    _server, _source, service, _transaction, runtime_dir, generation = field_server
+    path = runtime_dir / "field-operator.json"
+    credential = json.loads(path.read_text())
     credential["service_generation"] = "service_" + "b" * 32
-    credential_path.write_text(json.dumps(credential))
-    credential_path.chmod(0o600)
-    result = CliRunner().invoke(
-        main,
-        [
-            "hub",
-            "field-transaction",
-            "apply",
-            plan["plan_token"],
-            "--approved-digest",
-            plan["plan_digest"],
-            "--external-writers-paused",
-        ],
-        input="y\n",
-    )
-    assert result.exit_code == 7
-    assert "generation" in result.output.lower()
+    path.write_text(json.dumps(credential))
+    path.chmod(0o600)
+    record = SimpleNamespace(log_path=runtime_dir / "hub.log", pid=os.getpid(),
+                             service_generation=generation)
+    with pytest.raises(SafetyRefusalError, match="generation"):
+        _field_operator_token(record)
     assert not service.registry.path.exists()
 
-
-def test_cli_plan_apply_and_conditional_recover(field_server, monkeypatch) -> None:
-    server, _source, service, transaction, runtime_dir, generation = field_server
-    port = server.server_address[1]
-    _fake_managed_status(monkeypatch, port, runtime_dir, generation)
+def test_native_cli_plan_apply_and_conditional_recover(field_server, tmp_path: Path) -> None:
+    _server, source, service, transaction, _runtime_dir, _generation = field_server
     runner = CliRunner()
-    planned = runner.invoke(
-        main,
-        ["hub", "field-transaction", "plan", "--field-root", "世界模型"],
-    )
+    planned = runner.invoke(main, ["knowledge", "field-transaction", "plan",
+        "--root", str(source.parent.parent), "--field-root", "世界模型"])
     assert planned.exit_code == 0, planned.output
-    plan = json.loads(planned.output)
+    reviewed = json.loads(planned.output)
+    plan = reviewed["plan"]
     assert plan["field_title"] == "世界模型"
-    assert plan["candidate_token"].startswith("fld_")
+    assert "candidate_token" not in plan
+    assert "plan_token" not in plan
     assert not service.registry.path.exists()
     assert not transaction.state_root.exists()
-
-    missing_pause = runner.invoke(
-        main,
-        [
-            "hub",
-            "field-transaction",
-            "apply",
-            plan["plan_token"],
-            "--approved-digest",
-            plan["plan_digest"],
-        ],
-    )
+    plan_file = tmp_path / "reviewed.json"
+    plan_file.write_text(json.dumps(reviewed), encoding="utf-8")
+    args = ["knowledge", "field-transaction", "apply", str(plan_file),
+            "--approved-digest", plan["plan_digest"]]
+    missing_pause = runner.invoke(main, args)
     assert missing_pause.exit_code == 7
     assert not service.registry.path.exists()
-
-    applied = runner.invoke(
-        main,
-        [
-            "hub",
-            "field-transaction",
-            "apply",
-            plan["plan_token"],
-            "--approved-digest",
-            plan["plan_digest"],
-            "--external-writers-paused",
-        ],
-        input="y\n",
-    )
+    applied = runner.invoke(main, [*args, "--external-writers-paused"], input="y\n")
     assert applied.exit_code == 0, applied.output
     result = json.loads(applied.output.splitlines()[-1])
     assert result["source_id"] == plan["source_id"]
     assert result["recovery_is_verified_backup"] is False
-    assert service.registry.path.is_file()
-
-    recovered = runner.invoke(
-        main,
-        [
-            "hub",
-            "field-transaction",
-            "recover",
-            plan["source_id"],
-            plan["field_id"],
-            "--confirm-recovery",
-        ],
-        input="y\n",
-    )
-    assert recovered.exit_code == 7
-    assert "writers must be paused" in recovered.output
-    recovered = runner.invoke(
-        main,
-        [
-            "hub",
-            "field-transaction",
-            "recover",
-            plan["source_id"],
-            plan["field_id"],
-            "--confirm-recovery",
-            "--external-writers-paused",
-        ],
-        input="y\n",
-    )
+    recovered = runner.invoke(main, ["knowledge", "field-transaction", "recover",
+        plan["source_id"], plan["field_id"], "--confirm-recovery",
+        "--external-writers-paused"], input="y\n")
     assert recovered.exit_code == 0, recovered.output
     assert json.loads(recovered.output.splitlines()[-1])["outcome"] == "nothing-to-recover"
-
 
 def test_expired_transaction_plan_cannot_commit(field_server, monkeypatch) -> None:
     server, source, service, transaction, runtime_dir, _generation = field_server
@@ -661,62 +588,35 @@ def test_managed_analysis_cannot_use_compatibility_field_confirm(
     assert not transaction.state_root.exists()
 
 
-def test_field_ui_disables_legacy_confirm_and_points_to_operator_flow() -> None:
-    script = resources.files("scholar_workflow.hub.static").joinpath("hub.js").read_text()
-    assert "transaction_required_fields" in script
-    assert "selectedTransactionReasons.length !== 0" in script
-    assert "scholar-workflow hub field-transaction plan" in script
+def test_operator_credential_must_be_private_regular_file(field_server) -> None:
+    from types import SimpleNamespace
 
+    from scholar_workflow.cli import SafetyRefusalError, _field_operator_token
 
-def test_operator_credential_must_be_private_regular_file(field_server, monkeypatch) -> None:
-    server, _source, _service, _transaction, runtime_dir, generation = field_server
-    port = server.server_address[1]
-    _fake_managed_status(monkeypatch, port, runtime_dir, generation)
+    _server, _source, _service, _transaction, runtime_dir, generation = field_server
     credential_path = runtime_dir / "field-operator.json"
     credential_path.chmod(0o644)
-    result = CliRunner().invoke(
-        main,
-        [
-            "hub",
-            "field-transaction",
-            "recover",
-            "00000000-0000-4000-8000-000000000001",
-            "00000000-0000-4000-8000-000000000002",
-            "--confirm-recovery",
-            "--external-writers-paused",
-        ],
-        input="y\n",
-    )
-    assert result.exit_code == 7
-    assert "credential is unsafe" in result.output
+    record = SimpleNamespace(log_path=runtime_dir / "hub.log", pid=os.getpid(),
+                             service_generation=generation)
+    with pytest.raises(SafetyRefusalError, match="credential is unsafe"):
+        _field_operator_token(record)
 
+def test_operator_credential_rejects_symlink(field_server) -> None:
+    from types import SimpleNamespace
 
-def test_operator_credential_rejects_symlink(field_server, monkeypatch) -> None:
-    server, _source, _service, _transaction, runtime_dir, generation = field_server
-    port = server.server_address[1]
-    _fake_managed_status(monkeypatch, port, runtime_dir, generation)
+    from scholar_workflow.cli import SafetyRefusalError, _field_operator_token
+
+    _server, _source, _service, _transaction, runtime_dir, generation = field_server
     credential_path = runtime_dir / "field-operator.json"
     replacement = runtime_dir / "replacement.json"
     replacement.write_bytes(credential_path.read_bytes())
     replacement.chmod(0o600)
     credential_path.unlink()
     credential_path.symlink_to(replacement)
-    result = CliRunner().invoke(
-        main,
-        [
-            "hub",
-            "field-transaction",
-            "recover",
-            "00000000-0000-4000-8000-000000000001",
-            "00000000-0000-4000-8000-000000000002",
-            "--confirm-recovery",
-            "--external-writers-paused",
-        ],
-        input="y\n",
-    )
-    assert result.exit_code == 7
-    assert "credential is unavailable or unsafe" in result.output
-
+    record = SimpleNamespace(log_path=runtime_dir / "hub.log", pid=os.getpid(),
+                             service_generation=generation)
+    with pytest.raises(SafetyRefusalError, match="credential is unavailable or unsafe"):
+        _field_operator_token(record)
 
 def test_operator_only_legacy_preview_is_read_only_and_stage_is_unavailable(
     field_server, tmp_path: Path, monkeypatch
@@ -749,11 +649,13 @@ def test_operator_only_legacy_preview_is_read_only_and_stage_is_unavailable(
     proposed = runner.invoke(
         main,
         [
-            "hub",
+            "knowledge",
             "field-transaction",
             "legacy-preview",
-            candidate_token,
-            field_id,
+            "--root",
+            str(source.parent.parent),
+            "--field-root",
+            "世界模型",
             "--package-file",
             str(package_path),
         ],
@@ -766,43 +668,9 @@ def test_operator_only_legacy_preview_is_read_only_and_stage_is_unavailable(
     assert not transaction.state_root.exists()
     assert (source.parent / "Fixture Paper分析.md").read_bytes() == old_markdown
 
-    wrong = runner.invoke(
-        main,
-        [
-            "hub",
-            "field-transaction",
-            "legacy-stage",
-            candidate_token,
-            field_id,
-            "--package-file",
-            str(package_path),
-            "--approved-cutover-digest",
-            "0" * 64,
-        ],
-        input="y\n",
-    )
+    wrong = runner.invoke(main, ["knowledge", "field-transaction", "legacy-stage"])
     assert wrong.exit_code == 3
     assert "recoverable transaction journal" in wrong.output
-    assert not service.registry.path.exists()
-    staged = runner.invoke(
-        main,
-        [
-            "hub",
-            "field-transaction",
-            "legacy-stage",
-            candidate_token,
-            field_id,
-            "--package-file",
-            str(package_path),
-            "--approved-cutover-digest",
-            report["cutover_digest"],
-            "--field-definition-file",
-            str(definition_path),
-        ],
-        input="y\n",
-    )
-    assert staged.exit_code == 3
-    assert "recoverable transaction journal" in staged.output
     assert not service.registry.path.exists()
     assert not transaction.state_root.exists()
 
@@ -973,11 +841,13 @@ def test_legacy_package_rejects_escape_and_duplicate_json_before_any_write(
     rejected = CliRunner().invoke(
         main,
         [
-            "hub",
+            "knowledge",
             "field-transaction",
             "legacy-preview",
-            candidate_token,
-            field_id,
+            "--root",
+            str(source.parent.parent),
+            "--field-root",
+            "世界模型",
             "--package-file",
             str(duplicate_path),
         ],

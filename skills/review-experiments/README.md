@@ -14,6 +14,12 @@ When a task also requires collection, its archive delivery remains a separate
 unfinished handoff until the required local evidence is received and checked.
 Remote-path prose in a report does not replace an original Run/Attempt bundle.
 
+This is a generic management review, separate from a project's execution skills;
+see [the project skill boundary](../../references/project-skills.md). Collection is
+parent-initiated and separately requested: configurations, metrics, figures and
+necessary logs come home, while models, weights and checkpoints remain execution
+assets. Selective export and SSH transport are not supplied by this review.
+
 Example request:
 
 > Compare the selected baseline and variant Runs using each primary Attempt's

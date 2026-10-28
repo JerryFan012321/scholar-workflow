@@ -17,8 +17,8 @@ def test_browser_edit_conflicts(tmp_path, scenario):
     executable = os.environ.get("SCHOLAR_BROWSER_NODE")
     if not executable or not os.environ.get("NODE_PATH"):
         pytest.skip("Set SCHOLAR_BROWSER_NODE and NODE_PATH for the optional Chrome contract")
-    from scholar_workflow.adapters.knowledge_explorer import make_server
     from scholar_workflow.knowledge.exploration import ExplorationStore, default_data
+    from tests.contract.explorer_fixture import fixture_server as make_server
 
     original = b"# Accepted paper\n\nDo not change the paper unit.\n"
     (tmp_path / "paper.md").write_bytes(original)

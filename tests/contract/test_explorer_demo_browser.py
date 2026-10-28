@@ -37,6 +37,7 @@ def test_synthetic_demo_browser(tmp_path, monkeypatch):
     ))
     root = tmp_path.resolve()
     server, token = demo.demo_server(root)
+    server.daemon_threads = False
     before = {
         path.relative_to(root): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in (root / "resources").rglob("*") if path.is_file()
@@ -46,8 +47,8 @@ def test_synthetic_demo_browser(tmp_path, monkeypatch):
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        screenshots = repository / "build"
-        screenshots.mkdir(exist_ok=True)
+        screenshots = Path(os.environ.get("SCHOLAR_EXPLORER_SCREENSHOT_DIR", root / "screenshots"))
+        screenshots.mkdir(parents=True, exist_ok=True)
         result = subprocess.run(
             [executable, str(Path(__file__).with_name("explorer_demo_browser.cjs"))],
             input=json.dumps({

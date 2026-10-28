@@ -13,6 +13,11 @@ project-management contract. Preserve the complete local management/knowledge
 surface, qualify selected child experiments and show remote code availability
 honestly; organizing PROJECT does not implement deployment or archive reception.
 
+This is a reusable project-management skill. Project-specific execution skills keep
+their real configs, entries and acceptance conditions in the selected project;
+organizing its entry neither creates them nor runs them. Use the project-skills
+contract when their organization is explicitly in scope.
+
 ## Inputs and operations
 
 - Use the selected project root, explicit materials, desired output language and
@@ -58,6 +63,7 @@ Load for this task:
 - `${CLAUDE_PLUGIN_ROOT}/references/project-entry.md` — required internal document format and update contract
 - `${CLAUDE_PLUGIN_ROOT}/references/project-management.md` — when the project has remote execution children
 - `${CLAUDE_PLUGIN_ROOT}/references/project-context.md` — existing association authority and native references
+- `${CLAUDE_PLUGIN_ROOT}/references/project-skills.md` — when organizing project-specific management or execution skills
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`
 

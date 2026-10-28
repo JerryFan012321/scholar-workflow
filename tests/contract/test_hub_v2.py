@@ -1501,6 +1501,8 @@ def test_typed_paper_attachment_and_analysis_landings_keep_raw_urls_internal(tmp
     vault.mkdir()
     (storage / "PDFD2345").mkdir()
     (storage / "PDFD2345" / "paper.pdf").write_bytes(b"%PDF-1.7\n")
+    (vault / "analysis").mkdir()
+    (vault / "analysis" / "landing.md").write_text("# Readable analysis\n", encoding="utf-8")
     provider = StaticCatalogProvider(
         HubCatalog(
             generated_at=NOW,
@@ -1545,6 +1547,7 @@ def test_typed_paper_attachment_and_analysis_landings_keep_raw_urls_internal(tmp
         assert "papers:paper:paper:landing" in html
         assert "item_type=attachment" in html
         assert "/open/paper/PDFD2345" not in html
+        assert 'href="/hub/"' not in html
 
         attachment = _request(
             server.server_address[1],
@@ -1558,7 +1561,13 @@ def test_typed_paper_attachment_and_analysis_landings_keep_raw_urls_internal(tmp
             "/hub/item?library_id=knowledge&item_type=artifact&item_id=analysis%3Alanding",
         ).read().decode("utf-8")
         assert "knowledge:artifact:analysis:landing" in analysis
-        assert "/hub/?artifact=analysis%3Alanding" in analysis
+        assert 'href="/api/v1/artifacts/analysis%3Alanding/content"' in analysis
+        assert "/hub/?artifact=" not in analysis
+        assert 'href="/hub/"' not in analysis
+        content = json.loads(_request(
+            server.server_address[1], "/api/v1/artifacts/analysis%3Alanding/content",
+        ).read())
+        assert content["content"] == "# Readable analysis\n"
         assert directory.resolve_item(
             TypedEntityRef(
                 library_id="papers",
@@ -1566,56 +1575,6 @@ def test_typed_paper_attachment_and_analysis_landings_keep_raw_urls_internal(tmp
                 item_id="analysis:landing",
             )
         ) is None
-    finally:
-        server.shutdown()
-        server.server_close()
-
-
-def test_hub_ui_uses_v3_information_architecture_and_independent_capabilities(tmp_path):
-    storage = tmp_path / "storage"
-    vault = tmp_path / "vault"
-    storage.mkdir()
-    vault.mkdir()
-    server = start_hub_server(
-        port=0,
-        storage_root=storage,
-        vault_root=vault,
-        catalog_provider=StaticCatalogProvider(_catalog()),
-    )
-    try:
-        port = server.server_address[1]
-        html = _request(port, "/hub/").read().decode("utf-8")
-        script = _request(port, "/hub/assets/hub.js").read().decode("utf-8")
-        assert 'id="library-nav"' in html
-        assert 'id="operation-status"' in html
-        assert 'id="project-ops-dialog"' in html
-        assert "相对于已注册项目的" in html
-        assert "Libraries" in html
-        assert "Knowledge Contexts" not in html
-        assert "/api/v3/directory" in script
-        assert "/api/v3/libraries/" in script
-        assert "/api/v3/destinations" in script
-        assert "/api/v3/actions/" in script
-        assert 'query.set("query"' in script
-        assert 'query.set("sort"' in script
-        assert 'query.set("type"' in script
-        assert "/hub/item?" not in script
-        assert "state.catalog" not in script
-        assert "`/open/paper/${" not in script
-        assert "knowledge_catalog" not in script
-        assert "operations.bound" not in script
-        assert "默认打开位置" in html
-        assert 'id="capability-matrix"' in html
-        assert 'id="field-register-dialog"' in html
-        assert "vault_writes" in script
-        assert "project_document_writes" in script
-        assert "Paper" in script and "Webpage" in script and "Other" in script
-        assert "journalArticle" not in script
-        assert "openProjectOperations" in script
-        assert "/api/v3/projects/" in script
-        assert "/docs/${operation}" in script
-        assert "confirmation_required" in script
-        assert "innerHTML" not in script
     finally:
         server.shutdown()
         server.server_close()

@@ -35,6 +35,20 @@ RUNTIME_PATHS=(
   "pyproject.toml"
 )
 
+# Development skills are loaded explicitly from dev-guide/skills in the checkout.
+# Refuse a contaminated snapshot before changing branches; do not silently strip
+# an accidental runtime copy and publish a different product than the source says.
+RUNTIME_FORBIDDEN_PATHS=(
+  "dev-guide"
+  "planning"
+  "tests"
+  "evals"
+  "AGENT.md"
+  "AGENTS.md"
+  "CLAUDE.md"
+  "skills/project-backlog"
+)
+
 # Require a pristine tree: tracked changes AND untracked files both block the build.
 # `git checkout` carries untracked files across branches, so a stray dev file (review
 # note, scratch script, an untracked file inside a runtime dir) would otherwise ride
@@ -52,6 +66,13 @@ trap 'rm -rf "$WORKDIR"' EXIT
 # Extract the runtime files from the dev commit into a staging dir (archive respects
 # .gitignore-tracked state: only committed files are included).
 git archive "$DEV_BRANCH" -- "${RUNTIME_PATHS[@]}" | tar -x -C "$WORKDIR"
+
+for runtime_path in "${RUNTIME_FORBIDDEN_PATHS[@]}"; do
+  if [ -e "$WORKDIR/$runtime_path" ] || [ -L "$WORKDIR/$runtime_path" ]; then
+    echo "error: development-only path in runtime snapshot: $runtime_path" >&2
+    exit 1
+  fi
+done
 
 # Switch to (or create) the orphan release branch.
 if git show-ref --verify --quiet "refs/heads/$RELEASE_BRANCH"; then

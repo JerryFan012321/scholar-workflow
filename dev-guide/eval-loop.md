@@ -9,6 +9,12 @@ the parent Vault repository. Preserve the real product's independent-Git-root
 checks; do not relax them to accommodate a test location. Keep test state,
 generated inputs and evidence within the selected test Vault.
 
+HTTP/browser fixtures must explicitly supply their synthetic reference, reader,
+Vault services and private state rather than falling back to personal configuration.
+Keep actual Vault/environment integrations in their dedicated controlled tests.
+Drain request handlers before restoring monkeypatches; a daemon request must not
+outlive its test and execute against the next test's dependencies.
+
 How skills are tested and pinned. Development-time doc — never loaded at runtime.
 
 ## What evals are here

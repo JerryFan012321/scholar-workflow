@@ -47,6 +47,11 @@ For an experiment-only comparison use `review-experiments`; for a new skeleton
 use `init-project`. The short `project overview` CLI remains an inventory view,
 not the rich PROJECT renderer.
 
+These are generic management capabilities. A project's reusable scientific entries
+belong in its own `.agents/skills/`, using the shared formats without copying them.
+Organizing PROJECT does not create or execute such task skills; see
+[the project skill boundary](../../references/project-skills.md).
+
 See [the document contract](../../references/project-entry.md). Available from
 0.43.0; native VS Code navigation/appearance assessment remains separate from
 installation and contract checks.

@@ -1,6 +1,11 @@
 # project-backlog
 
-项目待办队列管理 skill,维护 `planning/BACKLOG.md` 的持久化工作项清单。
+Scholar Workflow 开发专用 Skill，维护本插件源码仓库 `planning/BACKLOG.md` 的持久化工作项，
+不随科研运行插件安装。
+
+明确需要管理插件待办时，从开发仓库读取 `dev-guide/skills/project-backlog/SKILL.md`。
+所有路径相对此开发仓库解析，不能在调用者当前的科研项目中创建队列。
+科研项目继续使用已有 PROJECT、SCHEDULE 或明确选定的计划，不由本 Skill 另建一份。
 
 ## 用途
 

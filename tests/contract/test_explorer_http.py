@@ -10,7 +10,7 @@ import pytest
 
 @pytest.fixture
 def explorer(tmp_path):
-    from scholar_workflow.adapters.knowledge_explorer import make_server
+    from tests.contract.explorer_fixture import fixture_server as make_server
 
     (tmp_path / "paper.md").write_text("# Original\n\nUnchanged evidence.", encoding="utf-8")
     (tmp_path / "tree.canvas").write_text('{"nodes":[],"edges":[]}', encoding="utf-8")

@@ -51,6 +51,7 @@ def demo(demo_module, tmp_path, monkeypatch):
     root = tmp_path.resolve() / "demo"
     root.mkdir()
     server, token = demo_module.demo_server(root)
+    server.daemon_threads = False
     base = f"http://127.0.0.1:{server.server_port}"
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()

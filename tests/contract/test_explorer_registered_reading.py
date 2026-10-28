@@ -64,8 +64,8 @@ def test_pending_read_projection_is_whole_unit_and_keeps_diagnostics(paper_unit_
 
 
 def test_reading_http_cannot_save_even_with_valid_model(paper_unit_corpus):
-    from scholar_workflow.adapters.knowledge_explorer import make_server
     from scholar_workflow.knowledge.exploration_import import preview_paper_units
+    from tests.contract.explorer_fixture import fixture_server as make_server
 
     corpus = paper_unit_corpus
     payload = pending_inventory(corpus)

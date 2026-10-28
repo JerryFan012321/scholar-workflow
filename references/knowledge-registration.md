@@ -5,6 +5,21 @@ existing host Source registry. No Hub, cmux workspace, singleton Vault setting o
 second identity store is required. A Source root may be a selected Vault subfolder;
 this does not register its parent Vault or establish a PDF-reader identity.
 
+This operation registers a container and its host location. The minimum knowledge
+management object is the complete paper/blog/document asset unit in `asset-units.md`.
+Container registration alone does not enroll existing files as units; internal
+member links preserve their unit's owner rather than creating peer knowledge units.
+
+The local `knowledge field-transaction` entry also initializes the bound empty
+inventory when creating a genuinely new Source. Its reviewed plan includes an
+`inventory_initialization` fingerprint; it publishes that member before the host
+Source registration. Ordinary Field appends and existing-Source attachment never
+infer a new empty inventory. A missing historical inventory requires restoration.
+New first-Source Field journals use schema 4 and retain the original Field member
+format; legacy schema 2/3 journals remain recoverable. A rollback may retain an
+unregistered prepared inventory as recovery evidence. It does not become a unit,
+grant ownership or authorize reuse; review a new plan instead of adopting it.
+
 For an existing-library query or an unspecified destination, first use the inventory
 operations in `asset-management.md`. Do not begin by asking the user to name/path
 assets the host can already list. That lookup never registers or adopts content.

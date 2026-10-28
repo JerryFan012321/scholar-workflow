@@ -12,6 +12,8 @@ import pytest
 
 from scholar_workflow.hub.field_transaction import FieldTransactionError, FieldTransactionService
 from scholar_workflow.hub.fields import FieldService, KnowledgeSourceRegistry
+from scholar_workflow.knowledge.registration import registration_plan
+from scholar_workflow.workflows.register_source import register_source
 
 
 def _transaction_worker(service, plan, operation, start, attempted, result):
@@ -129,7 +131,7 @@ def test_field_confirm_waits_for_registry_before_publishing_manifest(tmp_path: P
     assert (vault / ".scholar-workflow" / "fields.yml").is_file()
 
 
-@pytest.mark.parametrize("schema_version", [2, 3])
+@pytest.mark.parametrize("schema_version", [2, 3, 4])
 @pytest.mark.parametrize("operation", ["apply", "recover"])
 def test_field_transaction_waits_for_registry_before_taking_vault(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, schema_version: int, operation: str
@@ -144,10 +146,20 @@ def test_field_transaction_waits_for_registry_before_taking_vault(
     note.write_text("# Note\n", encoding="utf-8")
     registry = KnowledgeSourceRegistry(tmp_path / "host" / "sources.json")
     fields = FieldService(registry)
+    if schema_version in {2, 3}:
+        # Existing Sources retain legacy Field journal formats; first creation
+        # now needs schema 4 to bind the inventory member as well.
+        existing = vault / "existing"
+        existing.mkdir()
+        (existing / "README.md").write_text("# Existing Field\n", encoding="utf-8")
+        approved = registration_plan(fields, vault, field_root="existing", existing_source=False)
+        register_source(fields, vault, field_root="existing", existing_source=False,
+                        approved_digest=approved.payload["approved_digest"])
     service = FieldTransactionService(fields, state_root=tmp_path / "private")
+    registry_before = registry.path.read_bytes() if registry.path.exists() else None
     preview = fields.preview(vault)
     selected = next(row for row in preview.fields if row.relative_root == "topic")
-    if schema_version == 3:
+    if schema_version in {3, 4}:
         selected = selected.model_copy(
             update={
                 "navigation": [
@@ -167,7 +179,7 @@ def test_field_transaction_waits_for_registry_before_taking_vault(
         preview.candidate_token,
         selected.field_id,
         field_definition=selected,
-        relocations={"note.md": "resources/note.md"} if schema_version == 3 else None,
+        relocations={"note.md": "resources/note.md"} if schema_version in {3, 4} else None,
     )
     assert plan.conflicts == ()
     if operation == "recover":
@@ -216,7 +228,13 @@ def test_field_transaction_waits_for_registry_before_taking_vault(
         fcntl.flock(vault_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         fcntl.flock(vault_fd, fcntl.LOCK_UN)
         fcntl.flock(registry_fd, fcntl.LOCK_UN)
-        assert result.get(timeout=10) == ("applied" if operation == "apply" else "rolled-back")
+        # For a pre-existing Source with only a new manifest member, that first
+        # publication is the complete commit. Relocations/new Source registration
+        # are still incomplete at this interruption and must roll back.
+        expected = "applied" if operation == "apply" else (
+            "committed" if schema_version == 2 else "rolled-back"
+        )
+        assert result.get(timeout=10) == expected
         worker.join(timeout=10)
         assert worker.exitcode == 0
     finally:
@@ -231,6 +249,9 @@ def test_field_transaction_waits_for_registry_before_taking_vault(
     if operation == "recover":
         assert note.read_text(encoding="utf-8") == "# Note\n"
         assert home.read_text(encoding="utf-8") == "# Topic\n"
-        assert not registry.path.exists()
+        if registry_before is None:
+            assert not registry.path.exists()
+        else:
+            assert registry.path.read_bytes() == registry_before
     else:
         assert registry.path.is_file()

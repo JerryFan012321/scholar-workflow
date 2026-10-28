@@ -2,16 +2,16 @@
 from __future__ import annotations
 
 import json
-import stat
-import subprocess
+import webbrowser
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 
 from scholar_workflow import __version__, cli
 from scholar_workflow.cli import main
 from scholar_workflow.hub import lifecycle
-from scholar_workflow.hub.directory import ProjectRegistry, ToolRegistry
+from scholar_workflow.hub.directory import ProjectRegistry
 from scholar_workflow.hub.fields import (
     FolderRegistration,
     KnowledgeSourceRegistration,
@@ -19,10 +19,6 @@ from scholar_workflow.hub.fields import (
     KnowledgeSourceRegistryDocument,
 )
 from scholar_workflow.hub.routing import ExecutionTargetRegistry
-from scholar_workflow.hub.tasks import (
-    CodexCapabilities,
-    TaskRecipeRegistry,
-)
 from scholar_workflow.hub.terminal_worker import TerminalWorkerState
 
 
@@ -166,110 +162,33 @@ def test_hub_doctor_proves_runtime_identity_build_and_private_files(tmp_path, mo
     }
 
 
-def test_open_hub_outside_cmux_starts_service_and_uses_system_browser(
-    tmp_path,
-    monkeypatch,
-):
-    record = _record(tmp_path)
-    monkeypatch.setattr(
-        lifecycle,
-        "HubServiceManager",
-        lambda: type(
-            "Manager",
-            (),
-            {"ensure_running": lambda self: record},
-        )(),
-    )
-    opened: list[tuple[str, int]] = []
-    monkeypatch.setattr(
-        cli.webbrowser,
-        "open",
-        lambda url, new=0: opened.append((url, new)) or True,
-    )
+@pytest.mark.parametrize("inside_cmux", [False, True])
+def test_open_hub_retirement_never_constructs_a_service_manager(tmp_path, monkeypatch, inside_cmux):
+    calls: list[str] = []
 
+    def forbidden(*_args, **_kwargs):
+        calls.append("constructed or launched")
+        raise AssertionError("retired front end must not affect API service lifecycle")
+
+    monkeypatch.setattr(lifecycle, "HubServiceManager", forbidden)
+    monkeypatch.setattr(cli, "_ensure_hub_router", forbidden)
+    monkeypatch.setattr(cli, "_register_default_destination", forbidden)
+    monkeypatch.setattr(webbrowser, "open", forbidden)
+    monkeypatch.setattr(cli.subprocess, "run", forbidden)
+    monkeypatch.setattr(cli.subprocess, "Popen", forbidden)
+    home = tmp_path / "uninitialized-home"
     result = CliRunner().invoke(
-        main,
-        ["open-hub", "--instance", "instance_A234567890abcdef"],
-        env={"CMUX_WORKSPACE_ID": "", "CMUX_SOCKET_PATH": ""},
+        main, ["open-hub", "--instance", "instance_A234567890abcdef"],
+        env={"SCHOLAR_WORKFLOW_HOME": str(home),
+             "CMUX_WORKSPACE_ID": "workspace:7" if inside_cmux else "",
+             "CMUX_SOCKET_PATH": "/tmp/cmux/socket" if inside_cmux else ""},
     )
 
-    assert result.exit_code == 0, result.output
-    assert opened == [
-        (
-            "http://127.0.0.1:45678/hub/?instance=instance_A234567890abcdef",
-            2,
-        )
-    ]
-    assert "choose a cmux destination" in result.output
-
-
-def test_open_hub_inside_cmux_registers_destination_then_opens_there(
-    tmp_path,
-    monkeypatch,
-):
-    record = _record(tmp_path)
-    startup_calls: list[bool] = []
-    startup_workspaces: list[str] = []
-    monkeypatch.setattr(
-        lifecycle,
-        "HubServiceManager",
-        lambda: type(
-            "Manager",
-            (),
-            {
-                "ensure_running": lambda self: startup_calls.append(True) or record
-            },
-        )(),
-    )
-    monkeypatch.setattr(
-        cli,
-        "_ensure_hub_router",
-        lambda _record, workspace: startup_workspaces.append(workspace),
-    )
-    registrations: list[tuple[int, str, str]] = []
-    monkeypatch.setattr(
-        cli,
-        "_register_default_destination",
-        lambda port, instance, workspace: registrations.append(
-            (port, instance, workspace)
-        )
-        or True,
-    )
-    monkeypatch.setattr(cli, "_resolve_cmux_executable", lambda: Path("/safe/cmux"))
-    calls: list[tuple[list[str], dict[str, object]]] = []
-    monkeypatch.setattr(
-        cli.subprocess,
-        "run",
-        lambda argv, **kwargs: calls.append((argv, kwargs))
-        or subprocess.CompletedProcess(argv, 0, "", ""),
-    )
-
-    result = CliRunner().invoke(
-        main,
-        ["open-hub", "--instance", "instance_A234567890abcdef"],
-        env={
-            "CMUX_WORKSPACE_ID": "workspace:7",
-            "CMUX_SOCKET_PATH": "/tmp/cmux/socket",
-        },
-    )
-
-    assert result.exit_code == 0, result.output
-    assert startup_calls == [True]
-    assert startup_workspaces == ["workspace:7"]
-    assert registrations == [(45678, "instance_A234567890abcdef", "workspace:7")]
-    argv, kwargs = calls[0]
-    assert argv == [
-        "/safe/cmux",
-        "open",
-        "http://127.0.0.1:45678/hub/?instance=instance_A234567890abcdef",
-        "--workspace",
-        "workspace:7",
-        "--focus",
-        "true",
-    ]
-    assert kwargs["shell"] is False
-    assert kwargs["env"]["CMUX_SOCKET_PATH"] == "/tmp/cmux/socket"
-    assert "default opening place" in result.output
+    assert result.exit_code == 3, result.output
+    assert "retired" in result.output.lower()
+    assert "knowledge explore" in result.output
+    assert calls == []
+    assert not home.exists()
 
 
 def test_destination_registration_uses_csrf_and_never_puts_workspace_in_url(
@@ -394,7 +313,7 @@ def test_hub_target_add_source_registers_folder_authority_without_cli_path(tmp_p
     assert json.loads(listed.output) == {"targets": [payload]}
 
 
-def test_hub_codex_configure_probes_and_keeps_policy_out_of_public_output(
+def test_hub_codex_configure_retires_without_changing_existing_registrations(
     tmp_path, monkeypatch
 ):
     home = tmp_path / "home"
@@ -437,15 +356,10 @@ def test_hub_codex_configure_probes_and_keeps_policy_out_of_public_output(
     executable = tmp_path / "codex-private-path"
     executable.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
     executable.chmod(0o700)
-    monkeypatch.setattr(
-        "scholar_workflow.hub.tasks.CodexCapabilityProbe.probe",
-        lambda _self: CodexCapabilities(
-            available=True,
-            create=True,
-            resume=True,
-            fork=True,
-        ),
-    )
+    def refuse_probe(_self):
+        raise AssertionError("Retired configuration must not start a Codex capability probe")
+
+    monkeypatch.setattr("scholar_workflow.hub.tasks.CodexCapabilityProbe.probe", refuse_probe)
 
     result = CliRunner().invoke(
         main,
@@ -463,25 +377,13 @@ def test_hub_codex_configure_probes_and_keeps_policy_out_of_public_output(
         env={"SCHOLAR_WORKFLOW_HOME": str(home)},
     )
 
-    assert result.exit_code == 0, result.output
-    payload = json.loads(result.output)
-    assert payload == {
-        "allowed_target_ids": ["world-models"],
-        "available": True,
-        "configured": True,
-        "efforts": ["fast", "standard", "deep"],
-        "recipe_id": "general-research",
-        "restart_required": True,
-    }
+    assert result.exit_code == 7, result.output
+    assert "retired" in result.output.lower()
     assert str(executable) not in result.output
     assert "private-model" not in result.output
 
-    recipes = TaskRecipeRegistry(home / "hub" / "task-recipes.json").load()
-    assert recipes.recipes[0].allowed_target_ids == ["world-models"]
-    assert recipes.safety_policies[0].model == "private-model"
+    assert not (home / "hub" / "task-recipes.json").exists()
     state = TerminalWorkerState(home / "hub" / "task-worker")
-    assert stat.S_IMODE(state.runtime_path.stat().st_mode) == 0o600
-    tools = ToolRegistry(home / "hub" / "tools.json").load()
-    assert [(tool.tool_id, tool.recipe_ids) for tool in tools] == [
-        ("codex", ["general-research"])
-    ]
+    assert not state.runtime_path.exists()
+    assert not (home / "hub" / "tools.json").exists()
+    assert sources.resolve(source_id, capability="read") == vault.resolve()

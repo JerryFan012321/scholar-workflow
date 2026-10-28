@@ -5,14 +5,16 @@
       "id": "knowledge-explorer-editable-dimensions-and-relations",
       "input": "打开这个已选知识目录的多维探索界面，新增一个输入模态维度并编辑研究定位和带证据的关系，不改论文正文或Canvas",
       "expected_skill": "explore-knowledge",
-      "must_not_trigger": "analyze-paper"
+      "must_not_trigger": "analyze-paper",
+      "comment": "保留研究记录Skill；查看/编辑方式待讨论，触发不自动打开历史网页或创建替代UI。"
     },
     {
       "id": "knowledge-explorer-joint-query-and-asset-navigation",
       "input": "在同一实验条件记录里筛选基座和任务，按年份排列命中工作，列出所有本地和在线资料入口，给Obsidian导航预览",
       "expected_skill": "explore-knowledge",
       "must_not_trigger": "build-literature-tree",
-      "must_not_write": true
+      "must_not_write": true,
+      "comment": "保留研究记录Skill；查看/编辑方式待讨论，触发不自动打开历史网页或创建替代UI。"
     },
     {
       "id": "knowledge-explorer-not-source-monitoring",
@@ -332,8 +334,9 @@
     {
       "id": "backlog-not-agent-collaboration",
       "input": "把这个加入待办，标记为等我决策",
-      "expected_skill": "project-backlog",
-      "comment": "待办队列增改 → project-backlog;不是跨 agent 协作或其他项目能力"
+      "expected_skill": null,
+      "comment": "插件开发backlog仅在开发checkout显式使用，不属于已安装科研运行Skill；不能在普通科研目录新建插件开发队列。",
+      "must_not_trigger": "agent-collaboration"
     },
     {
       "id": "analyze-paper-read-code",
@@ -358,8 +361,7 @@
       "id": "project-status-no-plugin-skill",
       "input": "项目现在什么状态",
       "expected_skill": null,
-      "must_not_trigger": "project-backlog",
-      "comment": "review 类 skill 已退场;裸项目状态不应被 project-backlog 吞掉"
+      "comment": "普通项目状态由宿主按项目资料处理；开发backlog已退出运行发现。"
     },
     {
       "id": "code-repo-analysis-not-paper",

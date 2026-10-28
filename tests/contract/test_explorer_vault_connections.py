@@ -49,6 +49,7 @@ def test_browser_vault_connections_preserve_paper_and_draft(tmp_path):
 
     service = VaultConnectionService(environment, Picker())
     server, token = make_server(root, environment=environment, vault_service=service)
+    server.daemon_threads = False
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     screenshot_dir = Path(os.environ.get("SCHOLAR_EXPLORER_SCREENSHOT_DIR", tmp_path / "screenshots"))

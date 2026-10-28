@@ -11,6 +11,8 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
+from tests.contract.explorer_fixture import fixture_server
+
 
 def test_browser_preview_source_links(tmp_path, monkeypatch):
     executable = os.environ.get("SCHOLAR_BROWSER_NODE")
@@ -73,7 +75,7 @@ def test_browser_preview_source_links(tmp_path, monkeypatch):
     monkeypatch.setattr(knowledge_explorer, "subprocess", SimpleNamespace(
         Popen=native_open, DEVNULL=subprocess.DEVNULL,
     ))
-    server, token = knowledge_explorer.make_server(tmp_path, reader_gate=ReaderGate())
+    server, token = fixture_server(tmp_path, reader_gate=ReaderGate())
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:

@@ -12,6 +12,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from tests.contract.explorer_fixture import fixture_server
+
 
 def _comparison_png():
     width, height = 320, 120
@@ -142,7 +144,7 @@ def test_browser_readable_analysis_preview(tmp_path, monkeypatch):
     monkeypatch.setattr(knowledge_explorer, "subprocess", SimpleNamespace(
         Popen=native_open, DEVNULL=subprocess.DEVNULL,
     ))
-    server, token = knowledge_explorer.make_server(tmp_path, reader_gate=ReaderGate())
+    server, token = fixture_server(tmp_path, reader_gate=ReaderGate())
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:

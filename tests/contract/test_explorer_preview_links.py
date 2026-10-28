@@ -7,8 +7,8 @@ import urllib.request
 
 import pytest
 
-from scholar_workflow.adapters.knowledge_explorer import make_server
 from scholar_workflow.knowledge.exploration import ExplorationStore, default_data
+from tests.contract.explorer_fixture import fixture_server as make_server
 
 NATIVE = ("obsidian://zotflow?vault=1111111111111111&type=open-attachment"
           "&libraryID=123&key=BCDE3456&navigation=%7B%22pageIndex%22%3A3%7D")

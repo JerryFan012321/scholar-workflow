@@ -13,8 +13,8 @@ def test_browser_file_roundtrip(tmp_path):
     executable = os.environ.get("SCHOLAR_BROWSER_NODE")
     if not executable or not os.environ.get("NODE_PATH"):
         pytest.skip("Set SCHOLAR_BROWSER_NODE and NODE_PATH for the optional Chrome smoke test")
-    from scholar_workflow.adapters.knowledge_explorer import make_server
     from scholar_workflow.knowledge.exploration import ExplorationStore, default_data
+    from tests.contract.explorer_fixture import fixture_server as make_server
 
     original = b"# Accepted analysis\n\nOriginal paper content.\n"
     (tmp_path / "paper.md").write_bytes(original)

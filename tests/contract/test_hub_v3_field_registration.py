@@ -9,7 +9,6 @@ import threading
 import urllib.error
 import urllib.request
 from datetime import UTC, datetime
-from importlib import resources
 from pathlib import Path
 
 import pytest
@@ -305,14 +304,6 @@ def test_registry_directory_sync_failure_reports_uncertain_without_manifest_roll
     assert (vault / ".scholar-workflow" / "fields.yml").exists()
     assert registry.path.exists()
     assert len(registry.load_document().sources) == 1
-
-
-def test_field_registration_ui_separates_portable_enrollment_and_refresh_failure() -> None:
-    script = resources.files("scholar_workflow.hub.static").joinpath("hub.js").read_text()
-    assert "preview.registration_only" in script
-    assert "source_id: preview.source_id" in script
-    assert "原 manifest 与全部 Field ID 保持不变" in script
-    assert "登记已成功，但列表刷新失败" in script
 
 
 def test_registry_cas_serializes_two_independent_saves(

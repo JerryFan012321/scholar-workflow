@@ -15,6 +15,12 @@ shared project-management contract. Keep child-qualified identities and every
 selected outcome distinct; review only the supplied safe evidence and report
 collection/lifecycle gaps rather than fetching or rewriting records.
 
+This management review reuses the experiment-report format; the project's execution
+skills own its scientific entries and task-specific acceptance conditions. A review
+does not invoke those skills or pull result bytes. For a separate collection request,
+the parent pulls selected human-readable evidence under the management contract;
+model, weights and checkpoint payloads are not local result deliverables.
+
 ## Inputs and operations
 
 - Use the selected project root, Run/Attempt identities, metric artifacts and review
@@ -62,6 +68,7 @@ Load these for this task:
 
 - `${CLAUDE_PLUGIN_ROOT}/references/experiment-review.md` — required report structure and metric evidence rules
 - `${CLAUDE_PLUGIN_ROOT}/references/project-management.md` — when reviewing collected execution-child results
+- `${CLAUDE_PLUGIN_ROOT}/references/project-skills.md` — when distinguishing review from project-specific execution
 - `${CLAUDE_PLUGIN_ROOT}/skills/init-project/references/experiment-records.md` — existing record authority and mutability
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/storage-policy.md`

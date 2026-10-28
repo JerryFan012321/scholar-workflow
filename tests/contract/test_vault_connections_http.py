@@ -30,6 +30,7 @@ def vault_server(tmp_path, monkeypatch):
 
     service = VaultConnectionService(environment, picker=Picker())
     server, token = make_server(root, environment=environment, vault_service=service)
+    server.daemon_threads = False
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     base = f"http://127.0.0.1:{server.server_port}"

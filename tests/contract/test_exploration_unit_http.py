@@ -9,9 +9,9 @@ import urllib.request
 from copy import deepcopy
 from urllib.parse import parse_qs, urlsplit
 
-from scholar_workflow.adapters.knowledge_explorer import make_server
 from scholar_workflow.knowledge.exploration import default_data
 from scholar_workflow.workflows.exploration_references import ExplorationReferenceService
+from tests.contract.explorer_fixture import fixture_server as make_server
 from tests.contract.test_field_paper_units import (
     ALPHA,
     FIELD_A,

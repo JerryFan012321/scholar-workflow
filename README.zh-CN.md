@@ -5,10 +5,10 @@
 论文分析、文献树、入库与实验档案由插件维护；阅读、编辑和执行继续利用 Zotero、Obsidian、
 Notion、cmux 和外部 Codex 的原生能力，不另建工具控制面。
 
-0.49.0新增有限的知识探索界面：编辑可扩展维度、条件化研究记录和带依据的关系，
-查看完整本地／在线资料入口。已有论文正文、Canvas、sidecar和图片保持原样。
-恢复的是知识关系可视化；历史Hub的Codex任务控制仍不继续发展。
-开发、正常安装与人工使用验收分别取证。
+当前源码为0.50.0开发候选（未发布）：保留科研Skill、已认可格式和原生工具薄适配，退役旧Hub网站，停止扩建独立探索网页。
+知识按完整论文／Blog／文档资产单元及明确上下文管理，区分管理、分析、查看与编辑。
+见[资产单元](references/asset-units.md)与[项目Skill分层](references/project-skills.md)。
+多维查看／编辑方式继续讨论，已有记录保留。已安装0.49.0在新版本正常安装前仍是此前行为。
 
 [English](./README.md)
 
@@ -25,28 +25,14 @@ Local API。主题召回由 Local API 全字段/全文 quicksearch 加宿主模�
 可用 [track-research](skills/track-research/README.zh-CN.md) 管理所选研究者博客、机构网页、
 代码发布及模型列表：`research sources list/register` 查询或登记，`scholar-research check` 检查一次，
 `research updates/mark` 阅读并标记动态。首次建立基线，失败保留诊断，选中不等于入库；
-不要求 Hub、源码目录或定时服务，不下载模型权重。本批尚须独立完成发布安装和真实来源验收。
+不要求 Hub、源码目录或定时服务，不下载模型权重。动态跟踪已随0.48.0发布安装，并完成单个RSS来源的安装态功能检查；其他渠道、人工评鉴和入库交接仍分别待验。
 
 ### 内容与项目归属
 
-多维研究定位使用[explore-knowledge](skills/explore-knowledge/README.zh-CN.md)：
-
-```sh
-scholar-workflow knowledge explore --root /path/to/selected/folder
-```
-
-处于cmux时尝试在那里打开，否则使用普通浏览器；终端按Ctrl-C停止。
-界面与CLI共享`.scholar-workflow/exploration.yml`，定义可扩展维度，筛选先匹配同条研究记录，
-条件与结果放在一起，工作间关系保留依据。资料清单包含明确登记的本地／在线入口及缺失诊断。
-`knowledge exploration-export --root /path/to/selected/folder`只输出可读Obsidian导航，
-不修改论文包。本批不自动存档网站正文、不运行定时agent，也不向现有笔记自动插入导航。
-精确文件/查询/命令见[运行契约](references/knowledge-exploration.md)。
-
-左侧“知识库 → 添加 Vault/目录”使用系统选择器。先查看安全阅读、论文引用和插件维护
-三层检查，再“预览必要调整”或“只读连接”；连接保留论文正文、Canvas和图片。
-测试显式使用 `--environment test --state-root /测试状态目录 --test-root /测试Vault`，登记仅含
-测试范围且关闭原生集成；日常默认 personal，可连接明确选择的安全 Vault/子目录。
-详见[接入与环境边界](references/vault-connections.md)。命令可用性与版本以安装帮助为准；人工评鉴另行确认。
+多维研究定位的数据由[explore-knowledge](skills/explore-knowledge/README.zh-CN.md)保留，
+查看与编辑方式继续讨论，不默认启动旧网页。现有`.scholar-workflow/exploration.yml`、
+可扩展维度、条件记录、证据和保存查询不改；显式CLI查询／导出仍可使用。
+导出只向stdout输出可读导航，不修改论文单元。精确数据接口见[运行契约](references/knowledge-exploration.md)。
 
 - **Knowledge System** 以人类可读 Markdown 为正文。论文、重要技术文档和 Blog 是原子资源；
   分析、Canvas 和附件是显式归属的附属产物。新生成的全文分析采用原图的 Abstract、
@@ -221,184 +207,59 @@ scholar-workflow analysis check-bundle /论文目录绝对路径 \
 额外安装系统 Python 依赖，也不打包外部论文。详见[复现契约](skills/init-project/references/reproducibility.md)。
 确定性示例不证明科学论文结论，也不替代人类评鉴。
 
-### 历史研究 Hub（仅兼容）
+### 保留兼容服务，退役旧网站
 
-Hub 前端和内置 Codex 控制面不再是产品发展方向。以下说明用于已有安装的兼容使用，不是项目
-整合或 agent 使用原生 cmux/Codex 的前置条件。本次重构没有关闭已安装服务或 worker。
-旧打开命令是：
+当前源码已移除旧Hub网站的HTML/JS/CSS，`/hub/`和`/hub/assets/*`返回HTTP 410。
+`open-hub`在启动服务、路由终端或打开浏览器前明确拒绝，不自动跳往尚未决定的多维界面。
+已安装0.49.0在新版本正常安装前仍保留旧行为。
 
-```bash
-scholar-workflow open-hub
-```
-
-`open-hub` 会核验已安装构建、启动或安全重启 Scholar Workflow 自己管理的回环服务、发现动态端口并
-打开 Hub。它不需要源码 checkout、`CODE_REPO_ROOT`、固定端口、nonce 或 lease。在 cmux 内运行时，
-当前 workspace 会成为该页面的“默认打开位置”；在 cmux 外运行仍可阅读和执行独立授权的文件操作，
-只有需要 cmux 的动作会提示选择目的地。
-HTTP 服务独立于 cmux 存活。在 cmux 内，`open-hub` 还会开一个不抢焦点的小型终端路由进程来执行
-窗口动作；关闭该 workspace 不应中断 Hub 阅读。
-当前一个 Hub 服务只路由到一个活动 cmux 实例（同实例可有多个工作区）；从另一实例运行
-`open-hub` 会替换窗口路由，旧页面仍可阅读，旧打开位置不再可用于启动窗口，文件权限不受影响。
-
-服务生命周期命令完整且幂等：
+目录、health、PDF及受控原生打开的兼容API保留，已有状态和服务管理边界保持：
 
 ```bash
-scholar-workflow hub start
 scholar-workflow hub status
-scholar-workflow hub restart
 scholar-workflow hub doctor
 scholar-workflow hub stop
 ```
 
-`status` 显示真实 executable、已安装 package 版本与代码 build、协议、PID、动态端口、generation、启动时间
-和日志位置。`stop` 只会停止 discovery 与在线身份握手共同证明属于 Scholar Workflow 的进程；未知
-listener 不会被误杀。
-`hub doctor` 核验受管进程、构建和私有运行文件；`hub-doctor --json` 提供详细 provider/能力诊断。
-provider 或 cmux 路由变慢不会改变服务身份判断。插件 manifest 版本在发布校验中另行核对。任何一次
-手动 `hub restart` 后，都要重新运行 `open-hub`：旧页面仍指向旧动态端口；如需默认窗口目的地，
-应在 cmux 内运行。
+停止／重启只影响经身份核实的自有服务。本次源码删除不自动停止已安装服务、不删除状态。
+论文原生打开见[资料定位契约](skills/find-resource/references/resource-location.md)，
+笔记可使用独立`knowledge open`命令；均无需网站。
 
-页面结构是 `Libraries → Papers / Fields`，以及平级的 `Projects`、`Tools`。不再存在全局
-“已绑定/只读”状态；Vault 写入、项目文档写入、cmux launch、Codex 任务、ZotFlow 批注和 Zotero Local API
-分别报告能力。某个 cmux workspace 关闭时，只禁用路由到它的打开动作。
+显式生成独立的Zotero批注PDF副本仍可使用
+`scholar-workflow zotero snapshot-annotations ATTACHMENT_KEY --output /path/to/copy.pdf`，
+不覆盖原附件、不将副本编辑同步回正式批注。
 
-新增科研领域的具体步骤：
+### 本地Field事务
 
-1. 打开 **Fields → 选择 Vault / 目录**。
-2. 在系统文件选择器中选择一个 Obsidian Vault 或其子目录；浏览器不会收到绝对路径。
-3. 查看零写入预览：候选 Field、入口文档、导航顺序、重名、模板改写、忽略文件、未映射正文和链接变化。
-4. 普通新 Field 只确认要初始化的那一个。如果预览提示旧分析或旧 Hub 链接，网页确认会禁用；
-   应使用下文的本地操作员事务，让登记和迁移一同完成。一个 Source 可以包含多个 Field，
-   每个 Field 自己定义导航分组。
-
-如果所选 Vault 已有便携 Field manifest、但本机尚未登记，预览会改为**登记现有 Source**：明确列出
-将出现的全部已有 Field 与身份；确认只登记本机位置，不修改 manifest 或原文档。
-
-旧 `research_vault_root` 只作为迁移候选，不再是唯一必填知识库。Field 首页同屏显示 manifest 导航和
-所选 Markdown 正文，不再经过文档落地页。
-
-论文卡片直接执行动作：主按钮是**在 Zotero 打开本机 PDF**；确认 ZotFlow 已启用本机 storage 模式后，
-次级动作才允许在 ZotFlow 标注。其他动作包括在所选 cmux workspace 阅读、系统阅读器、查看分析和
-打开批注笔记。本机 PDF 缺失或已变化时拒绝打开，不触发云端补下载。Zotero 仍是批注唯一权威；
-cmux 内的 PDF 是本机只读预览，不是嵌入的 Zotero 阅读器，也不会同步正式批注。新版分析草稿可
-按已核实的 PDF 物理页或现有批注打开独立 Zotero 应用；页级链接不等于自动选中原文句子。
-只有 ZotFlow 可以在 Obsidian SecretStorage 中
-持有 Zotero Web API 密钥，Scholar Workflow 只经 Local API 读取批注，绝不请求该密钥。旧
-`/hub/item` 与 `/open/paper/...` 只保留一版兼容解析，正常 UI 不再产生它们。
-
-展开论文卡片的 **相关文件**，即可查看明确关联的资料笔记、分析 Markdown、Canvas、批注/阅读笔记、
-ZotFlow 来源笔记和 Zotero 子附件。每项显示来源及可用状态：Markdown 点 **正文预览** 在 Hub 阅读，
-点 **在 Obsidian 打开**进入原笔记；Canvas 在 Obsidian 中编辑。缺失文件会显示原因，不按同名猜归属。
-**在 ZotFlow 标注**打开已登记 Vault 内的 Library Reader；**在 cmux 阅读**将原 PDF 放到所选
-workspace 的浏览器中，明确不含 Zotero 数据库批注。动作旁可临时选择打开位置；原生应用不属于 cmux。
-
-若要让 ZotFlow 在桌面端只读本机 PDF：打开 Obsidian 设置 → ZotFlow → General → Source Notes →
-Library Source Note，启用 **Use Zotero Storage Directory**，将 **Zotero Storage Path** 设为 Zotero
-数据目录下 `storage` 的绝对路径（不是上一层，也不要写 `~`）。对已导入附件，找不到本机文件会报错，
-不会退回云端 PDF 下载。元数据/批注的 Web API 同步与 PDF 文件同步是两回事；保留前者不要求购买
-Zotero 云端附件空间。Hub 只有在不读取 ZotFlow 密钥的前提下证明本机模式时才启用 ZotFlow 按钮。
-
-要手动进入 ZotFlow 的 Zotero **Library Reader**，在 Obsidian 按 `⌘P`，运行
-`ZotFlow: Open Zotero Tree View`，搜索论文标题、展开条目，再双击 PDF 附件；也可以运行
-`ZotFlow: Search Zotero Library`，搜索标题并对附件结果按回车。做 Zotero 往返验收时，
-不要从 Vault 文件列表打开 PDF：那是 Local Reader，批注只写旁边的 `.zf.json`。
-先在 Obsidian 设置 → ZotFlow → Sync 确认目标库为 `Bidirectional`；标注后在 ZotFlow
-Activity Center → Sync 运行同步，并等待 Tasks 完成。Tree View 找不到论文时先运行
-`Sync All`。Zotero Web API 密钥只在 ZotFlow 设置里处理，不交给 Scholar Workflow。
-详见 [ZotFlow 阅读器说明](https://zotflow.peterduan.dev/zh/reading-and-annotating/)和
-[快速开始](https://zotflow.peterduan.dev/zh/getting-started/)。
-
-Notion 等 Web 工具通过预登记 URL recipe 在所选 cmux browser surface 打开；CLI/Codex recipe 在那里
-打开 terminal surface，但 cwd 只能来自登记的项目、Vault 或文件夹 Target。浏览器不能提交 URL、命令、
-cwd、model、sandbox、permission、环境变量或原始 Codex 配置。项目文件操作仍只接受已注册
-`project_id + docs 相对路径`，拒绝覆盖和 symlink 逃逸，删除进入可恢复 trash，Hub 不执行 Git 写入。
-
-要在 Hub 中运行 Codex 任务，先打开 **Codex 任务 → 配置 Codex**：
-
-1. 查看检测到的安装版本和模型选项。检测不会保存设置或启动任务；未检测到时使用下方 CLI 备用入口。
-2. 勾选允许的已登记目标，或点 **选择文件夹**，在系统选择器中选择工作目录并确认预览。
-   Field 建议目标仅覆盖该 Field 的目录；目录授权与 cmux 打开位置无关。
-3. 选择模型和读写策略后确认。只读任务选择 **只读**；需要写工作目录的任务选择 **工作区写入**。
-4. 返回任务区。当前 Project/Field 或唯一论文归属会建议对应目标，唯一适用任务自动选中；
-   有歧义时手动选择，无目标时先登记。当前论文/文档的已核验身份作为上下文定位符传入，
-   不会自动把整篇正文注入模型。
-5. 选择 **默认／具体模型**及该模型支持的思考强度，输入不超过 8 KiB 的任务说明。
-   检查任务、目标、模型、强度和打开位置的摘要后启动，在页面查看运行状态与 cmux 终端。
-
-模型选择会保存在服务端，重启或端口变化不丢失。“默认”指已确认的本机 CLI 模型，不是桌面端的
-自动路由。目录列出模型不代表账户一定可调用；实际任务成功才证明。已有线程固定实际模型和强度，
-修改配置须新建或明确 fork，不能在 resume 中静默切换。任务请求不允许自行输入模型、命令或路径。
-
-CLI 备用入口（在运行 Hub 的同一主机上执行）：
+Field内容事务改为本地调用，无需HTTP服务、浏览器token或cmux。新增Field时先输出完整JSON计划，
+把计划保存在所选Source之外：
 
 ```bash
-scholar-workflow hub target list
-scholar-workflow hub target add-source SOURCE_ID --target-id research
-# 或使用已登记的项目：
-scholar-workflow hub target add-project PROJECT_ID --target-id project
-scholar-workflow hub codex configure --executable /absolute/path/to/codex --model YOUR_MODEL --sandbox workspace-write
-scholar-workflow hub codex status
-scholar-workflow hub restart
+scholar-workflow knowledge field-transaction plan --root /path/to/selected-folder --field-root . > REVIEWED.json
+scholar-workflow knowledge field-transaction apply REVIEWED.json --approved-digest sha256:PLAN_DIGEST --external-writers-paused
 ```
 
-`SOURCE_ID` 会显示在 **Fields → 选择 Vault / 目录** 的预览中；`PROJECT_ID` 来自已登记项目的 manifest。
-按实际工作对象选一种 Target 登记方式即可。`configure` 只探测显式指定的可执行文件，并把 model、
-sandbox 保存在服务端策略；Hub 不扫描 `$PATH`。CLI 配置后需 `hub restart`，页面配置确认则即时更新任务入口。
-配置、有效目的地或 worker 能力检查缺失时，会单独说明不可用原因。对于只需阅读的任务，管理员
-也可以选择 `--sandbox read-only`。
+已有Source内的未登记Field可改用`--source-id SOURCE_ID --field-root RELATIVE_ROOT`。
+计划绑定明确选择、候选改动与原文件字节；apply可跨进程重建并核对完整摘要，摘要过期即拒绝。
+仍须交互确认，并先安排外部编辑器／同步程序停写。恢复快照不是真正经过验证的备份。
+原有中断journal可通过`knowledge field-transaction recover SOURCE_ID FIELD_ID
+--confirm-recovery --external-writers-paused`条件恢复。
 
-常见失败：ZotFlow 按钮不可用时检查已登记 Vault、插件版本和本机 storage 模式；不要改用云端下载。
-cmux 目的地失效时重新选择活跃 workspace，不影响正文阅读。任务没有目标时先登记，不会任取列表
-第一项；模型目录不可用时只提供已确认的本机模型。任务配置变更遇到运行中任务时先等待完成或明确取消。
-
-以上是保留的历史 Hub 兼容入口，不是当前以项目资料为中心的工作流。打开请求被接受
-不等于已目视看到阅读器。无需 Hub 的原生论文打开方式见
-[资料定位契约](skills/find-resource/references/resource-location.md)。
-
-要让其他 PDF 阅读器查看 Zotero 批注，可显式生成一份独立副本：
+受信任的旧分析候选包可做本地只读守恒检查：
 
 ```bash
-scholar-workflow zotero snapshot-annotations ATTACHMENT_KEY --output /path/to/annotated-copy.pdf
+scholar-workflow knowledge field-transaction legacy-preview --root /path/to/selected-folder --field-root . --package-file PROPOSAL.json
 ```
 
-命令生成新 PDF 与哈希收据，不覆盖 Zotero 附件，也不把对副本的编辑同步回 Zotero；无法支持的
-批注类型会明确报错。
-
-已有旧论文链接或旧版分析文档的科研目录，不应先点网页里的旧式「初始化 Field」确认。
-使用操作员的单 Field 事务，把便携 manifest、本机 Source 登记、旧链接改写，以及经审议的
-Markdown/Canvas/sidecar 替换放进同一份计划：
-
-```bash
-scholar-workflow hub field-transaction plan --field-root FIELD_RELATIVE_ROOT
-# 零写入审议 candidate_token、field_id、plan_token、plan_digest、逐文件差异、冲突和未映射文件。
-scholar-workflow hub field-transaction apply PLAN_TOKEN --approved-digest sha256:PLAN_DIGEST --external-writers-paused
-```
-
-`plan` 可打开系统文件选择器。如果直接选择 Field 目录，相对根是 `.`。`apply` 还要求交互确认，
-并由操作员先安排 Obsidian 和同步程序停写；CLI 无法自行证明它们已经停止。服务重启或审阅令牌过期后，
-必须重新生成并审议计划摘要。私有 recovery snapshot **不是**真正经过恢复演练的备份。
-
-要在同一事务中规范旧论文分析，先准备受信任的本地 JSON 候选包：`schema_version`、相对的
-`markdown_path`/`canvas_path`/`sidecar_path`、候选 Analysis IR、渲染后的 Markdown/Canvas bundle，
-以及覆盖旧 Markdown/Canvas 的映射计划。服务端自己读取旧文件；候选包不能包含旧文件字节、绝对路径
-或 Web API 密钥。先做只读机械预览，解决所有 finding 和论文事实疑点。旧分析的公开 stage/apply
-路径目前禁用，直到 Provider 快照和 Field 改动共用一份可恢复 journal；预览不能授权写入 Vault：
-
-```bash
-scholar-workflow hub field-transaction legacy-preview CANDIDATE_TOKEN FIELD_ID --package-file PROPOSAL.json
-```
-
-`legacy-preview` 只读；即便提供正确摘要，`legacy-stage` CLI 仍以依赖错误码 3 退出，HTTP
-返回 503。普通的干净 Field 事务仍可使用，但普通 `plan` 不得绕过受管分析冲突。机械合格不代替
-人对论文事实与 Canvas 版式的验收。已中断事务的 `recover` 仍可用，恢复前须人工安排
-Obsidian/同步器停写；CLI 无法自行验证。
+这不等于stage旧分析；Provider与Field联合legacy-stage仍以依赖错误3拒绝。新增登记不能绕过
+受管内容冲突。旧`hub field-transaction`命令提供迁移提示，已有浏览器候选须重新生成明确本地计划。
 
 旧的链接专用命令只用于**已经登记**且不需要重排分析或 manifest 的 Field：
 
 ```bash
-scholar-workflow hub field-migration plan SOURCE_ID FIELD_ID
-scholar-workflow hub field-migration apply SOURCE_ID FIELD_ID --approved-digest sha256:PLAN_DIGEST --external-writers-paused
-scholar-workflow hub field-migration recover SOURCE_ID FIELD_ID
+scholar-workflow knowledge field-migration plan SOURCE_ID FIELD_ID
+scholar-workflow knowledge field-migration apply SOURCE_ID FIELD_ID --approved-digest sha256:PLAN_DIGEST --external-writers-paused
+scholar-workflow knowledge field-migration recover SOURCE_ID FIELD_ID
 ```
 
 这个 `plan` 完全只读；每个不同的附件 key 都须通过 Zotero Local API 核实为个人库中可读取的 PDF，
@@ -438,7 +299,6 @@ snapshot 不是 verified backup；真正备份仍需要独立介质和恢复演�
 | organize-project | 内部 PROJECT、模块图、资料入口与唯一计划（0.43.0起） |
 | review-experiments | 只读整理与比较选定实验档案（0.43.0起） |
 | config-setup | 初始化、查询和更新插件配置 |
-| project-backlog | 维护本仓库的持久化工作项队列 |
 
 ## 本地科研资产
 
@@ -529,8 +389,8 @@ Obsidian已知Vault、已登记Source和论文归属分别报告。详见[资产
    scholar-workflow config show                                       # 查看生效值
    ```
    这会写 `~/.config/scholar-workflow/config.yml`(只写你指定的键,非全倒默认值)、校验、
-   后续编辑时保留注释。需要时用 `SCHOLAR_WORKFLOW_HOME` 覆盖位置。每个 Vault/目录可从
-   **知识探索 → 知识库 → 添加 Vault/目录**只读接入；完整领域登记使用独立 knowledge 命令；旧 `research_vault_root` 只作为迁移候选。
+   后续编辑时保留注释。需要时用 `SCHOLAR_WORKFLOW_HOME` 覆盖位置。所选Vault/目录的
+   登记使用独立knowledge命令；普通原生阅读无需先登记整个Vault。旧`research_vault_root`仅为迁移候选。
 
 4. **授权 Zotero 写入。** 启动 Zotero 后运行:
    ```bash
@@ -582,9 +442,9 @@ pipx install --force "git+https://github.com/JerryFan012321/scholar-workflow.git
 - **Zotero 10.0.2 实机已跑通:** Local API 已完成 probe、search、collections、持久写授权、
   条目创建、imported PDF 上传、精确 DOI 复用与附件复用。同一 ingest payload 重跑会返回原
   item/attachment，不重复上传。
-- **有限知识界面:** `knowledge explore`提供文件型关系探索，不改论文包，不恢复Codex控制。
-  候选源码检查、正常安装、原生打开与人工便利性仍分别验收。
-- **历史 Hub 仅保留兼容:** 动态服务和旧路由继续受安全边界保护，但不再是内容工作的前置条件。
+- **多维交互待讨论:** 保留文件型研究记录与已认可论文包，旧探索网页不再是推荐工作流；
+  源码检查、正常安装、原生打开与人工便利性仍分别取证。
+- **旧网站已退役，兼容API保留:** 动态服务身份、PDF及原生路由继续受安全边界保护。
   原生工具自行持有配置与生命周期；cmux 只选择打开位置，不授予文件权限。
 - **真实数据继续逐 Field 门禁:** 明确选择已登记 Source/Field，在迁移改写前审议当前 preview；
   其他 Vault/项目保持不动，单个样本验收不批准其他 Field 或整库迁移。

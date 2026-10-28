@@ -39,5 +39,9 @@ Markdown/Mermaid 预览。可选扩展及实际验收见[阅读器契约](../../
 只比较实验使用 review-experiments；创建骨架使用 init-project。现有
 project overview CLI 仍是清单视图，不是丰富 PROJECT 的渲染器。
 
+这些是通用项目管理能力。项目自己的可复用科学操作放在 `.agents/skills/`，引用通用格式，
+不复制模板；整理 PROJECT 不会自动创建或执行任务 Skill，详见
+[项目 Skill 边界](../../references/project-skills.md)。
+
 详见[内部项目文档契约](../../references/project-entry.md)。本功能自0.43.0提供；
 VS Code 原生阅读、导航评鉴与安装及契约检查分开。

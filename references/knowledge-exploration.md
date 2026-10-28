@@ -1,5 +1,11 @@
 # Knowledge exploration
 
+> Interaction status, 2026-10-28: self-built Hub/explorer product work is frozen.
+> Viewing and editing design remains open. Retain the data and supported explicit
+> CLI operations; a Skill invocation does not automatically launch the old page
+> or create a replacement interface. Historical UI descriptions below are not a
+> recommendation or proof of accepted native-tool interaction.
+
 Load [Vault connections](vault-connections.md) for explicit test/personal runtime
 boundaries and **Add Vault/folder**. Read-only host connections are separate from
 research edits; connection and inspection never rewrite paper packages.

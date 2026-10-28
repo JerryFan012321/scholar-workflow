@@ -1,45 +1,64 @@
 # explore-knowledge
 
-Use **Add Vault/folder** for system selection, independent reading/reference/update
-checks, an adjustments preview and explicit read-only host connection. Existing
-paper units keep their contents and format. See the shared
-[connection/environment contract](../../references/vault-connections.md).
-
 Explore research works through editable dimensions, conditions, results and
 evidence-linked relations. This layer references existing paper units without
 changing their prose, Canvas, images or sidecars.
 
-Use **Reference paper units** to select a registered Field and whole paper units.
-All declared assets are referenced together; this does not create a new paper,
-copy its package or save automatically. Multiple conditional records still refer
-to the same unit. Paper asset membership stays read-only in the explorer; maintain
-the owned package through its existing workflow. Validation failures keep the
-form and previous unsaved draft intact.
+The interaction design is pending discussion. The existing webpage is not the
+recommended workflow, and invoking the skill does not open it, create another
+interface or migrate data. A native replacement interface has not been delivered.
+
+## File-backed operations
+
+Select an existing folder and the operation you need. For read-only queries and
+Markdown output, use:
+
+```sh
+scholar-workflow knowledge exploration-query --root /path/to/selected/folder --selection query.yml
+scholar-workflow knowledge exploration-export --root /path/to/selected/folder
+```
+
+Omit `--selection` for the default selection. A missing manifest is an empty
+in-memory model, not implicit file creation. Export prints to stdout; saving an
+additional navigation document is an explicit separate file operation. Keep it
+outside existing paper packages and in the chosen folder so relative links work.
+
+State stays in `.scholar-workflow/exploration.yml`: extensible dimension definitions,
+whole-unit references, joint conditions/results, evidence-linked relations and
+saved views. Queries match one record before grouping by work; they cannot combine
+unrelated conditions merely because they appear in the same work. Author reports,
+local reproduction, independent assessments and analysis remain distinguishable.
+
+For an explicitly selected change, `exploration-init` creates a new manifest and
+`exploration-apply` saves against its current revision. `exploration-import`
+previews actual registered Source/Field paper units, with a separate revision-bound
+apply. Whole units bring their complete declared asset inventory; this does not
+copy or reanalyse them. Generic model saves cannot add a paper identity or change
+its owned assets. Direct file editing keeps the same schema and ownership rules;
+reload after external changes and resolve conflicts without overwriting newer edits.
+
+Readable output keeps positioning, conditions/results, relations and the complete
+declared local/web/native asset links, including missing or unavailable diagnostics.
+The original paper package remains the place to read/edit its Markdown and Canvas
+with existing tools. A model query/export does not launch those tools or demonstrate
+that their links were opened successfully.
+
+Folder connection, test/personal isolation and layered readiness checks retain the
+[connection/environment contract](../../references/vault-connections.md). They are
+separate operations, not an implicit pre-step for every query.
+
+## Historical webpage entry
+
+Only when the existing interface is explicitly requested:
 
 ```sh
 scholar-workflow knowledge explore --root /path/to/selected/folder
 ```
 
-The local interface uses a dynamic loopback port and opens in cmux when available,
-otherwise in a normal browser. Keep the terminal running; Ctrl-C stops it. Use
-`--no-open` to receive the session URL without opening a window.
-
-State lives in `.scholar-workflow/exploration.yml`. Query and Markdown export are
-read-only. Explicit initialization and revision-checked saves write only that
-manifest. Adding a dimension changes the definition rather than a fixed UI enum.
-Conditions and results stay together, and filters cannot join unrelated records
-merely because they belong to the same work.
-
-Select a paper, then choose **Preview** on its declared Markdown asset. Original
-excerpt headings keep their source action visible; expand them to read the full
-quotation and direct-evidence emphasis. Declared local figures appear beside
-their captions. Unsupported or missing images retain a diagnosis; remote images
-are not loaded automatically. The preview is read-only, and **Open in native
-application** remains available for supported assets such as editable Canvas.
-
-The readable export provides work positioning, the complete declared asset list,
-conditions/results and relations for use in Obsidian. It prints to stdout; saving
-an additional navigation document is an explicit separate file operation.
+This retained technical entry uses a dynamic local port and may open a browser or
+cmux surface. Keep its terminal running and stop it with Ctrl-C; `--no-open` reports
+the session URL without opening a window. It is not a requirement for the file-backed
+operations above, nor the product direction for future interaction design.
 
 See the [runtime contract](../../references/knowledge-exploration.md) for exact
 commands, schema, opening behavior and current limits. Development checks do not
