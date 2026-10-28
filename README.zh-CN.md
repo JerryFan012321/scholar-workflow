@@ -5,6 +5,11 @@
 论文分析、文献树、入库与实验档案由插件维护；阅读、编辑和执行继续利用 Zotero、Obsidian、
 Notion、cmux 和外部 Codex 的原生能力，不另建工具控制面。
 
+0.49.0新增有限的知识探索界面：编辑可扩展维度、条件化研究记录和带依据的关系，
+查看完整本地／在线资料入口。已有论文正文、Canvas、sidecar和图片保持原样。
+恢复的是知识关系可视化；历史Hub的Codex任务控制仍不继续发展。
+开发、正常安装与人工使用验收分别取证。
+
 [English](./README.md)
 
 ## 架构
@@ -23,6 +28,25 @@ Local API。主题召回由 Local API 全字段/全文 quicksearch 加宿主模�
 不要求 Hub、源码目录或定时服务，不下载模型权重。本批尚须独立完成发布安装和真实来源验收。
 
 ### 内容与项目归属
+
+多维研究定位使用[explore-knowledge](skills/explore-knowledge/README.zh-CN.md)：
+
+```sh
+scholar-workflow knowledge explore --root /path/to/selected/folder
+```
+
+处于cmux时尝试在那里打开，否则使用普通浏览器；终端按Ctrl-C停止。
+界面与CLI共享`.scholar-workflow/exploration.yml`，定义可扩展维度，筛选先匹配同条研究记录，
+条件与结果放在一起，工作间关系保留依据。资料清单包含明确登记的本地／在线入口及缺失诊断。
+`knowledge exploration-export --root /path/to/selected/folder`只输出可读Obsidian导航，
+不修改论文包。本批不自动存档网站正文、不运行定时agent，也不向现有笔记自动插入导航。
+精确文件/查询/命令见[运行契约](references/knowledge-exploration.md)。
+
+左侧“知识库 → 添加 Vault/目录”使用系统选择器。先查看安全阅读、论文引用和插件维护
+三层检查，再“预览必要调整”或“只读连接”；连接保留论文正文、Canvas和图片。
+测试显式使用 `--environment test --state-root /测试状态目录 --test-root /测试Vault`，登记仅含
+测试范围且关闭原生集成；日常默认 personal，可连接明确选择的安全 Vault/子目录。
+详见[接入与环境边界](references/vault-connections.md)。命令可用性与版本以安装帮助为准；人工评鉴另行确认。
 
 - **Knowledge System** 以人类可读 Markdown 为正文。论文、重要技术文档和 Blog 是原子资源；
   分析、Canvas 和附件是显式归属的附属产物。新生成的全文分析采用原图的 Abstract、
@@ -405,6 +429,7 @@ snapshot 不是 verified backup；真正备份仍需要独立介质和恢复演�
 | export-annotations | 把某篇论文的 Zotero 批注整理成结构化 vault 笔记 |
 | recommend-papers | 每日多源论文 feed + NotebookLM 略读 → 推荐清单 |
 | track-research | 所选博客、机构网页、代码发布及模型列表 → 增量动态 |
+| explore-knowledge | 可扩展多维定位、条件比较、证据关系及完整资产导航 |
 | analyze-paper | 把论文详细分析投影为 Markdown + 可编辑 Canvas 文档对 |
 | manage-assets | 先查已有记录，再登记和复用自有服务器与知识库 |
 | env-setup | 搭建并查阅个人 API-key / SSH 服务器 env-records 台账 |
@@ -504,8 +529,8 @@ Obsidian已知Vault、已登记Source和论文归属分别报告。详见[资产
    scholar-workflow config show                                       # 查看生效值
    ```
    这会写 `~/.config/scholar-workflow/config.yml`(只写你指定的键,非全倒默认值)、校验、
-   后续编辑时保留注释。需要时用 `SCHOLAR_WORKFLOW_HOME` 覆盖位置。每个 Vault/目录从
-   **Hub → Fields → 选择 Vault / 目录**登记；旧 `research_vault_root` 只作为迁移候选。
+   后续编辑时保留注释。需要时用 `SCHOLAR_WORKFLOW_HOME` 覆盖位置。每个 Vault/目录可从
+   **知识探索 → 知识库 → 添加 Vault/目录**只读接入；完整领域登记使用独立 knowledge 命令；旧 `research_vault_root` 只作为迁移候选。
 
 4. **授权 Zotero 写入。** 启动 Zotero 后运行:
    ```bash
@@ -557,6 +582,8 @@ pipx install --force "git+https://github.com/JerryFan012321/scholar-workflow.git
 - **Zotero 10.0.2 实机已跑通:** Local API 已完成 probe、search、collections、持久写授权、
   条目创建、imported PDF 上传、精确 DOI 复用与附件复用。同一 ingest payload 重跑会返回原
   item/attachment，不重复上传。
+- **有限知识界面:** `knowledge explore`提供文件型关系探索，不改论文包，不恢复Codex控制。
+  候选源码检查、正常安装、原生打开与人工便利性仍分别验收。
 - **历史 Hub 仅保留兼容:** 动态服务和旧路由继续受安全边界保护，但不再是内容工作的前置条件。
   原生工具自行持有配置与生命周期；cmux 只选择打开位置，不授予文件权限。
 - **真实数据继续逐 Field 门禁:** 明确选择已登记 Source/Field，在迁移改写前审议当前 preview；

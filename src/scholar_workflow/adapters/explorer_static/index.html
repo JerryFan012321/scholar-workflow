@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Scholar · 知识探索</title>
+  <link rel="stylesheet" href="/explore.css">
+  <script src="/explore.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">S<span>Scholar</span><small>知识探索</small></a>
+    <div id="environment" class="environment-context" aria-label="运行环境"><span id="environment-label" class="environment-badge">正在核对环境</span><span id="environment-root"></span><small id="environment-version"></small></div>
+    <div class="document-state"><span id="status-dot" class="status-dot"></span><span id="status">正在读取知识库</span></div>
+    <div class="header-actions"><button id="reload">重新读取</button><button id="save" class="primary" disabled>保存修改</button></div>
+  </header>
+  <div id="notice" class="notice" role="status" hidden></div>
+  <main class="workspace">
+    <aside class="left-panel">
+      <section class="vault-section" aria-labelledby="vault-heading"><div class="section-heading"><h2 id="vault-heading">知识库</h2><button id="add-vault" class="text-button">添加 Vault/目录</button></div><div id="vault-connections" class="vault-connections"></div><p id="vault-list-state" class="vault-list-state">正在读取已连接目录…</p></section>
+      <div class="panel-title"><h1>研究范围</h1><button id="clear-filter" class="text-button">清除</button></div>
+      <label class="search"><span>搜索标题与说明</span><input id="search" type="search" placeholder="查找工作标题或简短说明…"></label>
+      <div id="filters"></div>
+      <div class="filter-options"><label>排序<select id="sort"><option value="year">发表时间</option><option value="title">标题</option></select></label><label class="check"><input id="descending" type="checkbox" checked>降序</label></div>
+      <label class="check context-option"><input id="context" type="checkbox" checked>保留关系路径的上下文</label>
+      <div class="section-heading"><h2>已保存的视图</h2><button id="save-view" class="text-button">保存当前</button></div>
+      <select id="views" aria-label="已保存的视图"><option value="">选择一个视图…</option></select>
+      <div class="section-heading results-heading"><h2>命中工作 <span id="result-count">0</span></h2><button id="add-work" class="text-button">引用论文单元</button></div>
+      <div id="results" class="results"></div>
+    </aside>
+    <section class="center-panel">
+      <div class="explore-toolbar"><div class="tabs" role="tablist"><button id="graph-tab" class="active" role="tab" aria-selected="true">关系路径</button><button id="table-tab" role="tab" aria-selected="false">条件与结果</button></div><div class="tool-actions"><button id="add-dimension">＋ 维度</button><button id="add-edge">＋ 关系</button><button id="add-record">＋ 研究记录</button></div></div>
+      <div class="view-caption"><span id="caption">箭头表示有依据的关系；时间仅作为排序属性。</span><span id="draft-label" hidden>包含未保存修改</span></div>
+      <div id="graph-view" class="graph-view"><div id="graph" class="graph"></div><div class="legend"><span><i class="legend-hit"></i>命中工作</span><span><i class="legend-context"></i>路径上下文</span><span>点击节点查看资产 · 点击连线说明编辑关系</span></div></div>
+      <div id="table-view" class="table-view" hidden><div id="comparison"></div></div>
+      <div class="center-footer">资料保持单一入口 · 关系与评价可编辑 · 原有论文包保持原样</div>
+    </section>
+    <aside id="details" class="detail-panel"><div class="empty-detail"><span class="empty-symbol">◇</span><h2>从一项论文单元开始</h2><p>选择左侧工作或图中节点，查看研究定位、条件、结果与全部相关资产。</p><button id="first-work" class="primary">引用论文单元</button></div></aside>
+  </main>
+  <dialog id="editor"><form id="editor-form"><div class="dialog-heading"><h2 id="editor-title">编辑</h2><button type="button" id="close-editor" class="icon-button" aria-label="关闭">×</button></div><div id="editor-fields" class="editor-fields"></div><div id="form-error" class="form-error" role="alert" hidden></div><div class="dialog-footer"><span>应用后，使用页面右上角保存到知识库。</span><button type="button" id="cancel-editor">取消</button><button type="submit" class="primary">应用修改</button></div></form></dialog>
+  <dialog id="reload-confirm" aria-labelledby="reload-confirm-title"><div class="dialog-heading"><h2 id="reload-confirm-title">重新读取知识库</h2></div><p class="editor-fields">重新读取会放弃尚未保存的定位和关系修改，论文文件不受影响。是否继续？</p><div class="dialog-footer"><button id="reload-keep">保留修改</button><button id="reload-discard" class="primary">放弃草稿并读取</button></div></dialog>
+  <dialog id="preview"><div class="dialog-heading"><h2 id="preview-title">阅读</h2><button id="close-preview" class="icon-button" aria-label="关闭">×</button></div><div id="preview-body" class="preview-body"></div><div class="dialog-footer"><span>原文只读预览</span><button id="preview-native">在原生应用打开</button></div></dialog>
+  <dialog id="vault-dialog" aria-labelledby="vault-title"><div class="dialog-heading"><h2 id="vault-title">添加 Vault/目录</h2><button id="close-vault" class="icon-button" aria-label="关闭知识库接入">×</button></div><div class="vault-inspection"><p id="vault-state" class="vault-introduction" role="status">请选择需要连接的目录。</p><div id="vault-layers" class="vault-layers"></div><div id="vault-diagnostics"></div><section id="vault-changes" hidden><h3>必要修改预览</h3><p class="form-hint">以下仅为预览。只读连接只登记访问位置，不应用正文、Canvas 或目录格式修改。</p><div id="vault-change-list"></div></section><div id="vault-error" class="vault-error" role="alert" hidden></div></div><div class="dialog-footer"><button id="vault-adjustments" disabled>预览必要调整</button><button id="vault-cancel">取消</button><button id="vault-connect" class="primary" disabled>只读连接</button></div></dialog>
+  <dialog id="vault-documents" aria-labelledby="vault-documents-title"><div class="dialog-heading"><h2 id="vault-documents-title">知识库资料</h2><button id="close-vault-documents" class="icon-button" aria-label="关闭知识库资料">×</button></div><p class="vault-reading-note">只读浏览已连接目录。尚未确认归属的文档保留原样，不能作为正式论文单元引用。</p><div class="vault-reading-layout"><nav id="vault-document-list" aria-label="目录文档"></nav><article id="vault-document-body" class="preview-body" aria-live="polite"><p class="preview-message">选择一份文档阅读。</p></article></div></dialog>
+</body>
+</html>

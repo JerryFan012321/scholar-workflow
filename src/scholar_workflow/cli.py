@@ -18,6 +18,7 @@ import click
 
 from scholar_workflow import __version__
 from scholar_workflow.config import DEFAULT_HOME
+from scholar_workflow.knowledge.exploration_cli import register_commands as _exploration_commands
 from scholar_workflow.research.cli import research
 
 
@@ -3848,7 +3849,10 @@ def assets_server_register(spec: Path, expected_revision: str | None,
 
 @main.group(name="knowledge")
 def knowledge() -> None:
-    """Preview and explicitly register knowledge folders without Hub."""
+    """Register knowledge folders and explore file-backed research relationships."""
+
+
+_exploration_commands(knowledge)
 
 
 @knowledge.command(name="preview")

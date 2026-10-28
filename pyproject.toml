@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scholar-workflow"
-version = "0.48.0"
+version = "0.49.0"
 requires-python = ">=3.11"
 dependencies = [
     "click==8.1.8",
@@ -26,6 +26,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "scholar_workflow.hub.static" = ["*.html", "*.css", "*.js", "*.svg"]
+"scholar_workflow.adapters.explorer_static" = ["*.html", "*.css", "*.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

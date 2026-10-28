@@ -412,6 +412,7 @@ def test_source_qualification_does_not_hide_duplicate_global_owner(paper_unit_co
     payload = _query(corpus)
     alpha = _assert_envelope(payload, status="partial")[SOURCE_A, ALPHA]
     assert alpha["ownership"]["status"] == "conflict"
+    assert alpha["local_read_state"] == "unverified"
     assert {row["source_id"] for row in alpha["ownership"]["owner_candidates"]} == {SOURCE_A, SOURCE_B}
     assert all(row["uri"] is None and row["open_state"] == "ownership_unresolved" for row in alpha["files"])
     assert not any((row["source_id"], row["resource_id"]) == (SOURCE_B, ALPHA)

@@ -2,6 +2,37 @@
   "description": "Skill routing eval — verifies correct skill is triggered for each input type",
   "cases": [
     {
+      "id": "knowledge-explorer-editable-dimensions-and-relations",
+      "input": "打开这个已选知识目录的多维探索界面，新增一个输入模态维度并编辑研究定位和带证据的关系，不改论文正文或Canvas",
+      "expected_skill": "explore-knowledge",
+      "must_not_trigger": "analyze-paper"
+    },
+    {
+      "id": "knowledge-explorer-joint-query-and-asset-navigation",
+      "input": "在同一实验条件记录里筛选基座和任务，按年份排列命中工作，列出所有本地和在线资料入口，给Obsidian导航预览",
+      "expected_skill": "explore-knowledge",
+      "must_not_trigger": "build-literature-tree",
+      "must_not_write": true
+    },
+    {
+      "id": "knowledge-explorer-not-source-monitoring",
+      "input": "关注这个实验室博客并生成最新动态简报，暂时不编辑研究定位或关系",
+      "expected_skill": "track-research",
+      "must_not_trigger": "explore-knowledge"
+    },
+    {
+      "id": "knowledge-explorer-not-paper-analysis",
+      "input": "修订这篇已入库论文的分析正文与完整五分支Canvas，不编辑多维空间",
+      "expected_skill": "analyze-paper",
+      "must_not_trigger": "explore-knowledge"
+    },
+    {
+      "id": "knowledge-explorer-not-page-ingest",
+      "input": "把简报中我选中的这篇Blog正式加入指定知识库，不建立关系图",
+      "expected_skill": "ingest-resource",
+      "must_not_trigger": "explore-knowledge"
+    },
+    {
       "id": "research-channels-incremental-tracking",
       "input": "关注这个实验室博客和公司的模型发布渠道，登记后检查新增和旧页面变化；不要自动入库或创建定时任务",
       "expected_skill": "track-research",

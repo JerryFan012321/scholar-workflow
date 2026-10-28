@@ -1,5 +1,14 @@
 # Eval Loop
 
+## Temporary test roots inside a Git-managed Vault
+
+When `pytest --basetemp` is inside a Git-managed test Vault, set
+`GIT_CEILING_DIRECTORIES` to that same absolute basetemp for the entire test
+process. Project initialization/replay fixtures must not discover or commit to
+the parent Vault repository. Preserve the real product's independent-Git-root
+checks; do not relax them to accommodate a test location. Keep test state,
+generated inputs and evidence within the selected test Vault.
+
 How skills are tested and pinned. Development-time doc — never loaded at runtime.
 
 ## What evals are here

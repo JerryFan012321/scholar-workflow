@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "scholar-workflow",
-      "description": "Human-first scholarly knowledge, reproducible research projects, and a typed local Hub control plane for Zotero, Obsidian, Codex, and cmux.",
+      "description": "Project-centered research context, readable knowledge and reproducible experiment records using Zotero, Obsidian, Notion and native tools.",
       "source": {
         "source": "github",
         "repo": "JerryFan012321/scholar-workflow",

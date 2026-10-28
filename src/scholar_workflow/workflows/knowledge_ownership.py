@@ -216,6 +216,7 @@ def _placements(
 def _resolve_objects(
     wanted: set[str], registry_path: Path, *, observation: dict | None = None,
     field_selection: tuple[str, str] | None = None, inventory: dict | None = None,
+    root_validator=None,
 ) -> tuple[dict[str, KnowledgeOwnershipResolution], set[str]]:
     """Observe declared owners globally; a caller's selection is not a placement."""
     if not wanted and field_selection is None:
@@ -240,6 +241,13 @@ def _resolve_objects(
     except (OSError, ValueError, RecursionError, FieldRegistryError):
         issue(None, "registry_unavailable")
         document = KnowledgeSourceRegistryDocument()
+
+    # Validate the exact parsed registration set before touching any Source.
+    # A prior HTTP/selector check cannot authorize a later registry replacement.
+    if root_validator is not None:
+        for folder in document.folders:
+            if folder.enabled:
+                root_validator(folder.root)
 
     for source in document.sources:
         folder = next(row for row in document.folders if row.folder_id == source.folder_id)

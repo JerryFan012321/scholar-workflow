@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ast
 import importlib
+import os
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,7 @@ SOURCE_ROOT = Path(__file__).resolve().parents[2] / "src" / "scholar_workflow"
 LEGACY_MODULES = (
     ("hub.fields", "knowledge.fields", "FieldService", "_safe_relative"),
     ("hub.models", "knowledge.catalog_models", "HubCatalog", "_ensure_unique"),
+    ("hub.zotflow", "adapters.zotflow", "ZotFlowReaderAdapter", "_version_tuple"),
     (
         "hub.obsidian_contract",
         "knowledge.obsidian_contract",
@@ -119,3 +121,42 @@ def test_native_content_callers_use_the_knowledge_owner() -> None:
     for directory in ("analysis", "workflows", "adapters"):
         for path in (SOURCE_ROOT / directory).glob("*.py"):
             assert not (_imports(path) & moved_paths), path.relative_to(SOURCE_ROOT)
+
+
+@pytest.mark.parametrize("relative", ("zotflow.py", "process_environment.py"))
+def test_shared_native_adapters_do_not_import_hub(relative: str) -> None:
+    imported = _imports(SOURCE_ROOT / "adapters" / relative)
+    assert not any(name == "scholar_workflow.hub" or name.startswith("scholar_workflow.hub.")
+                   for name in imported)
+
+
+def test_legacy_zotflow_private_monkeypatch_targets_canonical_namespace(monkeypatch) -> None:
+    legacy = importlib.import_module("scholar_workflow.hub.zotflow")
+    canonical = importlib.import_module("scholar_workflow.adapters.zotflow")
+    seen = []
+
+    def observe(value):
+        seen.append(value)
+        return (value,)
+
+    monkeypatch.setattr(legacy, "_prefix_parts", observe)
+    canonical.validate_writer_namespaces(zotflow_prefix="source-notes", better_notes_prefix="better",
+                                         scholar_prefix="analyses")
+    assert seen == ["source-notes", "better", "analyses"]
+
+
+def test_cmux_reexports_same_shared_minimal_environment(monkeypatch) -> None:
+    legacy = importlib.import_module("scholar_workflow.hub.cmux")
+    canonical = importlib.import_module("scholar_workflow.adapters.process_environment")
+    assert legacy.minimal_child_environment is canonical.minimal_child_environment
+    assert legacy._BASE_CHILD_ENV_KEYS is canonical._BASE_CHILD_ENV_KEYS
+    assert legacy._CMUX_CHILD_ENV_KEYS is canonical._CMUX_CHILD_ENV_KEYS
+    monkeypatch.setenv("CMUX_WORKSPACE_ID", "synthetic-workspace")
+    monkeypatch.setenv("CMUX_SOCKET_PATH", "/synthetic/socket")
+    monkeypatch.setenv("SCHOLAR_TEST_SECRET", "do-not-inherit")
+    expected = {key: os.environ[key] for key in ("HOME", "PATH", "TMPDIR", "LANG", "LC_ALL")
+                if key in os.environ}
+    assert canonical.minimal_child_environment() == expected
+    assert legacy.minimal_child_environment(include_cmux=True) == {
+        **expected, "CMUX_WORKSPACE_ID": "synthetic-workspace", "CMUX_SOCKET_PATH": "/synthetic/socket",
+    }

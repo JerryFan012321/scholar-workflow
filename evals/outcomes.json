@@ -2,6 +2,11 @@
   "description": "Outcome eval linked to planning/GOALS.md; lifecycle marks retired Hub product gates and compatibility-only cases without changing their historical status. New project-centered cases remain pending until independently approved testing and human evaluation.",
   "cases": [
     {
+      "id": "knowledge-explorer-edit-query-navigation",
+      "description": "G12/G17/G20/INV64：在一个独立test对象中，正常安装版可添加自定义维度（不强制第五维）、填写单多值及work/record作用域、同条record联合筛选并保存查询；B1/T1与B2/T2不拼成B1/T2。论文单元为最小独立对象，从已登记provider整包引用；多个定位/评价记录仍只一个单元，不自由创建标题卡片、拆包或重分配身份。条件结果和作者/独立/本地/分析来源同处，关系有依据且可有分支，时间不冒充继承，邻接context不算命中；按明确可排序单值属性排列，未知不当零值。两端列出同一完整明确资产及缺失/外链未核验状态；Markdown导出只stdout，原论文Markdown/Canvas/sidecar/原文/图片字节不变。外部修改后请求重读，过期revision拒绝覆盖。0.49.0候选开发中的核心/CLI/HTTP/UI与文档规范不代表已正常安装、原生打开、双端便利性或人工评鉴；网页快照、跟踪入库桥接、定时agent及自动写回Obsidian未由本项冒称完成。",
+      "status": "pending"
+    },
+    {
       "id": "research-resource-incremental-tracking",
       "description": "G19/INV63：正常安装版Skill在独立test对象登记博客、机构发布渠道和模型列表，验证首次基线、重复、新增、修订、304、失败恢复、分页拒绝及停用。动态有实际时间/原文链接和可读处置，关注/发现/选中/归档分离，不改论文Canvas。合成、安装、受控实际来源、新对话一次调用和人工阅读分别取证；模型档案、选中归档与明确调度的完整方向不缩小。0.48.0正常发布安装后独立test单RSS通过53首次可见、重复not_modified/0事件和1已选读回，表格与原生显示已核；首次stdout截断保留，完整后续读回另存。人工、其他渠道及完整方向仍pending，见planning/0.48.0-release.md。",
       "status": "pending"

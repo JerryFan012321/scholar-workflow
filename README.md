@@ -6,6 +6,21 @@ in its existing tools. It maintains readable Markdown/Canvas analyses, literatur
 ingestion and reproducible project records. Obsidian, Zotero, Notion, cmux and external Codex keep
 their native reading, editing and execution interfaces.
 
+Version 0.49.0 adds a focused knowledge explorer: edit extensible dimensions,
+condition-specific research records and evidence-linked relationships, and navigate
+all declared local/web assets. Existing paper prose, Canvas, sidecars and images
+are unchanged. This restores a limited knowledge interface without restoring the
+legacy Hub's Codex task control. Development, installation and human acceptance
+remain separate.
+
+The **Knowledge libraries → Add Vault/folder** uses the system picker,
+separate reading/reference/update readiness checks and an adjustments preview.
+Explicit read-only connection changes only the selected environment's host registry.
+Personal mode accepts selected safe Vaults; test mode requires separate state and
+allowed roots and disables ambient native integrations. See
+[Vault connections](references/vault-connections.md). Installed availability remains
+subject to actual command help. Installation and human assessment require their own checks.
+
 [中文文档](./README.zh-CN.md)
 
 ## Architecture
@@ -24,6 +39,24 @@ Destructive actions still require your approval. **Obsidian** holds knowledge no
 derived indexes; **Notion** holds an optional cross-device projection.
 
 ### Content and project ownership
+
+For multidimensional research positioning, use
+[explore-knowledge](skills/explore-knowledge/README.md):
+
+```sh
+scholar-workflow knowledge explore --root /path/to/selected/folder
+```
+
+The local page opens in cmux when available or a normal browser; Ctrl-C in its
+terminal stops it. It shares `.scholar-workflow/exploration.yml` with the CLI.
+Add dimensions through definitions, combine filters within a joint research record,
+keep conditions/results together and retain explicit evidence for relationships.
+The complete declared asset list keeps missing-file diagnostics and external
+links. `knowledge exploration-export --root /path/to/selected/folder` prints
+readable Obsidian navigation to stdout without changing a paper unit. The first
+batch does not create website snapshots, run an agent scheduler or automatically
+insert navigation into existing notes. See the
+[schema, query and command contract](references/knowledge-exploration.md).
 
 For non-paper updates, use [track-research](skills/track-research/README.md):
 `research sources list/register` manages selected blogs, institutional pages,
@@ -493,6 +526,7 @@ flows instead of treating a compatibility response as write authority.
 | export-annotations | Turn a paper's Zotero annotations into a structured vault note |
 | recommend-papers | Daily multi-source paper feed + NotebookLM skim → Reading Report |
 | track-research | Selected blogs, institutional pages, releases and model lists → incremental updates |
+| explore-knowledge | Editable dimensions, joint-condition research comparisons, evidence relations and complete asset navigation |
 | analyze-paper | Project detailed paper analysis into paired Markdown + editable Canvas |
 | manage-assets | Query, register and reuse owned servers and knowledge libraries |
 | env-setup | Scaffold — and consult — a personal API-key / SSH-server env-records ledger |
@@ -660,6 +694,10 @@ The plugin is in active `0.x` development. What's solid vs. still settling:
   listing, remembered write authorization, item creation, imported-PDF upload, exact DOI
   reuse, and attachment reuse. The same ingest payload returns the original item and
   attachment without re-uploading.
+- **Focused knowledge interface:** `knowledge explore` adds file-backed relationship
+  exploration; it does not rewrite paper packages or restore Codex task control.
+  Candidate source checks, normal installation and native/human usability remain
+  separate results.
 - **Legacy Hub is compatibility-only:** its dynamic service and historical routing remain
   protected, but it is not a prerequisite for current content workflows. Native tools retain
   their own configuration and lifecycle; cmux selects an opening location, not file permission.
