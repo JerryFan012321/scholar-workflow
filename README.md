@@ -46,6 +46,12 @@ evidence and saved queries remain intact. Explicit CLI query/export operations
 remain available; export writes readable navigation to stdout only and does not
 change paper units. See the [data contract](references/knowledge-exploration.md).
 
+The unpublished0.50.0 candidate adds complete registered paper, Blog and technical
+document references. `knowledge list --asset-units --source-id SOURCE --field-id FIELD --language en`
+lists their members and availability; `--paper-units` stays paper-only. New references
+use registered import. Unqualified legacy rows remain readable and unverified,
+not silently adopted. The installed0.49.0 does not have this option.
+
 For non-paper updates, use [track-research](skills/track-research/README.md):
 `research sources list/register` manages selected blogs, institutional pages,
 release repositories and model lists; `scholar-research check` observes them once;

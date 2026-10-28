@@ -183,7 +183,7 @@ from scholar_workflow.workflows import exploration_references
 ZoteroLocalAdapter.__init__ = forbidden
 KnowledgeSourceRegistry.__init__ = forbidden
 exploration_references.ExplorationReferenceService.__init__ = forbidden
-exploration_references.field_paper_units = forbidden
+exploration_references.field_asset_units = forbidden
 exploration_references.include_resource_links = forbidden
 exploration_readers.ExplorationReaderGate.__init__ = forbidden
 

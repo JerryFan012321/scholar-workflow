@@ -115,12 +115,12 @@ def test_live_reading_service_uses_actual_inventory_and_rechecks_changes(paper_u
 
     corpus = paper_unit_corpus
     pending_inventory(corpus)
-    original = module.field_paper_units
+    original = module.field_asset_units
 
     def actual_inventory(path, **kwargs):
         return original(path, **kwargs, reader_config_path=corpus.reader_config)
 
-    monkeypatch.setattr(module, "field_paper_units", actual_inventory)
+    monkeypatch.setattr(module, "field_asset_units", actual_inventory)
     service = module.ExplorationReferenceService(corpus.scope.registry.path)
     from tests.contract.test_field_paper_units import FIELD_A
     result = service.reading_snapshot(corpus.scope.root, SOURCE_A, FIELD_A)

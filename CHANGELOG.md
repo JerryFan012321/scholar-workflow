@@ -7,6 +7,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **knowledge asset references:** project registered paper, Blog and technical
+  document owners through one complete asset inventory, preserving real kinds,
+  source/member bytes and paper-only compatibility views. Reuse registered import
+  for new references; protect qualified identity/membership across CLI and retained
+  HTTP writes. Keep unqualified legacy rows readable and explicitly unverified,
+  without silently adopting them or extending their relationships. No new registry,
+  UI, content migration or unsupported-type registration is introduced.
+  Add the read-only `knowledge list --asset-units` entry and derive explicitly
+  registered offline source links without external probes in test mode.
+
 - **experiment result delivery:** add an editable include/defer selection and a
   compatible schema-2 collection receipt. Preserve original execution records and
   declare omitted source payloads without reading or verifying their bytes; refuse

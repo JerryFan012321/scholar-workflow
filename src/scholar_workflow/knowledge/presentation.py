@@ -55,7 +55,18 @@ def references_markdown(references: list[dict], *, language: str) -> list[str]:
 
 def paper_units_markdown(payload: dict, *, language: str) -> str:
     """Render local titles and observed file states without claiming reader success."""
+    return _units_markdown(payload, language=language, unit_key="paper_units")
+
+
+def asset_units_markdown(payload: dict, *, language: str) -> str:
+    """Render complete registered Knowledge units with their real resource kinds."""
+    return _units_markdown(payload, language=language, unit_key="asset_units")
+
+
+def _units_markdown(payload: dict, *, language: str, unit_key: str) -> str:
     zh = language == "zh"
+    whole = unit_key == "asset_units"
+    material = ("知识资料" if zh else "Knowledge material") if whole else ("论文资料" if zh else "Paper material")
 
     def cell(value: str) -> str:
         return _text(" ".join(value.splitlines()))
@@ -75,7 +86,7 @@ def paper_units_markdown(payload: dict, *, language: str) -> str:
 
     def file_entry(row: dict) -> str:
         title_value = row["title"]
-        if row["kind"] not in {"paper", "primary"} and title_value == row["object_id"]:
+        if row["kind"] not in {"paper", "primary", "blog_post", "technical_document"} and title_value == row["object_id"]:
             roles = ({"analysis": "论文分析", "analysis_markdown": "论文分析",
                       "analysis_canvas": "解析树", "reading_note": "阅读笔记",
                       "annotations": "批注", "attachment": "附件", "analysis_sidecar": "分析附属文件"}
@@ -98,17 +109,21 @@ def paper_units_markdown(payload: dict, *, language: str) -> str:
         rows = [file_entry(row) for row in unit["files"] if row["kind"] in kinds]
         return "<br>".join(rows) if rows else ("未声明" if zh else "Undeclared")
 
-    lines = [f"# {cell(payload['field_title'])} — {'论文资料' if zh else 'Paper material'}", "",
-             (("导航部分可用。" if payload["status"] == "partial" else "已列出所选领域的论文资料。")
+    lines = [f"# {cell(payload['field_title'])} — {material}", "",
+             (("导航部分可用。" if payload["status"] == "partial" else f"已列出所选领域的{material}。")
               if zh else ("Navigation is partially available." if payload["status"] == "partial" else
-                          "Declared paper material for the selected Field is listed below.")), "",
-             ("标题取自已有本地声明。链接仅是原生打开候选；本次未打开应用，也未验收论文分析。" if zh else
-              "Titles come from existing local declarations. Links are native dispatch candidates; "
-              "no application was opened and paper analyses were not assessed."), "",
-             ("| 论文 | 所属领域 | 本领域用途 | 资料 | 分析 | Canvas | 笔记 | 状态 |" if zh else
-              "| Paper | Owning Field | Purpose in this Field | Material | Analysis | Canvas | Notes | State |"),
+                          f"Declared {material.lower()} for the selected Field is listed below.")), "",
+             (("标题取自已有本地声明。链接仅是原生打开候选；本次未打开应用或评鉴内容。" if whole else
+               "标题取自已有本地声明。链接仅是原生打开候选；本次未打开应用，也未验收论文分析。") if zh else
+              ("Titles come from existing local declarations. Links are native dispatch candidates; "
+               + ("no application was opened or content assessed." if whole else
+                  "no application was opened and paper analyses were not assessed."))), "",
+             (("| 知识单元 | 所属领域 | 本领域用途 | 资料 | 分析 | Canvas | 笔记 | 状态 |" if whole else
+               "| 论文 | 所属领域 | 本领域用途 | 资料 | 分析 | Canvas | 笔记 | 状态 |") if zh else
+              ("| Knowledge unit | Owning Field | Purpose in this Field | Material | Analysis | Canvas | Notes | State |" if whole else
+               "| Paper | Owning Field | Purpose in this Field | Material | Analysis | Canvas | Notes | State |")),
              "| --- | --- | --- | --- | --- | --- | --- | --- |"]
-    for unit in payload["paper_units"]:
+    for unit in payload[unit_key]:
         purposes = (["本领域自有资料" if zh else "Owned by this Field"]
                     if "owned" in unit["selected_by"] else [])
         purposes.extend(cell(purpose) for purpose in unit["purposes"])
@@ -117,28 +132,43 @@ def paper_units_markdown(payload: dict, *, language: str) -> str:
                        if row["open_state"] not in {"ready", "unsupported_type"}}
         if unavailable:
             state += ("；" if zh else "; ") + ("部分资料不可打开" if zh else "Some files unavailable")
-        columns = [cell(unit["title"]), cell(unit["field_title"]), "<br>".join(purposes),
-                   files_cell(unit, {"paper", "primary"}), files_cell(unit, {"analysis", "analysis_markdown"}),
+        title = cell(unit["title"])
+        if whole:
+            kinds = ({"paper": "论文", "blog_post": "Blog／网页", "technical_document": "技术文档"} if zh else
+                     {"paper": "Paper", "blog_post": "Blog / webpage", "technical_document": "Technical document"})
+            title += f" ({kinds[unit['resource_kind']]})"
+        columns = [title, cell(unit["field_title"]), "<br>".join(purposes),
+                   files_cell(unit, {"paper", "primary", "blog_post", "technical_document"}), files_cell(unit, {"analysis", "analysis_markdown"}),
                    files_cell(unit, {"analysis_canvas"}),
                    files_cell(unit, {"reading_note", "annotations"}), state]
         lines.append("| " + " | ".join(columns) + " |")
-    if not payload["paper_units"]:
-        lines += ["", "所选领域没有已声明或已定位的论文资料。" if zh else
-                  "The selected Field has no declared or resolved paper material."]
-    grouped_kinds = {"paper", "primary", "analysis", "analysis_markdown", "analysis_canvas",
+    if not payload[unit_key]:
+        lines += ["", f"所选领域没有已声明或已定位的{material}。" if zh else
+                  f"The selected Field has no declared or resolved {material.lower()}."]
+    grouped_kinds = {"paper", "primary", "blog_post", "technical_document", "analysis", "analysis_markdown", "analysis_canvas",
                      "reading_note", "annotations"}
-    other = [(unit, row) for unit in payload["paper_units"] for row in unit["files"]
+    other = [(unit, row) for unit in payload[unit_key] for row in unit["files"]
              if row["kind"] not in grouped_kinds]
     if other:
         lines += ["", "## 其他附件" if zh else "## Other attachments", ""]
         for unit, row in other:
             lines.append(f"- {cell(unit['title'])}：{file_entry(row)}" if zh else
                          f"- {cell(unit['title'])}: {file_entry(row)}")
+    source_links = [(unit, row) for unit in payload[unit_key] for row in unit.get("resource_links", [])]
+    if whole and source_links:
+        lines += ["", "## 原文与在线资源" if zh else "## Original and online resources", ""]
+        for unit, row in source_links:
+            uri = quote(row["uri"], safe=":/?=&%#")
+            lines.append(f"- {cell(unit['title'])}: [{cell(row['title'])}](<{uri}>)")
+        lines += ["", "入口来自已登记的明确来源；本次未访问网页或核验原生阅读器。" if zh else
+                  "Links come from explicit registered sources; webpages and native readers were not checked."]
     reason_labels = ({"reference_target_not_paper": "目标不是论文资料",
+                      "reference_target_not_atomic_resource": "目标不是独立知识资料",
                       "reference_ownership_not_found": "未找到目标归属",
                       "reference_ownership_conflict": "目标归属冲突",
                       "reference_ownership_incomplete": "目标归属核验不完整"} if zh else
                      {"reference_target_not_paper": "Target is not paper material",
+                      "reference_target_not_atomic_resource": "Target is not an atomic knowledge resource",
                       "reference_ownership_not_found": "Target owner not found",
                       "reference_ownership_conflict": "Target ownership conflict",
                       "reference_ownership_incomplete": "Target ownership incomplete"})

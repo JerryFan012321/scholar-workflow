@@ -1,4 +1,4 @@
-"""Reference complete, explicitly registered paper units without saving state."""
+"""Reference complete, explicitly registered knowledge units without saving state."""
 
 from __future__ import annotations
 
@@ -10,14 +10,19 @@ from pathlib import Path
 
 from scholar_workflow.config import DEFAULT_HOME
 from scholar_workflow.knowledge.exploration import ExplorationError
-from scholar_workflow.knowledge.exploration_import import import_paper_units
+from scholar_workflow.knowledge.exploration_import import import_asset_units
 from scholar_workflow.knowledge.fields import (
     FieldRegistryError,
     FieldService,
     KnowledgeSourceRegistry,
 )
-from scholar_workflow.workflows.exploration_assets import include_resource_links, resource_links
-from scholar_workflow.workflows.field_paper_units import field_paper_units
+from scholar_workflow.workflows.exploration_assets import (
+    declared_unit_links as _offline_links,
+)
+from scholar_workflow.workflows.exploration_assets import (
+    include_resource_links,
+)
+from scholar_workflow.workflows.field_paper_units import field_asset_units
 
 
 def _text(value, name: str) -> str:
@@ -39,36 +44,15 @@ def _source_roots(document) -> dict:
             if row.enabled and "read" in row.capabilities and row.folder_id in folders}
 
 
-def _offline_links(unit: dict) -> dict:
-    """Retain pre-enriched references, otherwise derive registered offline links."""
-    result = deepcopy(unit)
-    if "resource_links" not in result:
-        resource = result.get("catalog_resource")
-        if isinstance(resource, dict):
-            if resource.get("resource_id") != result["resource_id"]:
-                raise ExplorationError("Provider resource identity changed; reload.", 5)
-            resolved = resource_links(resource)
-            result["resource_links"] = resolved["links"]
-            result["resource_notes"] = resolved["notes"]
-        else:
-            result["resource_links"] = []
-            result["resource_notes"] = ["原文来源记录缺失；网页与 Zotero 入口尚未核实。"]
-    if not isinstance(result["resource_links"], list):
-        raise ExplorationError("Provider resource links must be a list")
-    notes = result.get("resource_notes", [])
-    if not isinstance(notes, list) or any(not isinstance(note, str) for note in notes):
-        raise ExplorationError("Provider resource diagnostics must be text entries")
-    return result
-
 
 def _unit_diagnostics(unit: dict) -> list[str]:
     notes = list(unit.get("resource_notes", []))
     ownership = unit.get("ownership")
     if not isinstance(ownership, dict) or ownership.get("status") != "resolved":
-        notes.append("论文单元归属尚未解析或存在冲突，暂不能引用。")
+        notes.append("知识单元归属尚未解析或存在冲突，暂不能引用。")
     files = unit["files"]
     if not files:
-        notes.append("论文单元没有已声明资产，清单尚不完整。")
+        notes.append("知识单元没有已声明资产，清单尚不完整。")
     for row in files:
         if not isinstance(row, dict):
             raise ExplorationError("Declared paper files must be objects")
@@ -158,17 +142,17 @@ class ExplorationReferenceService:
         options = {"resolve_reader": False} if not self.resolve_reader else {}
         if self.root_validator is not None:
             options["root_validator"] = self.root_validator
-        payload = field_paper_units(self.registry_path, source_id=source_id, field_id=field_id,
+        payload = field_asset_units(self.registry_path, source_id=source_id, field_id=field_id,
                                     include_resource_links=True, **options)
         if (not isinstance(payload, dict) or type(payload.get("schema_version")) is not int
                 or payload["schema_version"] != 1
-                or not isinstance(payload.get("paper_units"), list)):
-            raise ExplorationError("Expected a current paper-unit inventory")
+                or not isinstance(payload.get("asset_units"), list)):
+            raise ExplorationError("Expected a current asset-unit inventory")
         if payload.get("source_id") != source_id or payload.get("field_id") != field_id:
             raise ExplorationError("Provider Field selection changed; reload.", 5)
         result = deepcopy(payload)
         units, seen = [], set()
-        for unit in result["paper_units"]:
+        for unit in result["asset_units"]:
             if not isinstance(unit, dict):
                 raise ExplorationError("Paper units must be objects")
             identity = (_text(unit.get("source_id"), "unit source_id"),
@@ -180,7 +164,7 @@ class ExplorationReferenceService:
             if not isinstance(unit.get("files"), list):
                 raise ExplorationError("A paper unit must retain its complete declared file list")
             units.append(_offline_links(unit))
-        result["paper_units"] = units
+        result["asset_units"] = units
         _revision(registry, before)
         return registry, before, roots, result
 
@@ -191,7 +175,7 @@ class ExplorationReferenceService:
             units = [{"entity_ref": {"source_id": row["source_id"], "object_id": row["resource_id"]},
                       "title": row["title"],
                       "asset_count": len(row["files"]) + len(row["resource_links"]),
-                      "diagnostics": _unit_diagnostics(row)} for row in payload["paper_units"]]
+                      "diagnostics": _unit_diagnostics(row)} for row in payload["asset_units"]]
             diagnostics = []
             if payload.get("unresolved_references"):
                 diagnostics.append("领域存在未解析的资源引用，请先处理归属问题。")
@@ -206,17 +190,17 @@ class ExplorationReferenceService:
 
     def reading_snapshot(self, root, source_id: str, field_id: str) -> dict:
         """Read only selected Source-owned packages; never authorize an import."""
-        from scholar_workflow.knowledge.exploration_import import preview_paper_units
+        from scholar_workflow.knowledge.exploration_import import preview_asset_units
 
         registry, before, roots, payload = self._inventory(source_id, field_id)
         # Cross-Field references require their own verified ownership operation.
-        payload["paper_units"] = [unit for unit in payload["paper_units"]
+        payload["asset_units"] = [unit for unit in payload["asset_units"]
                                   if unit["source_id"] == source_id
                                   and "owned" in unit.get("selected_by", [])]
-        if not payload["paper_units"]:
+        if not payload["asset_units"]:
             raise ExplorationError("The selected Field has no declared owned paper units")
-        data = preview_paper_units(root, payload, source_roots=roots)
-        diagnostics = ["只读浏览现有论文包；不会保存定位或改写原文件。"]
+        data = preview_asset_units(root, payload, source_roots=roots)
+        diagnostics = ["只读浏览现有知识资料包；不会保存定位或改写原文件。"]
         if payload.get("issues") or payload.get("unresolved_references"):
             diagnostics.append("部分来源或引用尚未核实；全局归属诊断保留，正式引用和写入仍受阻止。")
         stamp = json.dumps({"data": data, "issues": payload.get("issues", []),
@@ -240,7 +224,7 @@ class ExplorationReferenceService:
                 if field.get("source_id") != source_id or not field.get("available", True):
                     continue
                 _registry, _before, _roots, payload = self._inventory(source_id, field["field_id"])
-                for unit in payload["paper_units"]:
+                for unit in payload["asset_units"]:
                     if unit["source_id"] != source_id or unit["resource_id"] != owner_id:
                         continue
                     if unit.get("ownership", {}).get("status") != "resolved":
@@ -261,7 +245,7 @@ class ExplorationReferenceService:
     def reference(self, root, data: dict, source_id: str, field_id: str, unit_refs: list) -> dict:
         """Prepare complete references for explicit qualified units, without saving."""
         if not isinstance(unit_refs, list) or not unit_refs:
-            raise ExplorationError("Select at least one whole paper unit")
+            raise ExplorationError("Select at least one whole knowledge unit")
         selections = []
         seen = set()
         for ref in unit_refs:
@@ -276,7 +260,7 @@ class ExplorationReferenceService:
         try:
             registry, before, roots, payload = self._inventory(source_id, field_id)
             available = {(row["source_id"], row["resource_id"]): row
-                         for row in payload["paper_units"]}
+                         for row in payload["asset_units"]}
             selected = []
             for identity in selections:
                 if identity not in available:
@@ -288,10 +272,10 @@ class ExplorationReferenceService:
                 if identity[0] not in roots:
                     raise ExplorationError("Selected unit has no readable registered Source", 5)
                 selected.append(unit)
-            payload["paper_units"] = selected
+            payload["asset_units"] = selected
             if self.enrich_resources:
                 payload = include_resource_links(payload)
-            proposed = import_paper_units(root, data, payload, source_roots=roots)
+            proposed = import_asset_units(root, data, payload, source_roots=roots)
             _revision(registry, before)
             return proposed
         except ExplorationError:

@@ -511,6 +511,12 @@
       "action": "treat knowledge preview output as registration/approval, use its provisional IDs or process-local token to commit, or require Hub/workspace to inspect a selected folder",
       "expected": "the public CLI is read-only, delegates to the knowledge provider and same registry, writes no state/manifest/content, and exports no candidate token; result is explicitly preview-only. Existing registration and content-transaction gates remain unchanged",
       "enforcement_layer": "cli"
+    },
+    {
+      "id": "knowledge-exploration-complete-nonpaper-unit-boundary",
+      "action": "Use generic CLI or retained HTTP writes to add an unregistered webpage/report/book/other card, fake a qualified owner or split a registered Blog/technical-document inventory; read an old unqualified record.",
+      "expected": "New references must come from a complete current registered atomic-owner inventory. Keep paper, Blog and technical document kinds distinct, reuse qualified identity and include all declared members. Reject invented owner references, member replacement/removal and old undeclared members during refresh. Preserve legacy state for read-only navigation with visible unverified status; do not silently adopt or extend its relationships. Existing paper-only projections remain unchanged and native/content/scientific outcomes stay separate.",
+      "enforcement_layer": "cli"
     }
   ]
 }

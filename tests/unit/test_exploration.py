@@ -45,6 +45,7 @@ def document():
          "attributes": {"modality": ["image"]}, "assets": [
              {"id": "a2", "label": "Original", "kind": "file", "uri": "paper/figure.png"}]},
         {"id": "w3", "title": "Gamma update", "kind": "webpage",
+         "entity_ref": {"source_id": "synthetic-source", "object_id": "synthetic-document-gamma"},
          "attributes": {}, "assets": []},
     ]
     data["records"] = [

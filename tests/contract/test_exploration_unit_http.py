@@ -47,7 +47,7 @@ def test_real_registered_units_referenced_over_http_without_source_or_state_writ
         # The guard denies body content, writes, native calls and new network
         # connections only while the provider reads its exact declarations.
         with _query_guard(corpus) as (workflow, _patch):
-            result = workflow.field_paper_units(
+            result = workflow.field_asset_units(
                 registry_path, reader_config_path=corpus.reader_config, **kwargs,
             )
         provider_calls.append((registry_path, kwargs))
@@ -57,7 +57,7 @@ def test_real_registered_units_referenced_over_http_without_source_or_state_writ
         external_enrichment.append(True)
         return deepcopy(payload)
 
-    monkeypatch.setattr(exploration_references, "field_paper_units", guarded_provider)
+    monkeypatch.setattr(exploration_references, "field_asset_units", guarded_provider)
     monkeypatch.setattr(exploration_references, "include_resource_links", no_external_zotero)
 
     def request(path, payload=None):

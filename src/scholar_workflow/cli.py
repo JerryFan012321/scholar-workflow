@@ -4232,31 +4232,52 @@ def knowledge_register(root: Path, field_root: str | None, existing_source: bool
               help="Read registered provider declarations to check selected Field references.")
 @click.option("--paper-units", is_flag=True,
               help="Show declared paper packages for one explicitly selected Source and Field.")
+@click.option("--asset-units", is_flag=True,
+              help="Show complete registered paper, Blog and technical-document units in one Field.")
 @click.option("--source-id")
 @click.option("--field-id")
 @click.option("--format", "fmt", type=click.Choice(["md", "json"]), default="md")
 @click.option("--language", type=click.Choice(["en", "zh"]), default="en")
-def knowledge_list(resolve_references: bool, paper_units: bool, source_id: str | None,
+def knowledge_list(resolve_references: bool, paper_units: bool, asset_units: bool, source_id: str | None,
                    field_id: str | None, fmt: str, language: str) -> None:
     """Read the single existing registry and portable navigation manifests."""
     from scholar_workflow.knowledge.fields import FieldRegistryError
     from scholar_workflow.knowledge.registration import fields_markdown
 
-    if paper_units and (not source_id or not field_id):
-        raise InputError("--paper-units requires both --source-id and --field-id")
-    if not paper_units and (source_id is not None or field_id is not None):
-        raise InputError("--source-id and --field-id require --paper-units")
-    if paper_units and resolve_references:
-        raise InputError("--paper-units cannot be combined with --resolve-references")
+    if paper_units and asset_units:
+        raise InputError("Select either --paper-units or --asset-units")
+    units = paper_units or asset_units
+    label = "--asset-units" if asset_units else "--paper-units"
+    if units and (not source_id or not field_id):
+        raise InputError(f"{label} requires both --source-id and --field-id")
+    if not units and (source_id is not None or field_id is not None):
+        raise InputError("--source-id and --field-id require --paper-units or --asset-units")
+    if units and resolve_references:
+        raise InputError(f"{label} cannot be combined with --resolve-references")
     try:
         service = _local_field_service()
-        if paper_units:
-            from scholar_workflow.knowledge.presentation import paper_units_markdown
-            from scholar_workflow.workflows.field_paper_units import field_paper_units
+        if units:
+            from scholar_workflow.knowledge.presentation import (
+                asset_units_markdown,
+                paper_units_markdown,
+            )
+            from scholar_workflow.workflows.field_paper_units import (
+                field_asset_units,
+                field_paper_units,
+            )
 
-            payload = field_paper_units(service.registry.path, source_id=source_id, field_id=field_id)
+            query = field_asset_units if asset_units else field_paper_units
+            render = asset_units_markdown if asset_units else paper_units_markdown
+            options = {"include_resource_links": True} if asset_units else {}
+            payload = query(service.registry.path, source_id=source_id, field_id=field_id, **options)
+            if asset_units:
+                from scholar_workflow.workflows.exploration_assets import (
+                    include_declared_resource_links,
+                )
+
+                payload = include_declared_resource_links(payload)
             click.echo(json.dumps(payload, ensure_ascii=False, indent=2) if fmt == "json" else
-                       paper_units_markdown(payload, language=language))
+                       render(payload, language=language))
             return
         fields = service.list_fields()
         if resolve_references:

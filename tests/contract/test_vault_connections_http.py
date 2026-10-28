@@ -107,8 +107,10 @@ def test_test_environment_refuses_native_open_without_launch(vault_server, monke
 
     data = default_data()
     data["works"] = [{"id": "article", "title": "Synthetic article", "kind": "webpage",
+                      "entity_ref": {"source_id": "synthetic-source", "object_id": "synthetic-article"},
                       "attributes": {}, "assets": [{"id": "web", "kind": "web",
                           "label": "Original", "uri": "https://example.test/original"}]}]
+    request.server.remember_units(data, [data["works"][0]["entity_ref"]])
     assert request("/api/save", {"data": data, "expected_revision": None})[0] == 200
     assert request("/api/open", {"work_id": "article", "asset_id": "web"})[0] == 403
     assert request("/api/assets/article")[1][0]["native_available"] is False

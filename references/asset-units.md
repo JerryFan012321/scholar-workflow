@@ -58,3 +58,30 @@ or change the existing exploration schema.
 Use `paper-registration.md`, `document-registration.md` and
 `knowledge-registration.md` for the actual supported writes. This contract
 does not claim that all asset types already have a unified CLI.
+
+## Supported outer references
+
+The current registered atomic kinds are `paper`, `blog_post` and
+`technical_document`. The common Field asset projection retains that exact
+`resource_kind`; exploration maps them to `paper`, `webpage` and `report`,
+respectively. It imports the qualified owner and every declared member rather
+than inventing a paper identity for a Blog. Existing paper-only navigation stays
+paper-only. New ownership still uses the actual supported registration operation;
+an unsupported book/other registration is a capability gap, not a free-card mode.
+`knowledge list --asset-units --source-id SOURCE --field-id FIELD --language en`
+lists the selected Field's complete units without analyzing or changing them;
+`--format json` exposes exact identities and member states. The historical
+`--paper-units` selection still lists only papers and cannot be combined with it.
+
+New outer references use the registered import. Generic edits preserve the
+identity, kind and members of every qualified unit, while human positioning and
+condition-specific assessments remain editable. A refresh with members absent
+from the current provider inventory requires explicit reconciliation; it does
+not silently certify old arbitrary members or delete historical evidence.
+
+Old unqualified non-paper rows remain readable in place and are explicitly
+unverified. Managed writes cannot create more such rows or edit those rows and
+their related records/edges as if ownership had been established. Unchanged
+legacy rows can remain alongside edits to other registered units; removing an
+entire outer reference never deletes its source files. Registration/adoption is
+separate and never inferred from a matching title or a newly filled identity field.

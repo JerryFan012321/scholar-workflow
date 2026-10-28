@@ -1,7 +1,7 @@
 # explore-knowledge
 
 Explore research works through editable dimensions, conditions, results and
-evidence-linked relations. This layer references existing paper units without
+evidence-linked relations. This layer references existing complete knowledge units without
 changing their prose, Canvas, images or sidecars.
 
 The interaction design is pending discussion. The existing webpage is not the
@@ -31,11 +31,13 @@ local reproduction, independent assessments and analysis remain distinguishable.
 
 For an explicitly selected change, `exploration-init` creates a new manifest and
 `exploration-apply` saves against its current revision. `exploration-import`
-previews actual registered Source/Field paper units, with a separate revision-bound
+previews registered Source/Field paper, Blog and technical-document units, with a revision-bound
 apply. Whole units bring their complete declared asset inventory; this does not
-copy or reanalyse them. Generic model saves cannot add a paper identity or change
+copy or reanalyse them. Generic model saves cannot add a unit identity or change
 its owned assets. Direct file editing keeps the same schema and ownership rules;
 reload after external changes and resolve conflicts without overwriting newer edits.
+Legacy unqualified non-paper rows stay readable and visibly unverified; managed
+edits keep them and their existing relationships read-only until explicit adoption.
 
 Readable output keeps positioning, conditions/results, relations and the complete
 declared local/web/native asset links, including missing or unavailable diagnostics.

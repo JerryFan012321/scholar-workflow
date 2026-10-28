@@ -29,6 +29,7 @@ def test_browser_edit_conflicts(tmp_path, scenario):
          "assets": [{"id": "paper-body", "label": "原有分析", "kind": "markdown",
                      "uri": "paper.md"}]},
         {"id": "editable", "title": "合成网页工作", "kind": "webpage", "year": 2025,
+         "entity_ref": {"source_id": "synthetic-source", "object_id": "synthetic-document"},
          "summary": "初始说明", "attributes": {}, "assets": []},
     ]
     if scenario == "stale-query":

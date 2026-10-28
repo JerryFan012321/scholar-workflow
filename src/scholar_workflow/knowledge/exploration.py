@@ -96,6 +96,7 @@ class _Work(_Model):
 
     @model_validator(mode="after")
     def _paper_unit_reference(self):
+        # Non-paper legacy files stay readable; managed writes check every new unit.
         if self.kind == "paper" and self.entity_ref is None:
             raise ValueError("paper entries require a qualified paper-unit entity_ref")
         return self
@@ -474,24 +475,37 @@ _Loader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _mapping
 
 
 def preserve_paper_units(before: dict, after: dict):
-    """Check normalized outer models: whole removal, never retargeting or fragments."""
+    """Preserve every qualified unit; retain unqualified legacy rows as read-only.
+
+    The historical function name remains an import compatibility surface.
+    """
     by_id = {row["id"]: row for row in after["works"]}
+    previous = {row["id"]: row for row in before["works"]}
+    for row in after["works"]:
+        if not row.get("entity_ref") and previous.get(row["id"]) != row:
+            raise ExplorationError("Unregistered knowledge entries are read-only; use exploration-import from a registered unit")
     by_identity = {(row["entity_ref"]["source_id"], row["entity_ref"]["object_id"]): row
                    for row in after["works"] if row.get("entity_ref")}
     for prior in before["works"]:
-        if prior["kind"] != "paper":
+        if not prior.get("entity_ref"):
+            if prior["id"] in by_id:
+                for key, columns in (("records", ("work_id",)), ("edges", ("from_id", "to_id"))):
+                    if ([row for row in before[key] if prior["id"] in {row[col] for col in columns}] !=
+                            [row for row in after[key] if prior["id"] in {row[col] for col in columns}]):
+                        raise ExplorationError("Unregistered legacy relationships are read-only; use exploration-import")
             continue
         identity = prior["entity_ref"]
+        name = "paper unit" if prior["kind"] == "paper" else "knowledge unit"
         current = by_id.get(prior["id"])
         if current is None:
             if (identity["source_id"], identity["object_id"]) in by_identity:
-                raise ExplorationError("Existing paper unit identity must not be reallocated")
+                raise ExplorationError(f"Existing {name} identity must not be reallocated")
             continue
-        if current["kind"] != "paper" or current.get("entity_ref") != identity:
-            raise ExplorationError("Existing paper unit identity and kind must be preserved")
+        if current["kind"] != prior["kind"] or current.get("entity_ref") != identity:
+            raise ExplorationError(f"Existing {name} identity and kind must be preserved; use exploration-import for explicit reconciliation")
         locations = {row["id"]: row["uri"] for row in current["assets"]}
         if any(locations.get(asset["id"]) != asset["uri"] for asset in prior["assets"]):
-            raise ExplorationError("Existing paper unit assets must stay together; reconcile ownership separately")
+            raise ExplorationError(f"Existing {name} assets must stay together; reconcile ownership separately with exploration-import")
 
 
 class ExplorationStore:
@@ -617,6 +631,8 @@ def render_markdown(root: Path, data: dict) -> str:
 
     for work in document.works:
         lines.extend([f"## {_text(work.title)}", ""])
+        if work.entity_ref is None:
+            lines.extend(["旧记录尚未登记为完整知识单元；归属未核实，保留只读。", ""])
         if work.summary:
             lines.extend([_text(work.summary), ""])
         positioning(work.attributes)

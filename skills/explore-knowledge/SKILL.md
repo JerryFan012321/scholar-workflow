@@ -12,11 +12,12 @@ the old explorer webpage, create a replacement interface or migrate existing dat
 
 ## Observable result
 
-- Treat an existing paper unit as the smallest independently organized paper
-  object. Reference its qualified owner and complete declared asset inventory;
+- Treat an existing complete knowledge asset unit as the smallest independently
+  organized object. Reference its qualified owner and complete declared inventory;
   keep one result/node across its dimensions and conditional records. The shared
   contract's atomic-unit boundary owns the distinction between a unit, its assets,
-  evidence and outer research records. Do not create paper-shaped title cards.
+  evidence and outer research records. Use the shared asset-unit contract for
+  supported types and legacy-state limits; a title card is not a registered unit.
 - Keep one `.scholar-workflow/exploration.yml` manifest for dimension definitions,
   work references, joint research records, supported relationships and saved views.
   Foundation, paradigm, problem and task are editable initial dimensions, not a
@@ -84,6 +85,8 @@ asset-management contract before asking the user to repeat names or paths.
 
 - `${CLAUDE_PLUGIN_ROOT}/references/knowledge-exploration.md` — required schema,
   query behavior, commands, asset opening and readable export contract.
+- `${CLAUDE_PLUGIN_ROOT}/references/asset-units.md` — whole-unit authority,
+  supported registered types and separate manage/analyze/view/edit outcomes.
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md` — visible results.
 - `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md` — shared tool boundaries.
 - `${CLAUDE_PLUGIN_ROOT}/references/asset-management.md` — existing destination lookup.

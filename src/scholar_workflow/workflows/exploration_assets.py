@@ -19,6 +19,37 @@ _DOI = re.compile(r"10\.[0-9]{4,9}/[^\s]+\Z")
 _ARXIV = re.compile(r"(?:[0-9]{4}\.[0-9]{4,5}|[a-zA-Z][a-zA-Z.\-]*/[0-9]{7})(?:v[1-9][0-9]*)?\Z")
 
 
+def declared_unit_links(unit: dict) -> dict:
+    """Retain pre-enriched references, otherwise derive registered offline links."""
+    result = deepcopy(unit)
+    if "resource_links" not in result:
+        resource = result.get("catalog_resource")
+        if isinstance(resource, dict):
+            if resource.get("resource_id") != result["resource_id"]:
+                raise ExplorationError("Provider resource identity changed; reload.", 5)
+            resolved = resource_links(resource)
+            result["resource_links"] = resolved["links"]
+            result["resource_notes"] = resolved["notes"]
+        else:
+            result["resource_links"] = []
+            result["resource_notes"] = ["原文来源记录缺失；网页与 Zotero 入口尚未核实。"]
+    if not isinstance(result["resource_links"], list):
+        raise ExplorationError("Provider resource links must be a list")
+    notes = result.get("resource_notes", [])
+    if not isinstance(notes, list) or any(not isinstance(note, str) for note in notes):
+        raise ExplorationError("Provider resource diagnostics must be text entries")
+    return result
+
+
+
+def include_declared_resource_links(payload):
+    """Project explicit offline source links, without constructing an external adapter."""
+    result = deepcopy(payload)
+    key = "asset_units" if "asset_units" in result else "paper_units"
+    result[key] = [declared_unit_links(unit) for unit in result[key]]
+    return result
+
+
 def include_resource_links(payload):
     """Read only selected known parents/children, preserving offline diagnostics."""
     from scholar_workflow.adapters.zotero_local import (
@@ -30,7 +61,7 @@ def include_resource_links(payload):
     enriched = deepcopy(payload)
     offline = False
     with ZoteroLocalAdapter() as local:
-        for unit in enriched.get("paper_units", []):
+        for unit in enriched.get("asset_units", enriched.get("paper_units", [])):
             resource = unit.get("catalog_resource")
             if not isinstance(resource, dict):
                 unit["resource_notes"] = ["资源来源记录缺失；原文和 Zotero 入口未核实。"]

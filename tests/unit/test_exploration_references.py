@@ -26,6 +26,7 @@ def inventory(tmp_path, monkeypatch):
                  ("analysis-a", "analysis", "Analysis A", "analysis.md"),
                  ("canvas-a", "canvas", "Tree A", "tree.canvas"))]
     unit = {"source_id": "source-a", "resource_id": "paper-a", "title": "Paper A",
+            "resource_kind": "paper",
             "ownership": {"status": "resolved"}, "files": files,
             "catalog_resource": {"resource_id": "paper-a",
                                  "identifiers": {"url": "https://research.example/a"},
@@ -45,7 +46,7 @@ def inventory(tmp_path, monkeypatch):
                                      capabilities=["read"])],
         ),
         payload={"schema_version": 1, "source_id": "source-a", "field_id": "field-a",
-                 "paper_units": [unit, second], "unresolved_references": [], "issues": [],
+                 "asset_units": [unit, second], "unresolved_references": [], "issues": [],
                  "status": "complete"},
     )
 
@@ -78,11 +79,11 @@ def inventory(tmp_path, monkeypatch):
 
     monkeypatch.setattr(module, "KnowledgeSourceRegistry", Registry)
     monkeypatch.setattr(module, "FieldService", Fields)
-    monkeypatch.setattr(module, "field_paper_units", paper_units)
+    monkeypatch.setattr(module, "field_asset_units", paper_units)
     state.enriched = []
 
     def enrich_selected(payload):
-        state.enriched.append([row["resource_id"] for row in payload["paper_units"]])
+        state.enriched.append([row["resource_id"] for row in payload["asset_units"]])
         return deepcopy(payload)
 
     monkeypatch.setattr(module, "include_resource_links", enrich_selected)
@@ -158,7 +159,7 @@ def test_unknown_duplicate_or_file_subset_selection_is_rejected(inventory, selec
 
 
 def test_unresolved_owner_is_visible_in_selection_and_refused_on_reference(inventory):
-    inventory.payload["paper_units"][0]["ownership"] = {"status": "conflict"}
+    inventory.payload["asset_units"][0]["ownership"] = {"status": "conflict"}
     listed = inventory.service.units("source-a", "field-a")
     assert listed["units"][0]["diagnostics"]
     with pytest.raises(ExplorationError) as error:
@@ -191,9 +192,9 @@ def test_disabled_or_unreadable_source_is_not_used(inventory):
 def test_other_source_with_same_owner_id_remains_a_distinct_whole_unit(inventory):
     inventory.document.sources.append(SimpleNamespace(
         source_id="source-b", folder_id="folder-a", enabled=True, capabilities=["read"]))
-    second = deepcopy(inventory.payload["paper_units"][0])
+    second = deepcopy(inventory.payload["asset_units"][0])
     second["source_id"] = "source-b"
-    inventory.payload["paper_units"].append(second)
+    inventory.payload["asset_units"].append(second)
     result = inventory.service.reference(inventory.root, default_data(), "source-a", "field-a",
                                          refs(("source-a", "paper-a"), ("source-b", "paper-a")))
     assert len(result["works"]) == 2
@@ -201,7 +202,7 @@ def test_other_source_with_same_owner_id_remains_a_distinct_whole_unit(inventory
 
 
 def test_malformed_or_duplicate_provider_units_are_not_silently_dropped(inventory):
-    inventory.payload["paper_units"].append(deepcopy(inventory.payload["paper_units"][0]))
+    inventory.payload["asset_units"].append(deepcopy(inventory.payload["asset_units"][0]))
     with pytest.raises(ExplorationError) as error:
         inventory.service.units("source-a", "field-a")
     assert error.value.code == 5
@@ -223,7 +224,7 @@ def test_default_registry_path_uses_the_existing_workflow_home(monkeypatch, tmp_
 def test_current_unit_reloads_registered_owner_without_body_reads_or_saving(inventory):
     result = inventory.service.current_unit({"source_id": "source-a", "object_id": "paper-a"})
     assert result["resource_id"] == "paper-a"
-    assert result["catalog_resource"] == inventory.payload["paper_units"][0]["catalog_resource"]
+    assert result["catalog_resource"] == inventory.payload["asset_units"][0]["catalog_resource"]
     assert len(result["files"]) == 3
     assert not (inventory.root / ".scholar-workflow").exists()
 
@@ -239,7 +240,7 @@ def test_current_unit_rejects_unknown_or_unqualified_reference(inventory, ref):
 
 
 def test_current_unit_refuses_conflicting_ownership(inventory):
-    inventory.payload["paper_units"][0]["ownership"] = {"status": "conflict"}
+    inventory.payload["asset_units"][0]["ownership"] = {"status": "conflict"}
     with pytest.raises(ExplorationError) as error:
         inventory.service.current_unit({"source_id": "source-a", "object_id": "paper-a"})
     assert error.value.code == 5

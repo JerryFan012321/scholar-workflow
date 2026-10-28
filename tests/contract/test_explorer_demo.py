@@ -31,7 +31,7 @@ def demo_module(monkeypatch):
     monkeypatch.setattr(KnowledgeSourceRegistry, "__init__", forbidden)
     monkeypatch.setattr(ZoteroLocalAdapter, "__init__", forbidden)
     monkeypatch.setattr(exploration_references.ExplorationReferenceService, "__init__", forbidden)
-    monkeypatch.setattr(exploration_references, "field_paper_units", forbidden)
+    monkeypatch.setattr(exploration_references, "field_asset_units", forbidden)
     monkeypatch.setattr(exploration_references, "include_resource_links", forbidden)
     monkeypatch.setattr(exploration_readers.ExplorationReaderGate, "__init__", forbidden)
     monkeypatch.setattr(knowledge_explorer, "subprocess", SimpleNamespace(

@@ -47,7 +47,13 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
   Synthetic dependency and request-lifetime isolation are fixed.
   These overlapping runs are not summed. Candidate0.50.0 is not published or
   installed; current execution state is HANDOFF top. Actual remote export/transfer,
-  timely pulling and complete non-paper exploration identity remain unresolved.
+  timely pulling remain unresolved. The existing three atomic owner kinds now
+  share complete references and an asset-unit list; generic non-paper fabrication
+  and member changes refuse, while unqualified legacy rows stay readable/unverified.
+  The latest full regression is4068 passes with exact wheel/browser enabled and
+  no skips; the first failed full run and corrected fixture inputs are retained.
+  Unsupported-type registration, installed/native/human acceptance and fresh-host
+  generation remain separate unfinished requirements; multidimensional UI is open.
 - **Related**: G11/G12/G16/G20, INV31/35/60/65/66; native-tool-separation.md.
 
 ### WI-056: Research resources, publication channels and incremental updates

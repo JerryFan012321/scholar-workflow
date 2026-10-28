@@ -34,6 +34,11 @@ Local API。主题召回由 Local API 全字段/全文 quicksearch 加宿主模�
 可扩展维度、条件记录、证据和保存查询不改；显式CLI查询／导出仍可使用。
 导出只向stdout输出可读导航，不修改论文单元。精确数据接口见[运行契约](references/knowledge-exploration.md)。
 
+0.50.0源码候选补齐论文、Blog和技术文档的完整单元引用。只读查看可用
+`knowledge list --asset-units --source-id SOURCE --field-id FIELD --language zh`；
+`--paper-units`仍只列论文。新引用经实际登记导入，旧未登记记录保留只读并明确标为未核实。
+当前0.49.0安装版尚无该选项；这不增加网页、复制正文或自动采用旧资料。
+
 - **Knowledge System** 以人类可读 Markdown 为正文。论文、重要技术文档和 Blog 是原子资源；
   分析、Canvas 和附件是显式归属的附属产物。新生成的全文分析采用原图的 Abstract、
   Introduction、Method、Experiments、Limitation 完整框架；旧任务／输入／分步流程／输出／边界格式仅供

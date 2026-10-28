@@ -73,10 +73,24 @@ def preview_paper_units(root, payload: dict, *, source_roots=None) -> dict:
     return _import_units(root, default_data(), payload, source_roots=source_roots, read_only=True)
 
 
-def _import_units(root, data: dict, payload: dict, *, source_roots, read_only: bool) -> dict:
+def import_asset_units(root, data: dict, payload: dict, *, source_roots=None) -> dict:
+    return _import_units(root, data, payload, source_roots=source_roots,
+                         read_only=False, unit_key="asset_units")
+
+
+def preview_asset_units(root, payload: dict, *, source_roots=None) -> dict:
+    from scholar_workflow.knowledge.exploration import default_data
+
+    return _import_units(root, default_data(), payload, source_roots=source_roots,
+                         read_only=True, unit_key="asset_units")
+
+
+def _import_units(root, data: dict, payload: dict, *, source_roots, read_only: bool,
+                  unit_key="paper_units") -> dict:
     """Return augmented explorer state; callers separately review and CAS-save it.
 
-    ``payload`` is the public ``field_paper_units`` response, not a directory listing.
+    ``payload`` is a declared Field unit projection, not a directory listing.
+    The paper-only compatibility interface retains its original response shape.
     ``source_roots`` is an optional explicit registry mapping. Paths from one Source
     are never assumed to belong to another Source or to ``root``. Shared files get
     per-work asset-reference IDs while continuing to point to the same source URI.
@@ -88,7 +102,7 @@ def _import_units(root, data: dict, payload: dict, *, source_roots, read_only: b
         raise ExplorationError("exploration root must be an existing nonsymlink directory")
     root = root.resolve()
     if (not isinstance(payload, dict) or type(payload.get("schema_version")) is not int
-            or payload["schema_version"] != 1 or not isinstance(payload.get("paper_units"), list)):
+            or payload["schema_version"] != 1 or not isinstance(payload.get(unit_key), list)):
         raise ExplorationError("expected a schema_version 1 public paper-unit payload")
     if payload.get("unresolved_references") and not read_only:
         raise ExplorationError("Selected Field has unresolved references; nothing was imported")
@@ -103,12 +117,16 @@ def _import_units(root, data: dict, payload: dict, *, source_roots, read_only: b
     work_ids = {work["id"] for work in updated["works"]}
     asset_owners = {asset["id"]: work["id"] for work in updated["works"] for asset in work["assets"]}
     seen = set()
-    for unit in payload["paper_units"]:
+    for unit in payload[unit_key]:
         if not isinstance(unit, dict):
             raise ExplorationError("paper units must be objects")
         source_id = _text(unit.get("source_id"), "source_id")
         resource_id = _text(unit.get("resource_id"), "resource_id")
         identity = source_id, resource_id
+        resource_kind = unit.get("resource_kind") if unit_key == "asset_units" else "paper"
+        kind = {"paper": "paper", "blog_post": "webpage", "technical_document": "report"}.get(resource_kind)
+        if kind is None:
+            raise ExplorationError("Knowledge units require their declared atomic resource kind")
         if identity in seen:
             raise ExplorationError("paper-unit payload repeats a qualified paper identity")
         seen.add(identity)
@@ -123,13 +141,15 @@ def _import_units(root, data: dict, payload: dict, *, source_roots, read_only: b
         if not isinstance(files, list) or not files:
             raise ExplorationError("paper unit must retain all explicitly declared files")
         work = identities.get(identity)
-        if work is not None and work["kind"] != "paper":
-            raise ExplorationError("qualified paper identity belongs to an existing non-paper resource", 5)
+        if work is not None and work["kind"] != kind:
+            message = ("Qualified paper identity belongs to an existing non-paper resource" if kind == "paper" else
+                       "Registered knowledge identity has a different resource kind; reconcile explicitly")
+            raise ExplorationError(message, 5)
         if work is None:
-            work_id = _identity(*identity, prefix="paper-unit-")
+            work_id = _identity(*identity, prefix="paper-unit-" if kind == "paper" else "knowledge-unit-")
             if work_id in work_ids:
                 raise ExplorationError("generated work identity is occupied; reconcile explicitly", 5)
-            work = {"id": work_id, "title": title, "kind": "paper", "attributes": {},
+            work = {"id": work_id, "title": title, "kind": kind, "attributes": {},
                     "entity_ref": {"source_id": source_id, "object_id": resource_id}, "assets": []}
             updated["works"].append(work)
             identities[identity] = work
@@ -144,6 +164,7 @@ def _import_units(root, data: dict, payload: dict, *, source_roots, read_only: b
             work.setdefault("asset_diagnostics", []).append(
                 "当前知识来源的论文包可只读浏览；其他来源登记不可用，全局唯一归属仍待核实。")
         seen_objects = set()
+        declared_assets = set()
         for row in [*files, *links]:
             if not isinstance(row, dict):
                 raise ExplorationError("declared paper-unit files must be objects")
@@ -159,13 +180,15 @@ def _import_units(root, data: dict, payload: dict, *, source_roots, read_only: b
                                  {"https", "http", "obsidian", "zotero"}):
                 raise ExplorationError("resource links require explicit native or web URLs")
             asset = {
-                "id": _identity(source_id, resource_id, object_id, prefix="paper-asset-"),
+                "id": _identity(source_id, resource_id, object_id,
+                                prefix="paper-asset-" if kind == "paper" else "knowledge-asset-"),
                 "label": (_text(row.get("title"), "file title") if row.get("title") != object_id
                           else Path(row.get("relative_path", object_id)).name),
                 "kind": _text(row.get("kind"), "file kind"),
                 "uri": _asset_uri(root, source_roots.get(source_id), row, source_id),
             }
             prior = existing.get(asset["id"])
+            declared_assets.add(asset["id"])
             if prior is not None:
                 if prior["uri"] != asset["uri"]:
                     raise ExplorationError("existing paper asset has a different URI; reconcile explicitly", 5)
@@ -175,4 +198,6 @@ def _import_units(root, data: dict, payload: dict, *, source_roots, read_only: b
             work["assets"].append(asset)
             existing[asset["id"]] = asset
             asset_owners[asset["id"]] = work["id"]
+        if unit_key == "asset_units" and set(existing) - declared_assets:
+            raise ExplorationError("Existing unit has members absent from its current declared inventory; reconcile explicitly", 5)
     return validate(updated)

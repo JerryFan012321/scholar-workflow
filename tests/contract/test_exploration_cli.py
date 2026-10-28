@@ -117,7 +117,7 @@ def test_apply_rejects_paper_asset_changes_without_writing(tmp_path, change):
     assert store.path.read_bytes() == before
 
 
-def test_nonpaper_init_and_apply_remain_available(tmp_path):
+def test_unregistered_nonpaper_init_refuses_without_creating_state(tmp_path):
     data = default_data()
     data["works"] = [{"id": "article", "kind": "webpage", "title": "Existing blog",
                        "attributes": {}, "assets": []}]
@@ -126,15 +126,9 @@ def test_nonpaper_init_and_apply_remain_available(tmp_path):
     runner = CliRunner()
     result = runner.invoke(main, ["knowledge", "exploration-init", "--root", str(tmp_path),
                                   "--spec", str(spec)])
-    assert result.exit_code == 0, result.output
-    receipt = json.loads(result.output)
-    data["works"].append({"id": "report", "kind": "report", "title": "Research report",
-                          "attributes": {}, "assets": []})
-    spec.write_text(json.dumps(data), encoding="utf-8")
-    result = runner.invoke(main, ["knowledge", "exploration-apply", "--root", str(tmp_path),
-                                  "--spec", str(spec), "--expected-revision", receipt["revision"]])
-    assert result.exit_code == 0, result.output
-    assert {work["kind"] for work in json.loads(result.output)["data"]["works"]} == {"webpage", "report"}
+    assert result.exit_code == 2, result.output
+    assert "exploration-import" in result.output
+    assert not ExplorationStore(tmp_path).path.exists()
 
 
 def test_repeat_init_does_not_replace(tmp_path):
@@ -185,9 +179,9 @@ def test_import_registered_references_preview_then_apply(tmp_path, monkeypatch):
                "unresolved_references": [], "paper_units": [{"source_id": source_id,
                    "resource_id": "paper", "title": "Existing", "ownership": {"status": "resolved"},
                    "files": [{"object_id": "body", "relative_path": "paper.md", "title": "Body",
-                              "kind": "analysis", "file_state": "available", "open_state": "ready",
+                              "kind": "paper", "file_state": "available", "open_state": "ready",
                               "uri": "obsidian://open?file=paper.md"}],
-                   "catalog_resource": {"resource_id": "paper",
+                   "catalog_resource": {"resource_id": "paper", "kind": "paper",
                                         "identifiers": {"url": "https://example.test/original"},
                                         "zotero": {"item_key": "ABCD2345"}}}]}
     monkeypatch.setattr(field_paper_units, "field_paper_units", lambda *_args, **_kwargs: payload)

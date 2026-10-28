@@ -29,6 +29,7 @@ def test_browser_file_roundtrip(tmp_path):
                       "attributes": {}, "assets": [{"id": "body", "label": "原有分析",
                                                       "kind": "markdown", "uri": "paper.md"}]},
                      {"id": "b", "title": "示例工作 B", "kind": "webpage", "year": 2026,
+                      "entity_ref": {"source_id": "synthetic-source", "object_id": "synthetic-document-b"},
                       "attributes": {}, "assets": []},
                      {"id": "c", "title": "示例工作 C", "kind": "paper", "year": 2026,
                       "entity_ref": {"source_id": "synthetic-source", "object_id": "synthetic-paper-c"},

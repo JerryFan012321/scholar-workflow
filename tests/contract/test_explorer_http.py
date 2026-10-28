@@ -79,6 +79,17 @@ def sample():
     }
 
 
+def confirmed_sample(request, data=None):
+    """Prepare the protocol fixture's declared inventory through its existing gate.
+
+    Real provider ownership is covered by the independent unit HTTP contract.
+    Negative confirmation cases deliberately do not call this helper.
+    """
+    data = sample() if data is None else data
+    references = [work["entity_ref"] for work in data["works"]]
+    return request.server.remember_units(data, references)
+
+
 def test_http_identity_auth_and_same_origin(explorer):
     _, req = explorer
     assert req("/")[0] == 200
@@ -95,13 +106,13 @@ def test_http_identity_auth_and_same_origin(explorer):
 def test_http_save_query_conflict_and_external_reload(explorer):
     root, req = explorer
     original = (root / "paper.md").read_bytes()
-    status, result, _ = req("/api/save", {"data": sample(), "expected_revision": None})
+    status, result, _ = req("/api/save", {"data": confirmed_sample(req), "expected_revision": None})
     assert status == 200
     revision = result["revision"]
     query = {"filters": {"foundation": {"mode": "any", "values": ["b1"]},
                          "task": {"mode": "all", "values": ["t2"]}}}
     assert req("/api/query", query)[1]["works"] == []
-    assert req("/api/save", {"data": sample(), "expected_revision": None})[0] == 409
+    assert req("/api/save", {"data": confirmed_sample(req), "expected_revision": None})[0] == 409
     from scholar_workflow.knowledge.exploration import ExplorationStore
 
     changed = sample()
@@ -109,13 +120,13 @@ def test_http_save_query_conflict_and_external_reload(explorer):
     saved = ExplorationStore(root).save(changed, expected_revision=revision)
     assert req("/api/state")[1]["revision"] == saved["revision"]
     assert req("/api/state")[1]["data"]["works"][0]["title"] == "Externally edited"
-    assert req("/api/save", {"data": sample(), "expected_revision": revision})[0] == 409
+    assert req("/api/save", {"data": confirmed_sample(req), "expected_revision": revision})[0] == 409
     assert (root / "paper.md").read_bytes() == original
 
 
 def test_http_assets_only_by_identity_and_no_canvas_json_preview(explorer, tmp_path):
     root, req = explorer
-    assert req("/api/save", {"data": sample(), "expected_revision": None})[0] == 200
+    assert req("/api/save", {"data": confirmed_sample(req), "expected_revision": None})[0] == 200
     listing = req("/api/assets/w1")[1]
     assert len(listing) == 2
     assert str(root) not in json.dumps(listing)
@@ -140,6 +151,7 @@ def test_draft_query_never_saves_or_modifies_source(explorer):
                                "scope": "work", "values": [{"id": "video", "label": "视频"}],
                                "sortable": False})
     data["works"][0]["attributes"] = {"modality": ["video"]}
+    confirmed_sample(req, data)
     status, result, _ = req("/api/query", {"_draft": data, "filters": {"modality": {"mode": "all", "values": ["video"]}}})
     assert status == 200
     assert result["works"][0]["id"] == "w1"
@@ -168,6 +180,7 @@ def test_asset_content_types_and_native_open_are_identity_scoped(explorer, monke
         {"id": "pdf", "kind": "pdf", "label": "Original PDF", "uri": "sample.pdf"},
         {"id": "image", "kind": "image", "label": "Figure", "uri": "image.png"},
     ])
+    confirmed_sample(req, data)
     assert req("/api/save", {"data": data, "expected_revision": None})[0] == 200
     assert req("/api/asset/w1/pdf")[2].get_content_type() == "application/pdf"
     assert req("/api/asset/w1/image")[2].get_content_type() == "image/png"
@@ -200,6 +213,7 @@ def test_native_open_blocks_executables_and_keeps_safe_text_preview(explorer, mo
     for suffix in ["command", "desktop", "py", "exe"]:
         (root / f"unsafe.{suffix}").write_text("do not execute", encoding="utf-8")
         data["works"][0]["assets"].append({"id": suffix, "label": suffix, "kind": "code", "uri": f"unsafe.{suffix}"})
+    confirmed_sample(req, data)
     assert req("/api/save", {"data": data, "expected_revision": None})[0] == 200
     listing = {asset["id"]: asset for asset in req("/api/assets/w1")[1]}
     for suffix in ["command", "desktop", "py", "exe"]:
@@ -247,6 +261,7 @@ def test_native_protocols_only_allow_known_reading_actions(explorer, monkeypatch
     data = sample()
     for index, uri in enumerate(permitted + blocked):
         data["works"][0]["assets"].append({"id": f"link-{index}", "label": f"Link {index}", "kind": "link", "uri": uri})
+    confirmed_sample(req, data)
     assert req("/api/save", {"data": data, "expected_revision": None})[0] == 200
     opened = []
     monkeypatch.setattr("scholar_workflow.adapters.knowledge_explorer.shutil.which", lambda value: "/usr/bin/open")
@@ -278,6 +293,7 @@ def test_reader_availability_is_not_inferred_from_uri_or_asset_kind(explorer):
         "id": "reader", "label": "Registered reader", "kind": "unrelated-label",
         "uri": "obsidian://zotflow?vault=1111111111111111&type=open-attachment&libraryID=1&key=PDFD2345",
     })
+    confirmed_sample(req, data)
     assert req("/api/save", {"data": data, "expected_revision": None})[0] == 200
     listing = {row["id"]: row for row in req("/api/assets/w1")[1]}
     assert listing["reader"]["available"] is True
@@ -306,6 +322,7 @@ def test_reader_gate_refusal_never_launches_or_modifies_files(explorer, monkeypa
     data = sample()
     data["works"][0]["assets"].append({"id": "reader", "label": "Original PDF",
         "kind": "link", "uri": "zotero://open-pdf/library/items/PDFD2345?page=4"})
+    confirmed_sample(req, data)
     assert req("/api/save", {"data": data, "expected_revision": None})[0] == 200
     original = (root / "paper.md").read_bytes()
     revision = req("/api/state")[1]["revision"]
