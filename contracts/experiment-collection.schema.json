@@ -1,33 +1,345 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Child-qualified collected execution receipt",
-  "type": "object", "additionalProperties": false,
-  "required": ["schema_version", "parent_project_id", "child_project_id", "run_id", "source_commit", "recipe_hash", "evidence_sha256", "files", "directories", "execution_verification"],
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "parent_project_id",
+    "child_project_id",
+    "run_id",
+    "source_commit",
+    "recipe_hash",
+    "evidence_sha256",
+    "files",
+    "directories",
+    "execution_verification"
+  ],
   "properties": {
-    "schema_version": {"type": "integer", "const": 1},
-    "parent_project_id": {"$ref": "#/$defs/project_id"},
-    "child_project_id": {"$ref": "#/$defs/project_id"},
-    "run_id": {"type": "string", "pattern": "^[0-9]{8}-[0-9]{4}-[a-z0-9][a-z0-9-]{0,47}$"},
-    "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
-    "recipe_hash": {"$ref": "#/$defs/hash"},
-    "evidence_sha256": {"$ref": "#/$defs/hash"},
-    "execution_verification": {"const": "records_only"},
-    "directories": {"type": "array", "items": {"$ref": "#/$defs/path"}, "uniqueItems": true},
+    "schema_version": {
+      "type": "integer",
+      "enum": [
+        1,
+        2
+      ]
+    },
+    "parent_project_id": {
+      "$ref": "#/$defs/project_id"
+    },
+    "child_project_id": {
+      "$ref": "#/$defs/project_id"
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[0-9]{8}-[0-9]{4}-[a-z0-9][a-z0-9-]{0,47}$"
+    },
+    "source_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "recipe_hash": {
+      "$ref": "#/$defs/hash"
+    },
+    "evidence_sha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "execution_verification": {
+      "const": "records_only"
+    },
+    "directories": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/path"
+      },
+      "uniqueItems": true
+    },
     "files": {
-      "type": "array", "items": {
-        "type": "object", "additionalProperties": false,
-        "required": ["source_path", "destination_path", "sha256", "size", "mode"],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_path",
+          "destination_path",
+          "sha256",
+          "size",
+          "mode"
+        ],
         "properties": {
-          "source_path": {"$ref": "#/$defs/path"}, "destination_path": {"$ref": "#/$defs/path"},
-          "sha256": {"$ref": "#/$defs/hash"}, "size": {"type": "integer", "minimum": 0},
-          "mode": {"type": "integer", "minimum": 0, "maximum": 511}
+          "source_path": {
+            "$ref": "#/$defs/path"
+          },
+          "destination_path": {
+            "$ref": "#/$defs/path"
+          },
+          "sha256": {
+            "$ref": "#/$defs/hash"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "mode": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 511
+          }
         }
       }
+    },
+    "result_delivery": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "selection": {
+          "$ref": "#/$defs/ResultSelection"
+        },
+        "omitted": {
+          "items": {
+            "$ref": "#/$defs/OmittedResult"
+          },
+          "maxItems": 10000,
+          "title": "Omitted",
+          "type": "array"
+        },
+        "omitted_byte_verification": {
+          "const": "not-performed",
+          "default": "not-performed",
+          "title": "Omitted Byte Verification",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "selection",
+        "omitted"
+      ],
+      "title": "ResultDelivery",
+      "type": "object"
     }
   },
   "$defs": {
-    "project_id": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
-    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "path": {"type": "string", "pattern": "^[^/\\\\]+(?:/[^/\\\\]+)*$", "not": {"pattern": "(?:^|/)\\.{1,2}(?:/|$)"}}
-  }
+    "project_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "path": {
+      "type": "string",
+      "pattern": "^[^/\\\\]+(?:/[^/\\\\]+)*$",
+      "not": {
+        "pattern": "(?:^|/)\\.{1,2}(?:/|$)"
+      }
+    },
+    "DeferredResult": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "maxLength": 4096,
+          "title": "Path",
+          "type": "string",
+          "allOf": [
+            {
+              "$ref": "#/$defs/path"
+            }
+          ]
+        },
+        "reason": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "reason"
+      ],
+      "title": "DeferredResult",
+      "type": "object"
+    },
+    "IncludedResult": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "maxLength": 4096,
+          "title": "Path",
+          "type": "string",
+          "allOf": [
+            {
+              "$ref": "#/$defs/path"
+            }
+          ]
+        },
+        "kind": {
+          "enum": [
+            "metrics",
+            "parameters",
+            "report",
+            "image",
+            "video",
+            "log"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "purpose": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Purpose",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "kind",
+        "purpose"
+      ],
+      "title": "IncludedResult",
+      "type": "object"
+    },
+    "OmittedResult": {
+      "additionalProperties": false,
+      "properties": {
+        "source_path": {
+          "maxLength": 4096,
+          "title": "Source Path",
+          "type": "string",
+          "allOf": [
+            {
+              "$ref": "#/$defs/path"
+            }
+          ]
+        },
+        "artifact_id": {
+          "anyOf": [
+            {
+              "pattern": "^art_[0-9a-f]{16}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Artifact Id"
+        },
+        "declared_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Declared Sha256"
+        },
+        "declared_size": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Declared Size"
+        },
+        "reason": {
+          "enum": [
+            "model",
+            "not-selected",
+            "deferred"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "explanation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Explanation"
+        }
+      },
+      "required": [
+        "source_path",
+        "artifact_id",
+        "declared_sha256",
+        "declared_size",
+        "reason",
+        "explanation"
+      ],
+      "title": "OmittedResult",
+      "type": "object"
+    },
+    "ResultSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "include": {
+          "items": {
+            "$ref": "#/$defs/IncludedResult"
+          },
+          "maxItems": 4096,
+          "title": "Include",
+          "type": "array"
+        },
+        "defer": {
+          "items": {
+            "$ref": "#/$defs/DeferredResult"
+          },
+          "maxItems": 4096,
+          "title": "Defer",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "include"
+      ],
+      "title": "ResultSelection",
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "schema_version": {
+            "const": 2
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "result_delivery"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "result_delivery"
+          ]
+        }
+      }
+    }
+  ]
 }

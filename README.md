@@ -130,6 +130,14 @@ separate from initialization and the short inventory overview. See
 
 ### Project material and collected experiment views
 
+The source candidate adds an editable YAML/JSON `--selection-file` for readable
+metrics, configuration, reports and figures, while model payloads remain at the
+source. Original Run/Attempt/artifact records stay unchanged; reception, reading,
+updates and recovery use the same selection. Explicitly deferred required evidence
+remains incomplete. Installed 0.49.0 does not expose this option; check installed
+help before use. Remote export/SSH pulling is not provided by this interface.
+See [result selection and delivery](references/experiment-result-selection.md).
+
 For collected child experiments, use a normally installed version whose
 `scholar-workflow experiment --help` exposes `collected`:
 

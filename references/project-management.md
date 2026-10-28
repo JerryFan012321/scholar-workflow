@@ -136,7 +136,7 @@ a second recipe, task system, server ledger or mutable copy of both sides' truth
 The parent may summarize child facts in PROJECT, with links and receipt freshness;
 only the child owns execution facts, while the parent owns local analysis and plans.
 
-The current schema-1 collection receipt has no reception/acknowledgment timestamp
+The current schema-1/2 collection receipts have no reception/acknowledgment timestamp
 or sender-confirmation protocol. It proves the checked version, not when a previous
 delivery was confirmed. Report unrecorded freshness as unknown; file mtimes are not
 confirmation times. Durable timed acknowledgment needs an explicit compatible
@@ -153,9 +153,9 @@ Do not copy active files with a recursive mirror or delete local analysis to mat
 the source. A compatibility gap is incomplete delivery, not permission to synthesize
 canonical records or silently upgrade them.
 
-Keep compact Run evidence separate from genuinely large payloads. The current
-collector reads the entire selected Run and refuses over 128 MiB; an artifact
-manifest does not exclude physical bytes still inside that tree. For new executions,
+Keep compact Run evidence separate from genuinely large payloads. Whole-Run
+collection refuses model/unclassified payloads; explicit result selection bounds
+received bytes to 128 MiB while omitted payloads stay unread. For new executions,
 use a declared large-output location outside the transferable Run (resolved through
 the existing Target/output contract), with producing Attempt, origin, size/hash when
 known and retention state in the artifact inventory. Existing co-located outputs
@@ -179,12 +179,11 @@ Datasets also remain at execution/data locations. Minimal source recovery is a
 separate explicitly selected operation, not permission to pull source worktrees or
 model files as results. Existing local files are not deleted or moved by this rule.
 
-The current receiver copies the complete selected accessible Run; it does not
-classify payload semantics or selectively exclude model bytes. A manifest cannot
-hide files still physically inside that tree. If it contains excluded payloads,
-report that a separately implemented, record-preserving export is needed; do not
-advertise safe selective collection, silently filter files or alter old receipts.
-SSH fetching and selective remote export remain unavailable as product operations.
+Use [experiment-result-selection.md](experiment-result-selection.md) for the
+supported explicit readable-result selection, first reception, readback and
+update/recovery. It preserves original records and distinguishes received files
+from source-only declarations, without opening model payloads. It is not an
+arbitrary semantic classifier. SSH fetching and selective remote export remain unavailable as product operations.
 Native tools may perform a separately authorized, explicitly reviewed transfer;
 that is not an installed automatic pull/sync capability.
 
@@ -393,10 +392,12 @@ reserved for local analysis. A filename collision refuses, never overwrites or
 silently chooses a name. Snapshot locators stay relative to their original child
 Run and require this explicit mapping in a future collected-record reader.
 
-This bounded preflight rejects more than 128 MiB of selected file bytes or a record
-larger than 1 MiB; it does not silently drop files or limit the number of Attempts.
+This bounded preflight rejects more than 128 MiB of received file bytes, a record
+larger than 1 MiB, or metadata exceeding 10,000 physical file entries. It does not
+silently truncate files or recorded Attempts; an oversized inventory refuses.
 Datasets/models/weights/checkpoints belong remotely with explicit manifests. This
-preflight does not implement selective export or semantic payload filtering. Symlinks,
+preflight supports the explicit `--selection-file` contract above, without a remote
+exporter or arbitrary semantic payload classification. Symlinks,
 special files/permissions, unsafe paths, duplicate YAML fields and detected changes
 refuse. Running/planned Attempts are included and marked mutable; a preview is not
 an immutable snapshot. Repeated source reads detect changes during inspection,
@@ -419,13 +420,15 @@ An existing empty directory also refuses. Safe file modes and required empty
 directories are retained. The local Run records keep original child-relative
 snapshot paths; use the receipt mapping, not a guessed parent-root interpretation.
 
-The machine-only `.collection.json` uses schema 1 from
+The machine-only `.collection.json` uses compatible schema 1 or selective schema 2 from
 `contracts/experiment-collection.schema.json`: parent/child/Run identity, child
 source commit, recipe/evidence hashes, source-to-local file mapping, hashes/sizes/
 modes, required directories and `execution_verification: records_only`. It is not
 another scientific recipe, source checkout or verified backup. Source report/notes
 use the mapped execution names; local report/notes and other analysis remain
 independent and are never written by this receiver.
+Schema 2 additionally preserves the exact selection and explicit omitted declarations;
+see the result-selection contract rather than inferring receipt from a remote path.
 
 Same-content replay verifies the receipt and every owned file/directory and
 reconfirms directory synchronization, then returns unchanged. Extra local analysis

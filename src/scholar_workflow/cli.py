@@ -2865,13 +2865,18 @@ def experiment() -> None:
 @click.option("--child-root", required=True,
               type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--run-id", required=True)
+@click.option("--selection-file", type=click.Path(exists=True, dir_okay=False, path_type=Path),
+              help="Explicit YAML/JSON include/defer config for readable results; model payload stays remote.")
 @click.option("--json", "as_json", is_flag=True)
-def experiment_collection_plan(project_root: Path, child_root: Path, run_id: str, as_json: bool) -> None:
+def experiment_collection_plan(project_root: Path, child_root: Path, run_id: str,
+                               selection_file: Path | None, as_json: bool) -> None:
     """Check one explicit child Run for collection; do not copy or execute it."""
     from scholar_workflow.project.collection import plan_run_collection
+    from scholar_workflow.project.result_scope import load_selection
 
     try:
-        result = plan_run_collection(project_root, child_root, run_id=run_id)
+        result = plan_run_collection(project_root, child_root, run_id=run_id,
+                                     selection=load_selection(selection_file))
     except ValueError as exc:
         raise InputError(str(exc)) from None
     if as_json:
@@ -2882,7 +2887,20 @@ def experiment_collection_plan(project_root: Path, child_root: Path, run_id: str
         click.echo(f"Evidence: {len(result['files'])} files, {len(result['attempts'])} Attempts.")
         for attempt in result["attempts"]:
             click.echo(f"Attempt {attempt['attempt_id']}: {attempt['status']}.")
+        _describe_result_delivery(result)
         click.echo("Execution status comes from records, not observed execution.")
+
+
+def _describe_result_delivery(result):
+    delivery = result.get("result_delivery", result.get("new_receipt", {}).get("result_delivery"))
+    if delivery is None:
+        return
+    for row in delivery["selection"]["include"]:
+        click.echo(f"Selected {row['kind']}: {row['path']} — {row['purpose']}")
+    for row in delivery["omitted"]:
+        detail = row["explanation"] or {"model": "model payload", "not-selected": "not selected"}[row["reason"]]
+        click.echo(f"Retained at source: {row['source_path']} — {detail}")
+    click.echo("Omitted bytes were not read or verified. Original execution records remain unchanged.")
 
 
 @experiment.command(name="receive-run")
@@ -2891,6 +2909,7 @@ def experiment_collection_plan(project_root: Path, child_root: Path, run_id: str
 @click.option("--child-root", required=True,
               type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--run-id", required=True)
+@click.option("--selection-file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option("--expected-parent-sha256", required=True)
 @click.option("--expected-child-sha256", required=True)
 @click.option("--expected-evidence-sha256", required=True)
@@ -2898,9 +2917,11 @@ def experiment_collection_plan(project_root: Path, child_root: Path, run_id: str
 def experiment_receive_run(
     project_root: Path, child_root: Path, run_id: str, expected_parent_sha256: str,
     expected_child_sha256: str, expected_evidence_sha256: str, as_json: bool,
+    selection_file: Path | None,
 ) -> None:
     """Receive a new child Run, or verify an identical archive; never overwrite versions."""
     from scholar_workflow.project.reception import ReceptionError, receive_run
+    from scholar_workflow.project.result_scope import load_selection
 
     try:
         result = receive_run(
@@ -2908,6 +2929,7 @@ def experiment_receive_run(
             expected_parent_sha256=expected_parent_sha256,
             expected_child_sha256=expected_child_sha256,
             expected_evidence_sha256=expected_evidence_sha256,
+            selection=load_selection(selection_file),
         )
     except ReceptionError as exc:
         error_class = {3: DependencyError, 5: IdentityConflictError, 6: PartialCompletionError,
@@ -2954,14 +2976,18 @@ def experiment_collected(project_root: Path, child_project_id: str | None,
 @click.option("--child-root", required=True,
               type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--run-id", required=True)
+@click.option("--selection-file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option("--json", "as_json", is_flag=True)
-def experiment_update_plan(project_root: Path, child_root: Path, run_id: str, as_json: bool) -> None:
+def experiment_update_plan(project_root: Path, child_root: Path, run_id: str,
+                           selection_file: Path | None, as_json: bool) -> None:
     """Preview exact lifecycle changes; do not overwrite or recover an archive."""
     from scholar_workflow.project.reception import ReceptionError
+    from scholar_workflow.project.result_scope import load_selection
     from scholar_workflow.project.updates import plan_run_update
 
     try:
-        result = plan_run_update(project_root, child_root, run_id=run_id)
+        result = plan_run_update(project_root, child_root, run_id=run_id,
+                                 selection=load_selection(selection_file))
     except ReceptionError as exc:
         if exc.exit_code == 6:
             raise PartialCompletionError(str(exc)) from None
@@ -2972,6 +2998,7 @@ def experiment_update_plan(project_root: Path, child_root: Path, run_id: str, as
         click.echo(json.dumps(result, indent=2))
     else:
         click.echo(f"Update preview: {result['status']}; nothing written.")
+        _describe_result_delivery(result)
         for change in result["changes"]:
             click.echo(f"{change['kind']}: {change['destination_path']}")
         for directory in result["new_directories"]:
@@ -2997,17 +3024,20 @@ def _raise_collection_update_error(exc):
 @click.option("--child-root", required=True,
               type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option("--run-id", required=True)
+@click.option("--selection-file", type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option("--expected-parent-sha256", required=True)
 @click.option("--expected-child-sha256", required=True)
 @click.option("--expected-new-evidence-sha256", required=True)
 @click.option("--expected-local-receipt-sha256", required=True)
 @click.option("--json", "as_json", is_flag=True)
-def experiment_update_run(project_root, child_root, run_id, as_json, **baselines):
+def experiment_update_run(project_root, child_root, run_id, as_json, selection_file, **baselines):
     """Apply a previewed Run version, preserving local analysis and recovery material."""
+    from scholar_workflow.project.result_scope import load_selection
     from scholar_workflow.project.transactions import apply_run_update
 
     try:
-        result = apply_run_update(project_root, child_root, run_id=run_id, **baselines)
+        result = apply_run_update(project_root, child_root, run_id=run_id,
+                                  selection=load_selection(selection_file), **baselines)
     except ValueError as exc:
         _raise_collection_update_error(exc)
     if as_json:

@@ -91,6 +91,11 @@ README 仍负责对外展示；此能力独立于初始化和简短资料清单�
 
 ### 项目资料与已收集实验总览
 
+源码候选新增可编辑的`--selection-file`（YAML/JSON）：选择指标、配置、报告和图表，模型载荷
+留在源端；原始Run/Attempt/产物记录保持不变。接收、读取、更新和恢复沿用同一清单，必需成果
+若明确延后则显示尚未收齐。现用0.49.0尚无此入口，实际使用先核对安装版帮助；这不等于已实现
+远端自动导出或SSH拉取。详见[结果选择与交付](references/experiment-result-selection.md)。
+
 已收集的子项目实验，用正常安装且 `scholar-workflow experiment --help` 中有 `collected` 的版本：
 
 ```bash

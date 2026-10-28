@@ -7,6 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- **experiment result delivery:** add an editable include/defer selection and a
+  compatible schema-2 collection receipt. Preserve original execution records and
+  declare omitted source payloads without reading or verifying their bytes; refuse
+  model/unclassified payloads on new whole-Run collection. Carry the same selection
+  through first reception, archive reading, lifecycle updates and offline recovery,
+  preserving local analysis and existing schema-1 archives. Native remote export,
+  SSH transfer and normal installed acceptance remain separate.
+
 - **development isolation:** give synthetic HTTP/browser fixtures explicit private
   state and reference/reader/Vault dependencies, and drain request handlers before
   restoring test patches. Keep actual Vault/environment integration checks separate.

@@ -192,12 +192,14 @@ def test_input_changes_during_plan_refuse(sample, monkeypatch):
     parent, child, run = sample
     original = collection._tree
     calls = 0
-    def changed(root, run_id):
+    def changed(root, run_id, **kwargs):
         nonlocal calls
-        calls += 1
-        if calls == 2:
-            (run / "notes.md").write_text("New remote observation\n")
-        return original(root, run_id)
+        # Metadata-only selection must not consume the full-evidence baseline.
+        if kwargs.get("include") is None:
+            calls += 1
+            if calls == 2:
+                (run / "notes.md").write_text("New remote observation\n")
+        return original(root, run_id, **kwargs)
     monkeypatch.setattr(collection, "_tree", changed)
     with pytest.raises(ValueError, match="changed"):
         plan_run_collection(parent, child, run_id=RUN)

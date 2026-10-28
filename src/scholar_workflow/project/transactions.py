@@ -210,7 +210,8 @@ def _observe(journal, stage_fd, run_fd, *, parent_id, child_id, run_id, destinat
             if (_sha(data), len(data), mode) != (row["sha256"], row["size"], row["mode"]):
                 _fail("Unchanged execution evidence differs from the prepared versions")
             files[row["source_path"]] = data
-        run, attempts, artifacts = validate_run_evidence(files, set(receipt["directories"]), run_id)
+        run, attempts, artifacts = validate_run_evidence(files, set(receipt["directories"]), run_id,
+                                                       result_delivery=receipt.get("result_delivery"))
         if run.source.commit != receipt["source_commit"] or run.recipe_hash != receipt["recipe_hash"]:
             _fail("Prepared evidence differs from its receipt recipe")
         versions.append((files, run, attempts, artifacts))
@@ -354,13 +355,13 @@ def _finish(root_fd, run_fd, journal, stage_fd, marker_raw, direction, check):
     _sync_dirs(root_fd, run_fd, plan)
 
 
-def apply_run_update(parent_root, child_root, *, run_id, **baselines):
+def apply_run_update(parent_root, child_root, *, run_id, selection=None, **baselines):
     """Prepare, activate and apply one explicitly previewed Run version."""
-    staged = stage_run_update(parent_root, child_root, run_id=run_id, **baselines)
+    staged = stage_run_update(parent_root, child_root, run_id=run_id, selection=selection, **baselines)
     if staged["status"] == "unchanged":
         try:
             with _locked(parent_root) as (root_fd, _, check):
-                plan = plan_run_update(parent_root, child_root, run_id=run_id)
+                plan = plan_run_update(parent_root, child_root, run_id=run_id, selection=selection)
                 _check(plan, tuple(baselines["expected_" + key] for key in _BASELINES))
                 with _directory(root_fd, plan["destination"]) as run_fd:
                     check()
@@ -371,7 +372,7 @@ def apply_run_update(parent_root, child_root, *, run_id, **baselines):
     active = False
     try:
         with _locked(parent_root) as (root_fd, _, check):
-            plan = plan_run_update(parent_root, child_root, run_id=run_id)
+            plan = plan_run_update(parent_root, child_root, run_id=run_id, selection=selection)
             _check(plan, tuple(baselines["expected_" + key] for key in _BASELINES))
             transaction_id = staged["package_path"].rsplit("/", 1)[1]
             with _directory(root_fd, staged["package_path"]) as stage_fd, _directory(root_fd, plan["destination"]) as run_fd:

@@ -39,11 +39,15 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Evidence**: separation checks365 passed; website/API/wheel checks253 passed
   and final compatibility checks86 passed. The new-Source inventory handoff now
   covers actual paper/document registration and project-reference resolution.
-  Current full unit/contract4010 passed with exact wheel and headless browser
-  checks, no skips; synthetic dependency and request-lifetime isolation are fixed.
+  The Source/separation batch passed4010 unit/contract checks. Result selection,
+  reception, archive reading, lifecycle updates and offline recovery now pass132
+  focused checks and the latest4037 unit/contract checks, with the exact wheel
+  and headless browser enabled and no skips. Original records remain unchanged,
+  model payload bytes stay unread, and one synthetic CLI example is in test Vault.
+  Synthetic dependency and request-lifetime isolation are fixed.
   These overlapping runs are not summed. Candidate0.50.0 is not published or
-  installed; current execution state is HANDOFF top. Result filtering/remote pull
-  and complete non-paper exploration identity remain unresolved requirements.
+  installed; current execution state is HANDOFF top. Actual remote export/transfer,
+  timely pulling and complete non-paper exploration identity remain unresolved.
 - **Related**: G11/G12/G16/G20, INV31/35/60/65/66; native-tool-separation.md.
 
 ### WI-056: Research resources, publication channels and incremental updates
