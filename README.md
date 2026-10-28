@@ -12,8 +12,13 @@ is managed as complete paper/blog/document asset units with explicit context. Th
 management, analysis, viewing and editing are separate operations. See
 [asset units](references/asset-units.md) and [project Skills](references/project-skills.md).
 Multidimensional viewing/editing remains under discussion; existing records are retained.
-The source is a 0.50.0 development candidate, not a published release. Installed
+The source is a 0.50.1 development candidate, not a published release. Installed
 0.49.0 still has the previous behavior until a new version is normally installed.
+
+The follow-up recovery fix separates a same-directory device-number recovery from
+acknowledging an additive Canvas editor save. It preserves all file bytes and reports
+the remaining acknowledgement; export stays strict until that separate step completes.
+This candidate is distinct from the previously reviewed 0.50.0 payload and is not installed.
 
 [中文文档](./README.zh-CN.md)
 

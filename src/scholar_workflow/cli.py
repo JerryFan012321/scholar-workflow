@@ -4076,6 +4076,9 @@ def _rebind_result(result, fmt, language, *, committed):
                    "Original path and inode match; recover only the host device number, not content edits.")
         click.echo(("已核文件：" if zh else "Checked files: ") + str(len(result["files"])))
         click.echo("尚未写入。" if zh else "Nothing written.")
+    for pending in result.get("pending_canvas_metadata", []):
+        click.echo(("Canvas 的编辑器保存仍待确认：" if zh else
+                    "Canvas editor save still requires acknowledgement: ") + pending["vault_path"])
     click.echo(("确认摘要：" if zh else "Confirmation digest: ") + result["approved_digest"])
     click.echo("不是已验证备份，不证明原文科学支持、阅读器打开或人工评鉴。" if zh else
                "Not a verified backup or proof of scientific support, reader launches or human assessment.")

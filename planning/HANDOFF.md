@@ -1,5 +1,72 @@
 # HANDOFF — 从这里接着干
 
+## 当前有效入口：2026-10-29 审查后的执行状态
+
+当前开发为 `codex/hotfix-source-recovery` 的0.50.1修复候选：恢复绑定时只容许精确证明
+图不变的新增受限metadata，原artifact hash仍保留并明确待确认，导出继续严格拒绝到单独确认完成。
+新13项反例先实际7失败/6通过，修复后13通过；补齐其他文件/纯序列化拒绝后，完整unit/contract
+4084通过，0失败/错误/跳过（259.03秒，11既有warning），确切wheel和headless浏览器均启用。
+最后仅调整一处import排版，最终70项恢复/导出/确切wheel补验通过（4.59秒），
+154个包内文件与最终wheel逐字一致；Ruff本批通过，原有TRY004单列，未顺手修无关代码。
+原 `codex/hotfix-native-tool-separation@696df83` 运行候选保持原样，不借旧发布问题授权新构建。
+前三份开发状态文档的未提交修订随分支保留，不重置。只在test工作目录运行合成测试，
+不调用正式Source的rebind/metadata acknowledgement，不发布安装、不改论文或合并main。
+
+本节是当前源码、安装与下一动作的唯一交接摘要。下方日期段保存原时点的证据；其中
+“当前”“未提交”“待批准”等措辞不覆盖本节，也不是重跑旧业务、恢复Hub或重复测试的指令。
+GOALS持有目标与不变量，BACKLOG持有未完工作；实际安装/验收状态从这里定位原始回执。
+
+| 对象 | 已核实状态 | 不应据此声称 |
+|---|---|---|
+| 当前源码候选 | hotfix `codex/hotfix-source-recovery` 的0.50.1；本地修复，尚未发布安装 | 日常安装已经采用新规则或真实Source已修复 |
+| 此前审阅候选 | `codex/hotfix-native-tool-separation@696df83` 的0.50.0原内容保持 | 旧版本发布问题的答复授权新的0.50.1构建 |
+| 正常安装 | PATH CLI及两个插件manifest均0.49.0，仍有旧Hub网页和19个Skill，含开发用project-backlog | 源码中的退役和18个运行Skill已在本机生效 |
+| 源码验证 | 0.50.1完整unit/contract4084通过，import排版后最终wheel补验70通过；此前0.50.0回执继续保留，重叠测试不相加 | 正常安装、原生界面、科学支持、人工评鉴或新对话oneshot通过 |
+| 知识与工具 | 只读查询得到12个Source及对应provider清单、2台服务器记录和26个跟踪渠道；Zotero Local API当前可达；这只证明目录/清单可读取 | 归属已解析、所有原生打开、远端连接或各篇分析质量均已验收 |
+| 归属健康 | 安装版实际论文单元投影为partial：11个正式Source的设备号与provider记录不同，路径/inode一致，12份snapshot均通过当前模型结构校验 | available目录等于可用归属，或可以批量跳过绑定/内容检查 |
+| 历史隔离 | 日常登记仍含test中的“模范知识目录-0.36.0”；正式“06-预测规划与驾驶世界模型”显式引用其中V-JEPA 2 | 新测试环境隔离已消除全部历史跨区引用 |
+| 实验交接 | 本机可访问证据的选择、接收、读取、更新恢复已有源码验证 | 远端选择性导出、主动拉取或及时交付已实现 |
+| 完整目标 | 已认可正文、五分支Canvas、领域库、项目和实验格式保留 | 第一阶段、新对话稳定一次生成或第二阶段多维交互已完成 |
+
+原始回执沿用test Vault唯一工作目录 `Scholar Workflow 实验/_工作/native-tool-separation-20261028`：
+`asset-unit-checks.json`、`asset-units-full-final.xml`、`runtime-0500-review.json`及
+`installed-0490-receipt2-baseline.json`。旧版读取候选schema-2实验回执实际退出6并报invalid，
+父项目文件字节不变；不得混用旧版读回结果作为0.50.0通过证据。
+本次修复记录为`目录绑定恢复修复.md`、`source-recovery-0501-{red,green,full,final}.xml`；
+最终wheel位于`candidate-0501-final-wheel/`，不同于全量回归所用的首个wheel。
+
+独立安装态检查器已通过10项标准库控制流测试；正常0.49.0预检实际退出3、
+`prerequisites_unmet`、业务调用0，正确保留“尚未安装候选”的状态。结果见同一工作目录
+`安装态验收准备.md`、`installed-checker-selftest-20261029.txt`和
+`installed-0500-preflight-20261029.json`。这不增加0.50.0业务通过项，也不替代人工评鉴。
+此前0.50.0发布/正常安装及两个既有合成对象验收的问题仍待用户答复；自动目标续行不是该授权。
+检查器不得发布或安装，不得以源码、PYTHONPATH或临时环境代替正常产品。
+它的现有计划只绑定旧0.50.0，不可未经更新和独立核验就用于新0.50.1。
+历史test到正式库引用需独立的身份/位置/链接处置预览；本次不移动、删除或重新登记论文单元。
+不连接服务器、不改正式Vault/Zotero、不停服务、不合并main，也不重复整篇或整库业务。
+
+### 当前新增证据：先处理恢复组合故障，再考虑历史归属搬迁
+
+以下为修复前的只读诊断；本批源码已补恢复交接，但尚未正常安装或执行真实恢复。
+
+只读核对12个Source的225条atomic owner入口，222条旧路径仍在；“3dgs模型优化”的3条
+provider路径仍为resources/papers/...，当前Field导航已指向resources/...且文件存在。
+三个新笔记的原生来源链接分别含对应登记item key，但这只是待核实映射，不证明原文件字节守恒，
+不能仅据标题/路径直接改provider。该Source的正常rebind-plan实际退出7并报告旧父目录缺失。
+
+“04-空间记忆与长期一致性”的rebind-plan也退出7：WorldMem Canvas原始hash不同。
+经已安装包的只读校验，当前Canvas的metadata仅为受支持version及空frontmatter；移除metadata后，
+完整JSON图的登记编码hash精确匹配原artifact。其他五个已登记分析产物字节匹配。
+现有metadata acknowledgement先要求设备/inode绑定有效，而rebind先要求原始artifact hash匹配；
+设备号漂移与允许的编辑器metadata同时发生时形成恢复死锁。没有调用写入函数或手改状态。
+
+本批组合反例和源码修复严格保留内容/布局变化拒绝、CAS、journal和未知metadata拒绝；
+不把恢复绑定冒充metadata已确认或科学内容通过。正常安装与单对象恢复仍需后续各自证据，
+3DGS旧路径不在本修复范围内；后续修正与待审阅旧候选明确区分。
+V-JEPA 2是一个已登记单元、10个声明成员，正常reproduction-plan可导出；12个Field声明中仅
+“06-预测规划与驾驶世界模型”有一条对该test owner的显式引用。未扫描任意项目/正文反链，
+不声称所有人工链接已覆盖。优先保留它，不在其他Source尚未恢复时盲目搬迁或重建身份。
+
 ## 2026-10-29：完整知识资产单元的上层引用（源码验证完成，未发布安装）
 
 上一目标轮完成可读成果选择批次的本地提交eeae243，工作区干净，未发布安装。

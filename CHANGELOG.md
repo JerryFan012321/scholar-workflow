@@ -5,6 +5,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Fixed
+
+- **knowledge recovery (0.50.1 candidate):** break the same-directory device-drift
+  and additive Canvas-editor-metadata deadlock. Prove the entire registered graph
+  unchanged, freeze current file bytes in the reviewed plan, and restore only the
+  host binding while explicitly retaining pending metadata acknowledgement.
+  Keep registered artifact hashes unchanged and export/restore strict until the
+  separate acknowledgement; refuse content/layout/unknown-metadata drift and
+  preserve CAS, old journals and interrupted recovery. No paper regeneration,
+  formal Source repair, publication or normal installation is performed.
+
 ### Changed
 
 - **knowledge asset references:** project registered paper, Blog and technical

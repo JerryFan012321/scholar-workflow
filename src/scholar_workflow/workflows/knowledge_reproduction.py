@@ -14,7 +14,11 @@ from scholar_workflow.analysis.apply_changes import (
     _locked_state_root,
     _vault_binding_for_root,
 )
-from scholar_workflow.analysis.commit import _read_target_regular
+from scholar_workflow.analysis.commit import (
+    AnalysisCommitSafetyError,
+    _json_bytes,
+    _read_target_regular,
+)
 from scholar_workflow.analysis.image_assets import ImageAssetError, verify_canvas_assets
 from scholar_workflow.analysis.models import AnalysisBaseline
 from scholar_workflow.analysis.package_check import check_package
@@ -81,8 +85,23 @@ def _asset_projection(snapshot, payload):
     return KnowledgeProviderSnapshot.model_validate(data)
 
 
-def _inventory(root, root_fd, state_fd, fields, snapshot):
-    """Check the same complete explicit file set for export and restoration."""
+def _pending_editor_save(artifact, payload):
+    """Prove only the same additive metadata save supported by acknowledgement."""
+    from scholar_workflow.analysis.editor_metadata import _metadata_graph
+
+    try:
+        graph = _metadata_graph(payload)
+    except AnalysisCommitSafetyError as exc:
+        raise FieldRegistryError("Registered Canvas metadata proof is invalid") from exc
+    original = {key: value for key, value in graph.items() if key != "metadata"}
+    if "metadata" not in graph or _hash(_json_bytes(original)) != artifact.sha256:
+        raise FieldRegistryError("Registered Canvas graph differs from actual file")
+    return {"artifact_id": artifact.artifact_id, "vault_path": artifact.vault_path,
+            "registered_sha256": artifact.sha256, "observed_sha256": _hash(payload)}
+
+
+def _inventory(root, root_fd, state_fd, fields, snapshot, *, pending_canvas_metadata=None):
+    """Check complete files; only explicit rebind callers may defer proven metadata."""
     asset_bytes, _ = _read(state_fd, "assets.yml")
     snapshot = _asset_projection(snapshot, asset_bytes)
     paths = {r.markdown_path for r in snapshot.manifest.atomic_resources}
@@ -98,7 +117,9 @@ def _inventory(root, root_fd, state_fd, fields, snapshot):
     hashes = {path: _hash(payload) for path, payload in contents.items()}
     for artifact in snapshot.artifacts:
         if hashes[artifact.vault_path] != artifact.sha256:
-            raise FieldRegistryError("Registered artifact hash differs from actual file")
+            if pending_canvas_metadata is None or artifact.kind != "analysis_canvas":
+                raise FieldRegistryError("Registered artifact hash differs from actual file")
+            pending_canvas_metadata.append(_pending_editor_save(artifact, contents[artifact.vault_path]))
     for asset in snapshot.catalog.assets:
         if hashes[asset.vault_path] != asset.sha256 or len(contents[asset.vault_path]) != asset.size:
             raise FieldRegistryError("Registered asset hash or size differs from actual file")

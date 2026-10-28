@@ -8,6 +8,13 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 > not evidence for this batch. Cancelled Hub-only acceptance is **retired**, never promoted to
 > pass. Content safety, source verification, real migration and verified backup remain separate.
 
+> Current-state rule, 2026-10-29: HANDOFF top owns the current source/install and
+> acceptance snapshot. An item's current Blocker/Next action overrides its dated
+> historical notes. Old version numbers or spent release permissions are not new
+> authorization. Ordinary tests follow the global preparation rule without a
+> separate approval gate; installation, real-data changes and human assessment
+> keep their own boundaries.
+
 ## Schema
 
 - **ID**: `WI-NNN` (auto-increment from 001)
@@ -55,6 +62,36 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
   Unsupported-type registration, installed/native/human acceptance and fresh-host
   generation remain separate unfinished requirements; multidimensional UI is open.
 - **Related**: G11/G12/G16/G20, INV31/35/60/65/66; native-tool-separation.md.
+- **Next action, 2026-10-29**: the follow-up0.50.1 recovery candidate has source
+  regression evidence below. Preserve the original0.50.0 ref and review archive;
+  obtain exact new-build distribution/installation authority before installed
+  checks. The earlier installed-checker control tests passed10, and normal0.49.0
+  preflight stopped with no business commands; its plan still selects0.50.0 and
+  must not masquerade as acceptance of0.50.1. Do not run more paper analyses or
+  change formal Sources. Actual remote transfer and fresh-host generation remain open.
+- **Operational finding, 2026-10-29**: one Source in the personal registry still
+  lives in test Vault and is explicitly referenced by a formal Field. New test-mode
+  isolation does not repair that legacy relationship. Prepare a separate reviewed
+  identity/location/link disposition before changing any content or registration;
+  no automatic deletion, adoption or duplicate owner is authorized here.
+- **Recovery finding, 2026-10-29**: directory inventory is available but the normal
+  installed unit projection is partial:11 formal providers have device-number
+  drift with matching paths/inodes. All12 snapshot schemas parse. Of225 declared
+  owner paths,3 old3DGS paths are missing while current navigation files exist;
+  do not infer safe adoption from titles. A second selected rebind preview reveals
+  an actual recovery deadlock: supported Canvas editor metadata preserves the
+  exact registered graph, but rebind requires its old raw hash and metadata
+  acknowledgement requires a current provider binding. Both previews refuse with
+  exit7 and no state writes. The follow-up0.50.1 source candidate now permits
+  only proven additive metadata during binding recovery while retaining pending
+  acknowledgement and the original artifact hashes. Export remains strict.
+  The new13-case regression first failed7/passed6, then passed13; with3 additional
+  refusal cases the full suite passed4084, no skips. After import formatting,
+  the final exact wheel and affected recovery/export paths passed70 checks.
+  These overlapping runs are not summed. All graph-change, unknown-metadata,
+  CAS and journal protections remain; no papers or formal Sources are changed.
+  The old0.50.0 runtime/ref is frozen;0.50.1 needs its own exact build identity and
+  cannot use an answer to the pending old publication question as authorization.
 
 ### WI-056: Research resources, publication channels and incremental updates
 
@@ -81,10 +118,18 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Status**: in-progress
 - **Priority**: p1
 - **Type**: code-change
-- **Latest correction, 2026-10-21**: Read-only inspection now finds existing experiment JSON and outputs in the real project; the old report-only/empty-archive diagnosis is stale. Parent role declaration and a selected Run's canonical collection format remain missing; preserve the original plan/records and review identity/field mappings before authorized adoption. Normal installation remains 0.47.0; its synthetic reception and independent read-only comparison do not prove real remote collection or generation one-shot. The user additionally requires timely lightweight delivery and conforming execution-child structure. The shared runtime contract now specifies these requirements without claiming transport/scheduling implementation or approval of the proposed detailed tree.
+- **Historical correction, 2026-10-21**: Read-only inspection found existing experiment JSON and outputs in the real project; the old report-only/empty-archive diagnosis was stale. Parent role declaration and a selected Run's canonical collection format were missing at that inspection. Preserve the original plan/records and review identity/field mappings before authorized adoption. The installation at that time was 0.47.0; current installation is recorded in HANDOFF, not inferred from this historical note. Synthetic reception/comparison does not prove real remote collection or generation one-shot. Timely lightweight delivery and conforming execution-child structure remain requirements.
 - **Context**: On 2026-10-16 the user confirmed a full local research parent with private local-only management Git, knowledge/literature, PROJECT and one plan, agent guidance/skills, all-child experiment archives and local analysis. Every child has its own remote source Git and all human/agent code changes happen remotely; only the primary role may push project-owned history to GitHub, while reading original upstreams remains allowed for other children. Local code retention is a minimal recovery copy, not a development clone. This supersedes the earlier local nested-primary idea; it does not revoke any existing released contract or accepted paper/Canvas format.
-- **Blocker**: none for the explicitly authorized 0.47.0 commit/publication/normal installation and test-only single-project continuation. Real deployment/migration, human acceptance and WI-041 remain separately scoped. Authority does not include main merge, servers, formal Vault/Zotero or service switching.
-- **Next action**: Validate the timely-delivery/child-format contract with bounded existing synthetic checks; keep its new behavioral outcomes pending until independently exercised. Review the existing real records' identity/format gaps before separately authorized adoption or transfer. Preserve the displayed clean PROJECT/comparison and pending human assessment. Do not repeat valid business, migrate a real child from the directory proposal, deploy synchronization, merge main or infer live workers from markers. Publication/normal installation of this new contract is separate; prior release facts remain in their receipts.
+- **Blocker**: remote export/transfer and timely-delivery evidence remain missing;
+  real deployment/migration, human assessment and WI-041 are separately scoped.
+  Earlier 0.47.0 publication permission has been used, not renewed. Current candidate
+  distribution boundaries are in HANDOFF/WI-057.
+- **Next action**: retain the existing local reception/update/recovery evidence and
+  accepted project/report formats. Finish candidate installed acceptance under
+  WI-057, then implement the missing parent-initiated remote delivery handoff as a
+  separate bounded operation. Prepare selected inputs, expected identity/bytes and
+  explicit transfer authority before any real server access. Do not repeat valid
+  business, deploy synchronization, merge main or infer live workers from markers.
 - **Related**: G11, G16, INV32-INV35, INV62, WI-019, WI-020, WI-022, WI-023, WI-024, WI-041, WI-054; `planning/project-system-v2.md`
 - **Usability/transfer requirement, 2026-10-21**: Detailed target and implementation slices now live in `planning/project-system-v2.md` §16; shared runtime requirements live in `references/project-management.md`. All roles need human-editable config and thin non-frontend operations; primary is not a third architecture. Separate requested work, original child evidence and confirmed parent receipt; reuse existing authorities, preserve local analysis and account for the whole-Run 128 MiB collector boundary. Unified launcher/selective export/transport remain unimplemented, new behavior evals pending. No remote deployment, new registry or test conversation is authorized by this discussion.
 - **Contract validation, 2026-10-21**: Timely-delivery/child-format requirements pass 139 focused checks and the full 3111-test unit/contract regression (11 existing warnings, 135.94s); three project-skill validators and seven shared relative links pass. Existing outcomes are unchanged; two new behavioral outcomes stay pending. This is local hotfix source validation only, not publication/installation, a running collector, remote migration or fresh-host acceptance.
@@ -108,10 +153,21 @@ Work items for scholar-workflow. Single source of truth for pending work, decisi
 - **Priority**: p0
 - **Type**: refactor
 - **Context**: The user approved replacing the tool-control product with an integrated research-project context: code, papers, analysis/notes, experiments and results remain in their authoritative stores and are joined by explicit project-owned references. Project owns context/layout/archives; Knowledge owns reusable objects and ownership; Analysis owns paper results; Adapters own external interfaces; Workflows compose tasks; CLI/agents/skills stay thin. The formal batch specification is `planning/project-centered-refactor.md`.
-- **Blocker**: independent test approval before executing any tests; publication, installation, service retirement and real-data migration are not included in implementation authorization
-- **Next action**: The schema-1 context contract, three read-only project CLI entries and first Knowledge model/catalog/document/Field extraction are implemented in the development tree without changing project-layout schema 2 or analysis formats. Present the one-project synthetic inputs, expected Markdown/JSON and targeted regression scope for independent approval before running tests. Remaining native-reader imports, literature-tree catalog update and Field transaction HTTP dependencies are explicit later slices, not proof of full decoupling. This batch is untested and unpublished; cancelled Hub UI/worker gates and incomplete real migration/backup do not block its independent acceptance.
+- **Blocker**: none for bounded development checks prepared under the global test
+  rule. Publication/installation, process shutdown and real-data migration remain
+  separate; retired Hub UI/worker acceptance must not be reopened.
+- **Next action**: context/schema/read-only CLI and the subsequent Knowledge/model/
+  Field-transaction extraction have source regression evidence under WI-057 and
+  HANDOFF. They are not an untested first extraction anymore. Keep remaining legacy
+  import aliases and compatibility code explicit without calling them a required
+  running Hub. Verify normal installation separately; preserve layout identity,
+  accepted analyses and existing data, and do not rerun old project business.
 - **Related**: G16, INV59-INV61, NG21-NG22, WI-019, WI-025, WI-030, WI-041; `planning/project-centered-refactor.md`
-- **Direction update, 2026-10-16**: Remote-only child source development and full local research management are accepted under WI-055. The existing context interface has no remote-code locator; add that capability explicitly in the new slice rather than accepting arbitrary SSH URIs or declaring it already supported.
+- **Historical direction update, 2026-10-16**: Remote-only child source development
+  and full local research management were accepted under WI-055. The then-missing
+  code locator now has an explicit execution-code/remote-code-plan interface; its
+  current contract is references/project-context.md. This preview does not connect,
+  verify remote state or authorize arbitrary SSH URIs.
 
 ### WI-053: Direct paper readers, related files and guided Codex tasks
 - **Status**: deferred

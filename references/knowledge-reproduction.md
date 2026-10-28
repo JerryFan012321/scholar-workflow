@@ -88,7 +88,8 @@ must be enabled and writable, with exactly the saved normalized path and inode.
 Only its device number may differ. The plan freezes registry/provider bytes, current
 root identity, portable manifests (including absence) and the complete explicit file
 inventory. Managed analysis and declared asset hashes must already match their
-authority; other navigated notes are frozen from this inspection, not certified
+authority, except the proven pending editor save below; other navigated notes
+are frozen from this inspection, not certified
 against an unavailable historical copy. Missing, unsafe or inconsistent members,
 different roots and changes after preview refuse recovery.
 
@@ -106,6 +107,33 @@ edit provider state or roll back another writer. After recovery obtain fresh pro
 CAS for any pending paired update; if its operation context was frozen, use a new
 batch with the existing reviewed IR rather than reanalyzing the paper. Reader links,
 scientific/source assessment, human acceptance and verified backup remain separate.
+
+### Pending additive Canvas metadata during device recovery
+
+Requires normally installed runtime 0.50.1 or later. `rebind-plan` may list
+`pending_canvas_metadata` when a
+Canvas only gained supported editor metadata with empty frontmatter. Removing
+that metadata and canonically encoding the entire graph must reproduce the exact
+registered physical artifact hash. Text, layout, nodes, edges, links and all other
+content remain unchanged; unknown metadata, missing files and any other drift
+still refuse. Plain serialization changes without additive metadata do not qualify.
+
+The plan binds both the old artifact hash and the observed current bytes. Rebind
+updates only the host binding and derived snapshot revision, preserving the old
+artifact hashes, catalog, receipts, ownership and every Source file. Its result
+retains the pending list, sets `file_integrity_verified: false` because the new
+physical artifact hash is not yet acknowledged, and sets
+`file_readset_verified: true` for the reviewed bytes. A current binding may also report pending metadata
+without creating a recovery journal. Old plans without this field retain their
+existing digest and replay behavior.
+
+After binding recovery, prepare a fresh metadata-only request with the current
+three file hashes and provider revisions. Use the existing
+[`analysis acknowledge-canvas-metadata` contract](../skills/analyze-paper/references/analysis-batch.md),
+then read back the resulting artifact hash. It does not rewrite the Canvas.
+Ordinary reproduction/export and restoration remain strict and still refuse the
+unacknowledged artifact. Binding recovery is not metadata acknowledgement or
+scientific acceptance; this exception does not adopt renamed or missing paths.
 
 ## Reader and completion handoff
 
