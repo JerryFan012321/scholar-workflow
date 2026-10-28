@@ -1,6 +1,22 @@
 # HANDOFF — 从这里接着干
 
-## 2026-10-28：用户要求正常安装 0.49.0（执行中）
+## 2026-10-28：0.49.0 已正常安装，待用户人工评阅
+
+源码69d1d9956224b6f2667d9f1bb1e491524862bbab已固化，runtime-only运行提交
+e3fc572a7a448e8d7f04a5a81b2b9135969f7936已正常推送release。通过既有Git marketplace与
+pipx固定runtime更新，Codex/Claude/CLI均0.49.0，关键payload逐字一致。main不合并。
+正常CLI为pipx Python3.14 site-packages，脱离源码cwd运行；0.48.0 runtime3f1f0df及
+Codex旧缓存保留，固定旧提交的CLI回退命令记在test安装回执。
+
+旧50984源码预览已按核实PID停止，检查其无未保存草稿后关闭该标签。已安装CLI从test Vault
+启动独立test环境59032/session43152，内置浏览器标签7已实际读取并保留：2论文、2测试来源、
+4条件记录；添加Vault入口可见。实际页面读取不代表系统选择器交互、受管写入或人工评鉴通过。
+11个论文文件与正式registry仍字节一致，不跑真实业务、不迁移资料。安装回执与截图在test的
+`Scholar Workflow 实验/_工作/vault-onboarding-20261028/`。新开宿主对话后才加载新Skill。
+
+日常从任意目录运行`scholar-workflow knowledge explore --root <选定Vault目录>`，自动在
+cmux或普通浏览器打开；终端Ctrl-C停止。当前59032为隔离测试环境，不能作为日常登记来使用。
+用户现只要求安装与打开方法；后续先给用户使用，不自动继续整库操作或扩展功能。
 
 修正测试边界后完整unit/contract终态3972通过、0跳过、11项既有警告、239.33秒；显式启用
 真实headless浏览器和确切wheel隔离检查。父test Vault HEAD仍a656fb1、暂存区为空，11个

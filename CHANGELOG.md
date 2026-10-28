@@ -5,6 +5,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Changed
+
+- **explore-knowledge:** record normal 0.49.0 marketplace/CLI installation and
+  isolated installed-page verification. User assessment remains independent.
+
 ## [0.49.0] - 2026-10-28
 
 ### Added
