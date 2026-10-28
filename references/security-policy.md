@@ -46,6 +46,10 @@ it still requires optimistic concurrency protection.
 
 ## Personal asset records
 
+The explorer's test/personal and read-only Vault connection boundaries are specified
+in [Vault connections](vault-connections.md). Test requests cannot select personal
+state or foreign roots. Read-only connection grants no paper ownership/content write.
+
 The shared `asset-management.md` contract owns lookup/capture/reuse scope. Server
 registration stores non-secret metadata and credential references only; legacy
 secret fields remain private and are neither emitted nor silently migrated. A

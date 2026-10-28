@@ -5,6 +5,106 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.49.0] - 2026-10-28
+
+### Added
+
+- **explore-knowledge — isolated Vault connections:** introduce explicit personal/test
+  runtime contexts, test-root validation on startup and requests, test-only registries,
+  and disabled ambient reader/Zotero/native launches in tests. Add system-selected,
+  revision-bound read-only Vault/folder connections, layered readiness inspection,
+  proposed adjustment previews and bounded Markdown reading through the existing host
+  registry. Keep paper identities, prose, editable Canvas and figures unchanged.
+  Publication/installation and human acceptance remain separate from development checks.
+
+- **explore-knowledge — 0.49.0:** add the runtime skill, bilingual
+  usage documentation and shared contract for extensible dimensions,
+  condition-specific records, evidence-linked work relations and complete
+  local/web asset navigation. Document the installed CLI interfaces and
+  stdout-only Obsidian export; existing paper prose, Canvas, sidecars, originals
+  and images remain unchanged. Source validation, publication, installation,
+  native opening and human assessment are distinct outcomes.
+  Import original-page/DOI/arXiv references from the exact resource and verified
+  Zotero item/PDF/note/attachment links through read-only Local API calls. Keep
+  offline diagnostics in both the interface and Markdown export; no attachment
+  cloud download, paper-body parsing or title-based association. Dimension forms
+  offer sorting only for supported single-value text/number/date types.
+  Preserve existing paper units as atomic objects: select whole registered units
+  through the actual inventory, keep paper identity and asset membership, and
+  aggregate multiple conditional records into one result/node. Replace the free
+  paper-card creation entry with explicit unit selection. Validate editor candidate
+  copies before adopting them, retaining forms and unsaved state on failure.
+  Require server-confirmed whole-unit proposals for new paper saves; reject direct
+  fabricated/fragment references and generic CLI paper-inventory edits. Preserve
+  provider-driven inventory growth and map registered Source assets correctly
+  when the exploration root is a Field subdirectory.
+  Apply the same confirmed-unit boundary to draft query previews, not only saves.
+  Verify native PDF actions against current unit/provider ownership, parent/library
+  and attachment identity, Local API locators and real local byte digests. Require
+  an asset-list snapshot and recheck before launch, preserving page/annotation
+  targets. ZotFlow additionally requires the exact registered Vault and its live
+  local-storage/compatibility probe; no cloud PDF or secret-read fallback. Keep
+  unavailable links with readable reasons instead of disabling unrelated work.
+  Reuse the existing ZotFlow implementation from shared adapters with a legacy
+  Hub module alias; share the unchanged minimal child environment and retain
+  old import/monkeypatch identity.
+  Preserve human edits across concurrent file changes and delayed responses:
+  bind forms to their opening revision, retain inputs on conflict, prevent
+  concurrent saves/new edit forms during a save, and discard superseded
+  reload/poll/query responses. Query the displayed model and invalidate old
+  requests as soon as filters change; never silently rebase an unsaved draft.
+  Preserve exact inline source links in Markdown previews through digest-bound,
+  session-only actions. Revalidate the literal source and reader before launch;
+  no raw native-protocol anchor bypass or browser-supplied URI/path is accepted.
+  Support the analysis renderer's exact ZotFlow navigation.pageIndex locator and
+  declared local heading/block targets without rewriting accepted paper assets.
+  Reject a paper import when its qualified identity is already occupied by a
+  non-paper kind; preserve the original rather than mixing inventories or relabeling.
+  Keep supported paper-body previews readable, including folded original
+  excerpts, evidence emphasis, lists/tables and in-place declared raster images.
+  Serve inline images through source-bound session actions, not remote loading
+  or browser paths; leave original paper files and native Canvas editing intact.
+  Refuse changing/incomplete manifest reads and keep ordinary text dimension
+  values distinct from reference IDs in Markdown export. Suggest record ownership
+  only from explicit selection or a completed query's unique match; ambiguous
+  choices remain explicit. Clear removed-unit details and query-owned stale errors,
+  preserving unrelated conflict warnings. Prepare native evidence actions directly
+  from comparison rows without requiring a prior visit to the unit's detail panel.
+  Add explicit Source/Field read-only browsing of existing packages without an
+  exploration write. Preserve incomplete global ownership diagnostics while
+  distinguishing checked local declarations; conflicts and unsafe declarations
+  remain refused, normal imports/writes and PDF-reader checks are unchanged.
+  Read the original Markdown and declared figures, link the existing Canvas,
+  and keep candidate/history folders out of the paper-node inventory.
+  Fill missing source-page/DOI entries from the identity-verified live Zotero
+  parent, rejecting unsafe URLs and mismatched parents. Use a page-local draft
+  reload confirmation so embedded browsers do not block on native confirm;
+  keeping or discarding a draft never saves it or rewrites paper files.
+
+### Changed
+
+- **Distribution metadata:** align the Claude marketplace description with both
+  plugin manifests and the Codex marketplace. Do not advertise the retired
+  general Hub/Codex control plane as the current product.
+- **Development — explorer demonstration:** add an explicitly synthetic,
+  disposable source preview using the real store, importer and local UI. Keep
+  complete unit selection, conditional comparisons and readable asset previews
+  observable while refusing every native launch and avoiding personal providers.
+  This development utility is not shipped or evidence of installed acceptance.
+- **Product boundary / G20:** restore a focused file-backed knowledge relationship
+  interface, with cmux as an optional browser destination and the same declared
+  assets available to Obsidian navigation. Preserve historical Hub goal retirement
+  and the ban on expanding built-in Codex control. Add routing/safety specifications
+  and a pending outcome; this record does not claim installed or real-Vault
+  acceptance, website-body archiving or an agent scheduler.
+- **Development — 0.48.0 delivery:** record authorized runtime-only hotfix publication,
+  normal pinned pipx/marketplace installation and exact installed payload checks.
+  Preserve the two audit-script false positives as diagnostics, not product failures.
+  Record one independent installed RSS check, repeat/deduplication, disposition
+  read-back and native report display, retaining initial stdout truncation and
+  window/paint capture limitations. Human and other-provider acceptance remain
+  separate; no main merge or formal library writes.
+
 ## [0.48.0] - 2026-10-24
 
 ### Added

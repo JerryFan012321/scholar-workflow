@@ -243,6 +243,9 @@ def _declared_files(snapshot, owner_id: str, assets: list[HubAsset]) -> list[dic
 def field_paper_units(
     registry_path: Path, *, source_id: str, field_id: str,
     reader_config_path: Path | None = None,
+    include_resource_links: bool = False,
+    resolve_reader: bool = True,
+    root_validator=None,
 ) -> dict:
     """Compose declared paper units for one explicit Field, without reading bodies.
 
@@ -252,13 +255,16 @@ def field_paper_units(
     if not source_id or not field_id:
         raise FieldRegistryError("Paper units require both Source and Field selectors")
     inventory: dict = {}
+    options = {"root_validator": root_validator} if root_validator is not None else {}
     results, available = _resolve_objects(
         set(), Path(registry_path), field_selection=(source_id, field_id), inventory=inventory,
+        **options,
     )
     inventory["registry_parent"] = Path(registry_path).parent
     field = inventory["selected_field"]
     assets, asset_issues = _source_assets(inventory)
-    readers, reader_issues = _readers(inventory, results, reader_config_path)
+    readers, reader_issues = (_readers(inventory, results, reader_config_path)
+                             if resolve_reader else ({}, []))
     observations = {(row["source_id"], row["relative_path"]): row for row in inventory["files"]}
     declared = {key: _declared_files(inventory["snapshots"][key[0]], key[1], assets[key[0]])
                 for key in sorted(inventory["selected_owners"])}
@@ -341,6 +347,16 @@ def field_paper_units(
         (row.source_id, row.object_id), row.file_state)}) for row in inventory["locations"]]
     results = {object_id: resolve_declared_ownership(object_id, locations, issues)
                for object_id in results}
+    # Local reading is not a claim of global uniqueness. Ignore only unreadable
+    # *other* Sources for this observation; known conflicts and local changes stay.
+    reading_results = {}
+    for owner_source, owner_id in declared:
+        local_issues = [issue for issue in issues if not (
+            issue.source_id is not None and issue.source_id != owner_source
+            and issue.code == "source_declaration_unavailable")]
+        resolved = {object_id: resolve_declared_ownership(object_id, locations, local_issues)
+                    for object_id in results}
+        reading_results[owner_source, owner_id] = resolved
     selections = {key: {"selected_by": ["owned"], "purposes": []}
                   for key in declared if key[0] == source_id and any(
                       row.source_id == source_id and row.field_id == field_id
@@ -367,16 +383,31 @@ def field_paper_units(
                      and row.object_id == owner_id and row.owner_id == owner_id)
         files = file_views[(owner_source, owner_id)]
         for row in files:
+            row["local_read_state"] = ("declared" if _file_ownership_resolved(
+                row, owner_source, owner_id, reading_results[owner_source, owner_id])
+                and not (row["kind"] == "asset" and owner_source in incomplete_assets)
+                and row["file_state"] != "unsafe" else "unverified")
             if (not _file_ownership_resolved(row, owner_source, owner_id, results)
                     or row["kind"] == "asset" and owner_source in incomplete_assets):
                 row["uri"] = None
                 if (row["file_state"] == "available"
                         and (row["kind"] != "asset" or row["open_state"] != "unsupported_type")):
                     row["open_state"] = "ownership_unresolved"
-        units.append({"source_id": owner_source, "resource_id": owner_id,
-                      "title": files[0]["title"], "field_title": owner.field_title,
-                      **selection, "ownership": results[owner_id].model_dump(mode="json"),
-                      "files": files})
+        unit = {"source_id": owner_source, "resource_id": owner_id,
+                "title": files[0]["title"], "field_title": owner.field_title,
+                **selection, "ownership": results[owner_id].model_dump(mode="json"),
+                "local_read_state": ("declared" if all(
+                    row["local_read_state"] == "declared" for row in files) else "unverified"),
+                "files": files}
+        if include_resource_links:
+            # Reuse the exact Source snapshot already checked above; no second scan,
+            # title matching or original-body parsing supplies the association.
+            resource = next((row for row in inventory["snapshots"][owner_source].catalog.resources
+                             if row.resource_id == owner_id), None)
+            unit["catalog_resource"] = (
+                resource.model_dump(mode="json") if resource is not None else None
+            )
+        units.append(unit)
     all_issues = list({(row["source_id"], row["code"]): row for row in [
         *(issue.model_dump(mode="json") for issue in issues), *reader_issues, *asset_issues,
     ]}.values())

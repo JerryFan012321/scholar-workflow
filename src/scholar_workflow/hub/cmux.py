@@ -21,10 +21,16 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
+from scholar_workflow.adapters.process_environment import (
+    _BASE_CHILD_ENV_KEYS as _BASE_CHILD_ENV_KEYS,  # noqa: PLC0414 - compatibility re-export
+)
+from scholar_workflow.adapters.process_environment import (
+    _CMUX_CHILD_ENV_KEYS as _CMUX_CHILD_ENV_KEYS,  # noqa: PLC0414 - compatibility re-export
+)
+from scholar_workflow.adapters.process_environment import minimal_child_environment
+
 DEFAULT_CMUX_PATH = Path("/Applications/cmux.app/Contents/Resources/bin/cmux")
 _INSTANCE_TOKEN_RE = re.compile(r"^[A-Za-z0-9_-]{8,128}$")
-_BASE_CHILD_ENV_KEYS = ("HOME", "PATH", "TMPDIR", "LANG", "LC_ALL")
-_CMUX_CHILD_ENV_KEYS = ("CMUX_WORKSPACE_ID", "CMUX_SOCKET_PATH")
 _UUID_RE = re.compile(
     r"(?i)\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b"
 )
@@ -509,16 +515,6 @@ def _url_values(value: Any, *, key: str = "") -> Iterator[str]:
             yield from _url_values(child, key=key)
     elif isinstance(value, str) and key.lower() in {"url", "uri", "current_url", "currenturl"}:
         yield value
-
-
-def minimal_child_environment(*, include_cmux: bool = False) -> dict[str, str]:
-    """Return the small environment required by local launch helpers."""
-    keys = _BASE_CHILD_ENV_KEYS + (_CMUX_CHILD_ENV_KEYS if include_cmux else ())
-    return {
-        key: value
-        for key in keys
-        if (value := os.environ.get(key)) is not None
-    }
 
 
 def _public_error(detail: str, *, secrets: tuple[str, ...] = ()) -> str:
