@@ -79,7 +79,7 @@ def _check_strings(value, key=""):
         for child in value:
             _check_strings(child, key)
     elif isinstance(value, str):
-        _safe_text(value, multiline=key in {"abstract_original", "abstract_zh", "description_original", "description_zh"})
+        _safe_text(value, multiline=key in {"abstract_original", "abstract_zh", "description_original", "description_zh", "summary_zh"})
     elif isinstance(value, float) and not math.isfinite(value):
         raise ResearchError("Recommendation numbers must be finite.")
 
@@ -109,6 +109,8 @@ def _normalize_resource(resource: dict) -> tuple[dict, str]:
         result["project_url"] = channel_url_identity(result["project_url"])
     for link in result.get("links", []):
         link["url"] = channel_url_identity(link["url"])
+    if "summary_sources" in result:
+        result["summary_sources"] = [channel_url_identity(url) for url in result["summary_sources"]]
     kind = result["kind"]
     if kind == "paper":
         url_id = _arxiv_url_identity(result["url"])
@@ -172,9 +174,26 @@ def _validate_item(item, schema):
     return result, identity
 
 
+def reading_kind(resource):
+    """Identify the actual reading content without substituting a summary for a translation."""
+    if resource["kind"] == "paper":
+        if resource.get("abstract_original"):
+            return "abstract" if resource.get("abstract_zh") else "unavailable"
+    if resource.get("summary_zh") and resource.get("summary_sources"):
+        return "summary"
+    if resource["kind"] != "paper" and resource.get("description_original"):
+        return "description"
+    return "unavailable"
+
+
 def _review_digest(resource):
+    kind = reading_kind(resource)
+    if kind == "summary":
+        return _digest({key: resource.get(key) for key in
+                        ("kind", "title", "url", "arxiv_id", "doi", "summary_zh", "summary_sources")})
     if resource["kind"] != "paper":
         return None
+    # Preserve existing abstract-review hashes across this additive change.
     return _digest({key: resource.get(key) for key in
                     ("kind", "title", "arxiv_id", "doi", "abstract_original", "abstract_zh")})
 
@@ -220,6 +239,8 @@ class RecommendationStore:
                 raise ResearchError("Recommendation state schema is unsupported.", 2)
         else:
             connection.executescript(_DDL)
+        connection.execute("""CREATE TABLE IF NOT EXISTS metric_refreshes (
+            candidate_id TEXT PRIMARY KEY REFERENCES candidates(candidate_id), snapshot TEXT NOT NULL)""")
         connection.execute("PRAGMA foreign_keys=ON")
         return connection
 
@@ -357,7 +378,23 @@ class RecommendationStore:
                 if key not in metric_keys:
                     metrics.append(metric)
                     metric_keys.add(key)
+        from scholar_workflow.research.recommendations.metrics import metric_targets
+
+        targets = [{key: target[key] for key in ("platform", "metric", "url")}
+                   for target in metric_targets(resource)]
+        keys = {(item["platform"], item["metric"], item["url"]) for item in targets}
+        refreshed = database.execute("SELECT snapshot FROM metric_refreshes WHERE candidate_id=?",
+                                     (row["candidate_id"],)).fetchone()
+        snapshot = json.loads(refreshed["snapshot"]) if refreshed else {"observations": [], "checks": []}
+        metrics.extend(item for item in snapshot["observations"]
+                       if (item["platform"], item["metric"], item["url"]) in keys)
+        kind = reading_kind(resource)
         return {"candidate_id": row["candidate_id"], "resource": resource, "tags": sorted(tags),
+                "metric_targets": targets, "metric_refresh": {"checks": [
+                    item for item in snapshot["checks"]
+                    if (item["platform"], item["metric"], item["url"]) in keys]},
+                "reading_kind": kind, "review_required": resource["kind"] == "paper" or kind == "summary",
+                "review_available": kind in {"abstract", "summary"},
                 "producers": list(producers.values()), "recommendations": recommendations,
                 "metrics": metrics, "decision": row["decision"], "revision": row["revision"],
                 "abstract_reviewed": bool(row["review_digest"] and row["review_digest"] == _review_digest(resource)),
@@ -434,14 +471,70 @@ class RecommendationStore:
                 raise ResearchError("Recommendation changed; reload before updating your choice.", 5)
             if review:
                 resource = json.loads(row["resource"])
-                if resource["kind"] != "paper" or not all(resource.get(key, "").strip() for key in ("abstract_original", "abstract_zh")):
-                    raise ResearchError("A complete original abstract and Chinese translation are required for review.", 7)
+                if reading_kind(resource) not in {"abstract", "summary"}:
+                    raise ResearchError("Review requires a complete translated abstract or a sourced, explicit summary.", 7)
                 database.execute("UPDATE candidates SET review_digest=?,revision=revision+1,updated_at=? WHERE candidate_id=?",
                                  (_review_digest(resource), _now(), candidate_id))
             else:
                 database.execute("UPDATE candidates SET decision=?,revision=revision+1,updated_at=? WHERE candidate_id=?",
                                  (decision, _now(), candidate_id))
             return self._candidate(database, self._row(database, candidate_id))
+
+    def record_metric_refresh(self, candidate_id, expected_revision, result):
+        """Write only platform observations; preserve recommendation and human state."""
+        from scholar_workflow.research.recommendations.metrics import metric_targets
+
+        if (type(expected_revision) is not int or expected_revision < 1
+                or not isinstance(result, dict) or set(result) != {"observations", "checks"}
+                or not all(isinstance(result[key], list) and len(result[key]) <= 6 for key in result)):
+            raise ResearchError("Metric refresh payload is invalid.")
+        with self._database(write=True) as database:
+            row = self._row(database, candidate_id)
+            if row["revision"] != expected_revision:
+                raise ResearchError("Recommendation changed; reload before refreshing metrics.", 5)
+            resource = json.loads(row["resource"])
+            allowed = {(item["platform"], item["metric"], item["url"])
+                       for item in metric_targets(resource)}
+            def key(item):
+                return item["platform"], item["metric"], item["url"]
+            def timestamp(value):
+                try:
+                    parsed = datetime.fromisoformat(value)
+                    if parsed.utcoffset() is None:
+                        raise ValueError()
+                    return parsed.astimezone(UTC).isoformat()
+                except (ValueError, TypeError):
+                    raise ResearchError("Metric refresh requires a valid timezone timestamp.") from None
+            normalized, _ = _validate_item({"submission_id": "metric-refresh", "resource": resource,
+                                            "tags": [], "metrics": result["observations"]}, load_submission_schema())
+            observations = normalized["metrics"]
+            checks = copy.deepcopy(result["checks"])
+            for check in checks:
+                if (not isinstance(check, dict)
+                        or set(check) != {"platform", "metric", "url", "status", "checked_at"}
+                        or check["status"] not in {"ok", "unavailable", "rate_limited"}):
+                    raise ResearchError("Metric refresh check is invalid.")
+                check["url"] = channel_url_identity(check["url"])
+                if key(check) not in allowed:
+                    raise ResearchError("Metric target is not declared by this candidate.", 7)
+                check["checked_at"] = timestamp(check["checked_at"])
+            for item in observations:
+                item["observed_at"] = timestamp(item["observed_at"])
+                if (key(item) not in allowed or not any(key(check) == key(item)
+                        and check["status"] == "ok" and check["checked_at"] == item["observed_at"] for check in checks)):
+                    raise ResearchError("Metric observation does not match an authorized successful check.", 7)
+            previous = database.execute("SELECT snapshot FROM metric_refreshes WHERE candidate_id=?", (candidate_id,)).fetchone()
+            snapshot = json.loads(previous["snapshot"]) if previous else {"observations": [], "checks": []}
+            for field, date_key, incoming in (("observations", "observed_at", observations), ("checks", "checked_at", checks)):
+                latest = {key(item): item for item in snapshot[field] if key(item) in allowed}
+                for item in incoming:
+                    if key(item) not in latest or item[date_key] >= latest[key(item)][date_key]:
+                        latest[key(item)] = item
+                snapshot[field] = list(latest.values())
+            database.execute("INSERT INTO metric_refreshes(candidate_id,snapshot) VALUES(?,?) "
+                             "ON CONFLICT(candidate_id) DO UPDATE SET snapshot=excluded.snapshot",
+                             (candidate_id, _json(snapshot)))
+            return self._candidate(database, row)
 
     def set_decision(self, candidate_id, decision, expected_revision):
         if decision not in DECISIONS:
@@ -455,7 +548,7 @@ class RecommendationStore:
         with self._database() as database:
             items = [self._candidate(database, row) for row in database.execute(
                 "SELECT * FROM candidates WHERE decision='selected' ORDER BY created_at,candidate_id")]
-        if any(row["resource"]["kind"] == "paper" and not row["abstract_reviewed"] for row in items):
-            raise ResearchError("Review every selected paper's complete translated abstract before preparing ingestion.", 7)
+        if any(row["review_required"] and not row["abstract_reviewed"] for row in items):
+            raise ResearchError("Review every selected item's current abstract or sourced summary before preparing ingestion.", 7)
         pool_id = "pool-" + hashlib.sha256(str(self.state_dir).encode("utf-8")).hexdigest()[:32]
         return {"schema_version": 1, "status": "ready", "pool_id": pool_id, "items": items}

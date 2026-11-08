@@ -537,6 +537,11 @@
       "id": "shared-recommendation-intake-and-human-review",
       "description": "G19：独立agent/定时任务通过安装版统一CLI按版本JSON提交论文、项目主页和Blog；同对象合并且各推荐记录保留，幂等重试、冲突回执、同条记录标签筛选、个人/测试隔离和人工决定保全。页面呈现完整论文摘要译文及原文、项目主页、任务/渠道和平台原始数值，不作热度评价；人审阅后选择，导出可交给既有ingest-resource的清单，不自动写Zotero/Vault。源码合成、正常安装、浏览器实际操作和人工评鉴分别取证，未通过不冒称完整交付。",
       "status": "pending"
+    },
+    {
+      "id": "recommendation-raw-metrics-and-sourced-summary",
+      "description": "G19/G4：旧候选能显式补采GitHub stars及HF model/dataset/Space likes，标题旁显示对象、时间及缺值/失败；刷新保留人工决定/审阅与推荐次数。无摘要时仅基于实际正文给有来源的agent总结，有作者摘要缺译文仍需译文。Blog及其他附件保持灵活links，当前内容/依据变更重新审阅。模拟API/存储/CLI/HTTP/真实JS DOM、公开小元数据、正常安装及人工评鉴分别取证；未完成不冒称已部署。",
+      "status": "pending"
     }
   ]
 }

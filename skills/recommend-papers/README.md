@@ -93,3 +93,13 @@ no NotebookLM package or login is required.
 
 Author-watchlist requests resolve the actual Semantic Scholar `authorId` before
 updating the configured watchlist, disambiguating when necessary.
+
+## Platform counts and missing abstracts
+
+Use `submit --refresh-metrics` for recommendations with verified public GitHub/HF
+object links; old candidates have `refresh-metrics --candidate-id <id>` and a card
+action. Counts show their target and time; failures retain old values. HF likes
+are labeled separately from GitHub stars. A missing author abstract can use a
+source-backed `summary_zh` with `summary_sources`, explicitly labeled as an agent
+summary and reviewed before handoff. Related Blogs use the existing flexible
+`links` array. See the [intake contract](../../references/recommendation-intake.md).

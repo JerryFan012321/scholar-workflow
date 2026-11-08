@@ -149,6 +149,78 @@
     return Array.from(latest.values());
   }
 
+  function metricIdentity(metric) {
+    return JSON.stringify([metric.platform, metric.metric, metric.url]);
+  }
+
+  function metricName(metric) {
+    if (metric.platform === "github" && metric.metric === "stars") return "GitHub stars";
+    if (metric.platform === "huggingface" && metric.metric === "likes") return "Hugging Face 点赞（likes）";
+    return `${metric.platform} ${metric.metric}`;
+  }
+
+  function metricTime(value, label) {
+    const time = element("time", null, `${label} ${displayDate(value)}`);
+    time.title = value || "";
+    if (value) time.dateTime = value;
+    return time;
+  }
+
+  function metricSection(candidate) {
+    const section = element("section", "metrics");
+    section.setAttribute("aria-label", "平台热度");
+    const heading = element("div", "metrics-heading");
+    heading.append(element("span", "metrics-label", "平台热度"));
+    const targets = candidate.metric_targets || [];
+    const refresh = element("button", "text-button metric-refresh", "更新热度");
+    refresh.type = "button";
+    refresh.disabled = !targets.length;
+    refresh.addEventListener("click", async () => {
+      refresh.disabled = true;
+      refresh.textContent = "更新中…";
+      try {
+        await updateCandidate(candidate, "/api/metrics", {});
+      } finally {
+        refresh.disabled = !targets.length;
+        refresh.textContent = "更新热度";
+      }
+    });
+    heading.append(refresh);
+    section.append(heading);
+
+    const checks = new Map();
+    for (const check of candidate.metric_refresh?.checks || []) {
+      const key = metricIdentity(check);
+      const previous = checks.get(key);
+      if (!previous || new Date(check.checked_at).getTime() >= new Date(previous.checked_at).getTime()) {
+        checks.set(key, check);
+      }
+    }
+    const observations = latestMetrics(candidate.metrics);
+    const observed = new Set(observations.map(metricIdentity));
+    const values = element("div", "metrics-values");
+    for (const metric of [...observations, ...targets.filter(target => !observed.has(metricIdentity(target)))]) {
+      const entry = element("div", "metric");
+      const anchor = externalLink(metricName(metric), metric.url);
+      entry.append(anchor || element("span", null, metricName(metric)));
+      const hasValue = typeof metric.value === "number" && Number.isFinite(metric.value);
+      entry.append(element("span", hasValue ? "metric-value" : "metric-uncollected", hasValue ? metric.value : "未采集"));
+      if (hasValue) entry.append(metricTime(metric.observed_at, "采集于"));
+      if (metric.period) entry.append(element("span", null, metric.period));
+      const check = checks.get(metricIdentity(metric));
+      if (check && check.status !== "ok" && (!hasValue || new Date(check.checked_at) >= new Date(metric.observed_at))) {
+        const status = check.status === "rate_limited" ? "平台限流" : "暂时无法采集";
+        entry.append(element("span", "metric-status", `${status}${hasValue ? "，保留上次数据" : ""}`));
+        entry.append(metricTime(check.checked_at, "检查于"));
+      }
+      values.append(entry);
+    }
+    if (!values.childElementCount) values.append(element("span", "metric-uncollected", "未采集"));
+    section.append(values);
+    if (!targets.length) section.append(element("p", "metric-hint", "尚无已核验 GitHub/HF 链接"));
+    return section;
+  }
+
   async function updateCandidate(candidate, path, extra) {
     notify("");
     try {
@@ -156,7 +228,8 @@
         expected_revision: candidate.revision, ...extra});
       await load();
     } catch (error) {
-      notify(readableError(error), true);
+      notify(path === "/api/metrics" && ![2, 5].includes(error.code) && error.httpStatus !== 401
+        ? "热度更新尚未完成，请稍后重试。" : readableError(error), true);
       await load();
     }
   }
@@ -179,12 +252,34 @@
     const tags = element("div", "tags");
     for (const tag of candidate.tags || []) tags.append(element("span", "tag", tag));
     if (tags.childElementCount) article.append(tags);
+    article.append(metricSection(candidate));
 
     const isPaper = resource.kind === "paper";
+    const sources = Array.isArray(resource.summary_sources) ? resource.summary_sources : [];
+    const hasAbstract = isPaper && Boolean(resource.abstract_original);
+    const hasDescription = !isPaper && Boolean(resource.description_zh || resource.description_original);
+    const hasSummary = !hasAbstract && Boolean(resource.summary_zh && sources.length);
+    const readingKind = candidate.reading_kind || (hasAbstract ? "abstract"
+      : hasSummary ? "summary" : hasDescription ? "description" : "unavailable");
+    const summaryActive = readingKind === "summary" && hasSummary;
+    const reviewRequired = typeof candidate.review_required === "boolean" ? candidate.review_required : isPaper || summaryActive;
+    const reviewAvailable = typeof candidate.review_available === "boolean" ? candidate.review_available
+      : Boolean((readingKind === "abstract" && resource.abstract_original && resource.abstract_zh) || summaryActive);
     const translated = isPaper ? resource.abstract_zh : resource.description_zh;
     const original = isPaper ? resource.abstract_original : resource.description_original;
     const label = isPaper ? "摘要译文" : "原文简介译文";
-    if (translated) {
+    if (summaryActive) {
+      article.append(element("div", "summary-label", "资料总结（agent整理，非原文摘要）"));
+      article.append(element("p", "summary", resource.summary_zh));
+      const references = element("nav", "summary-sources");
+      references.setAttribute("aria-label", "总结依据");
+      references.append(element("span", null, "总结依据"));
+      for (const [index, url] of sources.entries()) {
+        const link = externalLink(`来源 ${index + 1} ↗`, url);
+        if (link) references.append(link);
+      }
+      article.append(references);
+    } else if (translated) {
       article.append(element("div", "summary-label", label));
       article.append(element("p", "summary", translated));
     } else if (original && !isPaper) {
@@ -195,7 +290,7 @@
         ? "尚无完整摘要译文。补齐后才能确认审阅并选择入库。"
         : "尚未提供原文简介，可直接打开原文查看。"));
     }
-    if (original && (translated || isPaper)) {
+    if (original && (translated || isPaper || summaryActive)) {
       const detail = element("details", "original");
       detail.append(element("summary", null, isPaper ? "查看原文摘要" : "查看原文简介"));
       detail.append(element("p", null, original));
@@ -214,24 +309,6 @@
       if (anchor) { links.append(anchor); seen.add(value.url); }
     }
     article.append(links);
-
-    if ((candidate.metrics || []).length) {
-      const metrics = element("div", "metrics");
-      for (const metric of latestMetrics(candidate.metrics)) {
-        const entry = element("div", "metric");
-        const metricName = `${metric.platform} ${metric.metric}`;
-        const anchor = externalLink(metricName, metric.url);
-        entry.append(anchor || element("span", null, metricName));
-        entry.append(element("span", "metric-value", metric.value));
-        const time = element("time", null, `采集于 ${displayDate(metric.observed_at)}`);
-        time.title = metric.observed_at || "";
-        if (metric.observed_at) time.dateTime = metric.observed_at;
-        entry.append(time);
-        if (metric.period) entry.append(element("span", null, metric.period));
-        metrics.append(entry);
-      }
-      article.append(metrics);
-    }
 
     const records = candidate.recommendations || [];
     const recommendations = element("details", "recommendations");
@@ -253,18 +330,19 @@
     recommendations.append(recordList);
     article.append(recommendations);
 
-    if (isPaper) {
+    if (reviewRequired) {
       const review = element("label", "review");
       const checkbox = element("input");
       checkbox.type = "checkbox";
       checkbox.checked = Boolean(candidate.abstract_reviewed);
-      checkbox.disabled = Boolean(candidate.abstract_reviewed) || !resource.abstract_original || !resource.abstract_zh;
+      checkbox.disabled = Boolean(candidate.abstract_reviewed) || !reviewAvailable;
       checkbox.addEventListener("change", () => {
         checkbox.disabled = true;
         updateCandidate(candidate, "/api/reviews", {});
       });
       review.append(checkbox, element("span", null, candidate.abstract_reviewed
-        ? "这份摘要译文已确认审阅" : "我已阅读这份摘要译文"));
+        ? (summaryActive ? "这份资料总结已确认审阅" : "这份摘要译文已确认审阅")
+        : (summaryActive ? "我已阅读这份资料总结" : "我已阅读这份摘要译文")));
       article.append(review);
     }
 
@@ -273,7 +351,7 @@
     const selected = element("input", "select-input");
     selected.type = "checkbox";
     selected.checked = candidate.decision === "selected";
-    selected.disabled = isPaper && !candidate.abstract_reviewed && candidate.decision !== "selected";
+    selected.disabled = reviewRequired && !candidate.abstract_reviewed && candidate.decision !== "selected";
     selected.addEventListener("change", () => {
       selected.disabled = true;
       updateCandidate(candidate, "/api/decisions", {decision: selected.checked ? "selected" : "unread"});

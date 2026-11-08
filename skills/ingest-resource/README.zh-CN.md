@@ -46,3 +46,5 @@ Zotero 文件同步**不同步链接文件**,这些 PDF 本体永远到不了另
 附件保持 imported,交给 Zotero 同步。
 
 完整流程与约束见 [SKILL.md](./SKILL.md)。
+
+推荐交接中，原文没有摘要时可使用[推荐契约](../../references/recommendation-intake.md)的有来源总结分支，明确标注agent整理，并保留当前内容审阅和人类选择。

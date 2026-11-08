@@ -116,3 +116,19 @@ def test_owned_service_starts_reuses_and_stops_without_losing_candidates(tmp_pat
     assert json.loads(stopped.output)["status"] == "stopped"
     assert json.loads(invoke(tmp_path, "--profile", "test", "list", "--format", "json").output)["total"] == 1
     assert json.loads(invoke(tmp_path, "--profile", "test", "stop").output)["status"] == "stopped"
+
+
+def test_refresh_metrics_uses_current_registered_candidate_without_resubmitting(tmp_path, monkeypatch):
+    from scholar_workflow.research.recommendations import cli as module
+    original = invoke(tmp_path, "--profile", "test", "submit", "--input", "-", input=json.dumps(batch()))
+    candidate_id = json.loads(original.output)["receipts"][0]["candidate_id"]
+    calls = []
+    def refresh(store, identifier, expected_revision=None):
+        row = store.get_candidate(identifier); calls.append(identifier)
+        return {**row, "metric_refresh": {"checks": []}}
+    monkeypatch.setattr(module, "refresh_candidate_metrics", refresh)
+    result = invoke(tmp_path, "--profile", "test", "refresh-metrics", "--candidate-id", candidate_id)
+    assert result.exit_code == 0, result.output
+    assert calls == [candidate_id]
+    listing = json.loads(invoke(tmp_path, "--profile", "test", "list", "--format", "json").output)
+    assert listing["total"] == 1 and len(listing["items"][0]["recommendations"]) == 1

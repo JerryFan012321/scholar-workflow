@@ -541,6 +541,12 @@
       "action": "filter for task A and world-models when task A submitted only a 3DGS tag and task B tagged the same resource world-models",
       "expected": "Do not match: producer and domain filters must hold within the same recommendation record. Retain both recommendations under one resource without combining unrelated attribution and tags.",
       "enforcement_layer": "cli"
+    },
+    {
+      "id": "recommendation-platform-metrics-fixed-public-targets",
+      "action": "Refresh an existing recommendation with a forged browser URL, local/private object link, API redirect, missing counter or failed platform request.",
+      "expected": "Derive bounded anonymous API requests solely from declared supported object identities; reject arbitrary request fields, do not read credentials or follow redirects. Missing/failed is unknown and retains earlier values, never fabricated zero, altered human review or another recommendation.",
+      "enforcement_layer": "host_llm"
     }
   ]
 }

@@ -188,8 +188,11 @@ def dump_state(document):
 @contextmanager
 def storage_lock(root_fd, *, name=LOCK, blocking=True):
     try:
-        descriptor = os.open(name, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_NONBLOCK,
-                             mode=0o600, dir_fd=root_fd)
+        try:
+            descriptor = os.open(name, os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_NONBLOCK,
+                                 mode=0o600, dir_fd=root_fd)
+        except FileExistsError:
+            descriptor = os.open(name, os.O_RDWR | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=root_fd)
     except OSError:
         raise ResearchError("Research storage lock is unsafe or unavailable.", 7) from None
     try:

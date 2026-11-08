@@ -15,6 +15,7 @@ from urllib.parse import parse_qs, urlsplit
 from scholar_workflow import __version__
 from scholar_workflow.research.models import ResearchError
 from scholar_workflow.research.recommendations.store import RecommendationStore
+from scholar_workflow.research.recommendations.refresh import refresh_candidate_metrics
 
 _STATIC = {"/": ("index.html", "text/html; charset=utf-8"),
            "/index.html": ("index.html", "text/html; charset=utf-8"),
@@ -199,7 +200,7 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
                 expected = {"candidate_id", "expected_revision"}
                 if path.path == "/api/decisions":
                     expected.add("decision")
-                elif path.path != "/api/reviews":
+                elif path.path not in {"/api/reviews", "/api/metrics"}:
                     self._error("Recommendation route was not found.", 2, 404)
                     return
                 if (set(payload) != expected or not isinstance(payload.get("candidate_id"), str)
@@ -213,6 +214,8 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
                         raise ResearchError("Unknown recommendation decision.")
                     result = store.set_decision(payload["candidate_id"], payload["decision"],
                                                 payload["expected_revision"])
+                elif path.path == "/api/metrics":
+                    result = refresh_candidate_metrics(store, payload["candidate_id"], payload["expected_revision"])
                 else:
                     result = store.review_candidate(payload["candidate_id"], payload["expected_revision"])
                 self._respond(200, result)

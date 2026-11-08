@@ -153,3 +153,22 @@ def test_server_refuses_weak_token_or_unknown_profile(tmp_path):
         create_server(tmp_path, "test", "short")
     with pytest.raises(ResearchError):
         create_server(tmp_path, "production", TOKEN)
+
+
+def test_platform_refresh_requires_identity_cas_and_no_client_url(tmp_path, monkeypatch):
+    from scholar_workflow.research.recommendations import server as module
+    calls = []
+    def refresh(store, candidate_id, expected_revision):
+        calls.append((candidate_id, expected_revision))
+        return {"candidate_id": candidate_id, "metrics": [{"platform": "github", "metric": "stars", "value": 0}]}
+    monkeypatch.setattr(module, "refresh_candidate_metrics", refresh)
+    with running_server(tmp_path, monkeypatch) as service:
+        origin = f"http://127.0.0.1:{service.server_port}"
+        payload = {"candidate_id": "candidate-fixture", "expected_revision": 3}
+        status, _, body = request(service, "POST", "/api/metrics", origin=origin, body=payload)
+        assert status == 200 and json.loads(body)["metrics"][0]["value"] == 0
+        assert calls == [("candidate-fixture", 3)]
+        assert request(service, "POST", "/api/metrics", origin=origin, body={**payload, "url": "https://attacker.example"})[0] == 400
+        assert request(service, "POST", "/api/metrics", body=payload)[0] == 403
+        assert request(service, "POST", "/api/metrics", origin=origin, authenticated=False, body=payload)[0] == 401
+        assert len(calls) == 1

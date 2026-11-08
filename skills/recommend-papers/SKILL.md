@@ -16,7 +16,7 @@ Every recommending agent uses the same installed entry for the user's chosen poo
 
 ```text
 scholar-research recommendations --profile personal schema
-scholar-research recommendations --profile personal submit --input recommendations.json
+scholar-research recommendations --profile personal submit --input recommendations.json --refresh-metrics
 scholar-research recommendations --profile personal open
 ```
 
@@ -27,6 +27,12 @@ calling host; this skill does not create an agent scheduler.
 
 Use `--profile test` for an explicitly selected test pool. Never send test examples
 to the personal pool or alter installed runtime files to make acceptance pass.
+
+For declared GitHub/Hugging Face objects, collect raw platform counts through that
+explicit refresh entry; retain unknown/failure states rather than dropping the
+heat area or inventing zero. Include related verified Blog links among the flexible
+attachments. When no original abstract exists, follow the intake contract's
+sourced-summary branch and label the result explicitly; never fabricate an abstract.
 
 ## Existing source aggregation
 
