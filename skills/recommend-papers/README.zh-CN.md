@@ -1,66 +1,72 @@
-# recommend-papers(论文推荐)
+# recommend-papers（推荐与审阅）
 
-每日论文推荐 feed。聚合四个互补的推荐源,按 arXiv id 合并去重,再对你挑出的 shortlist
-经 NotebookLM 略读,产出一份便宜的**推荐清单(Reading Report)**——它只是决策辅助,不落
-vault。看中的论文走常规的 `find-resource` / `ingest-resource` 管线入库。
+多个独立 agent 或定时任务可以通过同一个入口提交论文、项目主页和 Blog，在同一页面查看。
+页面合并重复资源，保留各任务的推荐记录，并支持按领域、资源类型和推荐任务筛选。
 
-## 四个推荐源
+## 统一入口
 
-| 源 | 信号面 | 登录 |
-|---|---|---|
-| Semantic Scholar Recommendations | 用你的 Zotero 库当 positive 种子 | 无 |
-| Scholar Inbox | 训练型个性化 digest(长期 up/down vote 训出偏好) | session cookie(约 7 天) |
-| S2 author watchlist | 你登记的研究者/实验室的新作 | 无 |
-| HuggingFace Daily Papers | 社区 upvote 热度 | 无 |
+```bash
+scholar-research recommendations --profile personal schema
+scholar-research recommendations --profile personal submit --input recommendations.json
+scholar-research recommendations --profile personal open
+```
 
-每个源吐一个规范化候选(`arxiv_id`、标题、作者、来源、分数、摘要片段、url)。按 arXiv id
-去重,并记录每个贡献来源,便于看出重叠。
+让 agent 使用 `recommend-papers`，并遵循[统一入口契约](../../references/recommendation-intake.md)。
+`schema` 输出当前安装版本接受的数据格式；[提交示例](references/submission.example.json)
+全部是合成数据，不要把它提交到个人候选池。
 
-## 漏斗怎么走
+长期推荐任务使用稳定的 producer ID；每次执行有独立 run ID。重试复用原 submission ID
+和相同内容。回执逐项说明已接收、重复、冲突或无效，不能把超时猜成失败后重复新建。
 
-1. **全量可选项**——聚合器只打印**元数据级**候选(便宜,不 skim)。
-2. **细化**——按你显式给出的条件、已配置的兴趣 / 项目关键词和数量上限过滤，或手动挑选，
-   得到 shortlist。清单保留来源分数和实际采用的匹配信号，不依赖未说明的隐式排序规则。
-3. **略读**——只有 shortlist 进 NotebookLM(约 500 token/问,而读一篇 PDF 约 50K token)。
-4. **推荐清单**——一份供你拍板的简短 markdown。临时性;看中的再入库。
+## 页面展示
 
-## 配置
+- 论文：经核实的论文信息、完整中文摘要译文、可展开的原摘要，以及相关项目主页。
+- 项目主页和 Blog：来源信息、原文简介或摘录，以及已有译文；没有论文的项目也可推荐。
+- 平台原始数据：例如仓库 stars，注明对应对象、来源链接和采集时间，不作热度评价或合成总分。
+- 领域标签、推荐任务和发现渠道，以及独立的人类审阅与选择状态。
 
-1. 复制配置模板:
-   ```bash
-   cp references/recommend.example.yml ~/.config/scholar-workflow/recommend.yml
-   ```
-   编辑 `interests`、`sources` 开关、`daily_limit`、`watchlist`。
-   可选项目层:`~/.config/scholar-workflow/projects/<当前目录名>.yml`
-   (interests/watchlist 为追加;其余键覆盖)。
+**Reading Report** 是其中的论文呈现部分，只包含论文信息、摘要和相关项目主页。
+不添加推荐理由、科研分析或阅读覆盖报告；来源失败等运行问题另行说明。
 
-2. 安装 NotebookLM 自动化(略读级):
-   ```bash
-   pipx install "notebooklm-py[browser]"
-   notebooklm login
-   ```
-   会存真实 Google 登录态——建议用小号。
+## 审阅后选择入库
 
-3. Scholar Inbox(可选第四源)需要 session cookie。vendor 的客户端经 `playwright-cli`
-   驱动浏览器登录;cookie 存到 `~/.config/scholar-workflow/scholar-inbox/session.json`
-   (chmod 600),约 7 天有效。没有它则跳过该源,用其余三源。
+论文入库前先看完整中文摘要译文，原文也保留供核对。选择完成后，可导出入库交接清单：
 
-## Watchlist(关注作者)
+```bash
+scholar-research recommendations --profile personal handoff
+```
 
-给出研究者姓名(加机构或代表作),skill 解析出稳定的 Semantic Scholar `authorId` 存进
-`watchlist`,规避重名问题(如众多作者都叫 "He Wang")。台账是个人数据——gitignored、只留模板。
+该清单交给常规 `find-resource` / `ingest-resource` 流程，并以你的实际入库要求为依据。
+导出不会写入 Zotero 或 Vault，原有身份检查、目的地和来源规则继续有效。
+摘要内容改变后需要重新审阅，单纯刷新 stars 不影响已经完成的摘要审阅。
 
-## 排障
+## 查看状态、停止和测试隔离
 
-- **某源出现在 `skipped`**——该源失败或未配置(无种子、watchlist 为空、Scholar Inbox
-  无 session)。其余源照常完成。
-- **HF Daily 超时**——它走系统 HTTP 代理(`httpx` `trust_env`,即 `HTTP_PROXY`/`HTTPS_PROXY`
-  环境变量),S2 走直连。这些路径在适配器里固定;HF Daily 连不上时先查代理环境变量。
-- **NotebookLM 不可达**——回落到纯元数据推荐,或经 `analyze-paper` / Zotero 索引全文读取
-  已入库论文(更慢、更费 token)。
+```bash
+scholar-research recommendations --profile personal list
+scholar-research recommendations --profile personal status
+scholar-research recommendations --profile personal stop
+```
 
-## 引用声明
+测试使用 `--profile test`；需要独立状态位置时，再显式设置 `SCHOLAR_WORKFLOW_HOME`。
+测试池和个人池分开。页面认证信息和服务记录只用于当前本机服务，不能作为长期知识链接。
 
-`scripts/scholar_inbox/` 下的 Scholar Inbox 客户端改编自
-[sjh-skills](https://github.com/jiahao-shao1/sjh-skills)(MIT License,Copyright (c)
-2026 Jiahao Shao)。详见 `scripts/THIRD_PARTY_LICENSES`。
+## 现有论文来源和配置
+
+| 来源 | 提供的内容 |
+|---|---|
+| Semantic Scholar Recommendations | 与人提供或已核实 Zotero arXiv 种子相关的论文 |
+| Scholar Inbox | 已配置且会话可用的个性化推荐 |
+| S2 作者关注名单 | 已登记研究者的新论文 |
+| Hugging Face Daily Papers | 社区提交论文及投票数据 |
+
+原聚合器继续作为候选来源，返回元数据和未成功来源的诊断。它不会自动产生通用提交格式，
+也不会自动入库或证明已阅读全文。译文须依据完整权威摘要，不能用摘要片段代替。
+
+全局配置为 `~/.config/scholar-workflow/recommend.yml`，可选项目配置为
+`~/.config/scholar-workflow/projects/<cwd-name>.yml`。
+可按需使用[配置示例](references/recommend.example.yml)。项目兴趣和作者关注名单在全局值上追加，
+其他键覆盖。Scholar Inbox 会话保存在配置和 Git 之外；不可用时跳过该来源并说明。
+各来源现有网络代理方式保持。旧 `notebooklm_classification` 配置会被忽略，不需要 NotebookLM。
+
+关注作者时，先确认实际 Semantic Scholar `authorId`，重名时消歧，再更新关注名单。

@@ -37,3 +37,10 @@ not refresh human rules merely because its templates changed.
 
 Project-specific rules belong in `AGENTS.md`. Do not add them to global user instructions or
 to a host-specific adapter.
+
+Reusable project operations belong in `.agents/skills/` only when actually requested
+and needed. Follow the shared
+[project-skills contract](../../../references/project-skills.md) for the distinction
+between generic management, local management extensions and project execution.
+An empty skill directory is intentional; initialization does not populate one skill
+per planned step or copy the installed plugin's shared templates into the project.

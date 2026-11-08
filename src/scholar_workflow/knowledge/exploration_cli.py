@@ -11,6 +11,9 @@ import click
 import yaml
 
 from scholar_workflow.workflows.exploration_assets import (
+    include_declared_resource_links,
+)
+from scholar_workflow.workflows.exploration_assets import (
     include_resource_links as _include_resource_links,
 )
 
@@ -69,22 +72,25 @@ def _environment(root, environment, state_root, test_root, *inputs):
 
 
 def _existing_paper_references(current, proposed):
-    """Generic file edits may retain known papers; new units use the provider import."""
+    """Generic edits retain known units; every new reference uses the provider import."""
+    from scholar_workflow.knowledge.exploration import preserve_paper_units
+
     proposed = validate(proposed)
+    preserve_paper_units(current, proposed)
     known = {(work["entity_ref"]["source_id"], work["entity_ref"]["object_id"]): work
-             for work in current["works"] if work["kind"] == "paper"}
+             for work in current["works"] if work.get("entity_ref")}
     for work in proposed["works"]:
-        if work["kind"] != "paper":
+        if not work.get("entity_ref"):
             continue
         identity = work["entity_ref"]["source_id"], work["entity_ref"]["object_id"]
         if identity not in known:
             raise ExplorationError(
-                "New paper references require exploration-import from an existing registered "
-                "paper unit; generic init/apply only edits already referenced papers."
+                "New knowledge references require exploration-import from an existing registered "
+                "unit; generic init/apply only edits already referenced units."
             )
         if work["assets"] != known[identity]["assets"]:
             raise ExplorationError(
-                "Paper-unit assets are read-only in generic init/apply; use exploration-import "
+                "Unit assets are read-only in generic init/apply; use exploration-import "
                 "to refresh declared assets or the existing paper-asset maintenance operation."
             )
     return proposed
@@ -167,10 +173,10 @@ def exploration_export(root, environment, state_root, test_root):
 @environment_options
 def exploration_import(root, source_id, field_id, apply_changes, expected_revision,
                        environment, state_root, test_root):
-    """Reference the registered Field's declared paper assets without rewriting them."""
-    from scholar_workflow.knowledge.exploration_import import import_paper_units
+    """Reference the registered Field's declared Knowledge units without rewriting them."""
+    from scholar_workflow.knowledge.exploration_import import import_asset_units
     from scholar_workflow.knowledge.fields import FieldRegistryError, KnowledgeSourceRegistry
-    from scholar_workflow.workflows.field_paper_units import field_paper_units
+    from scholar_workflow.workflows.field_paper_units import field_asset_units
 
     if apply_changes and expected_revision is None:
         raise click.UsageError("--apply requires --expected-revision (or 'absent').")
@@ -183,10 +189,12 @@ def exploration_import(root, source_id, field_id, apply_changes, expected_revisi
         options = {"resolve_reader": False} if context.is_test else {}
         if context.is_test:
             options["root_validator"] = context.check_root
-        payload = field_paper_units(path, source_id=source_id, field_id=field_id,
+        payload = field_asset_units(path, source_id=source_id, field_id=field_id,
                                     include_resource_links=True, **options)
         if not context.is_test:
             payload = _include_resource_links(payload)
+        else:
+            payload = include_declared_resource_links(payload)
         if before != registry.revision():
             raise ExplorationError("Source registration changed; reload the selection.", 5)
         folders = {folder.folder_id: folder.root for folder in registrations.folders
@@ -197,7 +205,7 @@ def exploration_import(root, source_id, field_id, apply_changes, expected_revisi
                         and source.folder_id in folders}
         store = ExplorationStore(root)
         current = store.load()
-        proposed = import_paper_units(root, current["data"], payload, source_roots=source_roots)
+        proposed = import_asset_units(root, current["data"], payload, source_roots=source_roots)
         if apply_changes:
             _emit(store.save(proposed, expected_revision=None if expected_revision == "absent"
                              else expected_revision))
@@ -207,7 +215,7 @@ def exploration_import(root, source_id, field_id, apply_changes, expected_revisi
     except ExplorationError as exc:
         raise ExplorationCLIError(exc) from None
     except (FieldRegistryError, OSError, ValueError):
-        raise click.ClickException("Registered paper assets could not be resolved safely.") from None
+        raise click.ClickException("Registered knowledge assets could not be resolved safely.") from None
 
 
 def open_explorer(url):

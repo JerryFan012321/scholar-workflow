@@ -19,7 +19,6 @@ from .collection import (
     COLLECTION_UPDATE_MARKER,
     _relative,
     _sha,
-    _tree,
     plan_run_collection,
 )
 from .layout import ProjectLayoutError, _unique_json_object, open_project_root
@@ -98,7 +97,10 @@ def _receipt(plan):
     keys = ("schema_version", "parent_project_id", "child_project_id", "run_id",
             "source_commit", "recipe_hash", "evidence_sha256", "files", "directories",
             "execution_verification")
-    return {key: plan[key] for key in keys}
+    result = {key: plan[key] for key in keys}
+    if plan["schema_version"] == 2:
+        result["result_delivery"] = plan["result_delivery"]
+    return result
 
 
 def require_no_pending_update(root_fd):
@@ -174,12 +176,14 @@ def _sync_archive_parents(root_fd, namespace_fd):
 def receive_run(
     parent_root: str | Path, child_root: str | Path, *, run_id: str,
     expected_parent_sha256: str, expected_child_sha256: str, expected_evidence_sha256: str,
+    selection=None,
 ):
     """Receive once, or verify an identical receipt; never update an existing Run."""
     expected = (expected_parent_sha256, expected_child_sha256, expected_evidence_sha256)
     if not all(isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) for value in expected):
         raise ReceptionError("Reception requires all three preview SHA-256 baselines", 2)
-    plan = plan_run_collection(parent_root, child_root, run_id=run_id)
+    from .result_scope import capture_results
+    plan = plan_run_collection(parent_root, child_root, run_id=run_id, selection=selection)
     _check_baselines(plan, expected)
     if _RECEIPT in plan["directories"] or any(row["destination_path"] == _RECEIPT for row in plan["files"]):
         raise ReceptionError("Source conflicts with reserved collection receipt", 5)
@@ -204,7 +208,7 @@ def receive_run(
                     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 except BlockingIOError:
                     raise ReceptionError("Parent is busy; preview again before retrying", 5) from None
-                _check_baselines(plan_run_collection(parent_root, child_root, run_id=run_id), expected)
+                _check_baselines(plan_run_collection(parent_root, child_root, run_id=run_id, selection=selection), expected)
                 with _directory(root_fd, namespace, create=True) as namespace_fd:
                     if _existing(namespace_fd, run_id, plan):
                         existing_archive = True
@@ -214,7 +218,9 @@ def receive_run(
                     os.mkdir(staged, 0o700, dir_fd=namespace_fd)
                     stage_info = os.stat(staged, dir_fd=namespace_fd, follow_symlinks=False)
                     try:
-                        files, directories, modes = _tree(child_root, run_id)
+                        files, directories, modes, delivery = capture_results(child_root, run_id, selection)
+                        if delivery != plan.get("result_delivery"):
+                            raise ReceptionError("Result selection changed before staging", 5)
                         if sorted(directories) != plan["directories"] or set(files) != {row["source_path"] for row in plan["files"]}:
                             raise ReceptionError("Source tree changed before staging", 5)
                         with _directory(namespace_fd, staged) as stage_fd:
@@ -232,7 +238,7 @@ def receive_run(
                                     os.fsync(directory_fd)
                             os.fsync(stage_fd)
                         _existing(namespace_fd, staged, plan)
-                        _check_baselines(plan_run_collection(parent_root, child_root, run_id=run_id), expected)
+                        _check_baselines(plan_run_collection(parent_root, child_root, run_id=run_id, selection=selection), expected)
                         with open_project_root(parent_root) as current_root:
                             now, original = os.fstat(current_root), os.fstat(root_fd)
                             if (now.st_dev, now.st_ino) != (original.st_dev, original.st_ino):

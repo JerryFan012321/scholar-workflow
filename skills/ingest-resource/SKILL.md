@@ -20,6 +20,16 @@ requested results separately; a successful import is not an updated index.
 
 The external write dependencies are:
 
+- Before any paper write, show its complete abstract in Chinese translation and
+  obtain the user's selection of that paper. Reuse a current reviewed selection
+  rather than asking again. For a recommendation-page handoff, read
+  `${CLAUDE_PLUGIN_ROOT}/references/recommendation-intake.md`, re-read the current
+  selected/abstract-reviewed items with `scholar-research recommendations --profile
+  <export-profile> handoff`. Match its `pool_id`, candidate identities, current
+  content and review state with the export; never use the default personal profile
+  or a different pool as a substitute. A candidate's presence,
+  an agent's recommendation or an old exported list alone is not the user's
+  current selection. Report an unavailable abstract without inventing one.
 - Before paper creation, run `scholar-workflow zotero search` and confirm candidates with
   `scholar-workflow zotero get <item-key> --children` when needed. Reuse an exact match;
   continue on `none`; report multiple exact keys or a same-work publication/version

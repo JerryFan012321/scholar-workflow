@@ -1,5 +1,11 @@
 # Knowledge exploration
 
+> Interaction status, 2026-10-28: self-built Hub/explorer product work is frozen.
+> Viewing and editing design remains open. Retain the data and supported explicit
+> CLI operations; a Skill invocation does not automatically launch the old page
+> or create a replacement interface. Historical UI descriptions below are not a
+> recommendation or proof of accepted native-tool interaction.
+
 Load [Vault connections](vault-connections.md) for explicit test/personal runtime
 boundaries and **Add Vault/folder**. Read-only host connections are separate from
 research edits; connection and inspection never rewrite paper packages.
@@ -21,13 +27,15 @@ Each file read also checks the same descriptor's size and stat before and after
 reading. A changing or incomplete read refuses rather than presenting conditions
 and results assembled from different external edits.
 
-## Atomic paper-unit boundary
+## Atomic knowledge-unit boundary
 
 A paper unit is the smallest independently organized, navigable and compared
 paper object. It is the existing formally identified literature resource and all
 its explicitly associated assets, not a newly invented `work` title card. Reuse
 the owner allocation and source identity in `paper-registration.md`; the
 exploration layer does not allocate a second primary owner or bibliographic item.
+The same whole-owner boundary applies to registered Blog and technical documents
+under `asset-units.md`; Source/Field are containers, not new knowledge units.
 
 This is an organization boundary, not a ban on finer evidence addressing. The
 unit owns the resource identity and the declared asset inventory; its files and
@@ -53,7 +61,7 @@ maintaining the owned paper package remains the responsibility of its existing
 operations. Asset counts and repeatable method branches are not fixed quotas.
 Missing assets remain diagnosed, not grounds to discard the unit or invent content.
 
-`entity_ref` is required for paper-kind entries and retains the qualified owner
+Every new managed work requires `entity_ref` retaining the qualified owner
 reference. Uniqueness/shape validation alone does not prove current ownership,
 inventory completeness, source validity or scientific support: those require the
 existing provider/ownership read and their separate evidence. Unresolved ownership
@@ -61,7 +69,7 @@ refuses reference creation; a later unavailable source must not be silently
 replaced with a guessed same-title file. Names, directories, views and Field
 membership are not bibliographic identities. Migration or identity conflict uses
 the existing explicit resolution operation, not a new explorer object.
-Import refuses a qualified paper identity already occupied by a non-paper kind;
+Import refuses a qualified identity already occupied by a different resource kind;
 it does not merge the inventories or silently relabel the existing object.
 Current owner and local-reader checks do not provide historical versions of the
 complete package. The outer manifest is not a content-addressed archive, and
@@ -103,11 +111,14 @@ scholar-workflow knowledge exploration-export --root /path/to/selected/folder
 
 `init` refuses an existing manifest. The `init`/`apply` JSON result includes the
 current `revision` and `data`; the browser also loads them from `/api/state`.
-Generic `init`/`apply` cannot introduce a paper identity or add, remove or replace
+Generic `init`/`apply` cannot introduce any new unit identity or add, remove or replace
 its assets. Use `exploration-import` to reference actual registered units and
 refresh their declared inventory; use the existing owner operations to maintain
 the package itself. Existing outer attributes, records and assessments remain
-editable. A schema-valid spec is not evidence of a formally owned paper unit.
+editable. A schema-valid spec is not evidence of a formally owned knowledge unit.
+Old unqualified non-paper rows remain readable and visibly unverified; managed
+writes retain them unchanged or remove the whole outer reference. They cannot
+gain new records/edges or become registered merely by filling in an identity.
 Query without `--selection` returns the default selection. A missing manifest is
 an empty in-memory model, not implicit file creation. Export prints only to
 stdout: put an explicitly requested independent navigation document in the
@@ -161,7 +172,7 @@ declared file of each selected unit, not a browser-provided file subset. Unknown
 duplicate or conflicting selections refuse. Browser selection never accepts a
 root path and never registers a new Source or paper.
 
-Saving a new paper or changed paper inventory also requires the complete proposal
+Saving any new knowledge unit or changed inventory also requires the complete proposal
 confirmed by that session's real unit-reference operation. Direct save requests
 cannot substitute an invented owner, a selected-file fragment or extra assets.
 Session receipts only authorize the proposed reference; they are not a second
@@ -227,12 +238,16 @@ only work-scoped assignments. Each asset has a globally unique `id`, readable
 `label`, `kind` and `uri`. Registration is explicit: filenames and title matches
 do not prove that a file belongs to this work.
 
-An `entity_ref`, required for papers, retains `source_id` and `object_id` from an existing
-Knowledge owner. `exploration-import` reads the existing registered Field's public
-paper-unit inventory and the host's declared Source roots. It reuses these identities
+An `entity_ref` retains `source_id` and `object_id` from an existing Knowledge
+owner. It is structurally optional only for readable legacy non-paper rows;
+new managed references require actual registered import. `exploration-import`
+reads the registered Field's complete asset-unit inventory and declared Source
+roots: atomic `paper` becomes `paper`, `blog_post` becomes `webpage`, and
+`technical_document` becomes `report`. It reuses these identities
 and preserves human work labels/attributes/records, adding only missing explicit
-asset references. Existing conflicting URIs refuse instead of silently replacing
-them. Local root-relative preview requires an actual registered-root mapping;
+asset references. Existing conflicting URIs or members absent from the current
+inventory refuse for explicit reconciliation rather than being certified or
+silently removed. Local root-relative preview requires an actual registered-root mapping;
 cross-root references retain their public native URI. Unresolved ownership or missing
 locators are reported rather than inferred or omitted. It does not register a Source,
 copy a paper or repair a formal library. The default import is a zero-write preview.

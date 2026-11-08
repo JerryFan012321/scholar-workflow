@@ -64,7 +64,11 @@ def _plan(registry, *, source_id, provider_before=None, before_verify=None):
         after = KnowledgeProviderSnapshot.model_validate(data).model_dump(mode='json')
         if actual not in (before, _bytes(after)):
             raise FieldRegistryError('Provider changed; refusing directory recovery')
-        contents, hashes, manifests, _, _ = _inventory(root, root_fd, state_fd, fields, snapshot)
+        pending_canvas_metadata = []
+        contents, hashes, manifests, _, _ = _inventory(
+            root, root_fd, state_fd, fields, snapshot,
+            pending_canvas_metadata=pending_canvas_metadata,
+        )
         if before_verify is not None:
             before_verify()
         if (registry.revision() != registry_hash
@@ -91,6 +95,8 @@ def _plan(registry, *, source_id, provider_before=None, before_verify=None):
                 'provider_after': after, 'files': hashes,
                 'manifest_hashes': {name: _hash(payload) if payload is not None else None
                                     for name, payload in manifests.items()}}
+        if pending_canvas_metadata:
+            plan['pending_canvas_metadata'] = pending_canvas_metadata
         plan['approved_digest'] = _hash(_bytes(plan)).removeprefix('sha256:')
         if len(_bytes({'status': 'prepared', 'plan': plan})) > _LIMIT:
             raise FieldRegistryError('Rebinding recovery record exceeds its safe size limit')
@@ -153,6 +159,9 @@ def rebind(registry: KnowledgeSourceRegistry, *, source_id: str, approved_digest
                       'catalog_revision': plan['provider_after']['catalog']['revision'],
                       'content_rewritten': False, 'file_integrity_verified': True,
                       'source_verified': False, 'human_verified': False, 'backup_verified': False}
+            if plan.get('pending_canvas_metadata'):
+                result.update(pending_canvas_metadata=plan['pending_canvas_metadata'],
+                              file_integrity_verified=False, file_readset_verified=True)
             if journal['status'] == 'committed':
                 if _read(provider.fd, _SNAPSHOT)[0] != after:
                     raise FieldRegistryError('Rebound provider changed after completion')

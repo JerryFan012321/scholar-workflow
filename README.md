@@ -6,22 +6,42 @@ in its existing tools. It maintains readable Markdown/Canvas analyses, literatur
 ingestion and reproducible project records. Obsidian, Zotero, Notion, cmux and external Codex keep
 their native reading, editing and execution interfaces.
 
-Version 0.49.0 adds a focused knowledge explorer: edit extensible dimensions,
-condition-specific research records and evidence-linked relationships, and navigate
-all declared local/web assets. Existing paper prose, Canvas, sidecars and images
-are unchanged. This restores a limited knowledge interface without restoring the
-legacy Hub's Codex task control. Development, installation and human acceptance
-remain separate.
+Current product direction: retain research Skills, accepted file formats
+and thin native-tool adapters; retire the old Hub website and freeze independent explorer product work. Knowledge
+is managed as complete paper/blog/document asset units with explicit context. Their
+management, analysis, viewing and editing are separate operations. See
+[asset units](references/asset-units.md) and [project Skills](references/project-skills.md).
+Multidimensional viewing/editing remains under discussion; existing records are retained.
+Version 0.51.0 adds the first-phase recommendation page and shared agent intake.
 
-The **Knowledge libraries → Add Vault/folder** uses the system picker,
-separate reading/reference/update readiness checks and an adjustments preview.
-Explicit read-only connection changes only the selected environment's host registry.
-Personal mode accepts selected safe Vaults; test mode requires separate state and
-allowed roots and disables ambient native integrations. See
-[Vault connections](references/vault-connections.md). Installed availability remains
-subject to actual command help. Installation and human assessment require their own checks.
+The follow-up recovery fix separates a same-directory device-number recovery from
+acknowledging an additive Canvas editor save. It preserves all file bytes and reports
+the remaining acknowledgement; export stays strict until that separate step completes.
+
 
 [中文文档](./README.zh-CN.md)
+
+## Recommendation page — first phase (0.51.0)
+
+Independent agents submit papers, project homepages and blogs to one versioned
+JSON/CLI entry. The page provides complete abstract translations, topic/task/type
+filters, original/project links and attributed raw platform values. Popularity is
+shown as data without a combined score or evaluation. Host tools own scheduling.
+
+```bash
+scholar-research recommendations schema
+scholar-research recommendations submit --input recommendations.json
+scholar-research recommendations open
+scholar-research recommendations status
+scholar-research recommendations stop
+```
+
+The personal pool begins empty. Ask an agent to use the `recommend-papers` Skill;
+it knows the shared submission entry. Use `recommendations --profile test` for an
+independent test pool. Exported reviewed selections go to `ingest-resource`; export
+does not ingest. See the [intake contract](references/recommendation-intake.md).
+This is a bounded recommendation/review page. Existing knowledge units, native
+readers and agent runtimes keep their own interfaces and authority.
 
 ## Architecture
 
@@ -38,25 +58,25 @@ quicksearch with host-model ranking; no MCP server or local vector database is r
 Destructive actions still require your approval. **Obsidian** holds knowledge notes and
 derived indexes; **Notion** holds an optional cross-device projection.
 
+Research tracking shipped in 0.48.0, with one installed RSS-source functional check.
+Other channel types, human assessment and the selected-resource archive handoff
+retain their separate acceptance requirements.
+
 ### Content and project ownership
 
-For multidimensional research positioning, use
-[explore-knowledge](skills/explore-knowledge/README.md):
+Multidimensional records remain available through
+[explore-knowledge](skills/explore-knowledge/README.md). The viewing/editing design
+is open; do not launch the old web application as the default workflow. Existing
+`.scholar-workflow/exploration.yml`, extensible dimensions, conditional records,
+evidence and saved queries remain intact. Explicit CLI query/export operations
+remain available; export writes readable navigation to stdout only and does not
+change paper units. See the [data contract](references/knowledge-exploration.md).
 
-```sh
-scholar-workflow knowledge explore --root /path/to/selected/folder
-```
-
-The local page opens in cmux when available or a normal browser; Ctrl-C in its
-terminal stops it. It shares `.scholar-workflow/exploration.yml` with the CLI.
-Add dimensions through definitions, combine filters within a joint research record,
-keep conditions/results together and retain explicit evidence for relationships.
-The complete declared asset list keeps missing-file diagnostics and external
-links. `knowledge exploration-export --root /path/to/selected/folder` prints
-readable Obsidian navigation to stdout without changing a paper unit. The first
-batch does not create website snapshots, run an agent scheduler or automatically
-insert navigation into existing notes. See the
-[schema, query and command contract](references/knowledge-exploration.md).
+The unpublished0.50.0 candidate adds complete registered paper, Blog and technical
+document references. `knowledge list --asset-units --source-id SOURCE --field-id FIELD --language en`
+lists their members and availability; `--paper-units` stays paper-only. New references
+use registered import. Unqualified legacy rows remain readable and unverified,
+not silently adopted. The installed0.49.0 does not have this option.
 
 For non-paper updates, use [track-research](skills/track-research/README.md):
 `research sources list/register` manages selected blogs, institutional pages,
@@ -141,6 +161,14 @@ separate from initialization and the short inventory overview. See
 [internal project entry](skills/organize-project/README.md).
 
 ### Project material and collected experiment views
+
+The source candidate adds an editable YAML/JSON `--selection-file` for readable
+metrics, configuration, reports and figures, while model payloads remain at the
+source. Original Run/Attempt/artifact records stay unchanged; reception, reading,
+updates and recovery use the same selection. Explicitly deferred required evidence
+remains incomplete. Installed 0.49.0 does not expose this option; check installed
+help before use. Remote export/SSH pulling is not provided by this interface.
+See [result selection and delivery](references/experiment-result-selection.md).
 
 For collected child experiments, use a normally installed version whose
 `scholar-workflow experiment --help` exposes `collected`:
@@ -279,218 +307,69 @@ and new-clone replay. No Hub, source-checkout variable, external paper or system
 installation is required. See [reproduction contract](skills/init-project/references/reproducibility.md).
 The deterministic example does not establish scientific validity or replace human assessment.
 
-### Legacy research Hub (compatibility only)
+### Compatibility service without a website
 
-The frontend and embedded Codex control plane are no longer the product direction. The commands
-below remain documented for existing installations; they are not prerequisites for project
-integration or native cmux/Codex use. This refactor has not stopped any installed service/worker.
-The legacy opening command is:
+The old Hub website and its bundled HTML/JavaScript/CSS are retired in current
+source. `/hub/` and `/hub/assets/*` return HTTP 410. `open-hub` refuses before
+starting a service, routing a terminal or opening a browser. It does not redirect
+to the undecided multidimensional interface. Installed 0.49.0 keeps its old
+behavior until an updated package is normally installed.
 
-```bash
-scholar-workflow open-hub
-```
-
-`open-hub` verifies the installed build, starts or safely restarts Scholar Workflow's managed
-loopback service, discovers its dynamic port, and opens the Hub. It never needs a source checkout,
-`CODE_REPO_ROOT`, a fixed port, nonce, or lease. Run it inside cmux to remember that workspace as
-the page's default open location; outside cmux, reading and authorized file operations still work,
-while cmux-only actions ask you to choose a destination.
-The HTTP service runs independently of cmux. Inside cmux, `open-hub` also starts a small,
-unfocused terminal router for window actions; closing that workspace must not stop Hub reading.
-One managed Hub currently routes to one active cmux instance at a time (multiple workspaces within
-that instance are supported). Opening it from a different cmux instance replaces the window route,
-not file permissions; earlier pages remain readable and must choose a live destination to launch.
-
-Service controls are explicit and idempotent:
+Existing catalog/health/PDF and controlled native-open compatibility APIs remain.
+Their safety boundaries, existing state and lifecycle commands are retained:
 
 ```bash
-scholar-workflow hub start
 scholar-workflow hub status
-scholar-workflow hub restart
 scholar-workflow hub doctor
 scholar-workflow hub stop
 ```
 
-`status` reports the real executable, installed package version and code build, protocol, PID, dynamic port,
-generation, start time, and log. `stop` affects only a process whose discovery record and live
-identity handshake prove that Scholar Workflow owns it; an unknown listener is never terminated.
-`hub doctor` verifies the managed process, build and private runtime files; `hub-doctor --json`
-shows detailed provider and capability diagnostics. A slow provider or cmux router cannot invalidate
-the lifecycle identity check. Plugin manifest versions are checked separately during release
-validation. After any manual `hub restart`, run `open-hub` again: the old page points at the old
-dynamic port. Run it inside cmux if window actions need a default destination.
+Stop/restart only affect a process verified as Scholar-managed. This source change
+does not stop installed services or delete their state. Native paper/note opening
+uses the [resource-location contract](skills/find-resource/references/resource-location.md)
+and independent `knowledge open` commands. No website is required.
 
-The page is organized as `Libraries → Papers / Fields`, plus peer `Projects` and `Tools` entries.
-There is no global “workspace bound/read-only” mode. Capabilities such as Vault writes, project
-document writes, cmux launches, Codex tasks, ZotFlow annotations, and Zotero Local API are reported
-independently. A closed cmux workspace disables only launches routed to it.
+For an explicitly selected separate PDF copy with supported Zotero annotations,
+`scholar-workflow zotero snapshot-annotations ATTACHMENT_KEY --output /path/to/copy.pdf`
+keeps its existing semantics: no original replacement or annotation write-back.
 
-To add a research field:
+### Local Field transactions
 
-1. Open **Fields → 选择 Vault / 目录** (Select Vault/Folder).
-2. Choose an Obsidian Vault or a subdirectory in the system picker. The browser never receives its
-   absolute path.
-3. Review the zero-write preview: proposed Fields, home page, navigation order, collisions,
-   template rewrites, ignored files, unmapped prose, and link changes.
-4. For an ordinary new Field, confirm only the one you want to initialize. If the preview reports
-   legacy analysis or Hub links, its browser confirmation is disabled; use the operator transaction
-   below so registration and migration stay together. One Source may contain multiple Fields, and
-   each Field defines its own navigation labels.
-
-If the selected Vault already has a portable Field manifest but is not registered on this host,
-the preview instead offers **Register existing Source**. It shows all existing Fields and IDs;
-confirmation registers the Source locally without editing that manifest or its documents.
-
-The legacy `research_vault_root` is only offered as a migration candidate. It is not the one
-required knowledge root. Field pages show manifest navigation and selected Markdown together,
-without a document landing page.
-
-Paper cards act directly. The primary action opens the locally available PDF in **Zotero**;
-secondary actions can open ZotFlow when its desktop local-storage mode is verified, read in the
-selected cmux workspace, use the system PDF reader, show the analysis, or open the annotation note.
-The cmux PDF surface is a local read-only preview, not an embedded Zotero reader or an annotation
-sync client. Source links in new analysis drafts can target a verified Zotero PDF page or existing
-annotation in the separate Zotero app; exact-text selection is not implied by a page link.
-If the local PDF is missing or has changed, opening fails closed instead of requesting a cloud PDF.
-Zotero remains the annotation authority. Only ZotFlow may hold a
-Zotero Web API key, in Obsidian SecretStorage; Scholar Workflow reads annotations through the Local
-API and never requests that key. The legacy `/hub/item` and `/open/paper/...` routes remain only for
-one-cycle compatibility and are not emitted by the normal UI.
-
-Expand **Related files** on a paper card for explicitly related companion notes, analysis Markdown,
-Canvas, annotation/reading notes, ZotFlow Source Notes and Zotero child attachments. Rows show
-source and availability; Markdown offers a Hub body preview and Obsidian opening, while Canvas
-edits in Obsidian. Missing declared files retain diagnostics; names never establish paper ownership.
-The ZotFlow action targets the registered Vault's Library Reader. The cmux action opens the original
-PDF in the selected workspace browser, without Zotero database annotations. Each launch can override
-its destination; native Obsidian/Zotero windows do not belong to a cmux workspace.
-
-To use ZotFlow without cloud PDF downloads on desktop, go to Obsidian Settings → ZotFlow → General
-→ Source Notes → Library Source Note, enable **Use Zotero Storage Directory**, and set **Zotero
-Storage Path** to the absolute path of Zotero's `storage` directory (not its parent; do not use `~`).
-Imported attachments then read the existing local file. A missing local file is an error, not a
-reason to download it. ZotFlow's metadata/annotation Web API sync is separate from PDF file sync;
-keeping the former enabled does not require Zotero cloud PDF storage. Hub disables its ZotFlow
-action until it can verify this local-only mode without reading ZotFlow's secret settings.
-
-To open a Zotero attachment in ZotFlow's **Library Reader** manually, use Obsidian's Command
-Palette (`Cmd-P`) → `ZotFlow: Open Zotero Tree View`, search the paper title, expand its item,
-and double-click the PDF attachment. `ZotFlow: Search Zotero Library` is a shorter alternative:
-search the title and press Enter on the attachment result. Do not open a PDF from the Vault file
-explorer for a Zotero round-trip test: that is the Local Reader and its annotations stay in a
-co-located `.zf.json`. In Obsidian Settings → ZotFlow → Sync, the intended library must be
-`Bidirectional`; after annotating, use ZotFlow Activity Center → Sync and wait for Tasks to finish.
-If the paper is absent from Tree View, run `Sync All` there first. Keep any Zotero Web API key
-inside ZotFlow's own settings, never pass it to Scholar Workflow. See the
-[ZotFlow reader guide](https://zotflow.peterduan.dev/reading-and-annotating/) and
-[getting started guide](https://zotflow.peterduan.dev/getting-started/).
-
-Notion and other Web tools open through registered URL recipes in a selected cmux browser surface.
-CLI and Codex recipes open a terminal surface there, but cwd comes only from a registered project,
-Vault, or folder target. Browser requests cannot supply URLs, commands, cwd, model, sandbox,
-permissions, environment, or raw Codex configuration. Project operations still accept only a
-registered `project_id` and a relative path under `docs/`; collisions and symlink escapes fail,
-deletion goes to recoverable project trash, and Hub never writes Git.
-
-To enable a task, open **Codex tasks → Configure Codex**:
-
-1. Review detected executable versions and model choices. Detection does not save or launch a task.
-2. Select permitted registered targets, or choose a working folder in the system picker and confirm
-   its preview. A Field suggestion scopes cwd to that Field, not the entire Vault.
-3. Confirm a model and either read-only or workspace-write policy.
-4. Return to tasks. Current Project/Field or a paper's unique Field relation suggests its exact target;
-   only one applicable recipe auto-selects. Ambiguity requires a choice; missing targets guide registration.
-5. Pick Default/a specific model and a supported reasoning level, enter a brief up to 8 KiB, review
-   the recipe/target/model/reasoning/destination summary and start. Selected identities are context
-   locators, not an automatic full-paper text injection.
-
-Choices persist on the server across port changes. Default means the confirmed local CLI model, not
-desktop proprietary auto-routing. Catalog availability is not account entitlement; only a real
-successful call proves access. Existing threads pin actual model/reasoning; a changed configuration
-requires a new task or explicit fork, never a silent resume switch.
-
-The CLI fallback runs on the Hub host; destination routes the terminal, target resolves cwd:
+Field content operations have local entries without an HTTP listener, browser token
+or cmux. For a newly selected Field, review the complete JSON plan, storing it
+outside the selected source:
 
 ```bash
-scholar-workflow hub target list
-scholar-workflow hub target add-source SOURCE_ID --target-id research
-# Or use an already registered project:
-scholar-workflow hub target add-project PROJECT_ID --target-id project
-scholar-workflow hub codex configure --executable /absolute/path/to/codex --model YOUR_MODEL --sandbox workspace-write
-scholar-workflow hub codex status
-scholar-workflow hub restart
+scholar-workflow knowledge field-transaction plan --root /path/to/selected-folder --field-root . > REVIEWED.json
+scholar-workflow knowledge field-transaction apply REVIEWED.json --approved-digest sha256:PLAN_DIGEST --external-writers-paused
 ```
 
-`SOURCE_ID` is shown in the **Fields → 选择 Vault / 目录** preview; `PROJECT_ID` comes
-from the project's manifest and host registration. Use the target command that matches your work.
-`configure` probes the explicitly supplied executable and stores the model and sandbox as private
-server policy; it does not search `$PATH`. Restart the Hub after CLI configuration; browser setup
-refreshes the task entry immediately. Until configuration, a live destination, and the
-worker capability check all succeed, the panel shows the specific unavailable reason. The
-administrator can choose `--sandbox read-only` instead for a task that must not write files.
+Use `--source-id SOURCE_ID --field-root RELATIVE_ROOT` instead of `--root` to select
+an unregistered Field within an already registered Source. The plan binds the exact
+selection, proposals and bytes. Apply reconstructs and checks it in a fresh process,
+then requires interactive confirmation and an explicitly arranged external-writer
+pause. A stale digest refuses. The recovery snapshot is not a verified backup.
+For an interrupted original journal, use `knowledge field-transaction recover
+SOURCE_ID FIELD_ID --confirm-recovery --external-writers-paused`.
 
-If ZotFlow is unavailable, check the registered Vault, plugin versions and local-storage mode; do
-not enable cloud PDF fallback. Re-select a live cmux workspace after destination expiry; reading
-still works. Empty task targets require registration rather than an arbitrary first choice. A
-missing model catalog offers only a confirmed local model. Configuration changes wait for active
-runs to finish or be explicitly cancelled.
-
-These are retained legacy Hub compatibility entries, not the current project-centered
-workflow. An accepted open request does not prove visible reader behavior. For native
-paper opening without Hub, use the [resource-location contract](skills/find-resource/references/resource-location.md).
-
-To give another PDF reader a separate copy with supported Zotero annotations:
+For read-only conservation review of a trusted legacy proposal:
 
 ```bash
-scholar-workflow zotero snapshot-annotations ATTACHMENT_KEY --output /path/to/annotated-copy.pdf
+scholar-workflow knowledge field-transaction legacy-preview --root /path/to/selected-folder --field-root . --package-file PROPOSAL.json
 ```
 
-This creates a new PDF and hash receipt; it never overwrites the Zotero attachment or syncs edits
-made to the copy back into Zotero. Unsupported annotation types fail explicitly.
-
-For an existing research folder with legacy links or a legacy analysis pair, do not use the
-browser's old **Initialize Field** confirmation first. Use the single-Field operator transaction
-instead. Its read-only plan covers the portable manifest, local Source registration, old-link
-rewrites, and any reviewed Markdown/Canvas/sidecar replacement together:
-
-```bash
-scholar-workflow hub field-transaction plan --field-root FIELD_RELATIVE_ROOT
-# Review the returned candidate_token, field_id, plan_token, plan_digest,
-# file-by-file diff, conflicts, and unresolved files before any write.
-scholar-workflow hub field-transaction apply PLAN_TOKEN --approved-digest sha256:PLAN_DIGEST --external-writers-paused
-```
-
-`plan` may open the system folder picker. If you selected the Field directory itself, its relative
-root is `.`. `apply` requires a second interactive confirmation and a manually arranged pause of
-Obsidian/sync writers; the CLI cannot prove that they are paused. A restart or expired review token
-requires a fresh plan and a fresh digest review. The private recovery snapshot is **not** a
-verified backup.
-
-When a legacy paper analysis must be normalized in that same transaction, prepare a trusted local
-JSON proposal with `schema_version`, relative `markdown_path`/`canvas_path`/`sidecar_path`, the
-candidate Analysis IR and rendered Markdown/Canvas bundle, and complete old-Markdown/Canvas
-mapping plans. The server reads the old files itself; the package must not contain source bytes,
-absolute paths, or a Web API key. Preview the mechanical gate first and resolve every finding
-and paper-fact uncertainty. Legacy staging is disabled until Provider and Field changes share
-one recoverable transaction journal; a preview cannot authorize a Vault write:
-
-```bash
-scholar-workflow hub field-transaction legacy-preview CANDIDATE_TOKEN FIELD_ID --package-file PROPOSAL.json
-```
-
-`legacy-preview` is read-only; `legacy-stage` exits with dependency error 3 and its HTTP endpoint
-returns 503, even for a valid digest. Ordinary clean Field transactions remain available, but a
-plain `plan` cannot bypass managed analysis conflicts. Mechanical conformance cannot replace human
-review of scientific claims or the Canvas layout. Existing `recover` remains available for a
-previously interrupted transaction and requires a manually arranged pause of Obsidian/sync writers.
+This does not stage old analyses. Joint legacy Provider/Field staging remains
+unavailable; `legacy-stage` exits 3. Existing managed-content conflicts cannot be
+bypassed by enrollment. Old `hub field-transaction` commands return a migration
+notice; saved browser candidates need a fresh explicit local plan.
 
 The older link-only command remains for an **already registered** Field that needs no analysis or
 manifest reorganization:
 
 ```bash
-scholar-workflow hub field-migration plan SOURCE_ID FIELD_ID
-scholar-workflow hub field-migration apply SOURCE_ID FIELD_ID --approved-digest sha256:PLAN_DIGEST --external-writers-paused
-scholar-workflow hub field-migration recover SOURCE_ID FIELD_ID
+scholar-workflow knowledge field-migration plan SOURCE_ID FIELD_ID
+scholar-workflow knowledge field-migration apply SOURCE_ID FIELD_ID --approved-digest sha256:PLAN_DIGEST --external-writers-paused
+scholar-workflow knowledge field-migration recover SOURCE_ID FIELD_ID
 ```
 
 Its plan is read-only. Each distinct attachment key must be verified through Zotero's Local API as
@@ -524,7 +403,7 @@ flows instead of treating a compatibility response as write authority.
 | build-literature-tree | Complete paper list + literature timeline + radial technical routes and challenges |
 | check-consistency | Audit cross-system consistency (read-only) |
 | export-annotations | Turn a paper's Zotero annotations into a structured vault note |
-| recommend-papers | Daily multi-source paper feed + NotebookLM skim → Reading Report |
+| recommend-papers | Research recommendations, shared agent intake and reviewed selection |
 | track-research | Selected blogs, institutional pages, releases and model lists → incremental updates |
 | explore-knowledge | Editable dimensions, joint-condition research comparisons, evidence relations and complete asset navigation |
 | analyze-paper | Project detailed paper analysis into paired Markdown + editable Canvas |
@@ -535,7 +414,6 @@ flows instead of treating a compatibility response as write authority.
 | organize-project | Internal PROJECT entry with module views, material links and a single plan (0.43.0+) |
 | review-experiments | Read-only review/comparison of selected experiment archives (0.43.0+) |
 | config-setup | Initialize, query, and update the plugin configuration |
-| project-backlog | Maintain the repository's persistent work-item queue |
 
 ## Personal research assets
 
@@ -576,8 +454,8 @@ keep their recommendation store and are not yet providers in `assets list`.
     for this ZotFlow-specific proof, not for the Zotero primary action. ZotFlow keeps its Zotero
     Web API key in Obsidian SecretStorage.
   - Notion integration token — only if you enable the Notion projection.
-  - `notebooklm-py` + a Google login — only for the `recommend-papers` skim tier and
-    NotebookLM-assisted literature-tree batch reading.
+  - `notebooklm-py` + a Google login — only for explicitly chosen NotebookLM-assisted
+    literature-tree reading; recommendations do not require it.
   - A Scholar Inbox account — only for that one recommendation source.
   - A target agent's CLI and existing login — only when `agent-collaboration` crosses
     host runtimes instead of using a native agent tool.
@@ -694,12 +572,11 @@ The plugin is in active `0.x` development. What's solid vs. still settling:
   listing, remembered write authorization, item creation, imported-PDF upload, exact DOI
   reuse, and attachment reuse. The same ingest payload returns the original item and
   attachment without re-uploading.
-- **Focused knowledge interface:** `knowledge explore` adds file-backed relationship
-  exploration; it does not rewrite paper packages or restore Codex task control.
-  Candidate source checks, normal installation and native/human usability remain
-  separate results.
-- **Legacy Hub is compatibility-only:** its dynamic service and historical routing remain
-  protected, but it is not a prerequisite for current content workflows. Native tools retain
+- **Multidimensional interaction remains undecided:** retain file-backed records
+  and accepted paper packages. The old explorer is not the recommended workflow;
+  source checks, normal installation and human usability remain distinct.
+- **Legacy compatibility APIs remain:** the Hub website is removed; dynamic service
+  identity, PDF delivery and retained native routing stay protected. Native tools retain
   their own configuration and lifecycle; cmux selects an opening location, not file permission.
 - **Real data still uses per-Field gates:** explicitly select a registered Source/Field and
   review a current preview before a migration changes it. Other Vaults and projects remain untouched;
@@ -710,7 +587,7 @@ The plugin is in active `0.x` development. What's solid vs. still settling:
   from the Zotero Web API/WebDAV to repair local availability.
 - **Implemented but not yet exercised on a real end-to-end run:** the legacy
   `build-literature-tree` Mermaid CLI projection (especially the fourth `module`
-  level), the `recommend-papers` NotebookLM skim tier, and `check-consistency`.
+  level), and `check-consistency`.
   The current Field-library profile has separate installed/native/human assessment.
 - **No cross-run resume:** re-running `apply` starts a fresh job and re-downloads every item;
   it does not pick up where a prior run stopped.

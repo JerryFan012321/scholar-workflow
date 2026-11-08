@@ -36,8 +36,8 @@ def _emit(payload: dict, fmt: str, language: str, *, sources: bool = False) -> N
                (sources_markdown if sources else updates_markdown)(payload, language=language))
 
 
-def _spec(path: Path) -> dict:
-    limit, descriptor = 64 * 1024, None
+def _spec(path: Path, *, limit: int = 64 * 1024) -> dict:
+    descriptor = None
     try:
         absolute = Path(os.path.abspath(path))
         flags = os.O_RDONLY | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
@@ -52,10 +52,10 @@ def _spec(path: Path) -> dict:
             os.close(directory)
         metadata = os.fstat(descriptor)
         if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > limit:
-            raise ResearchError("Research specification must be a regular file of at most 64 KiB.", 7)
+            raise ResearchError("Research specification must be a regular file within the input limit.", 7)
         content = os.read(descriptor, limit + 1)
         if len(content) > limit:
-            raise ResearchError("Research specification exceeds 64 KiB.", 7)
+            raise ResearchError("Research specification exceeds the input limit.", 7)
     except OSError:
         raise ResearchError("Research specification is unavailable or its path is unsafe.", 7) from None
     finally:

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>研究推荐 · Scholar Workflow</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">SW</span><span>Scholar Workflow</span></div>
+    <span id="profile" class="profile">正在连接</span>
+  </header>
+  <main>
+    <section class="page-heading" aria-labelledby="page-title">
+      <div><p class="eyebrow">RESEARCH FEED</p><h1 id="page-title">研究推荐</h1><p class="subtitle">读摘要，选资料，追踪你关心的研究。</p></div>
+      <div class="heading-actions"><button id="refresh" type="button" class="secondary">刷新列表</button><button id="export" type="button" class="primary" disabled>导出入库清单 <span id="selected-count">0</span></button></div>
+    </section>
+    <div id="test-banner" class="test-banner" hidden>测试环境 · 候选与选择保存在独立测试状态中。</div>
+    <section class="filters" aria-label="筛选推荐">
+      <label class="search-field">搜索<input id="query" type="search" placeholder="标题或作者" maxlength="300"></label>
+      <label>发布日期<select id="since"><option value="">全部日期</option><option value="1">今天</option><option value="7">最近七天</option><option value="30">最近三十天</option></select></label>
+      <label>资源类型<select id="kind"><option value="">全部类型</option><option value="paper">论文</option><option value="project">项目主页</option><option value="blog">博客</option></select></label>
+      <label>领域<select id="tag"><option value="">全部领域</option></select></label>
+      <label>推荐任务<select id="producer_id"><option value="">全部任务</option></select></label>
+    </section>
+    <div class="list-toolbar">
+      <div class="view-tabs" role="group" aria-label="处理状态"><button type="button" data-decision="" aria-pressed="true">全部</button><button type="button" data-decision="unread" aria-pressed="false">未处理</button><button type="button" data-decision="saved" aria-pressed="false">稍后看</button><button type="button" data-decision="selected" aria-pressed="false">已选入库</button><button type="button" data-decision="ignored" aria-pressed="false">已忽略</button></div>
+      <div class="result-tools"><span id="result-count" class="result-count">正在读取</span><label class="sort-label">排序<select id="sort"><option value="published">发布日期</option><option value="newest">最新推荐</option><option value="oldest">最早推荐</option></select></label></div>
+    </div>
+    <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
+    <div id="auth-error" class="empty-state" hidden><h2>请从命令打开推荐页</h2><p>页面需要本次服务的访问凭证。请在终端运行下方命令，使用返回的完整链接打开。</p><code id="auth-command">scholar-research recommendations open</code></div>
+    <section id="feed" class="feed" aria-label="推荐内容" aria-busy="true"></section>
+    <section id="empty" class="empty-state" hidden>
+      <div class="empty-symbol" aria-hidden="true">＋</div><h2 id="empty-title">等待第一批推荐</h2>
+      <p id="empty-description">让你的推荐 agent 读取 recommend-papers Skill，并通过统一入口提交论文、项目主页或博客。</p>
+      <pre id="empty-command">scholar-research recommendations schema
+scholar-research recommendations submit --input recommendations.json</pre>
+      <p class="quiet">不同任务可以独立提交；同一对象会合并展示，推荐来源会保留。</p>
+    </section>
+    <nav class="pagination" aria-label="列表分页"><button id="previous" type="button" class="secondary" disabled>上一页</button><span id="page-number"></span><button id="next" type="button" class="secondary" disabled>下一页</button></nav>
+    <footer class="page-footer"><span>推荐候选独立于正式知识库。</span><span>审阅摘要后选择；导出清单后交给入库 Skill 执行。</span></footer>
+  </main>
+</body>
+</html>

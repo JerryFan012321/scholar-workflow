@@ -1,30 +1,47 @@
 ---
 name: recommend-papers
-description: Produce an ephemeral daily paper feed from configured sources, skim only a selected shortlist, or maintain an author watchlist. Use for 'recommend papers', 'daily papers', 'what should I read', 'watch this author', '推荐论文', '今日论文', '关注这个作者'. Not for targeted lookup or full paper analysis.
+description: Recommend research papers, project homepages and blogs, submit them to the shared recommendation page, or maintain an author watchlist. Use for 'recommend papers', 'daily papers', 'recommend research blogs', 'what should I read', 'watch this author', '推荐论文', '今日论文', '推荐研究项目', '推荐博客', '关注这个作者'. Not for targeted lookup, channel monitoring or full paper analysis.
 ---
 
 # recommend-papers
 
-## Feed result and required source boundary
+## Shared recommendation entry
 
-1. Use arXiv IDs supplied by the user or returned by
-   `scholar-workflow zotero search "<requested-or-configured-topic>" --fulltext` as Semantic
-   Scholar positive seeds. Keep the selected seed IDs visible in the run result.
-2. Run the configured source aggregator:
-   `echo '{"seed_arxiv_ids":[...]}' | python3 ${CLAUDE_PLUGIN_ROOT}/bin/recommend-papers.py`.
-   It returns `{candidates,count,skipped}`; source failures remain in `skipped` and do
-   not discard successful sources.
-3. The shortlist identifies the explicit user filters, configured interests and limit
-   applied to the candidate pool, and retains source scores and match signals. Only
-   shortlisted papers may receive the costly skim.
-4. Skim only the shortlist with NotebookLM using arXiv URLs. Reuse a same-topic notebook
-   when available. If NotebookLM is unavailable, use Zotero indexed full text for a
-   smaller shortlist or return metadata-only recommendations.
-5. Return an ephemeral Markdown Reading Report: title, one-line grounded description,
-   why relevant, source, arXiv link, and any skipped-source or skim limitation. Never
-   write the report to Zotero or the Vault.
-6. Send user-selected papers to `find-resource` / `ingest-resource`; this skill never
-   ingests directly.
+Before producing, submitting or reviewing recommendations, follow the
+[recommendation intake contract](../../references/recommendation-intake.md).
+It defines the shared entry for papers, project homepages and blogs, the Reading
+Report, tags, raw platform data, retry receipts and human selection handoff.
+
+Every recommending agent uses the same installed entry for the user's chosen pool:
+
+```text
+scholar-research recommendations --profile personal schema
+scholar-research recommendations --profile personal submit --input recommendations.json
+scholar-research recommendations --profile personal open
+```
+
+Use a stable producer ID for a recurring task, a separate run ID per execution and
+the same submission ID and payload on retries. Follow the receipt, not a guessed
+success. Do not write the pool database directly. Schedules remain owned by the
+calling host; this skill does not create an agent scheduler.
+
+Use `--profile test` for an explicitly selected test pool. Never send test examples
+to the personal pool or alter installed runtime files to make acceptance pass.
+
+## Existing source aggregation
+
+- Use user-supplied arXiv IDs or the confirmed results of
+  `scholar-workflow zotero search "<requested-or-configured-topic>" --fulltext` as
+  Semantic Scholar positive seeds.
+- The configured aggregator remains available:
+  `echo '{"seed_arxiv_ids":[...]}' | python3 ${CLAUDE_PLUGIN_ROOT}/bin/recommend-papers.py`.
+  Its `{candidates,count,skipped}` output is source input, not the versioned
+  submission envelope. Preserve source failures and map selected candidates through
+  the intake contract. Fetch the complete authoritative abstract and translate it;
+  a truncated snippet cannot stand in for the abstract.
+- Retrieve full text only for a user-selected reading request, through native host
+  tools and the shared source policy. An abstract does not establish full-text
+  reading; do not import a paper merely to obtain a reader.
 
 ## Watchlist
 
@@ -39,18 +56,25 @@ necessary, then add it to the global or project `watchlist` in `recommend.yml`.
 
 Project interests and watchlist extend global values; other project keys override them.
 Credentials and session state never belong in these YAML files.
+Legacy `notebooklm_classification` values remain readable but are ignored; no
+NotebookLM package, account, login or fallback is used.
 
 ## Constraints
 
-- Candidates require an arXiv ID and deduplicate by base arXiv ID.
+- The legacy paper aggregator requires arXiv IDs; the shared intake also accepts
+  project homepages and blogs under their own typed identities.
 - Use the network behavior implemented by each adapter; do not override per-source proxy
   routing.
-- Missing Scholar Inbox login skips that source. NotebookLM and Scholar Inbox login
-  state must remain outside config and Git; prefer a separate NotebookLM account.
+- Missing Scholar Inbox login skips that source. Its session state must remain
+  outside config and Git.
 - Never auto-ingest. The normal identity and source gates run after user selection.
 
 ## References
 
+- [Recommendation intake](../../references/recommendation-intake.md) — required for
+  submissions, the recommendation page and Reading Report/handoff output.
+- [Synthetic submission example](references/submission.example.json) — adapt only
+  with verified real metadata; the example is not a real recommendation.
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/source-policy.md`
 - `${CLAUDE_PLUGIN_ROOT}/references/security-policy.md`

@@ -36,10 +36,18 @@ class CollectedArchiveError(ValueError):
 
 
 def _validate_receipt(receipt, parent_id, child_id, run_id):
-    if not isinstance(receipt, dict) or set(receipt) != _RECEIPT_KEYS:
+    if not isinstance(receipt, dict):
         raise CollectedArchiveError("Invalid collection receipt fields")
-    if type(receipt["schema_version"]) is not int or receipt["schema_version"] != 1:
+    version = receipt.get("schema_version")
+    if type(version) is not int or version not in {1, 2}:
         raise CollectedArchiveError("Invalid collection receipt version")
+    expected_keys = _RECEIPT_KEYS | ({"result_delivery"} if version == 2 else set())
+    if set(receipt) != expected_keys:
+        raise CollectedArchiveError("Invalid collection receipt fields")
+    if version == 2:
+        from .result_scope import ResultDelivery
+        if ResultDelivery.model_validate(receipt["result_delivery"]).model_dump(mode="json") != receipt["result_delivery"]:
+            raise CollectedArchiveError("Result delivery must contain its exact versioned fields")
     if not is_project_id(receipt["parent_project_id"]) or not is_project_id(receipt["child_project_id"]):
         raise CollectedArchiveError("Invalid collection identity")
     if (receipt["parent_project_id"], receipt["child_project_id"], receipt["run_id"]) != (parent_id, child_id, run_id):
@@ -84,8 +92,10 @@ def _validate_receipt(receipt, parent_id, child_id, run_id):
         destinations.append(destination)
     if sources != sorted(set(sources)) or len(destinations) != len(set(destinations)):
         raise CollectedArchiveError("Collection file mappings must be unique and sorted")
-    expected_hash = _sha(json.dumps({"files": receipt["files"], "directories": directories},
-                                    sort_keys=True, separators=(",", ":")).encode())
+    evidence = {"files": receipt["files"], "directories": directories}
+    if version == 2:
+        evidence["result_delivery"] = receipt["result_delivery"]
+    expected_hash = _sha(json.dumps(evidence, sort_keys=True, separators=(",", ":")).encode())
     if expected_hash != receipt["evidence_sha256"]:
         raise CollectedArchiveError("Collection inventory checksum differs")
 
@@ -109,7 +119,8 @@ def read_collected_evidence(namespace_fd, parent_id, child_id, run_id):
             if len(data) != row["size"] or _sha(data) != row["sha256"] or mode != row["mode"]:
                 raise CollectedArchiveError("Local execution evidence checksum, size or mode differs", path=row["destination_path"])
             files[row["source_path"]] = data
-        run, attempts, artifacts = validate_run_evidence(files, set(receipt["directories"]), run_id)
+        run, attempts, artifacts = validate_run_evidence(files, set(receipt["directories"]), run_id,
+                                                       result_delivery=receipt.get("result_delivery"))
         if run.source.commit != receipt["source_commit"] or run.recipe_hash != receipt["recipe_hash"]:
             raise CollectedArchiveError("Receipt differs from its original child recipe")
         # Observe owned bytes again; do not call an in-progress update a valid mixed snapshot.
@@ -134,10 +145,10 @@ def _read_run(namespace_fd, parent_id, child_id, segment, run_id):
     def snapshot_path(value):
         return mapping[value.path.removeprefix(prefix)]
     metrics = [{"source_attempt_id": item.source_attempt_id,
-                "state": "local_unreviewed" if item.relative_path else "remote_only",
-                "path": mapping[item.relative_path] if item.relative_path else None}
+                "state": "local_unreviewed" if item.relative_path in mapping else "remote_only",
+                "path": mapping.get(item.relative_path)}
                for item in artifacts.artifacts if item.role == "metrics"]
-    return {
+    result = {
         "run_id": run_id, "child_project_id": child_id, "state": "verified_archive",
         "source_commit": run.source.commit, "recipe_hash": run.recipe_hash,
         "dataset": {key: getattr(run.dataset, key) for key in ("dataset_id", "version", "split")},
@@ -148,6 +159,13 @@ def _read_run(namespace_fd, parent_id, child_id, segment, run_id):
                      for row in attempts],
         "metrics": metrics, "execution_verification": "records_only", "issues": [],
     }
+    if "result_delivery" in receipt:
+        result["result_delivery"] = receipt["result_delivery"]
+        omitted = {row["source_path"] for row in receipt["result_delivery"]["omitted"]}
+        result["result_gaps"] = [item.relative_path for item in artifacts.artifacts
+                                 if item.relative_path in omitted and item.retention == "local-required"
+                                 and item.role in {"metrics", "parameters", "report", "image", "video", "log"}]
+    return result
 
 
 def collected_overview(parent_root: str | Path, *, child_project_id: str | None = None,
@@ -214,7 +232,8 @@ def collected_overview(parent_root: str | Path, *, child_project_id: str | None 
     found = {run["run_id"] for row in output for run in row["runs"]}
     missing = [run_id for run_id in required_run_ids if run_id not in found]
     partial = bool(missing) or any(row["issues"] or row["state"] == "unavailable" or
-                  any(run["state"] != "verified_archive" for run in row["runs"]) for row in output)
+                  any(run["state"] != "verified_archive" or run.get("result_gaps")
+                      for run in row["runs"]) for row in output)
     result = {"schema_version": 1, "parent_project_id": parent.project_id,
               "status": "partial" if partial else "complete", "children": output,
               "scope": {"registered_children_only": True, "child_project_id": child_project_id},
@@ -244,8 +263,13 @@ def render_collected_overview(result, *, language="en"):
              "Read-only navigation index, not a scientific comparison; execution status comes from records.", "",
              "| " + " | ".join(labels) + " |", "|" + "---|" * len(labels)]
     if result["status"] == "partial":
-        lines[3:3] = ["部分档案未通过检查，问题行保留。" if zh else
-                      "Some archives did not pass inspection; affected rows are retained.", ""]
+        deferred = any(run.get("result_gaps") for child in result["children"] for run in child["runs"])
+        if deferred:
+            notice = ("部分必需成果尚未接收；档案完整性与成果齐备分别显示。" if zh else
+                      "Some required results remain deferred; archive integrity is separate from delivery completeness.")
+        else:
+            notice = "部分档案未通过检查，问题行保留。" if zh else "Some archives did not pass inspection; affected rows are retained."
+        lines[3:3] = [notice, ""]
     missing = result.get("required_runs", {}).get("missing", [])
     if missing:
         lines[3:3] = [("要求的实验档案尚未接收：" if zh else "Required Run archives not received: ")
@@ -290,7 +314,15 @@ def render_collected_overview(result, *, language="en"):
                     time += "（时区未记录）" if zh else " (timezone not recorded)"
                 if attempt.get("finished_at"):
                     time += ("；结束：" if zh else "; End: ") + _text(attempt["finished_at"])
-                lines.append(f"| {title} / {entry} | {time} | {purpose} | {condition} | {outcome} | {'完整性通过；仅记录' if zh else 'Integrity checked; records only'} |")
+                check = "完整性通过；仅记录" if zh else "Integrity checked; records only"
+                delivery = run.get("result_delivery")
+                if delivery:
+                    count = len(delivery["omitted"])
+                    check += (f"；{count}个文件留在源端，字节未读取核验" if zh else
+                              f"; {count} files retained at source, bytes not verified")
+                    if run.get("result_gaps"):
+                        check += "；必需成果已明确延后" if zh else "; required results explicitly deferred"
+                lines.append(f"| {title} / {entry} | {time} | {purpose} | {condition} | {outcome} | {check} |")
         if child["unindexed_entries"]:
             lines.extend(["", f"{segment}: " + ("存在未完成暂存或未识别条目，未作为完成实验入表。" if zh else
                                                 "Staging/unrecognized entries remain; not counted as completed Runs."), ""])

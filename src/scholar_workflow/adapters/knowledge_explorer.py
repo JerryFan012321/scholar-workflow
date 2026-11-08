@@ -139,9 +139,9 @@ class ExplorerHTTPServer(ThreadingHTTPServer):
                 raise ExplorationError("Read-only paper browsing cannot edit research records")
             return before
         preserve_paper_units(before, proposed)
-        existing = {row["id"]: row for row in before["works"] if row["kind"] == "paper"}
+        existing = {row["id"]: row for row in before["works"] if row.get("entity_ref")}
         for work in proposed["works"]:
-            if work["kind"] != "paper":
+            if not work.get("entity_ref"):
                 continue
             if work["id"] in existing and work["assets"] == existing[work["id"]]["assets"]:
                 continue
@@ -160,7 +160,7 @@ class ExplorerHTTPServer(ThreadingHTTPServer):
             wanted.add((ref["source_id"], ref["object_id"]))
         found = set()
         for work in proposed["works"]:
-            if work["kind"] == "paper":
+            if work.get("entity_ref"):
                 ref = work["entity_ref"]
                 key = ref["source_id"], ref["object_id"]
                 if key in wanted:

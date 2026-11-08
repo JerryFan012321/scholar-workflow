@@ -6,7 +6,7 @@ import stat
 from pathlib import Path
 
 from .collected import read_collected_evidence
-from .collection import _record, _sha, _tree, plan_run_collection, validate_run_evidence
+from .collection import _record, _sha, plan_run_collection, validate_run_evidence
 from .layout import open_project_root
 from .models import AttemptRecord
 from .reception import _directory, _read_file, _receipt
@@ -86,10 +86,13 @@ def _transitions(old_run, new_run, old_files, new_files, old_attempts, new_attem
     return changes, artifact_changes
 
 
-def plan_run_update(parent_root: str | Path, child_root: str | Path, *, run_id: str):
+def plan_run_update(parent_root: str | Path, child_root: str | Path, *, run_id: str, selection=None):
     """Describe exact changes and byte baselines without creating locks, stages or files."""
-    incoming = plan_run_collection(parent_root, child_root, run_id=run_id)
-    new_files, new_directories, new_modes = _tree(child_root, run_id)
+    from .result_scope import capture_results
+    incoming = plan_run_collection(parent_root, child_root, run_id=run_id, selection=selection)
+    new_files, new_directories, new_modes, delivery = capture_results(child_root, run_id, selection)
+    if delivery != incoming.get("result_delivery"):
+        raise UpdatePlanError("Incoming result selection changed during update planning")
     if set(new_files) != {row["source_path"] for row in incoming["files"]} or sorted(new_directories) != incoming["directories"]:
         raise UpdatePlanError("Incoming source tree changed during update planning")
     for row in incoming["files"]:
@@ -97,12 +100,15 @@ def plan_run_update(parent_root: str | Path, child_root: str | Path, *, run_id: 
             row["sha256"], row["size"], row["mode"],
         ):
             raise UpdatePlanError("Incoming source evidence changed during update planning")
-    new_run, new_attempts, new_artifacts = validate_run_evidence(new_files, new_directories, run_id)
+    new_run, new_attempts, new_artifacts = validate_run_evidence(new_files, new_directories, run_id,
+                                                              result_delivery=delivery)
     namespace = incoming["destination"].rsplit("/", 1)[0]
     with open_project_root(parent_root) as root_fd, _directory(root_fd, namespace) as namespace_fd:
         raw_receipt, old_receipt, old_files, old_run, old_attempts, old_artifacts = read_collected_evidence(
             namespace_fd, incoming["parent_project_id"], incoming["child_project_id"], run_id,
         )
+        if old_receipt["schema_version"] == 2 and incoming["schema_version"] != 2:
+            raise UpdatePlanError("Selective archives require an explicit result selection for updates")
         transitions, artifact_transitions = _transitions(old_run, new_run, old_files, new_files, old_attempts,
                                                          new_attempts, old_artifacts, new_artifacts)
         old_rows = {row["source_path"]: row for row in old_receipt["files"]}
@@ -127,7 +133,7 @@ def plan_run_update(parent_root: str | Path, child_root: str | Path, *, run_id: 
         again = read_collected_evidence(namespace_fd, incoming["parent_project_id"], incoming["child_project_id"], run_id)
         if again[0] != raw_receipt or again[2] != old_files:
             raise UpdatePlanError("Local execution evidence changed during planning")
-        final = plan_run_collection(parent_root, child_root, run_id=run_id)
+        final = plan_run_collection(parent_root, child_root, run_id=run_id, selection=selection)
         keys = ("parent_sha256", "child_sha256", "evidence_sha256")
         if any(final[key] != incoming[key] for key in keys):
             raise UpdatePlanError("Incoming declaration or evidence changed during planning")

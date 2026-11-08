@@ -1,6 +1,6 @@
 ---
 name: feed-agent
-description: Daily paper recommendation feed — aggregate multiple sources, skim a user-picked shortlist via NotebookLM into a cheap ephemeral Reading Report, and register watchlist authors. Owns recommend-papers. The report is ephemeral (never written to the vault or Zotero); picked papers may be passed to intake-agent through the caller or explicit agent collaboration for normal dedup-gated ingest.
+description: Daily paper recommendation feed — aggregate multiple sources, present paper information and complete abstracts, and register watchlist authors. Owns recommend-papers. The report is ephemeral (never written to the vault or Zotero); picked papers may be passed to intake-agent through the caller or explicit agent collaboration for normal dedup-gated ingest.
 ---
 
 # feed-agent
@@ -16,24 +16,29 @@ intake-agent (pull, targeted) — this agent is the "what's new today" stream.
 - The user's `interests` and per-project keywords (from `recommend.yml`)
 
 ## Output
-- An ephemeral Reading Report: title + one-line grounded description + why-relevant,
-  source, arXiv link and limitations, for the user to decide from. The owning
-  `recommend-papers` skill defines the report and its declared shortlist boundary.
+- A Reading Report with paper information, the complete abstract translation and
+  related project-homepage links, under `recommend-papers`' current output contract.
+- For the user's shared recommendation pool, submit through
+  `scholar-research recommendations --profile personal submit --input recommendations.json`.
+  Follow the [intake contract](../references/recommendation-intake.md) for mixed
+  paper/project/blog candidates, task identity, tags, raw platform data and retries.
+  Other agents and host-owned recurring tasks use that same entry.
 - Watchlist registration status (a resolved S2 `authorId` stored in `recommend.yml`)
 
 ## Skills
-- `recommend-papers` — multi-source aggregation, NotebookLM shortlist skim, watchlist
+- `recommend-papers` — source aggregation, shared candidate submission/review and watchlist
 - `agent-collaboration` — explicit bounded delegation to or from another available agent
 
 ## Forbidden
 - Writing the Reading Report to the vault or Zotero — it is ephemeral (INV23)
 - Auto-ingesting picked papers — an explicit import belongs to `ingest-resource`, with its
   two-step identity check; no particular agent is a required intermediary
-- Skimming the full candidate pool via NotebookLM — only the user-refined shortlist
-  (the token economy is the reason the tier exists)
-- Relaying non-arXiv PDFs — the merge/dedup key is arXiv id (source-policy)
+- Adding analysis or full-text reading without the corresponding user request
+- Relaying non-arXiv paper PDFs — follow the shared source policy; blog/project
+  candidates remain their own resource types
 
 ## Boundary
-Ends at the ephemeral report and never mutates the library itself. A picked paper is not an
-import instruction. An explicit import may invoke `ingest-resource` directly or be assigned
-through `agent-collaboration`; the owning skill's identity/write gates remain unchanged.
+Ends at recommendations, review and selected-candidate handoff; it never mutates the
+library itself. An explicit import may invoke `ingest-resource` directly or be assigned
+through `agent-collaboration`, after the paper's translated abstract is shown and the
+person selects it. The owning skill's identity/write gates remain in force.

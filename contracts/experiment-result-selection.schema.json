@@ -1,0 +1,109 @@
+{
+  "$defs": {
+    "DeferredResult": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "maxLength": 4096,
+          "title": "Path",
+          "type": "string",
+          "allOf": [
+            {
+              "$ref": "#/$defs/path"
+            }
+          ]
+        },
+        "reason": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "reason"
+      ],
+      "title": "DeferredResult",
+      "type": "object"
+    },
+    "IncludedResult": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "maxLength": 4096,
+          "title": "Path",
+          "type": "string",
+          "allOf": [
+            {
+              "$ref": "#/$defs/path"
+            }
+          ]
+        },
+        "kind": {
+          "enum": [
+            "metrics",
+            "parameters",
+            "report",
+            "image",
+            "video",
+            "log"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "purpose": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Purpose",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "kind",
+        "purpose"
+      ],
+      "title": "IncludedResult",
+      "type": "object"
+    },
+    "path": {
+      "type": "string",
+      "pattern": "^[^/\\\\]+(?:/[^/\\\\]+)*$",
+      "not": {
+        "pattern": "(?:^|/)\\.{1,2}(?:/|$)"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "include": {
+      "items": {
+        "$ref": "#/$defs/IncludedResult"
+      },
+      "maxItems": 4096,
+      "title": "Include",
+      "type": "array"
+    },
+    "defer": {
+      "items": {
+        "$ref": "#/$defs/DeferredResult"
+      },
+      "maxItems": 4096,
+      "title": "Defer",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "include"
+  ],
+  "title": "ResultSelection",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

@@ -4,6 +4,12 @@
 > (`project-context.md`) and native tools, not a Hub frontend or embedded Codex control plane.
 > This document still constrains retained endpoints; it does not require a Hub for new content
 > operations or claim the installed service has been stopped.
+> Current source retires embedded Codex activation: mutation endpoints refuse and
+> old runtime configuration is not loaded into a worker/controller. Task-policy
+> sections below describe retained historical data, not available execution.
+> The old static Hub website is removed. `/hub/` and `/hub/assets/*` return 410;
+> `open-hub` refuses without starting a service, router or browser. API/PDF and
+> lifecycle compatibility remain. Historical UI sections do not restore a website.
 
 `HubDirectory` schema 3 is the only Hub root. It is a rebuildable control-plane
 projection, not a knowledge database or an authority for provider-owned content.
@@ -120,23 +126,24 @@ the host registry without rewriting the manifest, Field IDs, or document content
 
 For a first registration containing legacy links or a managed legacy analysis pair,
 the browser's compatibility confirmation must not split registration from migration.
-The trusted local operator instead reviews one `hub field-transaction plan`: its digest
+The trusted local operator instead reviews one `knowledge field-transaction plan`: its digest
 covers the portable manifest, host registry, managed Markdown/Canvas/sidecar changes,
 and link rewrites. A legacy analysis candidate must pass separate old-field/node/edge
 conservation and new bundle conformance before it can join the same Field plan. Its
-candidate is reviewed and staged through the local operator CLI, not the browser. A
+candidate can be reviewed through the local operator CLI, not the browser. Joint
+legacy Provider/Field staging remains unavailable; a preview cannot authorize it. A
 proposed navigation change cannot silently omit any previewed managed document.
 Commit requires the exact plan digest, a manually arranged external-writer pause,
 per-file CAS, an unverified recovery snapshot, and a private per-Field journal.
 An interrupted commit blocks new plans/applies until explicit recovery. The
-`hub field-transaction recover SOURCE_ID FIELD_ID --confirm-recovery --external-writers-paused`
+`knowledge field-transaction recover SOURCE_ID FIELD_ID --confirm-recovery --external-writers-paused`
 command requires the operator's external-writer pause assertion and conditionally restores
 journal-owned files; external edits or damaged recovery data fail closed. Multi-file replacement is
-not instantaneously atomic to external Vault readers. The local operator credential
-and interactive CLI confirmation assume processes running as that OS user are trusted;
+not instantaneously atomic to external Vault readers. Explicit local selection and
+interactive CLI confirmation assume processes running as that OS user are trusted;
 they do not cryptographically prove an independent human approval.
 
-The older `hub field-migration` command is link-only compatibility for an already
+The `knowledge field-migration` command is link-only cleanup for an already
 registered Field. It cannot normalize an analysis pair or initialize a Field in one
 transaction. Managed analysis Markdown/Canvas/sidecar cannot be changed through a
 single-file Hub editor; use the paired Knowledge update workflow.
@@ -303,7 +310,6 @@ result rather than a false complete export.
 Public commands are:
 
 ```bash
-scholar-workflow open-hub
 scholar-workflow hub start
 scholar-workflow hub status
 scholar-workflow hub stop
@@ -311,9 +317,9 @@ scholar-workflow hub restart
 scholar-workflow hub doctor
 ```
 
-`open-hub` verifies the installed package/build, starts or safely restarts its managed
-service, discovers the current URL, and opens the Hub. It does not accept or depend on a
-code repository root.
+`open-hub` is a retired compatibility name. It refuses before service activation
+or browser/terminal routing, without redirecting to another interface. Use native
+tools and the independent knowledge/project operations for current work.
 
 The service binds a dynamically selected loopback port. A mode-0600 runtime discovery
 record includes port, PID, executable, installed package version and build hash,
@@ -334,7 +340,8 @@ window router is slow.
 The v3 minimum surface is:
 
 ```text
-GET  /hub/
+GET/HEAD /hub/                 -> 410 hub_ui_retired
+GET/HEAD /hub/assets/*         -> 410 hub_ui_retired
 GET  /api/v1/session
 GET  /api/v3/directory
 GET  /api/v3/libraries/papers/items

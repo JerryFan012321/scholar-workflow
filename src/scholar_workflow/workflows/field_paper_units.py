@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from collections import Counter
+from copy import deepcopy
 from pathlib import Path, PurePosixPath
 from urllib.parse import quote, urlencode
 
@@ -222,7 +223,7 @@ def _reader_changes(inventory: dict, readers: dict) -> list[dict]:
 def _declared_files(snapshot, owner_id: str, assets: list[HubAsset]) -> list[dict]:
     """Use primary, supporting and artifact declarations, never nearby filenames."""
     owner = next(row for row in snapshot.manifest.atomic_resources if row.resource_id == owner_id)
-    files = [{"object_id": owner.resource_id, "kind": "paper", "title": owner.title,
+    files = [{"object_id": owner.resource_id, "kind": owner.kind.value, "title": owner.title,
               "relative_path": owner.markdown_path}]
     files.extend({"object_id": row.document_id, "kind": row.kind.value, "title": row.title,
                   "relative_path": row.vault_path}
@@ -246,6 +247,7 @@ def field_paper_units(
     include_resource_links: bool = False,
     resolve_reader: bool = True,
     root_validator=None,
+    owner_kinds: frozenset[str] = frozenset({"paper"}),
 ) -> dict:
     """Compose declared paper units for one explicit Field, without reading bodies.
 
@@ -258,7 +260,7 @@ def field_paper_units(
     options = {"root_validator": root_validator} if root_validator is not None else {}
     results, available = _resolve_objects(
         set(), Path(registry_path), field_selection=(source_id, field_id), inventory=inventory,
-        **options,
+        owner_kinds=owner_kinds, **options,
     )
     inventory["registry_parent"] = Path(registry_path).parent
     field = inventory["selected_field"]
@@ -418,3 +420,23 @@ def field_paper_units(
             "field_title": field.title, "paper_units": units,
             "unresolved_references": unresolved, "issues": all_issues,
             "status": "partial" if partial else "complete"}
+
+
+def field_asset_units(registry_path: Path, **selection) -> dict:
+    """Project complete atomic Knowledge owners, without changing paper-only views."""
+    kinds = frozenset({"paper", "blog_post", "technical_document"})
+    payload = deepcopy(field_paper_units(registry_path, owner_kinds=kinds, **selection))
+    units = payload.pop("paper_units")
+    for unit in units:
+        kind = unit["files"][0]["kind"]
+        if kind not in kinds:
+            raise FieldRegistryError("Asset unit must retain its declared atomic resource kind")
+        resource = unit.get("catalog_resource")
+        if resource is not None and resource.get("kind") != kind:
+            raise FieldRegistryError("Knowledge owner and catalog resource kinds disagree")
+        unit["resource_kind"] = kind
+    payload["asset_units"] = units
+    for reference in payload["unresolved_references"]:
+        if reference["reason"] == "reference_target_not_paper":
+            reference["reason"] = "reference_target_not_atomic_resource"
+    return payload

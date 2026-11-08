@@ -10,7 +10,6 @@ import hashlib
 import json
 import os
 import re
-from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
@@ -19,9 +18,7 @@ from scholar_workflow.analysis.apply_changes import (
     KnowledgeProviderSnapshot,
     _atomic_create,
     _locked_state_root,
-    _vault_binding_for_root,
 )
-from scholar_workflow.knowledge.catalog_models import HubCatalog
 from scholar_workflow.knowledge.fields import (
     FieldManifest,
     FieldRegistryError,
@@ -30,8 +27,8 @@ from scholar_workflow.knowledge.fields import (
     KnowledgeSourceRegistration,
     KnowledgeSourceRegistryDocument,
 )
-from scholar_workflow.knowledge.models import KnowledgeManifest
 from scholar_workflow.knowledge.registration import register, registration_plan
+from scholar_workflow.knowledge.source_inventory import empty_source_inventory
 from scholar_workflow.workflows.knowledge_ownership import _json, _read_declaration, _root_identity
 from scholar_workflow.workflows.register_paper import (
     _SNAPSHOT,
@@ -50,10 +47,7 @@ def _digest(plan: dict) -> str:
 
 
 def _empty_provider(root: Path) -> KnowledgeProviderSnapshot:
-    return KnowledgeProviderSnapshot(
-        vault_binding=_vault_binding_for_root(root), manifest=KnowledgeManifest(),
-        catalog=HubCatalog(generated_at=datetime(1970, 1, 1, tzinfo=UTC)),
-    )
+    return empty_source_inventory(root)
 
 
 def _validate_creation_members(creation: dict, manifest: FieldManifest, root: Path) -> None:

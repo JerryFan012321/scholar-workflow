@@ -5,6 +5,101 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.51.0] - 2026-11-08
+
+### Added
+
+- Shared recommendation intake for papers, project homepages and blogs through
+  versioned JSON and `scholar-research recommendations`; independent agents retain
+  their task identities, tags and idempotent receipts in an explicit personal/test pool.
+- Dedicated local recommendation/review page with complete translated abstracts,
+  original/project links, filters, raw platform observations and reviewed-selection
+  export. The page does not ingest resources or execute agents.
+- Installed-package service lifecycle with dynamic loopback discovery and owned
+  start/status/stop; runtime Skills expose the shared submission and ingestion handoff.
+
+### Fixed
+
+- Preserve known arXiv versions through unversioned metadata refreshes so late older
+  abstracts cannot overwrite newer reviewed content; retain source snapshots.
+- Treat the owned service's removal of its runtime record during graceful shutdown
+  as a stopped service, preserving identity checks for invalid or foreign records.
+
+### Changed
+
+- Retain full recommendation abstracts and per-source observations; keep the old
+  short snippet for compatibility. Remove the retired NotebookLM reading dependency.
+- Require complete translated-abstract review and explicit human selection before
+  paper ingestion, with profile/pool identity preserved in candidate handoffs.
+
+
+### Fixed
+
+- **knowledge recovery (0.50.1 candidate):** break the same-directory device-drift
+  and additive Canvas-editor-metadata deadlock. Prove the entire registered graph
+  unchanged, freeze current file bytes in the reviewed plan, and restore only the
+  host binding while explicitly retaining pending metadata acknowledgement.
+  Keep registered artifact hashes unchanged and export/restore strict until the
+  separate acknowledgement; refuse content/layout/unknown-metadata drift and
+  preserve CAS, old journals and interrupted recovery. No paper regeneration,
+  formal Source repair, publication or normal installation is performed.
+
+### Changed
+
+- **knowledge asset references:** project registered paper, Blog and technical
+  document owners through one complete asset inventory, preserving real kinds,
+  source/member bytes and paper-only compatibility views. Reuse registered import
+  for new references; protect qualified identity/membership across CLI and retained
+  HTTP writes. Keep unqualified legacy rows readable and explicitly unverified,
+  without silently adopting them or extending their relationships. No new registry,
+  UI, content migration or unsupported-type registration is introduced.
+  Add the read-only `knowledge list --asset-units` entry and derive explicitly
+  registered offline source links without external probes in test mode.
+
+- **experiment result delivery:** add an editable include/defer selection and a
+  compatible schema-2 collection receipt. Preserve original execution records and
+  declare omitted source payloads without reading or verifying their bytes; refuse
+  model/unclassified payloads on new whole-Run collection. Carry the same selection
+  through first reception, archive reading, lifecycle updates and offline recovery,
+  preserving local analysis and existing schema-1 archives. Native remote export,
+  SSH transfer and normal installed acceptance remain separate.
+
+- **development isolation:** give synthetic HTTP/browser fixtures explicit private
+  state and reference/reader/Vault dependencies, and drain request handlers before
+  restoring test patches. Keep actual Vault/environment integration checks separate.
+
+- **knowledge registration:** include genuinely new Source inventory initialization
+  in the local Field transaction plan and recovery checks, publishing the inventory
+  before host registration. Reuse the same deterministic empty-provider definition
+  as ordinary Source creation. Preserve existing/lost inventories, legacy journals,
+  and staged relocations; keep absolute host paths out of shared public plan metadata.
+  Add downstream paper ownership/project-reference and selected webpage/blog checks,
+  with interruption, collision and unknown-state refusal cases. Prepare0.50.0 as a
+  development candidate; normal release/installation remain separate.
+
+- **Hub website retirement:** remove the obsolete static HTML/JS/CSS payload;
+  return explicit retirement responses for page/assets and refuse `open-hub`
+  before starting services or opening windows. Keep existing API/PDF delivery,
+  native-tool actions, service diagnostics and saved state. No replacement
+  website, installed service switch or content migration is implied.
+
+- **native-tool separation:** retire the embedded Codex activation direction,
+  separate local Field content operations from Hub service prerequisites, and
+  isolate plugin-development Skills from research runtime distribution. Source
+  validation and installed acceptance are recorded separately.
+- **knowledge asset units:** define whole paper/blog/document ownership with
+  explicit context and separate management, analysis, viewing and editing;
+  monitored-channel and watchlist stores remain independent. Preserve current
+  identities and accepted paper/Canvas formats; multidimensional interaction
+  design remains open.
+- **project management:** require local-parent pulling of human-reviewable
+  experiment results, excluding model/weights/checkpoint files; distinguish
+  generic management Skills from project-owned execution task Skills. Selective
+  export and real SSH transfer are not claimed as implemented.
+
+- **explore-knowledge:** record normal 0.49.0 marketplace/CLI installation and
+  isolated installed-page verification. User assessment remains independent.
+
 ## [0.49.0] - 2026-10-28
 
 ### Added

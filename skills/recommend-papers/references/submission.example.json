@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "producer": {
+    "producer_id": "synthetic-world-models-daily",
+    "name": "Synthetic world-model recommendations",
+    "host": "synthetic-agent"
+  },
+  "run_id": "synthetic-run-2026-11-08",
+  "items": [
+    {
+      "submission_id": "synthetic-paper-2026-11-08",
+      "resource": {
+        "kind": "paper",
+        "title": "Synthetic Example Paper — Not a Real Publication",
+        "url": "https://example.org/synthetic/paper",
+        "authors": ["Synthetic Author"],
+        "published_at": "2026-11-08",
+        "abstract_original": "This is a synthetic abstract for demonstrating the submission format. It is not a research result or a real publication.",
+        "abstract_zh": "这是一段用于演示提交格式的合成摘要。它不是研究结果，也不对应真实出版物。",
+        "project_url": "https://example.org/synthetic/project",
+        "links": [
+          {
+            "label": "Synthetic code repository",
+            "url": "https://example.org/synthetic/code",
+            "kind": "code"
+          }
+        ]
+      },
+      "tags": ["world-models", "synthetic-example"],
+      "channels": [
+        {"name": "Synthetic research channel", "url": "https://example.org/synthetic/channel"}
+      ],
+      "metrics": [
+        {
+          "platform": "synthetic-platform",
+          "metric": "stars",
+          "value": 12,
+          "url": "https://example.org/synthetic/code",
+          "observed_at": "2026-11-08T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "submission_id": "synthetic-project-2026-11-08",
+      "resource": {
+        "kind": "project",
+        "title": "Synthetic Example Project",
+        "url": "https://example.org/synthetic/project",
+        "description_original": "This synthetic project page demonstrates a resource without a paper abstract.",
+        "description_zh": "这个合成项目页用于演示没有论文摘要的资源。"
+      },
+      "tags": ["world-models", "synthetic-example"],
+      "channels": [],
+      "metrics": []
+    },
+    {
+      "submission_id": "synthetic-blog-2026-11-08",
+      "resource": {
+        "kind": "blog",
+        "title": "Synthetic Example Blog Post",
+        "url": "https://example.org/synthetic/blog",
+        "description_original": "This synthetic excerpt demonstrates the source introduction and its translation.",
+        "description_zh": "这段合成摘录用于演示来源介绍及其译文。"
+      },
+      "tags": ["world-models", "synthetic-example"],
+      "channels": [],
+      "metrics": []
+    }
+  ]
+}

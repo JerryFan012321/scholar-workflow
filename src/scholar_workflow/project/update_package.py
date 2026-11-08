@@ -13,7 +13,7 @@ import stat
 import uuid
 from pathlib import Path
 
-from .collection import _sha, _tree
+from .collection import _sha
 from .layout import ProjectLayoutError, open_project_root
 from .management import PROJECT_MANAGEMENT
 from .reception import ReceptionError, _directory, _read_file, _write_file
@@ -64,6 +64,7 @@ def stage_run_update(
     parent_root: str | Path, child_root: str | Path, *, run_id: str,
     expected_parent_sha256: str, expected_child_sha256: str,
     expected_new_evidence_sha256: str, expected_local_receipt_sha256: str,
+    selection=None,
 ):
     """Stage exact before/after changes; leave the current archive untouched.
 
@@ -75,7 +76,8 @@ def stage_run_update(
                 expected_new_evidence_sha256, expected_local_receipt_sha256)
     if not all(isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) for value in expected):
         raise ReceptionError("Update staging requires all four preview SHA-256 baselines", 2)
-    plan = plan_run_update(parent_root, child_root, run_id=run_id)
+    from .result_scope import capture_results
+    plan = plan_run_update(parent_root, child_root, run_id=run_id, selection=selection)
     _check(plan, expected)
     if plan["status"] == "unchanged":
         return {"status": "unchanged", "destination": plan["destination"]}
@@ -92,9 +94,11 @@ def stage_run_update(
                     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 except BlockingIOError:
                     raise ReceptionError("Parent is busy; preview again before retrying", 5) from None
-                _check(plan_run_update(parent_root, child_root, run_id=run_id), expected)
-                files, directories, modes = _tree(child_root, run_id)
+                _check(plan_run_update(parent_root, child_root, run_id=run_id, selection=selection), expected)
+                files, directories, modes, delivery = capture_results(child_root, run_id, selection)
                 receipt = plan["new_receipt"]
+                if delivery != receipt.get("result_delivery"):
+                    raise ReceptionError("Result selection changed before update staging", 5)
                 if set(files) != {row["source_path"] for row in receipt["files"]} or sorted(directories) != receipt["directories"]:
                     raise ReceptionError("Source tree changed before recovery staging", 5)
                 for row in receipt["files"]:
@@ -124,7 +128,7 @@ def stage_run_update(
                                 before = _save(stage_fd, f"before/{index}", previous, previous_mode, info)
                             after = _save(stage_fd, f"after/{index}", content, mode)
                             actions.append({"destination_path": destination, "before": before, "after": after})
-                        final = plan_run_update(parent_root, child_root, run_id=run_id)
+                        final = plan_run_update(parent_root, child_root, run_id=run_id, selection=selection)
                         _check(final, expected)
                         if final != plan:
                             raise ReceptionError("Update plan changed during staging", 5)

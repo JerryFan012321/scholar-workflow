@@ -20,8 +20,11 @@ knowledge, decisions, lightweight literature division of work, rules and selecte
 materials when source development moves remotely. PROJECT remains internal and
 VS Code-oriented; README remains the external presentation. Keep one detailed plan
 authority in PROJECT, an explicitly selected SCHEDULE, or the existing plan.
-Project-specific guidance lives in canonical AGENTS with thin host entry points;
-project skills are not automatic conversation-memory synchronization.
+Project-specific guidance lives in canonical AGENTS with thin host entry points.
+Use [project-skills.md](project-skills.md) to separate installed generic management
+from the project's own management extensions and scientific execution skills;
+neither initialization nor local plugin installation automatically deploys child
+skills or synchronizes conversation memory.
 
 Use the owning format contracts: [project-entry.md](project-entry.md) for the
 six-section PROJECT, [experiment-review.md](experiment-review.md) for conditions/
@@ -124,7 +127,7 @@ received evidence, not identical directories or bidirectional file mirroring.
 | Direction | Required information and boundary |
 |---|---|
 | Parent to child | Selected parent/child identity, experiment purpose and acceptance conditions, requested recipe/entry, selected Target and the minimum relevant paper/decision/rule references. A handoff requests work; it does not overwrite child source/config, freeze a recipe or inherit credentials/session history. |
-| Child to parent | Original Run/Attempt/Target records, child source commit, captured effective inputs/environment/data identity, all execution outcomes, metrics, selected useful figures and artifact inventory. This is observed evidence, not the parent's analysis or plan. |
+| Parent pulls from child | Original Run/Attempt/Target records, child source commit, captured effective inputs/environment/data identity, all execution outcomes, metrics, selected useful figures, necessary logs and artifact inventory. The child prepares an identifiable stable selection; the parent initiates collection. This is observed evidence, not the parent's analysis or plan. |
 | Parent confirmation | The exact received child/Run version and local integrity/remaining gaps from the reception receipt and readback. A sender's upload success is not local delivery confirmation, independent execution proof or scientific acceptance. |
 
 Reuse the existing task/plan, management declarations, Run records, Targets and
@@ -133,14 +136,15 @@ a second recipe, task system, server ledger or mutable copy of both sides' truth
 The parent may summarize child facts in PROJECT, with links and receipt freshness;
 only the child owns execution facts, while the parent owns local analysis and plans.
 
-The current schema-1 collection receipt has no reception/acknowledgment timestamp
+The current schema-1/2 collection receipts have no reception/acknowledgment timestamp
 or sender-confirmation protocol. It proves the checked version, not when a previous
 delivery was confirmed. Report unrecorded freshness as unknown; file mtimes are not
 confirmation times. Durable timed acknowledgment needs an explicit compatible
 contract extension, not invented fields in an existing strict receipt.
 
-For an authorized transfer, stage only the explicitly selected stable record
-version, then use the collection/reception/update interfaces below. Verify identity,
+For an authorized transfer, the parent pulls only the explicitly selected stable
+record version into a selected staging location, then uses the local
+collection/reception/update interfaces below. Verify identity,
 compatible record versions, file mapping, hashes/sizes and the destination baseline.
 Publish a receipt only after checking local bytes. Same-version replay is idempotent;
 new lifecycle evidence uses an explicit update, while unknown edits/identity conflicts
@@ -149,14 +153,39 @@ Do not copy active files with a recursive mirror or delete local analysis to mat
 the source. A compatibility gap is incomplete delivery, not permission to synthesize
 canonical records or silently upgrade them.
 
-Keep compact Run evidence separate from genuinely large payloads. The current
-collector reads the entire selected Run and refuses over 128 MiB; an artifact
-manifest does not exclude physical bytes still inside that tree. For new executions,
+Keep compact Run evidence separate from genuinely large payloads. Whole-Run
+collection refuses model/unclassified payloads; explicit result selection bounds
+received bytes to 128 MiB while omitted payloads stay unread. For new executions,
 use a declared large-output location outside the transferable Run (resolved through
 the existing Target/output contract), with producing Attempt, origin, size/hash when
 known and retention state in the artifact inventory. Existing co-located outputs
 need an explicit safe export/migration design, not silent filtering or relocation.
 No selective remote exporter, transport or scheduler is implied by this contract.
+
+### Local result scope and pull ownership
+
+Local results are the material a person needs to read, compare and explain the
+experiment: original execution records, resolved configuration/environment and
+data identities, metrics, useful figures/tables and necessary logs. Keep sufficient
+context to interpret them without reading code or chat. The parent owns collection
+selection, initiation and readback; the child owns execution facts and makes the
+selected stable version available. Child completion or upload alone does not close
+the parent's collection task.
+
+Models, weights, checkpoints, optimizer state and other execution payloads are
+not local result deliverables, regardless of size. Keep their identities, producing
+Attempt, remote locations and retention state in the existing artifact inventory.
+Datasets also remain at execution/data locations. Minimal source recovery is a
+separate explicitly selected operation, not permission to pull source worktrees or
+model files as results. Existing local files are not deleted or moved by this rule.
+
+Use [experiment-result-selection.md](experiment-result-selection.md) for the
+supported explicit readable-result selection, first reception, readback and
+update/recovery. It preserves original records and distinguishes received files
+from source-only declarations, without opening model payloads. It is not an
+arbitrary semantic classifier. SSH fetching and selective remote export remain unavailable as product operations.
+Native tools may perform a separately authorized, explicitly reviewed transfer;
+that is not an installed automatic pull/sync capability.
 
 ## Explicit child registration
 
@@ -196,10 +225,11 @@ execution time do not redefine the scientific recipe.
 
 Collected evidence includes the child source commit, entry script, captured
 resolved config/environment, data identity/version, status, metrics and required
-result material. Do not replace that commit with the parent's management Git HEAD
-or use a mutable working config as the recorded recipe. Large datasets/outputs may
-remain remote with explicit manifests; a recovery-only source policy does not
-remove the per-experiment snapshots needed to explain a comparison.
+reading material within the local-result scope above. Do not replace that commit
+with the parent's management Git HEAD or use a mutable working config as the recorded
+recipe. Datasets and execution payloads remain remote; selected large reading
+evidence may remain remote with explicit manifests. A recovery-only source policy
+does not remove the per-experiment snapshots needed to explain a comparison.
 
 Remote execution facts and local human analysis have separate ownership. Preserve
 all recorded outcomes, raw evidence and local analysis when collecting updates.
@@ -215,8 +245,8 @@ evidence stays visible; collection does not itself prove a scientific conclusion
 
 ### Timely experiment delivery
 
-For an authorized execution-and-delivery task, collect lightweight evidence at
-Run registration, Attempt start, meaningful result/status milestones, and terminal
+For an authorized execution-and-delivery task, the parent pulls lightweight
+evidence at Run registration, Attempt start, meaningful result/status milestones, and terminal
 success, failure or interruption. Do not wait for the whole child project or a final
 report to finish. For long-running Attempts, make the running update interval and
 collection owner explicit in the existing task/plan; do not invent a universal cadence
@@ -225,9 +255,11 @@ not raw directory mirroring of actively changing files.
 
 Essential configuration/environment/data identities, observed status/times, metrics,
 output inventory and necessary compact result material belong in the local parent.
-Evaluate large-output exceptions by actual byte volume and transfer/storage cost,
-not filename extension. Record omitted payloads, their sizes when known, origin and
-producing Attempt in the existing artifact inventory. Keep enough lightweight evidence
+Within the allowed reading-evidence scope, evaluate large-output exceptions by
+actual byte volume and transfer/storage cost, not filename extension. Models,
+weights and checkpoints remain excluded even when small. Record omitted payloads,
+their sizes when known, origin and producing Attempt in the existing artifact
+inventory. Keep enough lightweight evidence
 locally to interpret the result; one large output never excuses omitting the whole Run.
 Receiver safety limits are not a universal scientific retention threshold. An oversized
 selection must be prepared explicitly or reported incomplete, never silently truncated.
@@ -254,16 +286,17 @@ and its Attempts against the requested experiment list, including failures and
 interruptions. The list comes from the actual task/plan, not only the archives that
 happen to exist. Do not create another registry to hold it.
 
-The execution owner supplies the original recipe, child commit, captured effective
-configuration/environment, data identity, observed Attempt status/time/exit facts,
-metrics and output inventory. The parent receives those lightweight bytes under
+The execution owner makes available the original recipe, child commit, captured
+effective configuration/environment, data identity, observed Attempt status/time/exit
+facts, metrics and output inventory. The parent pulls and receives those bytes under
 `experiments/<child-segment>/<run-id>/`; useful selected figures belong locally when
-their collection is requested. Large datasets, weights and other large outputs
-may remain remote with explicit manifests. A remote path or a temporary viewing
-URL is not a substitute for the local records needed to interpret a result.
+their collection is requested. Datasets, models, weights and checkpoints remain
+execution assets with explicit manifests; they are not local result deliverables.
+A remote path or a temporary viewing URL is not a substitute for the local records
+needed to interpret a result.
 
-An authorized collection may use native file-transfer tools to stage only the
-selected nonsecret original records from a verified child. This is not a source
+An authorized parent-initiated collection may use native file-transfer tools to stage
+only the selected nonsecret original records from a verified child. This is not a source
 development clone, broad directory sync or permission to rerun a model. Verify the
 current installed interface, parent/child declarations, source identity, selected
 bytes and destination conflicts before using the reception/update commands below.
@@ -359,9 +392,12 @@ reserved for local analysis. A filename collision refuses, never overwrites or
 silently chooses a name. Snapshot locators stay relative to their original child
 Run and require this explicit mapping in a future collected-record reader.
 
-This bounded preflight rejects more than 128 MiB of selected file bytes or a record
-larger than 1 MiB; it does not silently drop files or limit the number of Attempts.
-Large datasets/checkpoints belong remotely with explicit manifests. Symlinks,
+This bounded preflight rejects more than 128 MiB of received file bytes, a record
+larger than 1 MiB, or metadata exceeding 10,000 physical file entries. It does not
+silently truncate files or recorded Attempts; an oversized inventory refuses.
+Datasets/models/weights/checkpoints belong remotely with explicit manifests. This
+preflight supports the explicit `--selection-file` contract above, without a remote
+exporter or arbitrary semantic payload classification. Symlinks,
 special files/permissions, unsafe paths, duplicate YAML fields and detected changes
 refuse. Running/planned Attempts are included and marked mutable; a preview is not
 an immutable snapshot. Repeated source reads detect changes during inspection,
@@ -384,13 +420,15 @@ An existing empty directory also refuses. Safe file modes and required empty
 directories are retained. The local Run records keep original child-relative
 snapshot paths; use the receipt mapping, not a guessed parent-root interpretation.
 
-The machine-only `.collection.json` uses schema 1 from
+The machine-only `.collection.json` uses compatible schema 1 or selective schema 2 from
 `contracts/experiment-collection.schema.json`: parent/child/Run identity, child
 source commit, recipe/evidence hashes, source-to-local file mapping, hashes/sizes/
 modes, required directories and `execution_verification: records_only`. It is not
 another scientific recipe, source checkout or verified backup. Source report/notes
 use the mapped execution names; local report/notes and other analysis remain
 independent and are never written by this receiver.
+Schema 2 additionally preserves the exact selection and explicit omitted declarations;
+see the result-selection contract rather than inferring receipt from a remote path.
 
 Same-content replay verifies the receipt and every owned file/directory and
 reconfirms directory synchronization, then returns unchanged. Extra local analysis
@@ -663,6 +701,7 @@ automation exists. Determine the installed capability before an operation:
 | Parent archive reception and index | collection-plan previews one Run; receive-run supports first reception/identical replay; collected reads the qualified local index. update-plan/update-run provide four-baseline version changes; recovery-plan/recover-update explicitly commit or roll back a pending local journal. Check actual installed help before use. Pending markers block verified reading/replay, not prove a live process. Legacy flat commands still refuse parents; Target registration remains available. No SSH reception, automatic orphan cleanup, history correction or fabricated receipt is implied. |
 | Timely remote delivery | The milestone/interval and large-output rules above are required handoffs. Existing receivers operate on explicitly accessible selected records; no remote transport, automatic scheduler or freshness monitor is supplied by declaring a role or installing the skill. Report unconfigured automation and outstanding evidence rather than promising live synchronization. |
 | Human-editable operations and exchange | The required config/CLI usability and authority/transfer boundaries above apply to every role. Existing scaffolds do not generate a unified launcher or selective remote exporter; no `./project` interface is supplied. Preserve actual upstream operations and report missing capabilities rather than inventing commands, deploying transport or mirroring folders. |
+| Project-specific skills | `.agents/skills/` is the existing project-local location. The project-skills contract separates generic management from project-specific management/execution and shared output formats. Initialization leaves it empty; no task-skill generation, automatic remote install, Hub binding or new skill registry is implemented. |
 | Remote code in the material inventory | Additive context schema 1 `execution-code` identifies a registered child, safe relative code path and optional commit. `project remote-code-plan` combines one explicitly selected existing SSH Target and server ledger without connecting or writing. Target selection does not verify the remote child, path, commit, SSH alias or access. No fake local path, arbitrary URI, native open or implicit host binding; see project-context.md. Check installed help before use. |
 | PROJECT and experiment review | Read the explicitly selected, safely accessible material and produce the existing human format. Identify remote/unavailable sources and incomplete lifecycle verification. Review does not collect, execute, edit raw records or grant access to remote roots. |
 | Code recovery and verified backup | `project code-recovery-plan` checks one supplied local self-contained bundle against selected child Run commits; `project retain-code` explicitly retains it with a current digest and immutable per-plan coverage. Check installed help first. No remote bundle creation/transfer, child origin authentication, LFS/submodule payload recovery, uncommitted-work capture, daily clone or verified-backup claim. |

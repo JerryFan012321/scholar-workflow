@@ -3,7 +3,7 @@
 feature-ai-reading skim tier. A candidate is a plain dict with a stable shape so the
 funnel can merge/dedup across sources by arxiv_id:
   {arxiv_id, title, authors:[str], source:str, score:float|None,
-   abstract_snippet:str|None, url:str}
+   abstract:str|None, abstract_snippet:str|None, url:str}
 
 These make outbound network calls, so — like NotionAdapter — they are only invoked
 from bin/recommend-papers.py, never the CLI (INV18). Network paths differ per source:
@@ -23,6 +23,11 @@ def _snippet(text: str | None, limit: int = 280) -> str | None:
         return None
     text = " ".join(text.split())
     return text if len(text) <= limit else text[:limit].rstrip() + "…"
+
+
+def _abstract(text: str | None) -> str | None:
+    """Retain all abstract text for human review and translation."""
+    return " ".join(text.split()) if text else None
 
 
 def fetch_hf_daily(limit: int = 50, client: httpx.Client | None = None) -> list[dict]:
@@ -52,6 +57,7 @@ def fetch_hf_daily(limit: int = 50, client: httpx.Client | None = None) -> list[
             "source": "hf_daily",
             "score": paper.get("upvotes"),
             "abstract_snippet": _snippet(paper.get("summary")),
+            "abstract": _abstract(paper.get("summary")),
             "url": f"https://arxiv.org/abs/{arxiv_id}",
         })
     return out
@@ -71,6 +77,7 @@ def _from_s2(paper: dict, source: str) -> dict | None:
         "source": source,
         "score": None,
         "abstract_snippet": _snippet(paper.get("abstract")),
+        "abstract": _abstract(paper.get("abstract")),
         "url": f"https://arxiv.org/abs/{arxiv_id}",
     }
 
@@ -130,6 +137,7 @@ def normalize_scholar_inbox(digest: dict, min_score: float = 0.0) -> list[dict]:
             "source": "scholar_inbox",
             "score": round(score, 3),
             "abstract_snippet": _snippet(row.get("abstract")),
+            "abstract": _abstract(row.get("abstract")),
             "url": f"https://arxiv.org/abs/{arxiv_id}",
         })
     return out
@@ -146,8 +154,13 @@ def merge_candidates(*batches: list[dict]) -> list[dict]:
                 existing = merged[key]
                 if cand["source"] not in existing["sources"]:
                     existing["sources"].append(cand["source"])
+                existing["source_observations"].append(dict(cand))
+                if not existing.get("abstract") and cand.get("abstract"):
+                    existing["abstract"] = cand["abstract"]
+                    existing["abstract_snippet"] = cand.get("abstract_snippet")
             else:
                 entry = dict(cand)
                 entry["sources"] = [cand["source"]]
+                entry["source_observations"] = [dict(cand)]
                 merged[key] = entry
     return list(merged.values())

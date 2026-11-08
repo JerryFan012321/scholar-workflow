@@ -3,6 +3,10 @@
 How a resource is normalized, identified, and matched. Used by find-resource and
 ingest-resource.
 
+Knowledge-level ownership and upper-level navigation use complete asset units;
+see `asset-units.md`. The normalization rules below identify sources, not a new
+identity for every analysis, Canvas, quotation or tracked-channel entry.
+
 ## Identifier normalization
 
 - **DOI**: lowercase; strip `doi:` and `https://doi.org/` prefixes. Primary dedup key.

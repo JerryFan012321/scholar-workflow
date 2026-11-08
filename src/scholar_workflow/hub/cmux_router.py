@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
+from scholar_workflow.hub import CODEX_CONTROL_RETIRED_REASON
 from scholar_workflow.hub.cmux import CmuxControl, CmuxControlError
 from scholar_workflow.hub.lifecycle import HubLifecycleError, load_discovery
 
@@ -291,6 +292,8 @@ def _dispatch(
     if method == "shutdown" and not params:
         stop_signal.set()
         return {"stopping": True}
+    if method == "new_terminal_worker":
+        raise CmuxControlError(CODEX_CONTROL_RETIRED_REASON)
     current = _read_record(root)
     if (
         current is None
@@ -322,21 +325,6 @@ def _dispatch(
         workspace = _clean_string(params["workspace_id"], "workspace ID", limit=256)
         cwd = _working_directory(params["working_directory"])
         control.new_codex_session(workspace_id=workspace, working_directory=cwd)
-        return {"returncode": 0}
-    if method == "new_terminal_worker" and set(params) == {
-        "workspace_id", "working_directory", "command", "focus"
-    }:
-        workspace = _clean_string(params["workspace_id"], "workspace ID", limit=256)
-        cwd = _working_directory(params["working_directory"])
-        command = _worker_command(params["command"], root)
-        if type(params["focus"]) is not bool:
-            raise CmuxControlError("terminal focus must be boolean")
-        control.new_terminal_worker(
-            workspace_id=workspace,
-            working_directory=cwd,
-            command=command,
-            focus=params["focus"],
-        )
         return {"returncode": 0}
     raise CmuxControlError("unknown or invalid router RPC operation")
 

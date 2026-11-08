@@ -216,7 +216,7 @@ def _placements(
 def _resolve_objects(
     wanted: set[str], registry_path: Path, *, observation: dict | None = None,
     field_selection: tuple[str, str] | None = None, inventory: dict | None = None,
-    root_validator=None,
+    root_validator=None, owner_kinds: frozenset[str] = frozenset({"paper"}),
 ) -> tuple[dict[str, KnowledgeOwnershipResolution], set[str]]:
     """Observe declared owners globally; a caller's selection is not a placement."""
     if not wanted and field_selection is None:
@@ -298,11 +298,11 @@ def _resolve_objects(
                                if field.field_id == field_id), None)
         if selected_field is None:
             raise FieldRegistryError("Selected Field is not registered in the selected Source")
-        paper_ids = {resource.resource_id for resource in snapshots[source_id].manifest.atomic_resources
-                     if resource.kind == "paper"}
+        selected_ids = {resource.resource_id for resource in snapshots[source_id].manifest.atomic_resources
+                        if resource.kind in owner_kinds}
         selected_owners = {(source_id, row.owner_id) for row in locations
                            if row.source_id == source_id and row.field_id == field_id
-                           and row.object_id == row.owner_id and row.owner_id in paper_ids}
+                           and row.object_id == row.owner_id and row.owner_id in selected_ids}
         reference_ids = {reference.target.object_id for reference in selected_field.references}
         reference_results = {object_id: resolve_declared_ownership(object_id, locations, issues)
                              for object_id in reference_ids}
@@ -310,7 +310,7 @@ def _resolve_objects(
             result = _qualified_result(reference, reference_results, set(roots))
             if result.status == "resolved":
                 owner = result.owner_candidates[0]
-                if any(resource.resource_id == owner.owner_id and resource.kind == "paper"
+                if any(resource.resource_id == owner.owner_id and resource.kind in owner_kinds
                        for resource in snapshots[owner.source_id].manifest.atomic_resources):
                     selected_owners.add((owner.source_id, owner.owner_id))
         wanted = wanted | reference_ids | {row.object_id for row in locations

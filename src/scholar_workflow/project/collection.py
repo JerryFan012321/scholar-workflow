@@ -42,7 +42,7 @@ def _sha(content: bytes) -> str:
     return hashlib.sha256(content).hexdigest()
 
 
-def _tree(root: str | Path, run_id: str) -> tuple[dict[str, bytes], set[str], dict[str, int]]:
+def _tree(root: str | Path, run_id: str, *, include=None, observations=None, check_file=None) -> tuple[dict[str, bytes], set[str], dict[str, int]]:
     files: dict[str, bytes] = {}
     directories: set[str] = set()
     modes: dict[str, int] = {}
@@ -68,6 +68,14 @@ def _tree(root: str | Path, run_id: str) -> tuple[dict[str, bytes], set[str], di
                 finally:
                     os.close(child)
             elif stat.S_ISREG(info.st_mode):
+                if observations is not None:
+                    if len(observations) >= 10000:
+                        raise CollectionPlanError("Run metadata exceeds the bounded selection limit")
+                    observations[relative] = (info.st_size, stat.S_IMODE(info.st_mode))
+                if include is not None and not include(relative):
+                    continue
+                if check_file is not None:
+                    check_file(relative)
                 if total + info.st_size > _MAX_BYTES:
                     raise CollectionPlanError("Run exceeds the 128 MiB preflight limit; retain large data remotely")
                 child = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=descriptor)
@@ -150,7 +158,7 @@ def _check_snapshot(files, snapshot, run_id, *, attempt_id=None):
         raise CollectionPlanError("Required snapshot is missing or its checksum differs")
 
 
-def validate_run_evidence(files: dict[str, bytes], directories: set[str], run_id: str):
+def validate_run_evidence(files: dict[str, bytes], directories: set[str], run_id: str, *, result_delivery=None):
     """Validate a captured Run using original child-relative evidence paths."""
     if not isinstance(run_id, str) or not re.fullmatch(RUN_ID, run_id):
         raise CollectionPlanError("Invalid Run identity")
@@ -206,19 +214,27 @@ def validate_run_evidence(files: dict[str, bytes], directories: set[str], run_id
     artifacts = _record(files, "artifacts.yaml", ArtifactManifest)
     if artifacts.run_id != run_id:
         raise CollectionPlanError("Artifact manifest Run identity differs")
+    omitted = {}
+    if result_delivery is not None:
+        from .result_scope import validate_delivery
+        omitted = validate_delivery(result_delivery, files, directories, run_id, artifacts)
     for artifact in artifacts.artifacts:
         if artifact.source_attempt_id not in {row["attempt_id"] for row in attempts}:
             raise CollectionPlanError("Artifact references an unknown Attempt")
         if artifact.relative_path is not None:
             relative = _relative(artifact.relative_path)
-            if not relative.startswith("artifacts/") or relative not in files:
+            if not relative.startswith("artifacts/"):
+                raise CollectionPlanError("Local artifact is outside artifact storage")
+            if relative in omitted:
+                continue
+            if relative not in files:
                 raise CollectionPlanError("Local artifact is missing or outside artifact storage")
             if _sha(files[relative]) != artifact.sha256 or len(files[relative]) != artifact.size:
                 raise CollectionPlanError("Local artifact checksum or size differs")
     return run, attempts, artifacts
 
 
-def plan_run_collection(parent_root: str | Path, child_root: str | Path, *, run_id: str) -> dict[str, Any]:
+def plan_run_collection(parent_root: str | Path, child_root: str | Path, *, run_id: str, selection=None) -> dict[str, Any]:
     """Validate selected declared facts and produce path mapping, never receive or execute."""
     if not isinstance(run_id, str) or not re.fullmatch(RUN_ID, run_id):
         raise CollectionPlanError("Invalid Run identity")
@@ -226,10 +242,11 @@ def plan_run_collection(parent_root: str | Path, child_root: str | Path, *, run_
     parent, child = load_project_management(parent_root), load_project_management(child_root)
     validate_management_pair(parent, child)
     entry = next(row for row in parent.children if row.project_id == child.project_id)
-    files, directories, modes = _tree(child_root, run_id)
+    from .result_scope import capture_results
+    files, directories, modes, delivery = capture_results(child_root, run_id, selection)
     if any(path.split("/", 1)[0] in COLLECTION_RESERVED for path in (*files, *directories)):
         raise CollectionPlanError("Source contains reserved collection transaction metadata")
-    run, attempts, _ = validate_run_evidence(files, directories, run_id)
+    run, attempts, _ = validate_run_evidence(files, directories, run_id, result_delivery=delivery)
     mapped = []
     destinations = set()
     for name, data in sorted(files.items()):
@@ -239,19 +256,24 @@ def plan_run_collection(parent_root: str | Path, child_root: str | Path, *, run_
         destinations.add(destination)
         mapped.append({"source_path": name, "destination_path": destination,
                        "sha256": _sha(data), "size": len(data), "mode": modes[name]})
-    if _tree(child_root, run_id) != (files, directories, modes):
+    if capture_results(child_root, run_id, selection) != (files, directories, modes, delivery):
         raise CollectionPlanError("Run evidence changed during planning")
     if before != [read_project_bytes(root, PROJECT_MANAGEMENT) for root in (parent_root, child_root)]:
         raise CollectionPlanError("Parent or child declaration changed during planning")
-    return {
-        "schema_version": 1, "status": "planned_not_received", "parent_project_id": parent.project_id,
+    evidence = {"files": mapped, "directories": sorted(directories)}
+    if delivery is not None:
+        evidence["result_delivery"] = delivery
+    result = {
+        "schema_version": 2 if delivery is not None else 1, "status": "planned_not_received", "parent_project_id": parent.project_id,
         "child_project_id": child.project_id, "run_id": run_id,
         "destination": f"experiments/{entry.archive_segment}/{run_id}",
         "source_commit": run.source.commit, "recipe_hash": run.recipe_hash,
         "parent_sha256": _sha(before[0]), "child_sha256": _sha(before[1]),
-        "evidence_sha256": _sha(json.dumps({"files": mapped, "directories": sorted(directories)},
-                                           sort_keys=True, separators=(",", ":")).encode()),
+        "evidence_sha256": _sha(json.dumps(evidence, sort_keys=True, separators=(",", ":")).encode()),
         "attempts": attempts, "files": mapped, "directories": sorted(directories),
         "execution_verification": "records_only",
         "mutable_execution": any(row["status"] in {"planned", "running"} for row in attempts),
     }
+    if delivery is not None:
+        result["result_delivery"] = delivery
+    return result

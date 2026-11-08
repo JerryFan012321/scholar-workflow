@@ -3,6 +3,12 @@
 `manage-assets` is the common entry; asset-specific stores remain authoritative.
 This contract describes observable reads, writes and handoffs, not internal reasoning.
 
+Knowledge management uses the complete asset unit defined in `asset-units.md`:
+paper/blog/document identity plus its declared context. Source/Field inventories
+below locate containers; they are not the minimum knowledge registration target.
+Unit management, analysis, viewing and editing have separate completion rules.
+Watchlists and monitored channels keep their own documents/databases.
+
 ## Existing inventory before questions
 
 ```sh
