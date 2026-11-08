@@ -13,6 +13,7 @@ import click
 from scholar_workflow.research.cli import ResearchCommandError, _spec, root
 from scholar_workflow.research.models import ResearchError
 from scholar_workflow.research.recommendations import lifecycle
+from scholar_workflow.research.recommendations.refresh import refresh_candidate_metrics
 
 
 def guarded(function):
@@ -81,13 +82,26 @@ def schema():
 
 @recommendations.command(name="submit")
 @click.option("--input", "input_path", required=True, help="Submission JSON file, or - for stdin.")
+@click.option("--refresh-metrics", is_flag=True, help="Explicitly fetch public GitHub/Hugging Face counts for accepted candidates.")
 @click.pass_obj
 @guarded
-def submit(context, input_path):
+def submit(context, input_path, refresh_metrics):
     """Submit candidates; preserve producer provenance and human decisions."""
     # Input syntax is checked before opening or initializing a state store.
     record = _read_input(input_path)
-    payload = _store(context).submit(record)
+    store = _store(context)
+    payload = store.submit(record)
+    if refresh_metrics:
+        refreshes = []
+        identifiers = dict.fromkeys(item["candidate_id"] for item in payload["receipts"]
+                                    if item["status"] in {"accepted", "duplicate"})
+        for identifier in identifiers:
+            try:
+                row = refresh_candidate_metrics(store, identifier)
+                refreshes.append({"candidate_id": identifier, **row["metric_refresh"]})
+            except ResearchError as exc:
+                refreshes.append({"candidate_id": identifier, "status": "failed", "exit_code": exc.exit_code})
+        payload["metric_refreshes"] = refreshes
     _json(payload)
     states = {entry["status"] for entry in payload.get("receipts", [])}
     failures = states & {"conflict", "invalid", "failed"}
@@ -124,6 +138,27 @@ def candidates(context, query, kind, tag, producer_id, decision, since, limit, o
             click.echo("  领域：" + "、".join(item["tags"]))
     if not payload["items"]:
         click.echo("当前没有匹配项。agent可通过 recommendations submit 提交候选。")
+
+
+@recommendations.command(name="refresh-metrics")
+@click.option("--candidate-id", multiple=True, required=True, help="Existing candidate ID; repeat for selected candidates.")
+@click.pass_obj
+@guarded
+def refresh_metrics(context, candidate_id):
+    """Read public counts for explicitly selected candidates without resubmitting them."""
+    store = _store(context)
+    results = []
+    for identifier in dict.fromkeys(candidate_id):
+        try:
+            row = refresh_candidate_metrics(store, identifier)
+            checks = row["metric_refresh"]["checks"]
+            result = "complete" if checks and all(item["status"] == "ok" for item in checks) else "partial" if checks else "no_targets"
+            results.append({"candidate_id": identifier, "status": result, "metrics": row["metrics"], "checks": checks})
+        except ResearchError as exc:
+            results.append({"candidate_id": identifier, "status": "failed", "exit_code": exc.exit_code})
+    _json({"profile": context["profile"], "results": results})
+    if any(item["status"] in {"failed", "partial"} for item in results):
+        click.get_current_context().exit(6)
 
 
 @recommendations.command(name="handoff")

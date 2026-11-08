@@ -16,12 +16,13 @@ a source checkout as proof that an installed command exists.
 
 ```text
 scholar-research recommendations --profile personal schema
-scholar-research recommendations --profile personal submit --input recommendations.json
+scholar-research recommendations --profile personal submit --input recommendations.json --refresh-metrics
 scholar-research recommendations --profile personal list
 scholar-research recommendations --profile personal open
 scholar-research recommendations --profile personal status
 scholar-research recommendations --profile personal stop
 scholar-research recommendations --profile personal handoff
+scholar-research recommendations --profile personal refresh-metrics --candidate-id <id>
 ```
 
 `schema` supplies the exact installed version/limits; read it before constructing a
@@ -58,7 +59,19 @@ Provide available verified identifiers and metadata: `arxiv_id`, `doi`, `authors
 and its complete `abstract_zh`; a project/blog uses `description_original` and
 `description_zh` for an actual source introduction/excerpt and its translation.
 Do not invent an abstract, a publication date, an author or a related project URL.
-An unavailable full abstract remains unavailable, not a shortened substitute.
+When an author abstract is available, retain and translate it in full. If the
+source has no abstract (including a closed company's project/blog), read the
+available original body and provide `summary_zh` with nonempty `summary_sources`.
+Display it as an agent-prepared summary, not an author abstract or a translation.
+A title, search snippet or missing body is insufficient to invent that summary;
+state limited coverage and undisclosed details accurately. An existing author
+abstract lacking translation must be translated, not bypassed with a summary.
+
+Keep attachments flexible through `links`: each actual original, verified version,
+Blog, repository, model, dataset, demo or license has its own label, URL and optional
+kind. Attach a relevant verified Blog when available, normally with `kind: blog`;
+there is no mandatory fixed set or number of attachment slots. A related Blog does
+not merge its identity or claims into a paper.
 Follow the installed schema for optional fields and supported public URL syntax.
 
 Submission returns item receipts. Record accepted, duplicate, conflict and invalid
@@ -91,6 +104,28 @@ an older aggregator must not be relabeled as stars, likes or another platform's
 measurement. Repeated recommendations by agents are attribution records, not
 independent scientific evidence or platform measurements.
 
+## Explicit platform refresh
+
+Use `submit --refresh-metrics` when submitting verified public repository/model
+links for a recommendation. Existing candidates can be refreshed with
+`refresh-metrics --candidate-id <id>` (repeat the ID option for a selected set), or
+their page's Update metrics action. This explicit operation reads small public
+GitHub repository and Hugging Face model/dataset/Space metadata, never source files
+or model weights. Plain submit/list/page refresh does not silently fetch websites.
+
+Only declared HTTPS object homepages in the resource's URL, project URL or flexible
+links are used. Unknown project-homepage links are not guessed into repositories;
+add a verified platform link when available. GitHub `stars` and Hugging Face `likes`
+remain separate raw measurements. No local API token or default client credentials
+are read; requests have fixed official API hosts, bounded bodies/time and no redirects.
+
+The candidate pool retains explicit platform observations/checks separately from
+recommendation submissions, preserving original provenance, review and decisions.
+A refresh never adds a recommendation, changes the producer or counts as ingestion.
+Failure/rate limits retain prior successful values with their original times and a
+visible latest-check status; missing counts are unknown, not zero. The page shows
+this area near the title, including uncollected or unavailable states.
+
 ## Reading Report and page content
 
 The Reading Report is part of recommendation, not the report-writing system. It
@@ -98,7 +133,10 @@ contains only paper information, the paper's abstract and related project-homepa
 links. Paper information uses verified title, authors, publication information and
 original-source links. Show the complete Chinese abstract translation before the
 person chooses papers to ingest; keep the complete original accessible for checking.
-Do not truncate the abstract to a teaser or replace it with an agent's summary.
+Do not truncate an available abstract to a teaser or replace it with a summary.
+The explicit no-abstract fallback above is a sourced agent summary with its own
+label and review, including for non-paper resources. It adds no recommendation
+rationale or unsupported scientific assessment.
 
 The recommendation page also provides task/source attribution, domain labels and
 the raw observations above. These support browsing and filtering. Do not append
@@ -111,8 +149,12 @@ its source introduction/excerpt, rather than posing as a complete paper abstract
 
 The person reviews the translated abstract and explicitly chooses items. The page
 keeps review confirmation distinct from selected/saved/ignored decisions. A paper
-handoff requires review of the current original and translated abstract; a content
-change requires review again, while an unrelated metric refresh does not.
+handoff requires review of its current complete original/translated abstract, or
+of the sourced summary when no author abstract exists. A non-paper using the
+summary fallback also requires that review. Changes to the displayed summary or
+its supporting URLs require review again; a metric refresh does not. The legacy
+`abstract_reviewed` field now describes this current reading-content review;
+`reading_kind`, `review_required` and `review_available` expose its actual scope.
 
 `handoff` exports the current selected resources, review context, explicit `profile`
 and stable `pool_id`. These machine identities distinguish two pools even when
@@ -129,7 +171,7 @@ if the intended pool cannot be read, report that gap rather than substituting on
 Send only the currently selected identities and sources to
 [ingest-resource](../skills/ingest-resource/SKILL.md).
 Keep its existence preview, confirmed destination, Local API and source policies.
-Paper admission requires the reviewed translation and actual human selection;
+Paper admission requires the reviewed translation or explicit sourced-summary fallback and actual human selection;
 selection does not authorize library deletion, identity merging or knowledge edits.
 For a selected blog/project source, use its appropriate webpage/document branch.
 

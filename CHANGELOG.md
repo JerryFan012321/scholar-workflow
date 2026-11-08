@@ -5,6 +5,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.51.1] - 2026-11-08
+
+### Fixed
+
+- Initialize shared lock files through exclusive creation followed by opening the
+  existing file, preserving ownership and no-follow checks under concurrent writers.
+- Show raw platform metrics beside recommendation titles, with explicit uncollected,
+  unavailable and rate-limited states. Add anonymous bounded GitHub stars/HF likes
+  refresh for declared objects, preserving existing values, provenance and human choices.
+- Support a source-backed, explicitly labeled agent summary when no author abstract
+  exists; bind review to displayed content and sources. Retain flexible attachments,
+  including related Blog links, without adding fixed required slots.
+
+
 ## [0.51.0] - 2026-11-08
 
 ### Added
@@ -27,6 +41,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- Record the published runtime and normal CLI/Codex/Claude installation receipts,
+  preserving the existing test-pool decisions and separating CLI verification from GUI acceptance.
 - Retain full recommendation abstracts and per-source observations; keep the old
   short snippet for compatibility. Remove the retired NotebookLM reading dependency.
 - Require complete translated-abstract review and explicit human selection before

@@ -70,3 +70,11 @@ scholar-research recommendations --profile personal stop
 各来源现有网络代理方式保持。旧 `notebooklm_classification` 配置会被忽略，不需要 NotebookLM。
 
 关注作者时，先确认实际 Semantic Scholar `authorId`，重名时消歧，再更新关注名单。
+
+## 平台热度与无摘要资料
+
+有已核验GitHub/HF对象链接时，提交可使用`submit --refresh-metrics`采集原始数值；
+已有候选使用卡片“更新热度”或`refresh-metrics --candidate-id <id>`。
+页面显示具体对象及采集时间，失败保留旧值，未知不填零；HF点赞与GitHub stars分开标识。
+无作者摘要时，依据实际正文提供`summary_zh`和`summary_sources`，明确标注agent总结并审阅后交接。
+相关Blog继续通过灵活`links`附上。完整约定见[推荐入口](../../references/recommendation-intake.md)。
