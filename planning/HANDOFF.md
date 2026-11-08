@@ -3,14 +3,17 @@
 用户已认可推荐开发预览，并明确授权发布安装；后续需求分期处理。
 本分支codex/hotfix-recommendation-release从8a5bfc2隔离组装，仅含推荐一期与必要依赖，
 不包含原asset-management树未提交的Notion发现管理、互链、规划搬迁或其他功能。
-发布/安装/单对象验证进度见[本期回执](releases/0.51.0-recommendations-release.md)。
+发布、正常安装及单对象CLI验证已完成，详见[本期回执](releases/0.51.0-recommendations-release.md)。
+source 0976d16、runtime 83a5e1c；PATH两个CLI及Codex/Claude插件均0.51.0，安装文件与发布产物一致。
+完整回归4111通过/22跳过，原test对象3个候选及1个人工选择保留，数据库hash不变。
+页面工具打开返回queued；浏览器自动检查不可用，不冒称新的安装态GUI或人工评鉴。
 main不合并，正式知识/Notion/服务器不迁移；原test推荐对象的输入和人工认可保留。
 
 ---
 
 # HANDOFF — 从这里接着干
 
-## 当前有效入口：2026-10-29 审查后的执行状态
+## 历史入口：2026-10-29 审查后的执行状态（当前发布以文首为准）
 
 当前开发为 `codex/hotfix-source-recovery` 的0.50.1修复候选：恢复绑定时只容许精确证明
 图不变的新增受限metadata，原artifact hash仍保留并明确待确认，导出继续严格拒绝到单独确认完成。

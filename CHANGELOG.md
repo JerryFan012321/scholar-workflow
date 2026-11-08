@@ -27,6 +27,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Changed
 
+- Record the published runtime and normal CLI/Codex/Claude installation receipts,
+  preserving the existing test-pool decisions and separating CLI verification from GUI acceptance.
 - Retain full recommendation abstracts and per-source observations; keep the old
   short snippet for compatibility. Remove the retired NotebookLM reading dependency.
 - Require complete translated-abstract review and explicit human selection before
