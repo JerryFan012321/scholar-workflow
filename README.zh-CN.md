@@ -5,15 +5,34 @@
 论文分析、文献树、入库与实验档案由插件维护；阅读、编辑和执行继续利用 Zotero、Obsidian、
 Notion、cmux 和外部 Codex 的原生能力，不另建工具控制面。
 
-当前源码为0.50.1开发候选（未发布）：保留科研Skill、已认可格式和原生工具薄适配，退役旧Hub网站，停止扩建独立探索网页。
+当前0.51.0发布范围：保留科研Skill、已认可格式和原生工具薄适配，退役旧Hub网站，停止扩建独立探索网页。
 知识按完整论文／Blog／文档资产单元及明确上下文管理，区分管理、分析、查看与编辑。
 见[资产单元](references/asset-units.md)与[项目Skill分层](references/project-skills.md)。
-多维查看／编辑方式继续讨论，已有记录保留。已安装0.49.0在新版本正常安装前仍是此前行为。
+多维查看／编辑方式继续讨论，已有记录保留。0.51.0新增第一期推荐页和多agent统一提交入口。
 
 本次后续修复将原目录设备号恢复与Canvas编辑器保存确认分开：不改文件，明确显示尚待确认，
-导出仍需完成单独的元数据确认。它不同于此前审阅的0.50.0运行候选，尚未安装。
+导出仍需完成单独的元数据确认。
 
 [English](./README.md)
+
+## 推荐页面——第一期（0.51.0）
+
+多个agent通过同一JSON/CLI入口提交论文、项目主页和Blog。页面显示完整摘要译文、领域/
+任务/类型筛选、原文及项目链接，以及带来源和采集时间的原始平台数据。热度只列数据，
+不生成综合分数或评价。定时调度继续由各agent的宿主持有。
+
+```bash
+scholar-research recommendations schema
+scholar-research recommendations submit --input recommendations.json
+scholar-research recommendations open
+scholar-research recommendations status
+scholar-research recommendations stop
+```
+
+个人候选池初始为空。让agent使用`recommend-papers` Skill即可发现统一提交入口。
+使用`recommendations --profile test`访问独立测试池。审阅后选择并导出清单，再交给
+`ingest-resource`；导出不等于入库。具体格式见[统一入口契约](references/recommendation-intake.md)。
+本页只负责推荐与审阅选择；知识单元、原生阅读器和agent执行仍由各自工具持有。
 
 ## 架构
 
@@ -301,7 +320,7 @@ snapshot 不是 verified backup；真正备份仍需要独立介质和恢复演�
 | build-literature-tree | 完整论文列表 + 时间线文献树 + 放射技术路线树和挑战洞见树 |
 | check-consistency | 跨系统一致性审计(只读) |
 | export-annotations | 把某篇论文的 Zotero 批注整理成结构化 vault 笔记 |
-| recommend-papers | 每日多源论文 feed + NotebookLM 略读 → 推荐清单 |
+| recommend-papers | 多类型研究推荐、统一agent提交与人工审阅选择 |
 | track-research | 所选博客、机构网页、代码发布及模型列表 → 增量动态 |
 | explore-knowledge | 可扩展多维定位、条件比较、证据关系及完整资产导航 |
 | analyze-paper | 把论文详细分析投影为 Markdown + 可编辑 Canvas 文档对 |
@@ -346,7 +365,7 @@ Obsidian已知Vault、已登记Source和论文归属分别报告。详见[资产
     不自动升级 Obsidian。可选 Obsidian CLI 仅用于 ZotFlow 的此项证明，不是 Zotero 主动作的
     前置条件。Zotero Web API 密钥只留在 Obsidian SecretStorage。
   - Notion 集成 token —— 仅启用 Notion 投影时需要。
-  - `notebooklm-py` + Google 登录 —— 仅 `recommend-papers` 略读级 + 文献树 NotebookLM
+  - `notebooklm-py` + Google 登录 —— 仅显式选择的文献树 NotebookLM
     批读需要。
   - Scholar Inbox 账号 —— 仅该推荐源需要。
   - 目标 agent 的 CLI 与既有登录态 —— 仅 `agent-collaboration` 跨宿主运行时调用时需要;
@@ -465,7 +484,7 @@ pipx install --force "git+https://github.com/JerryFan012321/scholar-workflow.git
   PDF 不存在时，Hub 只禁用 ZotFlow 动作并说明原因；不会自动升级 Obsidian、卸载插件或通过
   Zotero Web API/WebDAV 下载 PDF 来补齐本机文件。
 - **已实现但尚未真实端到端跑通:** 旧 `build-literature-tree` Mermaid CLI投影（尤其第四层
-  `module`）、`recommend-papers` 的 NotebookLM 略读层、`check-consistency`。
+  `module`）、`check-consistency`。
   当前领域库格式的安装态、原生显示和人工评鉴独立记录。
 - **不支持跨运行续跑:** 重跑 `apply` 是全新任务、会把每一项从头下载,不会接着上次的进度。
 - **身份安全双层执行:** skill 先预览候选,`zotero ingest` 在创建前再次执行 DOI 或规范化

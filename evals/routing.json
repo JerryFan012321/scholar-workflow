@@ -396,6 +396,25 @@
       "expected_skill": null,
       "must_not_trigger": "env-setup",
       "comment": "负向消歧(中文):「查找服务器」裸词必须触发(见 env-query-find-server),但显式 K8s 集群上下文覆盖之 → 不得触发 env-setup"
+    },
+    {
+      "id": "recommend-shared-multi-agent-candidates",
+      "input": "推荐今天的世界模型论文，也可以附相关项目主页和官方Blog，通过同一个入口提交到我的推荐主页，并保留这个定时任务的标签",
+      "expected_skill": "recommend-papers",
+      "must_not_trigger": "ingest-resource",
+      "comment": "继续使用现有推荐Skill；统一入口位于运行契约，论文/项目/Blog可共同提交，推荐不入库。"
+    },
+    {
+      "id": "recommend-research-project-pages",
+      "input": "推荐最近值得关注的世界模型项目主页，不限于有论文的工作，放到推荐页供我筛选",
+      "expected_skill": "recommend-papers",
+      "must_not_trigger": "ingest-resource"
+    },
+    {
+      "id": "recommend-research-blog-posts",
+      "input": "推荐几篇研究博客文章供我看，先不订阅或入库",
+      "expected_skill": "recommend-papers",
+      "must_not_trigger": "track-research"
     }
   ]
 }

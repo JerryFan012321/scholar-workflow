@@ -1,3 +1,13 @@
+# 当前发布：0.51.0推荐系统第一期（2026-11-08）
+
+用户已认可推荐开发预览，并明确授权发布安装；后续需求分期处理。
+本分支codex/hotfix-recommendation-release从8a5bfc2隔离组装，仅含推荐一期与必要依赖，
+不包含原asset-management树未提交的Notion发现管理、互链、规划搬迁或其他功能。
+发布/安装/单对象验证进度见[本期回执](releases/0.51.0-recommendations-release.md)。
+main不合并，正式知识/Notion/服务器不迁移；原test推荐对象的输入和人工认可保留。
+
+---
+
 # HANDOFF — 从这里接着干
 
 ## 当前有效入口：2026-10-29 审查后的执行状态

@@ -34,7 +34,7 @@ def test_hf_daily_normalizes_and_skips_rows_without_paper():
     assert first == {
         "arxiv_id": "2607.23193", "title": "A Paper",
         "authors": ["Jane Doe", "John Roe"], "source": "hf_daily",
-        "score": 42, "abstract_snippet": "We propose a thing.",
+        "score": 42, "abstract_snippet": "We propose a thing.", "abstract": "We propose a thing.",
         "url": "https://arxiv.org/abs/2607.23193",
     }
     assert cands[1]["abstract_snippet"] is None  # missing summary → None
@@ -68,7 +68,7 @@ def test_s2_recommendations_normalizes_and_drops_non_arxiv():
     assert cands[0] == {
         "arxiv_id": "2607.11111", "title": "Rec One",
         "authors": ["A One", "B Two"], "source": "s2_recommendations",
-        "score": None, "abstract_snippet": "Some abstract.",
+        "score": None, "abstract_snippet": "Some abstract.", "abstract": "Some abstract.",
         "url": "https://arxiv.org/abs/2607.11111",
     }
 
@@ -103,6 +103,36 @@ def test_scholar_inbox_normalizes_splits_authors_and_filters_score():
     assert cands[0] == {
         "arxiv_id": "2607.33333", "title": "SI One",
         "authors": ["X Yang", "Z Wang"], "source": "scholar_inbox",
-        "score": 0.87, "abstract_snippet": "hello world",
+        "score": 0.87, "abstract_snippet": "hello world", "abstract": "hello world",
         "url": "https://arxiv.org/abs/2607.33333",
     }
+
+
+def test_all_sources_retain_full_abstract_for_translation():
+    full = "This is complete abstract context. " * 80
+    expected = " ".join(full.split())
+    hf = fetch_hf_daily(client=_client_returning([
+        {"paper": {"id": "2601.00001", "title": "Long", "summary": full}}
+    ]))[0]
+    s2 = fetch_s2_author_papers("a", client=_client_returning({"data": [
+        {"title": "Long", "abstract": full, "externalIds": {"ArXiv": "2601.00001"}}
+    ]}))[0]
+    inbox = normalize_scholar_inbox({"digest_df": [
+        {"title": "Long", "abstract": full, "arxiv_id": "2601.00001"}
+    ]})[0]
+    for candidate in (hf, s2, inbox):
+        assert candidate["abstract"] == expected
+        assert len(candidate["abstract"]) > 280
+        assert candidate["abstract_snippet"].endswith("…")
+
+
+def test_merge_retains_each_source_observation_and_fills_missing_abstract():
+    first = {"arxiv_id": "2601.00001", "title": "Title", "source": "hf_daily",
+             "score": 3, "abstract": None, "abstract_snippet": None}
+    second = {"arxiv_id": "2601.00001", "title": "Title", "source": "s2_author",
+              "score": None, "abstract": "Full available abstract.",
+              "abstract_snippet": "Full available abstract."}
+    candidate = merge_candidates([first], [second])[0]
+    assert candidate["abstract"] == second["abstract"]
+    assert [entry["source"] for entry in candidate["source_observations"]] == ["hf_daily", "s2_author"]
+    assert candidate["source_observations"][0]["score"] == 3

@@ -5,6 +5,10 @@ description: Track selected researcher blogs, lab/company research pages, code r
 
 # track-research
 
+When the task includes recommending or submitting selected research resources, read
+[Recommendation intake](../../references/recommendation-intake.md) and use the shared
+`scholar-research recommendations` entry. Channel tracking does not itself ingest.
+
 Maintain selected public research channels and readable incremental updates, without
 turning every announcement into a permanent knowledge unit. Load the shared
 `research-tracking.md` contract before using the local or network interfaces.

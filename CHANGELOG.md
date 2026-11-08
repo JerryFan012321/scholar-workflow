@@ -5,6 +5,34 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.51.0] - 2026-11-08
+
+### Added
+
+- Shared recommendation intake for papers, project homepages and blogs through
+  versioned JSON and `scholar-research recommendations`; independent agents retain
+  their task identities, tags and idempotent receipts in an explicit personal/test pool.
+- Dedicated local recommendation/review page with complete translated abstracts,
+  original/project links, filters, raw platform observations and reviewed-selection
+  export. The page does not ingest resources or execute agents.
+- Installed-package service lifecycle with dynamic loopback discovery and owned
+  start/status/stop; runtime Skills expose the shared submission and ingestion handoff.
+
+### Fixed
+
+- Preserve known arXiv versions through unversioned metadata refreshes so late older
+  abstracts cannot overwrite newer reviewed content; retain source snapshots.
+- Treat the owned service's removal of its runtime record during graceful shutdown
+  as a stopped service, preserving identity checks for invalid or foreign records.
+
+### Changed
+
+- Retain full recommendation abstracts and per-source observations; keep the old
+  short snippet for compatibility. Remove the retired NotebookLM reading dependency.
+- Require complete translated-abstract review and explicit human selection before
+  paper ingestion, with profile/pool identity preserved in candidate handoffs.
+
+
 ### Fixed
 
 - **knowledge recovery (0.50.1 candidate):** break the same-directory device-drift

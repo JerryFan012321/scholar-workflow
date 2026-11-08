@@ -6,21 +6,42 @@ in its existing tools. It maintains readable Markdown/Canvas analyses, literatur
 ingestion and reproducible project records. Obsidian, Zotero, Notion, cmux and external Codex keep
 their native reading, editing and execution interfaces.
 
-Current source direction (unreleased): retain research Skills, accepted file formats
+Current product direction: retain research Skills, accepted file formats
 and thin native-tool adapters; retire the old Hub website and freeze independent explorer product work. Knowledge
 is managed as complete paper/blog/document asset units with explicit context. Their
 management, analysis, viewing and editing are separate operations. See
 [asset units](references/asset-units.md) and [project Skills](references/project-skills.md).
 Multidimensional viewing/editing remains under discussion; existing records are retained.
-The source is a 0.50.1 development candidate, not a published release. Installed
-0.49.0 still has the previous behavior until a new version is normally installed.
+Version 0.51.0 adds the first-phase recommendation page and shared agent intake.
 
 The follow-up recovery fix separates a same-directory device-number recovery from
 acknowledging an additive Canvas editor save. It preserves all file bytes and reports
 the remaining acknowledgement; export stays strict until that separate step completes.
-This candidate is distinct from the previously reviewed 0.50.0 payload and is not installed.
+
 
 [中文文档](./README.zh-CN.md)
+
+## Recommendation page — first phase (0.51.0)
+
+Independent agents submit papers, project homepages and blogs to one versioned
+JSON/CLI entry. The page provides complete abstract translations, topic/task/type
+filters, original/project links and attributed raw platform values. Popularity is
+shown as data without a combined score or evaluation. Host tools own scheduling.
+
+```bash
+scholar-research recommendations schema
+scholar-research recommendations submit --input recommendations.json
+scholar-research recommendations open
+scholar-research recommendations status
+scholar-research recommendations stop
+```
+
+The personal pool begins empty. Ask an agent to use the `recommend-papers` Skill;
+it knows the shared submission entry. Use `recommendations --profile test` for an
+independent test pool. Exported reviewed selections go to `ingest-resource`; export
+does not ingest. See the [intake contract](references/recommendation-intake.md).
+This is a bounded recommendation/review page. Existing knowledge units, native
+readers and agent runtimes keep their own interfaces and authority.
 
 ## Architecture
 
@@ -382,7 +403,7 @@ flows instead of treating a compatibility response as write authority.
 | build-literature-tree | Complete paper list + literature timeline + radial technical routes and challenges |
 | check-consistency | Audit cross-system consistency (read-only) |
 | export-annotations | Turn a paper's Zotero annotations into a structured vault note |
-| recommend-papers | Daily multi-source paper feed + NotebookLM skim → Reading Report |
+| recommend-papers | Research recommendations, shared agent intake and reviewed selection |
 | track-research | Selected blogs, institutional pages, releases and model lists → incremental updates |
 | explore-knowledge | Editable dimensions, joint-condition research comparisons, evidence relations and complete asset navigation |
 | analyze-paper | Project detailed paper analysis into paired Markdown + editable Canvas |
@@ -433,8 +454,8 @@ keep their recommendation store and are not yet providers in `assets list`.
     for this ZotFlow-specific proof, not for the Zotero primary action. ZotFlow keeps its Zotero
     Web API key in Obsidian SecretStorage.
   - Notion integration token — only if you enable the Notion projection.
-  - `notebooklm-py` + a Google login — only for the `recommend-papers` skim tier and
-    NotebookLM-assisted literature-tree batch reading.
+  - `notebooklm-py` + a Google login — only for explicitly chosen NotebookLM-assisted
+    literature-tree reading; recommendations do not require it.
   - A Scholar Inbox account — only for that one recommendation source.
   - A target agent's CLI and existing login — only when `agent-collaboration` crosses
     host runtimes instead of using a native agent tool.
@@ -566,7 +587,7 @@ The plugin is in active `0.x` development. What's solid vs. still settling:
   from the Zotero Web API/WebDAV to repair local availability.
 - **Implemented but not yet exercised on a real end-to-end run:** the legacy
   `build-literature-tree` Mermaid CLI projection (especially the fourth `module`
-  level), the `recommend-papers` NotebookLM skim tier, and `check-consistency`.
+  level), and `check-consistency`.
   The current Field-library profile has separate installed/native/human assessment.
 - **No cross-run resume:** re-running `apply` starts a fresh job and re-downloads every item;
   it does not pick up where a prior run stopped.

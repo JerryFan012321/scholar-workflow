@@ -112,6 +112,14 @@ network failures never become successful empty observations.
 
 ## Loopback services
 
+The dedicated recommendation page follows [Recommendation intake](recommendation-intake.md).
+It has separate personal/test candidate state and browser authentication, accepts
+only candidate identities, exact revisions and documented review/decision fields,
+and exports selected items without writing Zotero or knowledge content. External
+resource URLs remain navigation data, never commands or implicit server fetches.
+Its CLI starts/stops only the identified profile service; it never revives the
+legacy Hub's workspace, editor or agent-task control surface.
+
 The following rules apply to retained legacy Hub endpoints, not to the project's content
 core or every agent use of native tools. The Hub/Codex control-plane product direction is retired;
 existing paths keep their security checks until a separately approved, identity-checked shutdown.

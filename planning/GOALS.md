@@ -1,3 +1,10 @@
+# 本期目标更新：2026-11-08
+
+用户批准推荐系统第一期发布安装。推荐专用页面与统一JSON/CLI、多agent候选、原始热度、
+摘要先译后选及Skill入口属于本次明确范围；旧Hub/内置worker仍退役，知识单元格式不改。
+不引入未发布的Notion发现管理，不把样例人工通过扩大为真实业务或安装态通过。
+本期分项状态以[发布回执](releases/0.51.0-recommendations-release.md)为准。
+
 # Scholar Workflow — 目标（活文档）
 
 > 这是项目的 north star，持续更新。原始设计文档（DESIGN.md / PROJECT.md）的意图层

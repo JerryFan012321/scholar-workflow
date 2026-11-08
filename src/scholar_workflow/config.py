@@ -76,9 +76,12 @@ class PolicyConfig(BaseModel):
 
 
 class RecommendConfig(BaseModel):
-    """recommend-papers preferences (feature-ai-reading). Two-layer: this global
+    """recommend-papers preferences. Two-layer: this global
     layer lives in recommend.yml; a per-cwd project layer overlays keywords/watchlist.
-    Not credentials — session cookies/tokens stay in env vars / env-records."""
+    Not credentials — session cookies/tokens stay in env vars / env-records.
+    The retired notebooklm_classification input is ignored like other extra keys;
+    loading an old configuration does not rewrite it or activate a reading service.
+    """
     interests: list[str] = []
     sources: dict[str, bool] = {
         "s2_recommendations": True,
@@ -88,7 +91,6 @@ class RecommendConfig(BaseModel):
     }
     daily_limit: int = 15
     min_score: float = 0.0
-    notebooklm_classification: str = "auto_topic"
     watchlist: list[str] = []  # S2 authorIds (semi-auto registered)
 
 

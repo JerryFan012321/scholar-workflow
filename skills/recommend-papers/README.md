@@ -1,76 +1,95 @@
 # recommend-papers
 
-A daily paper-recommendation feed. It aggregates four complementary sources, merges
-them by arXiv id, and skims a shortlist you pick through NotebookLM to produce a cheap
-**Reading Report** — a decision aid, not a vault artifact. Papers you like flow into the
-normal `find-resource` / `ingest-resource` pipeline.
+Collect recommendations in one review page. Independent agents and recurring tasks
+can submit papers, project homepages and blogs through the same installed CLI.
+The page merges duplicate resources, preserves who recommended each one and lets
+you filter by domain, resource type and producing task.
 
-## The four sources
+## Use the shared entry
 
-| Source | Signal | Auth |
-|---|---|---|
-| Semantic Scholar Recommendations | your Zotero library as positive seeds | none |
-| Scholar Inbox | trained personalized digest (up/down votes over time) | session cookie (~7 days) |
-| S2 author watchlist | new papers from researchers/labs you registered | none |
-| HuggingFace Daily Papers | community upvote heat | none |
+```bash
+scholar-research recommendations --profile personal schema
+scholar-research recommendations --profile personal submit --input recommendations.json
+scholar-research recommendations --profile personal open
+```
 
-Each source contributes a normalized candidate (`arxiv_id`, title, authors, source,
-score, abstract snippet, url). Candidates are deduped by arXiv id; every contributing
-source is recorded so you can see overlap.
+Ask an agent to follow `recommend-papers` and the
+[shared intake contract](../../references/recommendation-intake.md). The installed
+`schema` output is the submission contract; the
+[example](references/submission.example.json) uses synthetic data only.
 
-## How the funnel works
+Each recurring task keeps a stable producer ID. Each execution has a run ID, and
+retries reuse their submission IDs and unchanged payloads. You can see results
+from all tasks together or select a particular task/domain. A submission receipt
+states which entries were accepted, already present, conflicting or invalid.
 
-1. **All options** — the aggregator prints every candidate as *metadata only* (cheap,
-   no skim).
-2. **Refine** — apply your explicit filters, configured interests / project keywords,
-   and configured limit, or pick by hand, to get a shortlist. The report keeps the
-   source scores and applied match signals visible rather than relying on an unstated
-   ranking rule.
-3. **Skim** — only the shortlist goes through NotebookLM (~500 tokens/question vs ~50K
-   to read a PDF).
-4. **Report** — a short markdown list you decide from. Ephemeral; ingest the keepers.
+## What the page shows
 
-## Setup
+- Papers: verified paper information, the complete Chinese abstract translation,
+  the original abstract and the available project-homepage link.
+- Project pages and blogs: source information, the actual introduction/excerpt and
+  its translation when available. A project announcement does not need a paper.
+- Attributed raw platform data, such as repository stars, with the actual target,
+  source link and observation time. The page does not evaluate popularity or add
+  a combined score.
+- Domain tags, producing tasks and discovery channels, with separate human review
+  and selected/saved/ignored decisions.
 
-1. Copy the config template:
-   ```bash
-   cp references/recommend.example.yml ~/.config/scholar-workflow/recommend.yml
-   ```
-   Edit `interests`, `sources` toggles, `daily_limit`, and `watchlist`.
-   Optional per-project overlay: `~/.config/scholar-workflow/projects/<cwd-name>.yml`
-   (interests/watchlist are additive; other keys override).
+The **Reading Report** is the paper component: paper information, abstract and
+related project homepage. It does not contain recommendation rationale, scientific
+analysis or a reading-coverage report. Operation failures are reported separately.
 
-2. Install NotebookLM automation (for the skim tier):
-   ```bash
-   pipx install "notebooklm-py[browser]"
-   notebooklm login
-   ```
-   This stores a real Google login — a throwaway account is recommended.
+## Choose resources to ingest
 
-3. Scholar Inbox (optional fourth source) needs a session cookie. The vendored client
-   drives a browser login via `playwright-cli`; the cookie is stored under
-   `~/.config/scholar-workflow/scholar-inbox/session.json` (chmod 600) and lasts ~7
-   days. Without it, that source is skipped and the run uses the other three.
+Review the full translated abstract before selecting a paper for ingestion. Keep
+its original accessible for checking. Then export the selected-candidate handoff:
 
-## Watchlist
+```bash
+scholar-research recommendations --profile personal handoff
+```
 
-Give a researcher's name (plus affiliation or a notable paper) and the skill resolves a
-stable Semantic Scholar `authorId`, then stores it in `watchlist`. This avoids the
-common-name problem (e.g. many authors share "He Wang"). The ledger is personal data —
-gitignored, template-only.
+The handoff is an input to the normal `find-resource` / `ingest-resource` workflow,
+under your actual ingestion request. Exporting it does not write Zotero or the
+Vault. Existing identity checks, destinations and source policies still apply.
+An abstract content change requires review again; refreshing stars does not.
 
-## Troubleshooting
+## Lifecycle and test isolation
 
-- **A source shows under `skipped`** — that source failed or is unconfigured (no seeds,
-  empty watchlist, no Scholar Inbox session). The run still completes on the rest.
-- **HF Daily times out** — it goes through your system HTTP proxy (`httpx` `trust_env`,
-  i.e. `HTTP_PROXY`/`HTTPS_PROXY`), while S2 connects directly. These paths are fixed in
-  the adapters; if HF Daily can't reach the network, check your proxy env vars.
-- **NotebookLM unreachable** — fall back to metadata-only recommendations, or read an
-  ingested paper through `analyze-paper` / Zotero indexed full text (slower, more tokens).
+```bash
+scholar-research recommendations --profile personal list
+scholar-research recommendations --profile personal status
+scholar-research recommendations --profile personal stop
+```
 
-## Attribution
+Use `--profile test` for a test pool. For an isolated test location, set
+`SCHOLAR_WORKFLOW_HOME` explicitly as well. Test and personal pools are separate;
+the page's token and runtime service are local state, not persistent source links.
+Do not submit the synthetic example to your personal pool.
 
-The Scholar Inbox client under `scripts/scholar_inbox/` is adapted from
-[sjh-skills](https://github.com/jiahao-shao1/sjh-skills) (MIT License, Copyright (c)
-2026 Jiahao Shao). See `scripts/THIRD_PARTY_LICENSES`.
+## Existing paper sources and configuration
+
+The existing aggregator is still available as a source for candidates:
+
+| Source | Observation |
+|---|---|
+| Semantic Scholar Recommendations | Papers related to user-supplied or confirmed Zotero arXiv seeds |
+| Scholar Inbox | The configured personalized digest, when its session is available |
+| S2 author watchlist | New papers from registered researchers |
+| Hugging Face Daily Papers | Community paper submissions and votes |
+
+The aggregator returns source metadata and skipped-source diagnostics. It does not
+supply the versioned submission envelope automatically, import papers or prove that
+a full paper was read. Obtain a complete authoritative abstract before supplying
+its translation; a snippet is not a substitute.
+
+Configuration remains in `~/.config/scholar-workflow/recommend.yml`; the optional
+project overlay is `~/.config/scholar-workflow/projects/<cwd-name>.yml`. Copy and
+adapt [recommend.example.yml](references/recommend.example.yml) when needed.
+Project interests/watchlist extend global values; other project keys override.
+Scholar Inbox session state stays outside configuration and Git. Missing access
+skips that source and remains visible in diagnostics. Existing adapter proxy
+routing remains unchanged. Old `notebooklm_classification` settings are ignored;
+no NotebookLM package or login is required.
+
+Author-watchlist requests resolve the actual Semantic Scholar `authorId` before
+updating the configured watchlist, disambiguating when necessary.

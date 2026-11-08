@@ -532,6 +532,11 @@
       "id": "project-overview-human-readability",
       "description": "G16/INV58/INV61：一个合成项目的人类 Markdown 概览同时列明代码、论文、分析、笔记、实验和成果的用途、入口与诚实状态，中文/英文标签一致，不堆机器身份，不强制新首页或服务。手写 EXPECTED-OVERVIEW 是测试预期而非生成结果；须先比较实际渲染，并在会话中明确请用户评鉴清晰度与便利性。正常 hotfix 安装验收独立授权，当前保持 pending。",
       "status": "pending"
+    },
+    {
+      "id": "shared-recommendation-intake-and-human-review",
+      "description": "G19：独立agent/定时任务通过安装版统一CLI按版本JSON提交论文、项目主页和Blog；同对象合并且各推荐记录保留，幂等重试、冲突回执、同条记录标签筛选、个人/测试隔离和人工决定保全。页面呈现完整论文摘要译文及原文、项目主页、任务/渠道和平台原始数值，不作热度评价；人审阅后选择，导出可交给既有ingest-resource的清单，不自动写Zotero/Vault。源码合成、正常安装、浏览器实际操作和人工评鉴分别取证，未通过不冒称完整交付。",
+      "status": "pending"
     }
   ]
 }

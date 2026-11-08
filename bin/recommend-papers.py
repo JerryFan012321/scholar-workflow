@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Fetch + merge recommendation candidates from the enabled sources (skill mechanical layer).
 
-feature-ai-reading skim tier, step ①: gathers candidates from the four feeds (per
-recommend.yml `sources` toggles), merges/dedups by arxiv_id, prints the all-options
-list as JSON for the host LLM to refine (step ②) and skim via NotebookLM (step ③).
+Gathers candidates from the four feeds (per recommend.yml `sources` toggles),
+merges/dedups by arxiv_id, and prints the all-options list as JSON. The host uses
+its available reading tools only for a user-selected shortlist.
 
 NOT wired into the CLI — the CLI never makes outbound network calls (INV18). Reuses the
-recommend_sources adapters. Emits only metadata (cheap); NotebookLM skimming of the
-refined shortlist is orchestrated separately by the SKILL via notebooklm-py.
+recommend_sources adapters. Emits metadata only; it never reads full text,
+installs a reading package, logs into a reading service, or ingests a paper.
 
 Optional stdin JSON supplies context the CLI can't (it never touches MCP): the host LLM
 gathers it via `scholar-workflow zotero search` / config and pipes it in:

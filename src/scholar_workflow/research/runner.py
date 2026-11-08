@@ -84,3 +84,8 @@ def check(channel_ids: tuple[str], initial_mode: str, fmt: str, language: str) -
                updates_markdown(payload, language=language))
     if payload["status"] == "partial":
         click.get_current_context().exit(6)
+
+
+from scholar_workflow.research.recommendations.cli import recommendations
+
+main.add_command(recommendations)
