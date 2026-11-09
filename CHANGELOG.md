@@ -5,6 +5,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Changed
+
+- Record the 0.51.1 normal installation, single-object acceptance and personal
+  recommendation-service update; preserve all candidate and human-decision records.
+
 ## [0.51.1] - 2026-11-08
 
 ### Fixed

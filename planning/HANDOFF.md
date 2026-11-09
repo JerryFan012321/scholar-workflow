@@ -1,3 +1,14 @@
+# 当前已安装：0.51.1推荐热度与总结修复（2026-11-09）
+
+已获授权并完成hotfix发布、正常安装及日常服务更新；source 06faf41，runtime d6ce02c。
+两个CLI及Codex/Claude插件均0.51.1；各346个插件文件与发布产物一致。
+安装态test单对象检查通过；日常13候选及人工状态保留，3个GitHub目标计数刷新成功。
+当前日常服务build ca24e98313b7fa29，HTTP可用；运行`scholar-research recommendations open`打开。
+页面打开返回queued，视觉评鉴待用户确认；不将安装/机器检查写成人工通过。
+main未合并，其他未发布工作未混入。详见[回执](validation/recommendation-metrics-summary-results.md)。
+
+---
+
 # 当前修复：推荐热度与无摘要总结（2026-11-08）
 
 用户要求修复推荐页未展示GitHub/Hugging Face热度，并明确无摘要时据实际正文总结、

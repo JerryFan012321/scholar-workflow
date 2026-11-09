@@ -37,7 +37,14 @@ public-api-probe.json及对应日志；pytest basetemp有GIT_CEILING_DIRECTORIES
 
 ## 发布/安装边界
 
-尚未推送、发布、正常安装或切换服务；正在使用的0.51.0仍保持原样。
-正常安装后只使用test单个外围对象验收，再在授权范围补采真实推荐；不重做论文分析，
-不写Zotero/正式知识库，不合并main。保留上版runtime回退点
+2026-11-09用户明确批准发布、安装及更新正在使用的推荐页，现已完成。
+源码06faf41816aec0a4561a104fc17e26fbdd80246e与runtime
+d6ce02c3cef0bb529cefd8dc5573d82f188b6b5b已原子推送；main未合并。
+正常pipx安装的两个CLI、Codex/Claude插件均为0.51.1；两宿主各346个runtime文件与发布blob完全一致。
+安装后的单个test合成Blog对象通过总结/附件、审阅选择保留及公开计数刷新检查。
+日常服务已从0.51.0受控停止并以0.51.1启动，build ca24e98313b7fa29，HTTP 200；
+全部13候选的正文、revision、审阅、选择及推荐归属保持相同。3个已声明GitHub目标刷新成功，
+其他对象不猜测平台地址。页面打开返回queued，视觉评阅仍待用户确认。
+机器回执见test对象_work/installed-release-receipt.json及installed-0511/receipt.json。
+未写Zotero或正式知识库。保留上版runtime回退点
 83a5e1c3002f199d3440d46c8c12064fd2c4f7f0。
