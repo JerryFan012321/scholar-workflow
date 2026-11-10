@@ -3,16 +3,8 @@
 (() => {
   const fragment = new URLSearchParams(window.location.hash.slice(1));
   let token = fragment.get("token") || "";
-  try {
-    if (fragment.has("token")) {
-      sessionStorage.removeItem("scholar-recommendations-session");
-      if (/^[A-Za-z0-9_-]{32,256}$/.test(token)) {
-        sessionStorage.setItem("scholar-recommendations-session", token);
-      }
-    } else {
-      token = sessionStorage.getItem("scholar-recommendations-session") || "";
-    }
-  } catch (_) { /* Without tab storage, the initial authenticated URL still works. */ }
+  // Old fragment links remain readable; new pages initialize their own session.
+  try { sessionStorage.removeItem("scholar-recommendations-session"); } catch (_) { /* Optional storage. */ }
   if (window.location.hash) {
     window.history.replaceState(window.history.state || {}, "", window.location.pathname + window.location.search);
   }
@@ -924,11 +916,17 @@
     } catch (_) {
       $("profile").textContent = "连接中断";
     }
-    if (!token) {
+    try {
+      const response = await fetch("/api/session", {method: "POST", credentials: "omit", cache: "no-store",
+        headers: {"Content-Type": "application/json", "X-Scholar-Client": "recommendation-page"}, body: "{}"});
+      const session = await response.json();
+      if (!response.ok || !/^[A-Za-z0-9_-]{32,256}$/.test(session.token || "")) throw new Error("Session unavailable");
+      token = session.token;
+      $("auth-error").hidden = true;
+    } catch (_) {
       $("auth-error").hidden = false;
       $("feed").setAttribute("aria-busy", "false");
-      $("result-count").textContent = "等待打开凭证";
-      $("refresh").disabled = true;
+      $("result-count").textContent = "本机会话连接失败";
       return;
     }
     restoreFilters();

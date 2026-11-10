@@ -17,8 +17,12 @@ Every recommending agent uses the same installed entry for the user's chosen poo
 ```text
 scholar-research recommendations --profile personal schema
 scholar-research recommendations --profile personal submit --input recommendations.json --refresh-metrics
-scholar-research recommendations --profile personal open
 ```
+
+For human viewing only, run `recommendations start` and give the plain local URL
+from status, or `recommendations open --no-browser`. Opening or closing the UI is
+not part of recommendation submission. Headless producers and the curator follow
+[background operation](../../references/recommendation-intake.md#background-operation).
 
 Use a stable producer ID for a recurring task, a separate run ID per execution and
 the same submission ID and payload on retries. Follow the receipt, not a guessed

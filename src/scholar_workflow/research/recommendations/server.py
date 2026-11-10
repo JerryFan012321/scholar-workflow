@@ -38,7 +38,7 @@ class RecommendationHTTPServer(ThreadingHTTPServer):
 
 
 def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> ThreadingHTTPServer:
-    """Bind only loopback; never place the browser token in HTTP content or logs."""
+    """Bind loopback; expose browser credentials only through constrained bootstrap."""
     if profile not in {"personal", "test"}:
         raise ResearchError("Unknown recommendation profile.")
     if not isinstance(token, str) or not re.fullmatch(r"[A-Za-z0-9_-]{32,256}", token):
@@ -231,12 +231,23 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
                 self._error("Recommendation content is unavailable; inspect the service status.", 3)
 
         def do_POST(self):
-            if not self._boundary(authenticated=True, writing=True):
+            path = urlsplit(self.path)
+            bootstrap = path.path == "/api/session"
+            if not self._boundary(authenticated=not bootstrap, writing=True):
                 return
             try:
-                path = urlsplit(self.path)
                 if path.query:
                     raise ResearchError("Mutation URLs cannot contain query parameters.")
+                if bootstrap:
+                    # A foreign browser origin cannot send this non-simple header
+                    # without a CORS preflight, which this service always refuses.
+                    if (self.headers.get_all("X-Scholar-Client", []) != ["recommendation-page"]
+                            or self.headers.get("Sec-Fetch-Site", "same-origin") != "same-origin"):
+                        raise ResearchError("Session initialization requires the local recommendation page.", 7)
+                    if self._body() != {}:
+                        raise ResearchError("Session initialization does not accept parameters.")
+                    self._respond(200, {"token": token})
+                    return
                 payload = self._body(limit=96 * 1024 if path.path in {"/api/requirements", "/api/ranking/context"} else _MAX_BODY)
                 if path.path == "/api/ranking/context":
                     if set(payload) != {"content", "expected_revision"}:

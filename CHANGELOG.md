@@ -5,6 +5,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.52.1] - 2026-11-10
+
+### Fixed
+
+- Open plain local recommendation URLs in fresh independent windows through a
+  constrained same-origin session bootstrap, without URL tokens or saved credentials.
+- Document headless producer/curator Skill operations against the shared pool,
+  independent of the browser and HTTP lifecycle; external harnesses own scheduling.
+
+### Documentation
+
+- Record the 0.52.0 runtime publication, normal host/CLI installation and isolated
+  installed reading check, preserving all thirteen personal candidates.
+
 ## [0.52.0] - 2026-11-10
 
 ### Added

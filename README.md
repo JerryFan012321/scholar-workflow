@@ -462,6 +462,15 @@ keep their recommendation store and are not yet providers in `assets list`.
   - A target agent's CLI and existing login — only when `agent-collaboration` crosses
     host runtimes instead of using a native agent tool.
 
+## Background recommendation work
+
+External recommending agents and the curator use the shared data CLI with no browser
+or HTTP service required. Their harness owns scheduling. For people, run
+`scholar-research recommendations start` and open the plain URL returned by it;
+`status` rediscovers that URL and `open --no-browser` prints it. Multiple local
+browser/cmux windows work without URL tokens or existing browser credentials.
+Closing windows does not stop the service; `stop` does not disable data CLI access.
+
 ## Installation
 
 1. **Install the plugin in your host.**

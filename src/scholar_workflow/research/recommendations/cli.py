@@ -248,13 +248,13 @@ def start(context):
 
 
 @recommendations.command(name="open")
-@click.option("--no-browser", is_flag=True, help="Print the private session URL instead of opening it.")
+@click.option("--no-browser", is_flag=True, help="Print the plain local URL instead of opening it.")
 @click.pass_obj
 @guarded
 def open_page(context, no_browser):
     """Start the installed page and open it in the system browser."""
     record = lifecycle.start(context["state_dir"], context["profile"])
-    url = f"http://127.0.0.1:{record['port']}/#token={record['token']}"
+    url = f"http://127.0.0.1:{record['port']}/"
     if no_browser:
         click.echo(url)
     elif webbrowser.open(url):
