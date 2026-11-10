@@ -15,6 +15,14 @@ Notion、cmux 和外部 Codex 的原生能力，不另建工具控制面。
 
 [English](./README.md)
 
+## 后台推荐与普通本地地址
+
+外部推荐agent和管家agent通过共享CLI读写同一数据池，无需打开网页或HTTP服务。
+执行/定时归外部宿主。人类运行 `scholar-research recommendations start` 后，
+用它输出的普通本地URL打开即可；`status`查询地址，`open --no-browser`只输出URL。
+支持多个浏览器/cmux窗口，无需URL凭据或已登录窗口。关闭窗口不停止服务，
+`stop`关闭HTTP也不影响agent的CLI操作。刷新查看外部agent的新结果。
+
 ## 推荐页面——第一期（0.51.0）
 
 多个agent通过同一JSON/CLI入口提交论文、项目主页和Blog。首页紧凑显示领域/任务/类型筛选、

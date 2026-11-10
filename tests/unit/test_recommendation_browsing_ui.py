@@ -46,16 +46,17 @@ for(const id of ["detail-overlay","ingestion-overlay","sources-view","ingestion-
 const historyScope=new Element("div");historyScope.className="scope-note";get("ingestion-view").append(historyScope);
 const pages=["recommendations","sources","ingestion","settings","context"].map(page=>{const e=new Element("button");e.dataset.page=page;return e;});
 const tabs=["","unread","saved","selected","ignored"].map(decision=>{const e=new Element("button");e.dataset.decision=decision;return e;});
-const storage=new Map(Object.entries(input.storage||{})),posts=[],reads=[];let current=input.candidate,releaseHeld=null,holdUsed=false;
+const storage=new Map(Object.entries(input.storage||{})),posts=[],reads=[],sessions=[];let current=input.candidate,releaseHeld=null,holdUsed=false;
 let candidates=input.candidates||[current];
 let contextRecord=input.context||{context:{content:"",revision:0},ranking:{status:"empty",revision:0},candidate_count:1};
 const context={URL,URLSearchParams,Date,Math,JSON,Error,SyntaxError,Set,Map,TextEncoder,Uint8Array,setTimeout,clearTimeout,
- window:{location:{hash:"#token="+"a".repeat(32),pathname:"/",search:""},scrollY:0,scrollTo(options){this.scrollY=typeof options==="object"?options.top:0;},addEventListener(name,fn){(windowEvents[name]||=[]).push(fn);},
+ window:{location:{hash:input.fragment||"",pathname:"/",search:""},scrollY:0,scrollTo(options){this.scrollY=typeof options==="object"?options.top:0;},addEventListener(name,fn){(windowEvents[name]||=[]).push(fn);},
   history:{state:null,stack:[null],index:0,replaceState(value){this.state=value;this.stack[this.index]=value;},pushState(value){this.state=value;this.stack=this.stack.slice(0,++this.index);this.stack.push(value);},back(){if(this.index>0){this.state=this.stack[--this.index];for(const fn of windowEvents.popstate||[])fn({state:this.state});}}},crypto:{randomUUID:()=>"safe-fixture-id"}},
  document:{getElementById:get,createElement:tag=>new Element(tag),body:new Element("body"),
   get activeElement(){return activeNode;},querySelectorAll:selector=>selector==="[data-page]"?pages:tabs,addEventListener(name,fn){(documentEvents[name]||=[]).push(fn);}},
  sessionStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},
  fetch:async(path,options={})=>{
+  if(path==="/api/session"){sessions.push(options);return {ok:!input.session_failure,status:input.session_failure?403:200,json:async()=>({token:input.session_failure?null:"a".repeat(32)})};}
   const payload=options.method==="POST"?JSON.parse(options.body):null;
   if(payload)posts.push({path,body:payload});else reads.push(path);
   if(!holdUsed&&((input.action==="reopen_ingestion_plan"&&path==="/api/ingestion/plan")||
@@ -194,7 +195,7 @@ const openDetails=async()=>{await byClass("feed","entry-details").fire("click");
   get("kind").value="paper";await get("kind").fire("change");await settle();
   await byClass("active-filters","filter-chip").fire("click");await settle();
  }
- process.stdout.write(JSON.stringify({posts,reads,initial,feed:snap(get("feed")),detail:snap(get("detail-content")),
+ process.stdout.write(JSON.stringify({posts,reads,sessions,initial,feed:snap(get("feed")),detail:snap(get("detail-content")),
   reader_position:get("detail-position").textContent,reader_scroll:get("detail-panel").scrollTop,reader_next_disabled:get("detail-next").disabled,reader_previous_disabled:get("detail-previous").disabled,filters:snap(get("active-filters")),filter_summary:get("filter-summary").textContent,storage:Object.fromEntries(storage),
   detail_hidden:get("detail-overlay").hidden,detail_notice:get("detail-notice").textContent,sources:snap(get("sources-list")),
   history:snap(get("ingestion-history")),plan:snap(get("ingestion-plan")),collection:snap(get("ingestion-collection")),
@@ -584,3 +585,21 @@ def test_history_page_distinguishes_simulated_records_from_real_zotero_writes(pr
     explanation = "测试记录为模拟结果，不代表资料已写入真实 Zotero。"
     assert (explanation in result["history_scope"]["text"]) == (profile == "test")
     assert "PDF 附件和 Vault 知识单元" in result["history_scope"]["text"]
+
+
+def test_fresh_plain_url_windows_initialize_without_saved_credentials():
+    for _ in range(2):
+        result = render(action="initial")
+        assert result["initial"]["children"]
+        assert len(result["sessions"]) == 1
+        session = result["sessions"][0]
+        assert session["method"] == "POST" and session["body"] == "{}"
+        assert session["headers"]["X-Scholar-Client"] == "recommendation-page"
+        assert "scholar-recommendations-session" not in result["storage"]
+        assert not result["posts"]
+
+
+def test_bootstrap_failure_never_loads_recommendation_data():
+    result = render(action="initial", session_failure=True)
+    assert not result["initial"]["children"]
+    assert not any(path.startswith("/api/candidates") for path in result["reads"])

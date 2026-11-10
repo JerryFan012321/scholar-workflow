@@ -1,3 +1,15 @@
+# 当前修正：后台独立运行与普通本地URL（2026-11-10）
+
+用户要求：网页关闭仍可由专项/管家agent工作；运行命令后仅普通本地URL即可多窗口打开，相关Skill同步。
+独立codex/hotfix-recommendation-local-access，基于已安装0.52.0；不合并main、不改真实推荐。
+CLI直接操作同一pool本来独立于HTTP；服务进程已detach。修正仅本机页面自动会话握手、普通URL输出
+及Skill后台操作契约。握手要求精确Host/Origin、非简单自定义header、无跨站fetch，无CORS；
+数据API仍Bearer，写入Origin/CAS/审阅/确认均保留。浏览器凭据仅内存，兼容旧fragment后立即清除。
+测试先用合成HTTP/Node与现有test对象，覆盖无凭据、新/旧窗口、多客户端、跨站拒绝和无HTTP后台CLI。
+拟候选0.52.1；发布安装与实机验收另行记录，不用源码运行冒充安装态。
+
+---
+
 # 当前安装：0.52.0（2026-11-10）
 
 用户批准的整批推荐系统hotfix已发布并正常安装。源码84394c7，runtime5262449；

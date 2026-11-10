@@ -118,3 +118,11 @@ scholar-research recommendations requirements save --input requirements.json
 旧客户端编辑已有归属的要求时，省略该字段会保留原归属。原`recommend.yml`不迁移，来源备注
 仍负责管理信息。保存要求不会启动agent或定时任务，
 也不代表任何文章已获入库许可；摘要审阅和人工选择继续有效。
+
+## 后台推荐和普通本地地址
+
+专项agent提交、管家agent读取上下文与维护排序均使用正常安装的CLI，不需要网页或HTTP服务。
+各agent必须选同一profile/状态根，执行和定时由外部宿主管理。人类运行
+`scholar-research recommendations start` 后，直接用输出的普通本地URL在浏览器/cmux等打开，
+可同时多窗口，无需token或额外参数。`status`查询地址，`open --no-browser`仅输出地址。
+关闭页面不停止服务；关闭HTTP服务也不影响CLI后台操作。刷新查看其他agent或窗口的新内容。

@@ -144,3 +144,11 @@ legacy `recommend.yml` keep their own scope; neither is silently migrated or mer
 into the new requirements. Historical unassigned records remain readable without
 a guessed source; older clients omitting `source_id` preserve an existing binding.
 Saving a record does not start an agent, schedule work or approve ingestion.
+
+## Background agents and plain local URLs
+
+Recommendations and curator context/rankings use the installed CLI even with the
+UI and HTTP service closed. All agents share the selected profile/root; their own
+harness schedules them. Run `scholar-research recommendations start`, then open its
+plain URL in any local browser or multiple windows. `status` rediscovers it;
+`open --no-browser` prints it. No URL token is needed. Refresh to see external changes.

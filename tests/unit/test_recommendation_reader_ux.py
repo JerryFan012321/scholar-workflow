@@ -99,7 +99,7 @@ def test_delayed_history_restore_cannot_reopen_reader_after_entering_settings(le
   if(input.action==="reader_popstate_race"&&!holdUsed&&path.startsWith("/api/candidates?")&&new URLSearchParams(path.split("?")[1]).get("offset")==="20"){
    holdUsed=true;await new Promise(resolve=>releaseHeld=resolve);
   }''')
-    runner = runner.replace('process.stdout.write(JSON.stringify({posts,reads,initial', '''
+    runner = runner.replace('process.stdout.write(JSON.stringify({posts,reads,sessions,initial', '''
  if(input.action==="reader_popstate_race"){
   const oldState={scholarRecommendationPage:"recommendations",scholarRecommendationDetail:candidates[20].candidate_id,scholarRecommendationOffset:20};
   context.window.history.state=oldState;
@@ -112,7 +112,7 @@ def test_delayed_history_restore_cannot_reopen_reader_after_entering_settings(le
   }
   await settle();releaseHeld();await Promise.all(pending);await settle();
  }
- process.stdout.write(JSON.stringify({posts,reads,initial''')
+ process.stdout.write(JSON.stringify({posts,reads,sessions,initial''')
     rows = [candidate(candidate_id="candidate-" + f"{index:064x}",
                       resource={**candidate()["resource"], "title": f"Synthetic work {index}"}) for index in range(21)]
     static = _helpers["STATIC"]

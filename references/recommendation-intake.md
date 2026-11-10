@@ -324,3 +324,41 @@ For cross-session maintenance, per-agent recommendation reasons, historical huma
 judgments and external-agent order submissions, use [shared ranking context](recommendation-ranking.md).
 Source configuration, intake history and maintained notes live behind the page's
 settings gear. Model execution and maintenance scheduling remain external.
+
+
+## Background operation
+
+All agents use the same installed CLI, explicit profile and selected state root.
+Default personal data lives under the normal Scholar Workflow state directory;
+`SCHOLAR_WORKFLOW_HOME` selects an isolated root only when the task specifies one.
+Never infer a different pool from the current project, browser URL or old conversation.
+Return the profile/pool identity and recorded receipt so the next agent can continue.
+
+Producers use `sources list`, source-scoped `requirements list`, `schema` and `submit`
+without starting HTTP or opening a browser. Each recurring task retains its own
+producer ID and each execution its own run ID. Resolve native source tools using
+[the source catalog](recommendation-sources.md); source credentials stay in their host.
+A curator reads `context show`, `context snapshot` and relevant source history, then
+saves durable context and submits a ranking per [the ranking contract](recommendation-ranking.md).
+This is the curator's restart context, not an individual chat's memory. Retain human
+feedback, input digest/revision checks and attributed outcomes. Store no invented
+preferences or unsourced metrics. On conflict, reread the relevant records before
+submitting a new run; uncertain retries preserve the same idempotency identity.
+
+Data access is independent of both the frontend and its HTTP service. The installed
+`recommendations start` command starts a detached local UI service and returns a
+plain URL; closing every browser window or the launching terminal does not stop it.
+Use `status` to rediscover the current URL and `stop` to stop that service explicitly.
+Stopping the HTTP service still leaves CLI submission and curator operations usable.
+The application does not start, schedule or supervise the external agents: their
+harness owns execution, wakeups and account access. Do not report a recurring agent
+as active merely because a source or context was saved.
+
+For people, `open` opens the same plain URL and `open --no-browser` prints it.
+No fragment, query token, previous browser session or clipboard secret is needed.
+Fresh independent windows initialize their local API session automatically. They
+share saved data, while filters and drafts remain tab-local; refresh to see another
+agent/window's updates. A stale edit conflicts instead of replacing newer data.
+The dynamic port is discovered via status, not a permanent content identity. The
+URL works in browsers on this machine; `127.0.0.1` on a phone points to that phone,
+not the Mac. No LAN listener or remote access is enabled.

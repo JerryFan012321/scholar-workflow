@@ -53,7 +53,7 @@ def running_server(tmp_path, monkeypatch):
         assert not thread.is_alive()
 
 
-def request(service, method, path, *, authenticated=True, origin=None, body=None, host=None):
+def request(service, method, path, *, authenticated=True, origin=None, body=None, host=None, extra_headers=None):
     connection = http.client.HTTPConnection(*service.server_address, timeout=3)
     headers = {"Host": host or f"127.0.0.1:{service.server_port}"}
     if authenticated:
@@ -63,6 +63,7 @@ def request(service, method, path, *, authenticated=True, origin=None, body=None
     if body is not None:
         headers["Content-Type"] = "application/json"
         body = json.dumps(body).encode()
+    headers.update(extra_headers or {})
     connection.request(method, path, body=body, headers=headers)
     response = connection.getresponse()
     result = response.status, dict(response.getheaders()), response.read()
@@ -174,3 +175,29 @@ def test_platform_refresh_requires_identity_cas_and_no_client_url(tmp_path, monk
         assert request(service, "POST", "/api/metrics", body=payload)[0] == 403
         assert request(service, "POST", "/api/metrics", origin=origin, authenticated=False, body=payload)[0] == 401
         assert len(calls) == 1
+
+
+def test_plain_url_bootstrap_allows_independent_clients_not_foreign_sites(tmp_path, monkeypatch):
+    with running_server(tmp_path, monkeypatch) as service:
+        origin = f"http://127.0.0.1:{service.server_port}"
+        header = {"X-Scholar-Client": "recommendation-page", "Sec-Fetch-Site": "same-origin"}
+        for _ in range(2):
+            assert request(service, "GET", "/", authenticated=False)[0] == 200
+            status, headers, body = request(service, "POST", "/api/session", authenticated=False,
+                origin=origin, body={}, extra_headers=header)
+            assert status == 200 and json.loads(body)["token"] == TOKEN
+            assert headers["Cache-Control"] == "no-store"
+            assert "Access-Control-Allow-Origin" not in headers
+            assert request(service, "GET", "/api/candidates")[0] == 200
+        assert request(service, "GET", "/api/session", authenticated=False)[0] == 401
+        for changes in [dict(origin=None), dict(origin="https://foreign.example"),
+                        dict(host="foreign.example"), dict(extra_headers={}),
+                        dict(extra_headers={**header,"Sec-Fetch-Site":"cross-site"})]:
+            options = dict(authenticated=False, origin=origin, body={}, extra_headers=header)
+            options.update(changes)
+            status, headers, body = request(service, "POST", "/api/session", **options)
+            assert status == 403 and TOKEN.encode() not in body
+            assert "Access-Control-Allow-Origin" not in headers
+        assert request(service, "OPTIONS", "/api/session", origin="https://foreign.example")[0] == 403
+        assert request(service, "POST", "/api/session", authenticated=False, origin=origin,
+                       body={"arbitrary": "value"}, extra_headers=header)[0] == 400

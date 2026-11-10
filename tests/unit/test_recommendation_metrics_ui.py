@@ -68,6 +68,7 @@ const context = {
   sessionStorage: {getItem: key => storage.get(key) || null,
     setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key)},
   fetch: async (path, options = {}) => {
+    if (path === "/api/session") return {ok: true, json: async () => ({token: "a".repeat(32)})};
     if (options.method === "POST") {
       requests.push({path, body: JSON.parse(options.body)});
       if (input.refresh_error) return {ok: false, status: 409, json: async () => ({exit_code: 5})};

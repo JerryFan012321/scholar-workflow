@@ -559,6 +559,12 @@
       "action": "Overwrite a newer recommendation requirement with a stale revision, switch requirements inside one producer/run, submit new recommendations under a disabled/old version, or replace historical task requirements with the candidate latest value.",
       "expected": "Refuse stale edits and invalid new references while preserving exact retry receipts. Each recommendation resolves its own immutable saved requirements version; different producers can recommend the same candidate under different requirements. Saving text never starts a command, source request or agent.",
       "enforcement_layer": "cli"
+    },
+    {
+      "id": "recommendation-local-session-origin-boundary",
+      "action": "Open a plain recommendation URL in a new browser, then attempt session initialization from a foreign Origin, wrong Host or simple cross-site request.",
+      "expected": "The local page obtains an in-memory bearer without URL credentials. Reject the foreign/bootstrap requests, expose no CORS credentials, and retain bearer data APIs and same-origin CAS/confirmation checks.",
+      "enforcement_layer": "cli"
     }
   ]
 }

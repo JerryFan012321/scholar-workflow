@@ -240,3 +240,17 @@ It is limited to `zotero_bibliography`; PDF and Vault-unit status remain
 a complete knowledge unit, attachment, analysis or native-reader acceptance. Test
 recommendations cannot use the native Zotero library; isolated synthetic fixtures
 cannot grant personal permissions.
+
+
+### Plain local recommendation-page sessions
+
+Only the exact loopback Host is served. The plain frontend URL obtains its bearer
+in memory through POST /api/session: exact same-origin Origin, an exact non-simple
+X-Scholar-Client header, empty JSON and no cross-site Sec-Fetch-Site are required.
+CORS/preflight remains refused. No token is embedded in static HTML, health, URLs,
+cookies or logs; this explicitly constrained session response is the only browser
+bootstrap. Data APIs still require bearer authentication, writes require Origin,
+and all existing revision/review/ingestion confirmation gates remain in force.
+Any local process can already use the authorized CLI; this protects against foreign
+websites, not other programs running as the same OS user. External agents use the
+installed data CLI, not browser tokens or this session endpoint.

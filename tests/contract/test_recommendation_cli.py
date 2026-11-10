@@ -109,7 +109,7 @@ def test_owned_service_starts_reuses_and_stops_without_losing_candidates(tmp_pat
         assert json.loads(reused.output)["pid"] == status["pid"]
         opened = invoke(tmp_path, "--profile", "test", "open", "--no-browser")
         assert opened.exit_code == 0, opened.output
-        assert f"127.0.0.1:{status['port']}/#token=" in opened.output
+        assert opened.output.strip() == f"http://127.0.0.1:{status['port']}/"
     finally:
         stopped = invoke(tmp_path, "--profile", "test", "stop")
     assert stopped.exit_code == 0, stopped.output
@@ -132,3 +132,23 @@ def test_refresh_metrics_uses_current_registered_candidate_without_resubmitting(
     assert calls == [candidate_id]
     listing = json.loads(invoke(tmp_path, "--profile", "test", "list", "--format", "json").output)
     assert listing["total"] == 1 and len(listing["items"][0]["recommendations"]) == 1
+
+
+def test_producer_and_curator_work_with_no_browser_or_http(tmp_path, monkeypatch):
+    from scholar_workflow.research.recommendations import lifecycle
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Headless data operations must not start HTTP or a browser")
+    monkeypatch.setattr(lifecycle, "start", forbidden)
+    payload = batch()
+    for producer in ["domain-agent", "project-agent"]:
+        payload["producer"]["producer_id"] = producer
+        result = invoke(tmp_path, "--profile", "test", "submit", "--input", "-", input=json.dumps(payload))
+        assert result.exit_code == 0, result.output
+    snapshot = invoke(tmp_path, "--profile", "test", "context", "snapshot")
+    assert snapshot.exit_code == 0, snapshot.output
+    result = invoke(tmp_path, "--profile", "test", "context", "save", "--input", "-", input=json.dumps({
+        "content":"Synthetic curator context", "expected_revision":0,
+        "updated_by":{"kind":"agent", "name":"curator"}}))
+    assert result.exit_code == 0, result.output
+    assert json.loads(invoke(tmp_path, "--profile", "test", "list", "--format", "json").output)["total"] == 1
+    assert json.loads(invoke(tmp_path, "--profile", "test", "status").output)["status"] == "stopped"
