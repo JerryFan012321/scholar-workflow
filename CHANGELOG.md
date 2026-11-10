@@ -5,6 +5,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Documentation
+
+- Record the 0.53.0 normal release/install, five attributed reading corrections,
+  installed file parity and visible review artifacts; keep human acceptance pending.
+
 ## [0.53.0] - 2026-11-10
 
 ### Added

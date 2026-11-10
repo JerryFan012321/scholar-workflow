@@ -1,3 +1,21 @@
+# 当前：0.53.0已发布并正常安装（2026-11-10）
+
+源码c4ec9e6d，runtime c594d0b8；codex/hotfix-content-report与release已推送，未合并main。
+pipx、Codex与Claude插件均0.53.0；37个发布文件、91次安装位置hash比较全部一致。
+日常http://127.0.0.1:56292/，test为http://127.0.0.1:56303/，均可用普通URL直接打开。
+受管服务build均2224408b063ff8dc，PID46666/46685；端口为当前动态值，后续用start/status查询。
+五条真实简介已由安装CLI修正：四条官方Blog全文总结，AgiWorld完整作者摘要及译文；
+各revision升至2，总13候选及原推荐次数、评价、决定和入库状态保持，其余8条正文不变。
+本轮内容修改通常会清除旧审阅/待入库选择；这五条原本均未审阅、未选入库，故状态没有变化。
+本机私有recovery保留修正前数据库/只读快照，受控content-history保存逐条before/after。
+实际浏览器已显示Lucy完整两段简介、简单标题与默认折叠出处；test原4条可读。
+433项定向通过；独立合成报告样例和简介文风仍待人类评阅，不冒称语义或人工验收已通过。
+详见validation/content-report-results.md、releases/0.53.0-content-report-release.md与原test对象
+_work/content-quality/installed.json。新会话加载新Skill；Claude更新提示需重启以应用。
+未改论文包/Canvas/实验事实、未写Zotero；其他Notion等框架仍待独立实施。
+
+---
+
 # 0.53.0发布安装进行中
 
 内容/文风共用Skill、薄create-report和推荐简介修正已实现；433项定向通过，两个Skill/47链接校验通过。
