@@ -1,3 +1,17 @@
+# 当前安装：0.52.1普通URL与后台Skill（2026-11-10）
+
+源码28451c8，runtime01f2858；hotfix/release已普通推送，pipx/Codex/Claude正常更新到0.52.1，
+关键代码与Skill/reference匹配发布字节。383定向检查及Skill/Ruff/JS/diff通过，未重复全项目回归。
+安装态两个独立test标签页只用http://127.0.0.1:50247/打开，共同4候选可读，无token链接。
+日常http://127.0.0.1:50240/直接打开，原13条内容/状态守恒；此前61201/61208端口已退场。
+Skill已删推荐提交后必须打开页面的暗示，链接后台契约：同profile/root、回执、source/要求、
+管家context/snapshot/ranking、外部宿主调度边界。无HTTP的两producer和管家CLI合成检查通过。
+未新建定时任务、不写Zotero、不合并main。新会话加载新Skill；已有会话不靠记忆选择pool。
+端口动态，start/status查询；回退0.52.0 runtime5262449可经pipx固定SHA重装，数据保留。
+详细证据见validation/recommendation-local-access.md及原test对象_work/local-access-installed.json。
+
+---
+
 # 当前修正：后台独立运行与普通本地URL（2026-11-10）
 
 用户要求：网页关闭仍可由专项/管家agent工作；运行命令后仅普通本地URL即可多窗口打开，相关Skill同步。

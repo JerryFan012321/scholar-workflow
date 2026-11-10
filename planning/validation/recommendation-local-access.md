@@ -15,3 +15,15 @@
 安装后只在既有test对象打开两个无tokenURL，读同一4候选与设置入口；不点击真实Zotero写入。
 个人13条已有内容不修改；发布/安装身份与窗口结果后续追加。端口动态，status返回当前地址；
 127.0.0.1仅本机，不开放局域网。管家调度仍需外部harness，不由保存context推导在运行。
+
+
+## 实际安装与窗口回执
+
+源码28451c81deca1468c83934a96587740980e1c0b7，runtime01f2858098629266b801d14bdb719642aee1b4f1。
+hotfix/release已正常推送，main未合并；pipx固定runtime SHA、Codex/Claude marketplace正常更新，
+关键Skill/reference/代码匹配。个人50240/test50247，build5ff474aec0ab8c76，均来自安装包Python。
+两个独立标签页直接进入test普通URL（无fragment/query/预先凭据），均显示原4候选；日常普通URL
+显示原13条，CLI逐条对照内容/审阅/决定/revision/推荐/热度不变。无真实数据写入。
+截图local-access-window.png与local-access-installed.json位于同一test对象_work；旧失败XML保留。
+这证明本机浏览器实例行为，不代表所有第三方WebView或远程设备都做过实机验证。
+未创建/启动实际管家调度；外部agent按运行契约接入，不把保存上下文当作其存活证明。

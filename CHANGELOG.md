@@ -5,6 +5,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Documentation
+
+- Record the 0.52.1 normal installation, plain-URL multi-tab check and preserved
+  personal pool, keeping external-agent scheduling distinct from stored context.
+
 ## [0.52.1] - 2026-11-10
 
 ### Fixed
