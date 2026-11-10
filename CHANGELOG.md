@@ -5,6 +5,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Documentation
+
+- Record the 0.52.0 runtime publication, normal host/CLI installation and isolated
+  installed reading check, preserving all thirteen personal candidates.
+
 ## [0.52.0] - 2026-11-10
 
 ### Added
