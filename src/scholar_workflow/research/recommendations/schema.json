@@ -47,7 +47,7 @@
         "abstract_zh": {"$ref": "#/$defs/longText"},
         "description_original": {"$ref": "#/$defs/longText"},
         "description_zh": {"$ref": "#/$defs/longText"},
-        "summary_zh": {"$ref": "#/$defs/longText"},
+        "summary_zh": {"$ref": "#/$defs/longText", "description": "Complete source-backed Chinese synopsis when no author abstract exists; follow the recommendation reading-content and shared style contracts. A tagline or snippet is not a synopsis."},
         "summary_sources": {"type": "array", "minItems": 1, "maxItems": 10, "uniqueItems": true, "items": {"$ref": "#/$defs/url"}},
         "project_url": {"$ref": "#/$defs/url"},
         "links": {"type": "array", "maxItems": 30, "items": {"$ref": "#/$defs/link"}}

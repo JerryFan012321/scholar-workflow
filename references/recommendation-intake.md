@@ -84,8 +84,9 @@ to see the shape, not as real metadata to submit.
 Resource fields include `kind` (`paper`, `project`, `blog`), `title` and `url`.
 Provide available verified identifiers and metadata: `arxiv_id`, `doi`, `authors`,
 `published_at`, `project_url` and named `links`. A paper uses `abstract_original`
-and its complete `abstract_zh`; a project/blog uses `description_original` and
-`description_zh` for an actual source introduction/excerpt and its translation.
+and its complete `abstract_zh`; a project/blog with an author abstract uses the same abstract fields, retaining
+its actual resource kind. Original introduction/excerpt fields `description_original`
+and `description_zh` retain source material; they do not constitute a prepared synopsis.
 Do not invent an abstract, a publication date, an author or a related project URL.
 When an author abstract is available, retain and translate it in full. If the
 source has no abstract (including a closed company's project/blog), read the
@@ -174,8 +175,47 @@ The recommendation page also provides task/source attribution, domain labels and
 the raw observations above. These support browsing and filtering. Do not append
 recommendation rationale, scientific analysis, reading-coverage sections or general
 evaluation to the Reading Report. Failed-source and unavailable-content diagnostics
-belong in the operation result, outside its content. A project/blog card identifies
-its source introduction/excerpt, rather than posing as a complete paper abstract.
+belong in the operation result, outside its content. A project/blog without an author abstract carries a source-backed synopsis under
+the reading-content requirements below. An excerpt alone is incomplete preparation.
+
+## Reading content quality
+
+The detail's reading body must give the person enough information to understand
+what this work does before choosing whether to read or admit it. Homepage clipping
+is a view only; it never reduces the stored/detail content.
+
+- If the resource has a real author abstract, preserve that exact complete source
+  and translate all its substantive claims faithfully, even when the resource is a
+  project page or Blog. Keep its actual kind and the source/version paired. Check
+  the body/Abstract section; a subtitle, search snippet or meta description does not
+  establish that no abstract exists. Do not assemble text from different versions
+  and label it as one author's abstract.
+- When no abstract exists, read the available body and write a connected Chinese
+  synopsis in `summary_zh`, with supporting `summary_sources`. It should explain
+  the work's purpose, actual method/mechanism or provided functionality, principal
+  capabilities/results, use conditions and material limitations that the sources
+  disclose. Select by relevance rather than enforcing headings or minimum words.
+  A slogan, isolated sentence or translated introduction is insufficient. Missing
+  technical details remain missing; do not invent measurements, training facts or
+  an independent validation. Include relevant paper/project/Blog links separately.
+- For authored synopses, load the [content-and-style Skill](../skills/content-and-style/SKILL.md)
+  and its applicable compression, source-preservation and Chinese-prose requirements.
+  Use natural direct prose, preserve necessary conditions, and avoid filler,
+  decorative metaphors, repeated summaries, defensive preambles and invented jargon.
+  Complete abstract translations preserve meaning; style editing does not remove
+  source claims. Detailed paper-analysis, report or experiment sections are not
+  added to this recommendation component.
+- Main labels are simply Abstract, Project introduction or Content introduction in
+  the page's language. Attribution, preparation method, original text and sources
+  live in the collapsed Source section. Keep prose free of prefixed warnings such
+  as “来源摘录译文（非完整论文摘要）”; report real limits once beside affected claims.
+
+The recommending agent checks the synopsis against the actual source body before
+claiming preparation complete. The receiver checks types, source references and
+update state, not semantic completeness. Neither minimum length nor a valid schema
+proves a finished reading body. If the source cannot be read sufficiently, record
+that preparation failure in the task receipt; do not present a short excerpt as a
+completed recommendation. Existing sparse records may remain readable until repaired.
 
 ## Personal evaluations
 
@@ -362,3 +402,24 @@ agent/window's updates. A stale edit conflicts instead of replacing newer data.
 The dynamic port is discovered via status, not a permanent content identity. The
 URL works in browsers on this machine; `127.0.0.1` on a phone points to that phone,
 not the Mac. No LAN listener or remote access is enabled.
+
+
+## Correct an existing reading body
+
+Use `recommendations revise-content --input correction.json` for an authorized
+correction, not a new recommendation run. The input contains `candidate_id`, the
+exact `expected_revision`, `changes` and `updated_by` (`kind`: human/agent, `name`).
+Changes are limited to abstract/description original and Chinese fields, or
+summary/source fields; null removes a stale field. Identity, tags, counts, human
+scores and provider facts are not editable through it. A corrected reading body
+needs a complete original/translation pair or a source-backed summary. Its semantic
+quality remains the agent's output duty.
+
+CAS conflicts and active ingestion stop the edit. Changed reading content clears
+its old review and pending selected choice; saved/ignored remain, as do evaluations
+and completed ingestion receipts, with their content-version status. Unchanged
+content does not advance a revision. The store retains attributed before/after
+history under the same pool without adding a producer/run or recommendation count.
+Read it with `recommendations content-history --candidate-id ID`; do not edit the
+pool database. After a correction, report the actual receipt and need for fresh
+human review, not an automatic adoption or ingestion result.

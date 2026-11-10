@@ -59,7 +59,7 @@ def _resource_metadata(resource: dict[str, Any]) -> dict[str, Any]:
         metadata["DOI"] = resource["doi"]
     if resource.get("published_at"):
         metadata["date"] = resource["published_at"][:10]
-    original = resource.get("abstract_original") if kind == "paper" else resource.get("description_original")
+    original = resource.get("abstract_original") or (resource.get("description_original") if kind != "paper" else None)
     if original:
         metadata["abstractNote"] = original
     return metadata

@@ -32,6 +32,12 @@ calling host; this skill does not create an agent scheduler.
 Use `--profile test` for an explicitly selected test pool. Never send test examples
 to the personal pool or alter installed runtime files to make acceptance pass.
 
+Before delivering reading content, follow the
+[recommendation reading-content requirements](../../references/recommendation-intake.md#reading-content-quality).
+It owns complete abstract translation, source-backed project/Blog synopses and the
+conditional link to the shared content-and-style Skill. A tagline or excerpt is
+not a prepared synopsis; evidence and style checks are separate from JSON validity.
+
 For declared GitHub/Hugging Face objects, collect raw platform counts through that
 explicit refresh entry; retain unknown/failure states rather than dropping the
 heat area or inventing zero. Include related verified Blog links among the flexible
