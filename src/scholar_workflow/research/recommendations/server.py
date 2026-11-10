@@ -14,17 +14,22 @@ from urllib.parse import parse_qs, urlsplit
 
 from scholar_workflow import __version__
 from scholar_workflow.research.models import ResearchError
-from scholar_workflow.research.recommendations.store import RecommendationStore
+from scholar_workflow.research.recommendations.ingestion import IngestionService
+from scholar_workflow.research.recommendations.ranking import RecommendationRanking
 from scholar_workflow.research.recommendations.refresh import refresh_candidate_metrics
+from scholar_workflow.research.recommendations.source_catalog import SourceCatalog
+from scholar_workflow.research.recommendations.store import RecommendationStore
 
 _STATIC = {"/": ("index.html", "text/html; charset=utf-8"),
            "/index.html": ("index.html", "text/html; charset=utf-8"),
            "/app.js": ("app.js", "text/javascript; charset=utf-8"),
+           "/workspace.js": ("workspace.js", "text/javascript; charset=utf-8"),
+           "/requirements.js": ("requirements.js", "text/javascript; charset=utf-8"),
            "/style.css": ("style.css", "text/css; charset=utf-8")}
 _CSP = ("default-src 'none'; script-src 'self'; style-src 'self'; "
         "connect-src 'self'; img-src 'self'; font-src 'self'; "
         "base-uri 'none'; form-action 'none'; frame-ancestors 'none'")
-_MAX_BODY = 16 * 1024
+_MAX_BODY = 64 * 1024
 
 
 class RecommendationHTTPServer(ThreadingHTTPServer):
@@ -41,6 +46,7 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
     if type(port) is not int or not 0 <= port <= 65535:
         raise ResearchError("Invalid recommendation service port.")
     store = RecommendationStore(Path(state_dir))
+    ingestion = IngestionService(store, profile)
 
     class Handler(BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.1"
@@ -92,19 +98,19 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
             if authenticated:
                 authorization = self.headers.get_all("Authorization", [])
                 if (len(authorization) != 1
-                        or not secrets.compare_digest(authorization[0], f"Bearer {token}")):
+                        or not secrets.compare_digest(authorization[0].encode("utf-8"), f"Bearer {token}".encode("utf-8"))):
                     self._error("Open this recommendation page through its authenticated CLI URL.", 7, 401)
                     return False
             return True
 
-        def _body(self):
+        def _body(self, *, limit=_MAX_BODY):
             if self.headers.get("Transfer-Encoding"):
                 raise ResearchError("Transfer encoding is unsupported.")
             lengths = self.headers.get_all("Content-Length", [])
             if len(lengths) != 1 or not lengths[0].isdigit():
                 raise ResearchError("A bounded JSON content length is required.")
             length = int(lengths[0])
-            if length > _MAX_BODY:
+            if length > limit:
                 raise ResearchError("Request body exceeds the supported limit.")
             content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
             if content_type != "application/json":
@@ -148,7 +154,7 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
                 raise ResearchError("Unknown recommendation resource type.")
             if "decision" in result and result["decision"] not in {"unread", "saved", "selected", "ignored"}:
                 raise ResearchError("Unknown recommendation decision.")
-            if result.get("sort", "newest") not in {"newest", "oldest", "published"}:
+            if result.get("sort", "newest") not in {"newest", "oldest", "published", "agent"}:
                 raise ResearchError("Unknown recommendation sorting rule.")
             if "since" in result:
                 try:
@@ -171,11 +177,52 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
                     allowed = {key: identity[key] for key in ("generation", "pid", "version", "build", "profile")
                                if key in identity}
                     self._respond(200, {"service": "scholar-recommendations", "protocol": 1,
-                                        "profile": profile, "version": __version__, **allowed})
+                                        "profile": profile, "version": __version__,
+                                        "pool_id": RecommendationRanking(store).pool_id, **allowed})
                 elif path.path == "/api/candidates":
                     self._respond(200, store.list_candidates(**self._query(path.query)))
+                elif path.path == "/api/ranking/context" and not path.query:
+                    self._respond(200, RecommendationRanking(store).context())
                 elif path.path == "/api/handoff" and not path.query:
                     self._respond(200, {**store.prepare_handoff(), "profile": profile})
+                elif path.path == "/api/requirements":
+                    source_id = None
+                    if path.query:
+                        try:
+                            values = parse_qs(path.query, keep_blank_values=True,
+                                              strict_parsing=True, max_num_fields=1)
+                        except ValueError:
+                            raise ResearchError("Requirement list query needs one source_id.") from None
+                        if set(values) != {"source_id"} or len(values["source_id"]) != 1:
+                            raise ResearchError("Requirement list query needs one source_id.")
+                        source_id = values["source_id"][0]
+                    self._respond(200, store.list_requirements(source_id=source_id))
+                elif path.path.startswith("/api/requirements/"):
+                    requirement_id = path.path.removeprefix("/api/requirements/")
+                    revision = None
+                    if path.query:
+                        try:
+                            values = parse_qs(path.query, keep_blank_values=True,
+                                              strict_parsing=True, max_num_fields=1)
+                        except ValueError:
+                            raise ResearchError("Requirement query needs one positive revision.") from None
+                        if (set(values) != {"revision"} or len(values["revision"]) != 1
+                                or not re.fullmatch(r"[1-9][0-9]{0,17}", values["revision"][0])):
+                            raise ResearchError("Requirement query needs one positive revision.")
+                        revision = int(values["revision"][0])
+                    self._respond(200, store.get_requirement(requirement_id, revision))
+                elif path.path == "/api/sources" and not path.query:
+                    self._respond(200, SourceCatalog(store).list_sources())
+                elif path.path == "/api/ingestion/history" and not path.query:
+                    self._respond(200, {"items": ingestion.history()})
+                elif path.path == "/api/ingestion/targets" and not path.query:
+                    try:
+                        targets = ingestion.targets()
+                        self._respond(200, {**targets, "available": True, "targets": [
+                            {**target, "key": target["collection_key"]} for target in targets["targets"]]})
+                    except ResearchError as exc:
+                        self._respond(200, {"available": False, "reason": str(exc), "targets": [],
+                                            "scope": "zotero_bibliography", "exit_code": exc.exit_code})
                 else:
                     self._error("Recommendation route was not found.", 2, 404)
             except ResearchError as exc:
@@ -190,7 +237,41 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
                 path = urlsplit(self.path)
                 if path.query:
                     raise ResearchError("Mutation URLs cannot contain query parameters.")
-                payload = self._body()
+                payload = self._body(limit=96 * 1024 if path.path in {"/api/requirements", "/api/ranking/context"} else _MAX_BODY)
+                if path.path == "/api/ranking/context":
+                    if set(payload) != {"content", "expected_revision"}:
+                        raise ResearchError("Shared context needs text and its current revision.")
+                    self._respond(200, RecommendationRanking(store).save_context(
+                        **payload, updated_by={"kind": "human", "name": "推荐页"}))
+                    return
+                if path.path == "/api/evaluations":
+                    if set(payload) != {"candidate_id", "score", "comment", "expected_revision", "expected_candidate_revision"}:
+                        raise ResearchError("Evaluation needs a candidate, score, comment and both displayed revisions.")
+                    self._respond(200, store.save_evaluation(**payload))
+                    return
+                if path.path == "/api/requirements":
+                    expected = {"requirement_id", "title", "content", "enabled", "expected_revision"}
+                    if not expected <= set(payload) <= expected | {"source_id"}:
+                        raise ResearchError("A requirement edit needs its identity, text, enabled state and current revision.")
+                    self._respond(200, store.save_requirement(
+                        **payload, updated_by={"kind": "human", "name": "推荐页"}))
+                    return
+                if path.path == "/api/ingestion/plan":
+                    if set(payload) != {"candidate_id", "expected_revision", "collection_key"}:
+                        raise ResearchError("Ingestion preview needs a candidate, revision and selected collection.")
+                    plan = ingestion.plan(**payload)
+                    collection = plan["collection"]
+                    self._respond(200, {"plan_id": plan["plan_id"], "title": plan["resource"]["title"],
+                        "scope": plan["scope"], "expires_at": plan["expires_at"], "status": plan["status"],
+                        "collection": {"key": collection["collection_key"], "name": collection["name"]},
+                        "existing": bool(plan.get("existing_item_key")), "item_type": plan["metadata"]["itemType"],
+                        "warnings": ["本次仅加入 Zotero 书目；PDF 和 Vault 知识单元不在本次操作内。"]})
+                    return
+                if path.path == "/api/ingestion/execute":
+                    if not ({"plan_id", "confirmed"} <= set(payload) <= {"plan_id", "confirmed", "retry"}):
+                        raise ResearchError("Ingestion execution needs a confirmed server preview.")
+                    self._respond(200, ingestion.execute(payload["plan_id"], payload["confirmed"], retry=payload.get("retry", False)))
+                    return
                 if path.path == "/api/shutdown":
                     if payload:
                         raise ResearchError("Shutdown does not accept parameters.")
@@ -200,7 +281,7 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
                 expected = {"candidate_id", "expected_revision"}
                 if path.path == "/api/decisions":
                     expected.add("decision")
-                elif path.path not in {"/api/reviews", "/api/metrics"}:
+                elif path.path not in {"/api/reviews", "/api/reviews/revoke", "/api/metrics"}:
                     self._error("Recommendation route was not found.", 2, 404)
                     return
                 if (set(payload) != expected or not isinstance(payload.get("candidate_id"), str)
@@ -216,6 +297,8 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
                                                 payload["expected_revision"])
                 elif path.path == "/api/metrics":
                     result = refresh_candidate_metrics(store, payload["candidate_id"], payload["expected_revision"])
+                elif path.path == "/api/reviews/revoke":
+                    result = store.revoke_review(payload["candidate_id"], payload["expected_revision"])
                 else:
                     result = store.review_candidate(payload["candidate_id"], payload["expected_revision"])
                 self._respond(200, result)

@@ -24,8 +24,9 @@ the remaining acknowledgement; export stays strict until that separate step comp
 ## Recommendation page — first phase (0.51.0)
 
 Independent agents submit papers, project homepages and blogs to one versioned
-JSON/CLI entry. The page provides complete abstract translations, topic/task/type
-filters, original/project links and attributed raw platform values. Popularity is
+JSON/CLI entry. The compact page provides topic/task/type filters, original/project
+links and attributed raw platform values; expanding an item shows its complete
+abstract translation and supporting links. Popularity is
 shown as data without a combined score or evaluation. Host tools own scheduling.
 
 ```bash
@@ -39,8 +40,9 @@ scholar-research recommendations stop
 The personal pool begins empty. Ask an agent to use the `recommend-papers` Skill;
 it knows the shared submission entry. Use `recommendations --profile test` for an
 independent test pool. Exported reviewed selections go to `ingest-resource`; export
-does not ingest. See the [intake contract](references/recommendation-intake.md).
-This is a bounded recommendation/review page. Existing knowledge units, native
+does not ingest. The 0.52.0 candidate also supports explicitly confirmed Zotero
+bibliography writes, described below. See the
+[intake contract](references/recommendation-intake.md). This is a bounded recommendation/review page. Existing knowledge units, native
 readers and agent runtimes keep their own interfaces and authority.
 
 ## Architecture
@@ -601,3 +603,47 @@ The published `release` branch contains runtime files only, including native Cod
 Claude-compatible marketplace metadata and both host manifests. Development conventions,
 planning docs, tests, and evals live on `main`. See its `AGENT.md` for contributor guidelines;
 run tests there with `pytest tests/unit tests/contract`.
+
+### Source catalog and direct bibliography intake (0.52.0 candidate)
+
+External agents discover sources through the same local catalog and call available
+MCP, API or tooling connections in their own harness. alphaXiv is an important
+source; the plugin declares its official MCP endpoint for supported hosts. Native
+connections, OAuth and API credentials remain with the harness. The recommendation
+page does not present a native-tool console or manage an alphaXiv API key.
+
+```bash
+scholar-research recommendations sources list
+scholar-research recommendations sources show alphaxiv
+scholar-research recommendations sources context alphaxiv
+scholar-research recommendations sources history --source-id alphaxiv
+```
+
+This candidate adds shared [recommendation requirements](references/recommendation-requirements.md).
+Each recommendation-source entry contains an expandable requirements list/editor;
+external agents use `scholar-research recommendations requirements list --source-id ID`
+and the same `show/save` interface against that pool. Normal new records include
+the registered source identity; historical unassigned records stay readable without
+a guessed source.
+Content is free text supplied by the actual task. Tasks explicitly choose a saved
+version, retained in their recommendation details. Saving does not start an agent
+or rewrite previous recommendations. This increment is not yet released/installed.
+
+
+Use the [source-catalog contract](references/recommendation-sources.md) to register
+another source or record management notes, researcher suggestions and external
+operation results. Such records are `agent_reported`; they preserve context across
+chats without proving live access or replacing a source's cloud state. All agents
+retain their own producer identity and submit verified metadata, complete abstract
+translations or sourced summaries through the normal recommendation entry.
+
+The homepage stays compact. Expand an item for complete reading content, original
+text, flexible attachments and provenance. Source collection and preparation do not
+start agents or models from the page, and existing paper Markdown/Canvas stay intact.
+
+After reviewing/selecting a card, choose a Zotero collection, preview and confirm
+**Zotero bibliography ingestion**. Actual item/collection read-back determines
+completion. PDF and Vault-unit preparation remain separate and explicitly marked
+`not_requested`; a successful bibliography receipt does not complete a paper unit.
+See [alphaXiv source use](references/alphaxiv-source.md) and
+[recommendation intake](references/recommendation-intake.md).

@@ -1,6 +1,6 @@
 {
   "name": "scholar-workflow",
-  "version": "0.51.1",
+  "version": "0.52.0",
   "description": "Project-centered research context, readable knowledge and reproducible experiment records using Zotero, Obsidian, Notion and native tools.",
   "author": {
     "name": "Scholar Workflow contributors",
@@ -35,5 +35,6 @@
       "Analyze a saved paper and update my research notes.",
       "Initialize a new project with the standard Git-managed skeleton."
     ]
-  }
+  },
+  "mcpServers": "./.mcp.json"
 }

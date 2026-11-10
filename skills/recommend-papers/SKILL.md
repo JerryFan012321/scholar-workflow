@@ -34,6 +34,32 @@ heat area or inventing zero. Include related verified Blog links among the flexi
 attachments. When no original abstract exists, follow the intake contract's
 sourced-summary branch and label the result explicitly; never fabricate an abstract.
 
+## Task requirements
+
+When the task uses or maintains saved recommendation requirements, follow
+[recommendation requirements](../../references/recommendation-requirements.md).
+People and agents use the same versioned records under each source entry; agents
+query `recommendations requirements list --source-id SOURCE_ID`. Select the applicable
+record; do not choose the first or merge all records. A one-off task may use current
+instructions without inventing a persistent profile or fixed content standards.
+
+## Reusable sources and shared context
+
+Before choosing or adding a recommendation source, load
+[recommendation sources](../../references/recommendation-sources.md) and query the
+shared catalog. External agents use the source's actual native MCP/API/feed/CLI;
+registration never executes it. Read shared source context/history before account
+management and record reported outcomes there. alphaXiv supplies popular discovery
+alongside domain/project agents, all using the same schema and final presentation.
+Load [alphaXiv source](../../references/alphaxiv-source.md) only when using it.
+
+## Shared ranking context
+
+For maintaining cross-session judgments or reordering the existing candidate pool,
+read [shared ranking context](../../references/recommendation-ranking.md). Use the
+shared snapshot/context and ranking submission commands; the external harness owns
+the agent, model and schedule. Keep human feedback separate from agent judgments.
+
 ## Existing source aggregation
 
 - Use user-supplied arXiv IDs or the confirmed results of
@@ -79,6 +105,12 @@ NotebookLM package, account, login or fallback is used.
 
 - [Recommendation intake](../../references/recommendation-intake.md) — required for
   submissions, the recommendation page and Reading Report/handoff output.
+- [Recommendation requirements](../../references/recommendation-requirements.md) — when
+  writing, choosing or referencing a saved recommendation task.
+- [Recommendation sources](../../references/recommendation-sources.md) — when choosing,
+  registering or managing a source through the shared catalog/context.
+- [alphaXiv source](../../references/alphaxiv-source.md) — only for alphaXiv
+  discovery, connection, native tools or shared account management.
 - [Synthetic submission example](references/submission.example.json) — adapt only
   with verified real metadata; the example is not a real recommendation.
 - `${CLAUDE_PLUGIN_ROOT}/references/human-presentation.md`

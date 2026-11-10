@@ -17,8 +17,8 @@ Notion、cmux 和外部 Codex 的原生能力，不另建工具控制面。
 
 ## 推荐页面——第一期（0.51.0）
 
-多个agent通过同一JSON/CLI入口提交论文、项目主页和Blog。页面显示完整摘要译文、领域/
-任务/类型筛选、原文及项目链接，以及带来源和采集时间的原始平台数据。热度只列数据，
+多个agent通过同一JSON/CLI入口提交论文、项目主页和Blog。首页紧凑显示领域/任务/类型筛选、
+原文及项目链接，以及带来源和采集时间的原始平台数据；展开条目后阅读完整摘要译文和相关链接。热度只列数据，
 不生成综合分数或评价。定时调度继续由各agent的宿主持有。
 
 ```bash
@@ -31,8 +31,9 @@ scholar-research recommendations stop
 
 个人候选池初始为空。让agent使用`recommend-papers` Skill即可发现统一提交入口。
 使用`recommendations --profile test`访问独立测试池。审阅后选择并导出清单，再交给
-`ingest-resource`；导出不等于入库。具体格式见[统一入口契约](references/recommendation-intake.md)。
-本页只负责推荐与审阅选择；知识单元、原生阅读器和agent执行仍由各自工具持有。
+`ingest-resource`；导出不等于入库。0.52.0开发候选另提供预览后明确确认的Zotero书目入库，
+范围见下文。具体格式见[统一入口契约](references/recommendation-intake.md)。
+知识单元、原生阅读器和agent执行仍由各自工具持有。
 
 ## 架构
 
@@ -495,3 +496,36 @@ pipx install --force "git+https://github.com/JerryFan012321/scholar-workflow.git
 发布后的 `release` 分支仅包含运行时文件、Codex 原生及 Claude 兼容 marketplace 元数据与两个宿主
 manifest。开发规范、规划文档、测试与评估在 `main` 分支；贡献指南见其 `AGENT.md`，测试在该分支运行
 `pytest tests/unit tests/contract`。
+
+### 来源目录与直接书目入库（0.52.0 开发候选）
+
+不同外部agent先查询同一个本地来源目录，再使用各自harness中的MCP、API或工具。
+alphaXiv是其中的重要来源；插件为支持的宿主声明其官方MCP端点。原生连接、OAuth和API凭据
+由宿主持有，推荐页不再提供原生工具表单控制台，也不管理alphaXiv API key。
+
+```bash
+scholar-research recommendations sources list
+scholar-research recommendations sources show alphaxiv
+scholar-research recommendations sources context alphaxiv
+scholar-research recommendations sources history --source-id alphaxiv
+```
+
+本批候选增加[推荐要求](references/recommendation-requirements.md)：在对应推荐源条目中展开查看和编辑，
+不再单列“推荐要求”页面。agent用 `scholar-research recommendations requirements list --source-id ID`
+查询该源要求，再通过同一`show/save`入口读取或修改。正常新记录填写已登记的来源；旧无归属记录
+仍可查询和查看历史，不自动猜源或迁移。
+内容由实际任务决定，不预填筛选标准；不同任务明确选用要求及版本，详情保留当时文本。
+保存不自动启动推荐，既有记录不会被新要求改写。此增量尚未发布安装。
+
+
+新增来源、管理备注、研究者建议和外部操作回执均见[来源目录契约](references/recommendation-sources.md)。
+回执明确标为`agent_reported`，用于跨会话交接，不冒充独立核验、实时连接或云端账户真值。
+各agent保留自己的producer身份，按统一入口提交已核元数据、完整摘要译文或有来源的总结。
+
+首页保持紧凑；展开条目即可阅读完整内容、原文、灵活附件及推荐来源。推荐页不启动agent或模型，
+论文单元的正文、Canvas、证据与图片保留原格式。
+
+在卡片审阅并选择后，点击“加入Zotero”，选择分类、预览并确认。
+完成以实际条目及分类读回为准；当前直接执行范围为Zotero书目，PDF和Vault完整单元均标明
+`not_requested`，继续按既有Skill单独完成。运行细则见[alphaXiv](references/alphaxiv-source.md)
+与[推荐入库](references/recommendation-intake.md)。

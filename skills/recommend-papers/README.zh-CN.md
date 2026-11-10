@@ -78,3 +78,43 @@ scholar-research recommendations --profile personal stop
 页面显示具体对象及采集时间，失败保留旧值，未知不填零；HF点赞与GitHub stars分开标识。
 无作者摘要时，依据实际正文提供`summary_zh`和`summary_sources`，明确标注agent总结并审阅后交接。
 相关Blog继续通过灵活`links`附上。完整约定见[推荐入口](../../references/recommendation-intake.md)。
+
+## 可复用推荐源
+
+使用 `scholar-research recommendations sources list` 和 `sources show <source-id>`
+查询共用的 MCP／API／feed／原生 CLI 说明。显式登记使用目录当前 revision。
+[来源契约](../../references/recommendation-sources.md)说明字段、共用上下文／历史和 agent
+报告的操作回执。目录不执行描述内容，也不自动配置账号。
+
+alphaXiv 通过外部宿主的原生 MCP 提供重要的热门发现来源；专项领域／项目 agent 保留
+各自任务身份，使用同一提交 schema 和末端呈现规范。HF Daily 元数据复用已有配置聚合器。
+本人 X 和知乎来源目前是计划项，尚未接入账号采集。来源定义或插件安装不代表认证成功。
+
+推荐页呈现统一结果；外部 agent 负责获取来源、翻译摘要、整理有来源的总结及核实原始热度，
+再通过共用入口提交。研究者建议和原生操作报告保存在来源上下文／历史中；本地报告不能
+冒称远端状态已核验。系统不增加内置模型、调度器或账号控制台页面。
+
+
+## 推荐要求
+
+推荐要求放在对应推荐源条目里，展开该源的“推荐要求”即可查看和编辑。人和agent都可以填写，
+页面和CLI编辑同一份记录，正文自由填写，不预设领域、质量、时效或推荐数量。修改时核对
+当前版本，旧版本保留供查询。
+
+```bash
+scholar-research recommendations requirements list --source-id SOURCE_ID
+scholar-research recommendations requirements show REQUIREMENT_ID
+scholar-research recommendations requirements show REQUIREMENT_ID --revision REVISION
+scholar-research recommendations requirements save --input requirements.json
+```
+
+任务明确使用某份要求时，在提交顶层附上`requirement`，标明实际使用的记录与版本。
+同一篇论文可以被不同任务依据不同要求推荐，各条推荐分别保留当时的要求，不把其中一份
+强加给合并后的论文候选。没有明确适用的记录时，不自动选择第一份或合并全部记录。
+一次性推荐可以直接依照当次对话，无须创建长期配置或编造偏好。
+
+具体字段、页面编辑、版本与重试规则见[推荐要求契约](../../references/recommendation-requirements.md)。
+正常新建时明确填写已登记的`source_id`。旧的无归属要求保留CLI查询和历史，不自动猜源或迁移；
+旧客户端编辑已有归属的要求时，省略该字段会保留原归属。原`recommend.yml`不迁移，来源备注
+仍负责管理信息。保存要求不会启动agent或定时任务，
+也不代表任何文章已获入库许可；摘要审阅和人工选择继续有效。

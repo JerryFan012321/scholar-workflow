@@ -5,6 +5,53 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.52.0] - 2026-11-10
+
+### Added
+
+- Shared recommendation context and external-agent ranking handoff, with attributed
+  reasons, known feedback history, input digests, conflict checks and idempotent runs;
+  model execution and ongoing maintenance stay in the external harness.
+
+- Editable personal scores and comments on each recommendation, with explicit
+  clearing, independent conflict checks and compact homepage markers; agent
+  submissions retain human feedback and changed content is identified.
+- Editable recommendation requirements within each source entry for people and
+  external agents, with source filters, version history, conflict checks and per-task
+  submission snapshots.
+  Saving a requirement does not start an agent or alter existing recommendation decisions.
+- Reusable non-secret recommendation-source directory for external agents, including
+  alphaXiv's native host-managed MCP connection; extensible source descriptions,
+  shared source notes and clearly agent-reported operation records.
+- Explicit reviewed Zotero bibliography previews and confirmed ingestion with
+  selected collections, identity checks, read-back receipts and history; PDF and
+  complete Vault-unit preparation remain separate existing Skill operations.
+
+### Changed
+
+- Add direct original/later actions and reversible-choice undo to the compact feed;
+  support continuous detail reading, position, keyboard navigation and list return.
+- Fold secondary filters into removable conditions, compact metric diagnostics, and
+  preserve reader focus/scroll during same-item updates.
+- Give settings explicit dirty/saving/cancel states, non-destructive latest-version
+  comparison and scoped same-origin session drafts; coordinate browser history with
+  the reader without letting stale navigation reopen it over settings.
+- Show reading content and links before popularity and evaluation controls, and move
+  source management, ingestion history and shared context behind a settings gear.
+- Bind personal evaluations to both their own revision and the displayed candidate
+  revision so stale text cannot receive a falsely current judgment.
+
+- Allow withdrawal of reading review and pending selection while retaining completed
+  ingestion facts; distinguish simulated previews and bibliography-only intake in UI labels.
+- Present ingestion history as compact expandable rows, preserving complete receipts
+  and existing ingestion-confirmation behavior.
+- Keep the bright recommendation homepage compact; open complete abstracts, flexible
+  attachments, provenance, human review and ingestion actions in an item detail drawer.
+- Use the agent host's native source tools and credentials instead of a platform
+  console or a custom remote-tool executor inside the recommendation page.
+- Record the 0.51.1 normal installation and personal-service update; preserve all
+  existing candidates and human decisions.
+
 ## [0.51.1] - 2026-11-08
 
 ### Fixed

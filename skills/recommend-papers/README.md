@@ -103,3 +103,44 @@ are labeled separately from GitHub stars. A missing author abstract can use a
 source-backed `summary_zh` with `summary_sources`, explicitly labeled as an agent
 summary and reviewed before handoff. Related Blogs use the existing flexible
 `links` array. See the [intake contract](../../references/recommendation-intake.md).
+
+## Reusable recommendation sources
+
+Use `scholar-research recommendations sources list` and `sources show <source-id>`
+to inspect non-secret MCP/API/feed/native-CLI descriptions. Explicit registration
+uses the current catalog revision. [Source contract](../../references/recommendation-sources.md)
+defines the fields, shared context/history and agent-reported operation receipts.
+The catalog neither executes descriptors nor configures accounts.
+
+alphaXiv is an important popular-discovery source through the external host's
+native MCP connection. Domain/project agents retain their own producing identities
+and use the same submission schema and final presentation. HF Daily metadata is
+available through the existing configured aggregator. Own-account X and Zhihu
+entries are planned, with no implemented account acquisition. No source definition
+or plugin installation proves authentication.
+
+The recommendation page presents shared results. External agents perform source
+retrieval, translation and summary preparation, retain verified links/raw counts
+and submit through the common entry. Researcher suggestions and native operation
+reports persist in shared source context/history; a local report is not certified
+remote state. No built-in model, scheduler or account-control page is added.
+
+
+## Shared recommendation requirements
+
+People or agents write free-text requirements inside the corresponding source
+entry's expandable list/editor. Agents query
+`recommendations requirements list --source-id SOURCE_ID` and edit the same records
+through `show/save`. There are no preset
+research criteria. Updates use the current revision and retain older versions.
+When a task explicitly uses a saved record, its submission's top-level `requirement`
+links the actual record/version to that producer/run's recommendations. The merged
+paper candidate retains each task's distinct context. One-off requests can remain
+unlinked instead of creating a profile or inventing preferences.
+
+See [requirements](../../references/recommendation-requirements.md) for the exact
+record, page/CLI interfaces and retry behavior. The source-management notes and
+legacy `recommend.yml` keep their own scope; neither is silently migrated or merged
+into the new requirements. Historical unassigned records remain readable without
+a guessed source; older clients omitting `source_id` preserve an existing binding.
+Saving a record does not start an agent, schedule work or approve ingestion.

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scholar-workflow"
-version = "0.51.1"
+version = "0.52.0"
 requires-python = ">=3.11"
 dependencies = [
     "click==8.1.8",
@@ -26,7 +26,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "scholar_workflow.adapters.explorer_static" = ["*.html", "*.css", "*.js"]
-"scholar_workflow.research.recommendations" = ["schema.json", "static/*.html", "static/*.css", "static/*.js"]
+"scholar_workflow.research.recommendations" = ["*.json", "static/*.html", "static/*.css", "static/*.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

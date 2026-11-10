@@ -7,41 +7,97 @@
   <title>研究推荐 · Scholar Workflow</title>
   <link rel="stylesheet" href="/style.css">
   <script src="/app.js" defer></script>
+  <script src="/workspace.js" defer></script>
+  <script src="/requirements.js" defer></script>
 </head>
 <body>
-  <header class="masthead">
+  <header class="masthead" id="app-header">
     <div class="brand"><span class="brand-mark" aria-hidden="true">SW</span><span>Scholar Workflow</span></div>
-    <span id="profile" class="profile">正在连接</span>
+    <div class="masthead-actions"><span id="profile" class="profile">正在连接</span><button type="button" class="settings-toggle" data-page="settings" aria-label="打开设置" aria-controls="settings-view" title="设置"><span aria-hidden="true">⚙</span></button></div>
   </header>
   <main>
+    <div id="workspace-notice" class="notice" role="status" aria-live="polite" hidden></div>
+    <section id="recommendations-view" aria-label="研究推荐">
     <section class="page-heading" aria-labelledby="page-title">
-      <div><p class="eyebrow">RESEARCH FEED</p><h1 id="page-title">研究推荐</h1><p class="subtitle">读摘要，选资料，追踪你关心的研究。</p></div>
-      <div class="heading-actions"><button id="refresh" type="button" class="secondary">刷新列表</button><button id="export" type="button" class="primary" disabled>导出入库清单 <span id="selected-count">0</span></button></div>
+      <div><h1 id="page-title">研究推荐</h1></div>
+      <div class="heading-actions"><button id="refresh" type="button" class="secondary">刷新列表</button><button id="export" type="button" class="primary" disabled>查看已选 <span id="selected-count">0</span></button></div>
     </section>
     <div id="test-banner" class="test-banner" hidden>测试环境 · 候选与选择保存在独立测试状态中。</div>
-    <section class="filters" aria-label="筛选推荐">
-      <label class="search-field">搜索<input id="query" type="search" placeholder="标题或作者" maxlength="300"></label>
-      <label>发布日期<select id="since"><option value="">全部日期</option><option value="1">今天</option><option value="7">最近七天</option><option value="30">最近三十天</option></select></label>
-      <label>资源类型<select id="kind"><option value="">全部类型</option><option value="paper">论文</option><option value="project">项目主页</option><option value="blog">博客</option></select></label>
-      <label>领域<select id="tag"><option value="">全部领域</option></select></label>
-      <label>推荐任务<select id="producer_id"><option value="">全部任务</option></select></label>
+    <section class="filter-panel" aria-label="筛选推荐">
+      <label class="search-field" for="query">搜索推荐<input id="query" type="search" placeholder="搜索标题或作者" maxlength="300"></label>
+      <details id="advanced-filters" class="advanced-filters">
+        <summary id="filter-summary">更多筛选</summary>
+        <div class="filters">
+          <label for="kind">资源类型<select id="kind"><option value="">全部类型</option><option value="paper">论文</option><option value="project">项目主页</option><option value="blog">博客</option></select></label>
+          <label for="tag">领域<select id="tag"><option value="">全部领域</option></select></label>
+          <label for="producer_id">推荐任务<select id="producer_id"><option value="">全部任务</option></select></label>
+          <label for="since">发布日期<select id="since"><option value="">全部日期</option><option value="1">今天</option><option value="7">最近七天</option><option value="30">最近三十天</option></select></label>
+        </div>
+      </details>
+      <div id="active-filters" class="active-filters" aria-label="当前筛选条件" aria-live="polite" hidden></div>
     </section>
     <div class="list-toolbar">
       <div class="view-tabs" role="group" aria-label="处理状态"><button type="button" data-decision="" aria-pressed="true">全部</button><button type="button" data-decision="unread" aria-pressed="false">未处理</button><button type="button" data-decision="saved" aria-pressed="false">稍后看</button><button type="button" data-decision="selected" aria-pressed="false">已选入库</button><button type="button" data-decision="ignored" aria-pressed="false">已忽略</button></div>
-      <div class="result-tools"><span id="result-count" class="result-count">正在读取</span><label class="sort-label">排序<select id="sort"><option value="published">发布日期</option><option value="newest">最新推荐</option><option value="oldest">最早推荐</option></select></label></div>
+      <div class="result-tools"><span id="ranking-status" class="quiet"></span><span id="result-count" class="result-count">正在读取</span><label class="sort-label">排序<select id="sort"><option value="agent">推荐顺序</option><option value="published">发布日期</option><option value="newest">最新推荐</option><option value="oldest">最早推荐</option></select></label></div>
     </div>
     <p id="notice" class="notice" role="status" aria-live="polite" hidden></p>
     <div id="auth-error" class="empty-state" hidden><h2>请从命令打开推荐页</h2><p>页面需要本次服务的访问凭证。请在终端运行下方命令，使用返回的完整链接打开。</p><code id="auth-command">scholar-research recommendations open</code></div>
     <section id="feed" class="feed" aria-label="推荐内容" aria-busy="true"></section>
     <section id="empty" class="empty-state" hidden>
       <div class="empty-symbol" aria-hidden="true">＋</div><h2 id="empty-title">等待第一批推荐</h2>
-      <p id="empty-description">让你的推荐 agent 读取 recommend-papers Skill，并通过统一入口提交论文、项目主页或博客。</p>
-      <pre id="empty-command">scholar-research recommendations schema
-scholar-research recommendations submit --input recommendations.json</pre>
+      <p id="empty-description">来源与专项 agent 提交的内容会汇集到这里。</p>
+      <pre id="empty-command" hidden></pre>
       <p class="quiet">不同任务可以独立提交；同一对象会合并展示，推荐来源会保留。</p>
     </section>
     <nav class="pagination" aria-label="列表分页"><button id="previous" type="button" class="secondary" disabled>上一页</button><span id="page-number"></span><button id="next" type="button" class="secondary" disabled>下一页</button></nav>
-    <footer class="page-footer"><span>推荐候选独立于正式知识库。</span><span>审阅摘要后选择；导出清单后交给入库 Skill 执行。</span></footer>
+    <footer class="page-footer"><span>先看详情，再选择入库。</span><span>同一资料汇总展示，保留各条推荐来源。</span></footer>
+    </section>
+    <section id="settings-view" class="workspace-view" aria-labelledby="settings-title" hidden>
+      <div class="page-heading settings-heading"><h1 id="settings-title" tabindex="-1">设置</h1><button type="button" class="secondary" data-page="recommendations">返回推荐</button></div>
+      <div class="settings-layout">
+      <nav class="settings-nav" aria-label="设置分组"><button type="button" data-page="sources" aria-controls="sources-view" aria-current="page">推荐源</button><button type="button" data-page="context" aria-controls="context-view">推荐上下文</button><button type="button" data-page="ingestion" aria-controls="ingestion-view">入库记录</button></nav>
+      <div class="settings-content">
+    <section id="sources-view" class="workspace-view" aria-labelledby="sources-title" hidden>
+      <div class="page-heading"><div><h2 id="sources-title" class="settings-section-title" tabindex="-1">推荐源</h2><p class="subtitle">在对应来源中维护推荐要求；接入信息按需展开。</p></div><button id="sources-refresh" type="button" class="secondary">刷新目录</button></div>
+      <div id="sources-list" class="sources-list"></div>
+    </section>
+    <section id="ingestion-view" class="workspace-view" aria-labelledby="ingestion-title" hidden>
+      <div class="page-heading"><div><h2 id="ingestion-title" class="settings-section-title" tabindex="-1">入库记录</h2><p class="subtitle">查看每项书目入库的目标、状态和实际回执。</p></div><button id="ingestion-refresh" type="button" class="secondary">刷新记录</button></div>
+      <div class="scope-note">当前页面支持 Zotero 书目入库。PDF 附件和 Vault 知识单元的完成情况另行确认。</div>
+      <div id="ingestion-history" class="history-list"></div>
+    </section>
+    <section id="context-view" class="workspace-view" aria-labelledby="context-title" hidden>
+      <div class="page-heading"><div><h2 id="context-title" class="settings-section-title" tabindex="-1">推荐上下文</h2><p class="subtitle">记录跨任务延续的关注点与判断，供外部 agent 参考。</p></div></div>
+      <div class="surface-panel context-panel">
+        <label class="field-label" for="ranking-context-content">关注点与判断<textarea id="ranking-context-content" class="context-content" rows="10" maxlength="16000" disabled></textarea></label>
+        <p id="ranking-context-meta" class="quiet"></p>
+        <div class="context-actions"><button id="ranking-context-save" type="button" class="primary" disabled>保存修改</button><button id="ranking-context-cancel" type="button" class="secondary" hidden>取消修改</button><button id="ranking-context-reload" type="button" class="text-button">查看最新版</button></div>
+        <p id="ranking-context-notice" class="notice" role="status" aria-live="polite" hidden></p>
+        <details id="ranking-context-latest" class="context-latest" hidden><summary>查看最新已保存内容</summary><p id="ranking-context-latest-meta" class="quiet"></p><pre id="ranking-context-latest-content"></pre><button id="ranking-context-adopt" type="button" class="secondary">保留草稿，以最新版继续编辑</button></details>
+        <p id="ranking-context-state" class="context-ranking-state quiet"></p>
+      </div>
+    </section>
+      </div>
+      </div>
+    </section>
+    <div id="detail-overlay" class="detail-overlay" hidden>
+      <section id="detail-panel" class="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title" tabindex="-1">
+        <header class="detail-header"><div class="detail-heading"><button id="detail-close" type="button" class="text-button">← 返回列表</button><h2 id="detail-title">推荐详情</h2></div><nav class="detail-navigation" aria-label="连续阅读"><button id="detail-previous" type="button" class="secondary" disabled>上一条</button><span id="detail-position" class="quiet" role="status" aria-live="polite"></span><button id="detail-next" type="button" class="secondary" disabled>下一条</button></nav></header>
+        <div id="detail-notice" class="notice" role="status" aria-live="polite" hidden></div>
+        <div id="detail-content"></div>
+      </section>
+    </div>
+    <div id="ingestion-overlay" class="modal-overlay" hidden>
+      <section class="modal surface-panel" role="dialog" aria-modal="true" aria-labelledby="ingestion-dialog-title" tabindex="-1">
+        <div class="panel-heading"><h2 id="ingestion-dialog-title">加入 Zotero</h2><button id="ingestion-close" type="button" class="text-button">关闭</button></div>
+        <p id="ingestion-candidate-title" class="dialog-title"></p>
+        <div id="ingestion-dialog-status" class="notice" role="status" hidden></div>
+        <label class="field-label">目标分类<select id="ingestion-collection"><option value="">请选择 Zotero 分类</option></select></label>
+        <p class="muted">只加入所选分类；已有条目会先检查并复用。不会创建论文分析或 Vault 副本。</p>
+        <button id="ingestion-preview" type="button" class="primary">查看入库计划</button>
+        <div id="ingestion-plan" class="ingestion-plan" hidden></div>
+      </section>
+    </div>
   </main>
 </body>
 </html>
