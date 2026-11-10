@@ -505,7 +505,7 @@ pipx install --force "git+https://github.com/JerryFan012321/scholar-workflow.git
 manifest。开发规范、规划文档、测试与评估在 `main` 分支；贡献指南见其 `AGENT.md`，测试在该分支运行
 `pytest tests/unit tests/contract`。
 
-### 来源目录与直接书目入库（0.52.0 开发候选）
+### 来源目录与直接书目入库（0.52.0）
 
 不同外部agent先查询同一个本地来源目录，再使用各自harness中的MCP、API或工具。
 alphaXiv是其中的重要来源；插件为支持的宿主声明其官方MCP端点。原生连接、OAuth和API凭据
@@ -523,7 +523,7 @@ scholar-research recommendations sources history --source-id alphaxiv
 查询该源要求，再通过同一`show/save`入口读取或修改。正常新记录填写已登记的来源；旧无归属记录
 仍可查询和查看历史，不自动猜源或迁移。
 内容由实际任务决定，不预填筛选标准；不同任务明确选用要求及版本，详情保留当时文本。
-保存不自动启动推荐，既有记录不会被新要求改写。此增量尚未发布安装。
+保存不自动启动推荐，既有记录不会被新要求改写。该增量已随0.52.0发布。
 
 
 新增来源、管理备注、研究者建议和外部操作回执均见[来源目录契约](references/recommendation-sources.md)。
@@ -545,3 +545,12 @@ scholar-research recommendations sources history --source-id alphaxiv
 推荐有完整作者摘要时全文翻译；缺摘要时基于正文写完整简介，并引用共用文风。主标题简洁，出处折叠。
 `recommendations revise-content --input FILE`按精确revision修正文案；`content-history`读回署名历史，
 不因此增加推荐次数，也不代人评分或入库。
+
+
+## 推荐源插件（开发中）
+
+设置→推荐源增加版本化来源包的新建、导入、编辑、导出和启停；agent用
+`scholar-research recommendations sources guide SOURCE_ID`读取操作说明、推荐要求及续接上下文。
+插件不接管宿主MCP授权和执行；新增源无需修改核心或页面枚举。
+格式和CLI见[来源插件契约](references/recommendation-source-plugins.md)。当前尚未发布安装，
+日常0.53.0页面保持原状。

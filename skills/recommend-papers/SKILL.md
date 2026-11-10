@@ -57,8 +57,11 @@ instructions without inventing a persistent profile or fixed content standards.
 
 Before choosing or adding a recommendation source, load
 [recommendation sources](../../references/recommendation-sources.md) and query the
-shared catalog. External agents use the source's actual native MCP/API/feed/CLI;
-registration never executes it. Read shared source context/history before account
+shared catalog. Read `recommendations sources guide SOURCE_ID` for the selected
+source's operations, current requirements and shared context. External agents use
+the actual native MCP/API/feed/CLI; registration never executes it.
+For adding, importing, exporting or editing a source, follow the catalog's
+conditional [plugin contract](../../references/recommendation-source-plugins.md). Read shared source context/history before account
 management and record reported outcomes there. alphaXiv supplies popular discovery
 alongside domain/project agents, all using the same schema and final presentation.
 Load [alphaXiv source](../../references/alphaxiv-source.md) only when using it.

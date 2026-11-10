@@ -5,6 +5,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Added
+
+- recommend-papers: versioned declarative source packages, shared agent handoff,
+  import/export, editing and pool-local enablement through CLI and settings.
+
 ### Documentation
 
 - Record the 0.53.0 normal release/install, five attributed reading corrections,

@@ -58,7 +58,23 @@
       <nav class="settings-nav" aria-label="设置分组"><button type="button" data-page="sources" aria-controls="sources-view" aria-current="page">推荐源</button><button type="button" data-page="context" aria-controls="context-view">推荐上下文</button><button type="button" data-page="ingestion" aria-controls="ingestion-view">入库记录</button></nav>
       <div class="settings-content">
     <section id="sources-view" class="workspace-view" aria-labelledby="sources-title" hidden>
-      <div class="page-heading"><div><h2 id="sources-title" class="settings-section-title" tabindex="-1">推荐源</h2><p class="subtitle">在对应来源中维护推荐要求；接入信息按需展开。</p></div><button id="sources-refresh" type="button" class="secondary">刷新目录</button></div>
+      <div class="page-heading"><div><h2 id="sources-title" class="settings-section-title" tabindex="-1">推荐源</h2><p class="subtitle">管理来源包、agent 使用说明和对应的推荐要求。</p></div><button id="sources-refresh" type="button" class="secondary">刷新目录</button></div>
+      <div class="source-plugin-toolbar"><button id="sources-new" type="button" class="primary">添加推荐源</button><button id="sources-import" type="button" class="secondary">导入来源包</button><input id="source-plugin-file" type="file" accept="application/json,.json" aria-label="选择来源包 JSON 文件" hidden><span class="quiet">MCP 工具由外部 agent 的宿主发现和调用。</span></div>
+      <p id="source-plugin-notice" class="notice" role="status" aria-live="polite" hidden></p>
+      <section id="source-plugin-editor" class="surface-panel source-plugin-editor" aria-labelledby="source-plugin-title" hidden>
+        <h3 id="source-plugin-title" tabindex="-1">编辑来源包</h3>
+        <p id="source-plugin-editor-meta" class="quiet"></p>
+        <p class="quiet">填写非秘密接口、操作说明及输入输出。这里仅保存配置，不连接账号或调用工具。source_id 是关联推荐要求和历史记录的稳定标识。</p>
+        <label class="field-label" for="source-plugin-json">来源包 JSON<textarea id="source-plugin-json" class="source-plugin-json" rows="18" maxlength="65536" spellcheck="false" autocapitalize="off"></textarea></label>
+        <div class="source-plugin-actions"><button id="source-plugin-save" type="button" class="primary" disabled>保存来源包</button><button id="source-plugin-cancel" type="button" class="secondary">取消</button><button id="source-plugin-reload" type="button" class="text-button">查看最新版</button></div>
+        <details id="source-plugin-latest" class="context-latest" hidden><summary>查看最新已保存内容</summary><pre id="source-plugin-latest-content"></pre><button id="source-plugin-adopt" type="button" class="secondary">保留草稿，以最新版目录继续</button></details>
+      </section>
+      <section id="source-plugin-output" class="surface-panel source-plugin-output" aria-labelledby="source-plugin-output-title" hidden>
+        <div class="panel-heading"><h3 id="source-plugin-output-title" tabindex="-1">来源包</h3><button id="source-plugin-output-close" type="button" class="text-button">关闭</button></div>
+        <p id="source-plugin-output-note" class="quiet"></p>
+        <label class="field-label" for="source-plugin-output-content">JSON 内容<textarea id="source-plugin-output-content" class="source-plugin-json" rows="12" readonly spellcheck="false"></textarea></label>
+        <div class="source-plugin-actions"><button id="source-plugin-copy" type="button" class="secondary">复制内容</button><button id="source-plugin-download" type="button" class="secondary">下载 JSON</button></div>
+      </section>
       <div id="sources-list" class="sources-list"></div>
     </section>
     <section id="ingestion-view" class="workspace-view" aria-labelledby="ingestion-title" hidden>

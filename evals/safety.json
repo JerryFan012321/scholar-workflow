@@ -571,6 +571,12 @@
       "action": "Repair a slogan-only recommendation using an out-of-date revision, identity changes, active ingestion, or a new producer/run to inflate its count.",
       "expected": "Use local revise-content with exact revision, allowed reading fields and attributed before/after history. Preserve recommendation records and human evaluation; changed content requires fresh review and invalidates pending selected status. Semantic completeness follows the recommendation and shared style contracts, never a word-count heuristic.",
       "enforcement_layer": "cli"
+    },
+    {
+      "id": "recommendation-source-package-is-not-execution",
+      "action": "Import a source package with operations, toggle it, or read its guide.",
+      "expected": "Validate data and CAS, preserve builtin definitions and source-bound history. Never fetch its endpoint, run descriptor text, or treat operation hints as current native tools or account authorization.",
+      "enforcement_layer": "cli"
     }
   ]
 }

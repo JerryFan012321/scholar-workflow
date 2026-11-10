@@ -613,7 +613,7 @@ Claude-compatible marketplace metadata and both host manifests. Development conv
 planning docs, tests, and evals live on `main`. See its `AGENT.md` for contributor guidelines;
 run tests there with `pytest tests/unit tests/contract`.
 
-### Source catalog and direct bibliography intake (0.52.0 candidate)
+### Source catalog and direct bibliography intake (0.52.0)
 
 External agents discover sources through the same local catalog and call available
 MCP, API or tooling connections in their own harness. alphaXiv is an important
@@ -636,7 +636,7 @@ the registered source identity; historical unassigned records stay readable with
 a guessed source.
 Content is free text supplied by the actual task. Tasks explicitly choose a saved
 version, retained in their recommendation details. Saving does not start an agent
-or rewrite previous recommendations. This increment is not yet released/installed.
+or rewrite previous recommendations. This increment shipped in 0.52.0.
 
 
 Use the [source-catalog contract](references/recommendation-sources.md) to register
@@ -667,3 +667,13 @@ They preserve complete author abstracts or summarize actual source bodies, with
 brief labels and expandable Sources. `recommendations revise-content --input FILE`
 corrects an existing reading body with its exact revision; `content-history` reads
 its attributed changes without adding another recommendation.
+
+
+## Source plugins (in development)
+
+Settings → Sources adds versioned packages with create/import/edit/export/enable
+operations. External agents use `scholar-research recommendations sources guide SOURCE_ID`
+for operation contracts, requirements and shared context, then discover native tools
+in their own host. New sources need no core/UI enumeration. See the
+[source-plugin contract](references/recommendation-source-plugins.md). This increment
+is not yet published or installed; the daily page remains 0.53.0.

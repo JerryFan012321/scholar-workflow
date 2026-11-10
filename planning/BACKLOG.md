@@ -1,3 +1,9 @@
+# 当前能力增量：推荐源插件
+
+沿G19落实可版本化来源包、通用管理UI与外部agent guide。开发分支codex/hotfix-source-plugins；
+普通source描述继续兼容，完整包/启停/安全由定向契约验证。MCP真实工具由宿主发现。
+504项定向检查通过，当前未发布安装或切换日常服务；结果见validation/source-plugins-results.md。
+
 # Project Backlog
 
 Work items for scholar-workflow. Single source of truth for pending work, decisions, and blockers.

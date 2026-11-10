@@ -369,6 +369,51 @@ def sources_register(context, input_path, expected_revision):
     _json(_catalog(context).register(_read_input(input_path), expected_revision))
 
 
+@source_commands.command(name="import")
+@click.option("--input", "input_path", required=True, help="Versioned non-secret source plugin JSON file or - for stdin.")
+@click.option("--expected-revision", type=click.IntRange(min=0), required=True)
+@click.pass_obj
+@guarded
+def sources_import(context, input_path, expected_revision):
+    _json(_catalog(context).import_plugin(_read_input(input_path), expected_revision))
+
+
+@source_commands.command(name="export")
+@click.argument("source_id")
+@click.pass_obj
+@guarded
+def sources_export(context, source_id):
+    """Export the portable source definition, excluding local account/context state."""
+    _json(_catalog(context).export_plugin(source_id))
+
+
+@source_commands.command(name="guide")
+@click.argument("source_id")
+@click.pass_obj
+@guarded
+def sources_guide(context, source_id):
+    """Describe source operations, current requirements and cross-agent context."""
+    _json(_catalog(context).guide(source_id, profile=context["profile"]))
+
+
+@source_commands.command(name="enable")
+@click.argument("source_id")
+@click.option("--expected-revision", type=click.IntRange(min=0), required=True)
+@click.pass_obj
+@guarded
+def sources_enable(context, source_id, expected_revision):
+    _json(_catalog(context).set_enabled(source_id, True, expected_revision))
+
+
+@source_commands.command(name="disable")
+@click.argument("source_id")
+@click.option("--expected-revision", type=click.IntRange(min=0), required=True)
+@click.pass_obj
+@guarded
+def sources_disable(context, source_id, expected_revision):
+    _json(_catalog(context).set_enabled(source_id, False, expected_revision))
+
+
 @source_commands.command(name="context")
 @click.argument("source_id")
 @click.option("--input", "input_path", help="Update {expected_revision,topics,notes}; omit to read.")

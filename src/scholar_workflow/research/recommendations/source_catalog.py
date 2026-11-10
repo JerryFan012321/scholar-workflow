@@ -1,4 +1,4 @@
-"""Non-secret source descriptions for any external agent; never a tool executor."""
+"""Portable source packages and native-agent guides; never a tool executor."""
 
 from __future__ import annotations
 
@@ -11,6 +11,13 @@ from urllib.parse import urlsplit, urlunsplit
 from scholar_workflow.research.models import ResearchError, bounded_tree, public_url
 
 _SOURCE_ID = re.compile(r"[a-z0-9][a-z0-9_.-]{0,79}\Z")
+_SYMBOLIC_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}\Z")
+_SEMVER = re.compile(
+    r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
+    r"(?:-(?:(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)"
+    r"(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?"
+    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?\Z"
+)
 _PRIVATE_PATH = re.compile(
     r"(?:^|[\s=:(])(?:/(?:Users|home|private|tmp|var|etc|root|Volumes)/|~/|[A-Za-z]:[\\/]|\\\\)"
 )
@@ -31,6 +38,8 @@ _FIELDS = {
     "capabilities",
     "documentation",
     "auth",
+    "plugin_version",
+    "agent",
 }
 
 
@@ -68,6 +77,69 @@ def _url(value, *, documentation=False):
     return normalized + ("#" + fragment if fragment else "")
 
 
+def _operation_io(value):
+    """Inspect bounded descriptions/schemas without interpreting or dereferencing them."""
+    if not isinstance(value, (str, dict)):
+        raise ResearchError("Source operation inputs and outputs need text or a JSON object.")
+
+    def visit(node):
+        if isinstance(node, dict):
+            for key, item in node.items():
+                _text(key, limit=200)
+                if isinstance(item, str):
+                    _text(f"{key}={item}", limit=4201, multiline=True)
+                visit(item)
+        elif isinstance(node, list):
+            for item in node:
+                visit(item)
+        elif isinstance(node, str):
+            _text(node, limit=4000, multiline=True)
+            if node.startswith(("http:", "https:")):
+                _url(node, documentation=True)
+
+    visit(value)
+
+
+def _agent(value):
+    if (
+        not isinstance(value, dict)
+        or set(value) - {"connection_name", "instructions", "operations"}
+        or not {"instructions", "operations"} <= value.keys()
+    ):
+        raise ResearchError("Source agent guidance needs instructions and operations.")
+    _text(value["instructions"], limit=6000, multiline=True)
+    if "connection_name" in value:
+        _text(value["connection_name"], limit=128)
+        if not _SYMBOLIC_NAME.fullmatch(value["connection_name"]):
+            raise ResearchError("Source connection name must be symbolic, not a command or path.")
+    operations = value["operations"]
+    if not isinstance(operations, list) or not 1 <= len(operations) <= 50:
+        raise ResearchError("Source agent guidance needs a bounded nonempty operation list.")
+    identifiers = set()
+    for operation in operations:
+        if (
+            not isinstance(operation, dict)
+            or set(operation) - {"operation_id", "description", "tool_name", "effect", "inputs", "outputs"}
+            or not {"operation_id", "description", "effect", "inputs", "outputs"} <= operation.keys()
+        ):
+            raise ResearchError("Source operation contains unsupported or missing fields.")
+        identifier = operation["operation_id"]
+        if not isinstance(identifier, str) or not _SOURCE_ID.fullmatch(identifier):
+            raise ResearchError("Source operation ID must be a stable lowercase identifier.")
+        if identifier in identifiers:
+            raise ResearchError("Source operation IDs must not repeat.")
+        identifiers.add(identifier)
+        _text(operation["description"], limit=3000, multiline=True)
+        if "tool_name" in operation:
+            _text(operation["tool_name"], limit=128)
+            if not _SYMBOLIC_NAME.fullmatch(operation["tool_name"]):
+                raise ResearchError("Source native tool hint must be a symbolic name.")
+        if not isinstance(operation["effect"], str) or operation["effect"] not in {"read", "write"}:
+            raise ResearchError("Source operation must declare read or write effects.")
+        _operation_io(operation["inputs"])
+        _operation_io(operation["outputs"])
+
+
 def validate_source(value, *, builtin=False):
     """Validate data only; registration does not configure any external harness."""
     bounded_tree(value, budget=5000)
@@ -80,6 +152,8 @@ def validate_source(value, *, builtin=False):
     ):
         raise ResearchError("Source descriptor contains unsupported or missing fields.")
     source = copy.deepcopy(value)
+    if len(json.dumps(source, ensure_ascii=False).encode("utf-8")) > 128 * 1024:
+        raise ResearchError("Source definition exceeds the supported size limit.", 7)
     source_id = _text(source["source_id"], limit=80)
     if not _SOURCE_ID.fullmatch(source_id):
         raise ResearchError("Source ID must be a stable lowercase identifier.")
@@ -125,6 +199,14 @@ def validate_source(value, *, builtin=False):
     if not isinstance(source["documentation"], list) or len(source["documentation"]) > 20:
         raise ResearchError("Source documentation must be a bounded URL list.")
     source["documentation"] = [_url(url, documentation=True) for url in source["documentation"]]
+    if "plugin_version" in source and (
+        not isinstance(source["plugin_version"], str)
+        or len(source["plugin_version"]) > 100
+        or not _SEMVER.fullmatch(source["plugin_version"])
+    ):
+        raise ResearchError("Source plugin version must use semantic versioning.")
+    if "agent" in source:
+        _agent(source["agent"])
     if "auth" in source:
         auth = source["auth"]
         if (
@@ -183,6 +265,12 @@ def _view(source, origin):
         **copy.deepcopy(source),
         "origin": origin,
         "connection_status": "not_implemented" if source["status"] == "planned" else "not_checked",
+        "plugin_ready": bool(
+            source.get("plugin_version")
+            and source.get("agent", {}).get("operations")
+            and source["status"] == "available"
+            and source["enabled"]
+        ),
     }
 
 
@@ -205,6 +293,26 @@ class SourceCatalog:
         ):
             raise ResearchError("Local recommendation source registrations are invalid.", 7)
         registered = [validate_source(source) for source in local["items"]]
+        overrides = local.get("overrides", {})
+        if (
+            not isinstance(overrides, dict)
+            or len(overrides) > 200
+            or any(
+                not isinstance(source_id, str)
+                or not _SOURCE_ID.fullmatch(source_id)
+                or not isinstance(override, dict)
+                or set(override) != {"enabled"}
+                or type(override["enabled"]) is not bool
+                for source_id, override in overrides.items()
+            )
+        ):
+            raise ResearchError("Local recommendation source enable states are invalid.", 7)
+        for source in builtins:
+            if source["source_id"] in overrides:
+                enabled = overrides[source["source_id"]]["enabled"]
+                if source["status"] == "planned" and enabled:
+                    raise ResearchError("A planned source cannot be enabled.", 7)
+                source["enabled"] = enabled
         if identifiers & {source["source_id"] for source in registered} or len(
             {source["source_id"] for source in registered}
         ) != len(registered):
@@ -242,3 +350,74 @@ class SourceCatalog:
         return self.store.register_recommendation_source(
             source, expected_revision=expected_revision
         )
+
+    def export_plugin(self, source_id):
+        """Export the portable definition, not host enable overrides or projections."""
+        source = self.get_source(source_id)
+        if source["origin"] == "builtin":
+            source = next(item for item in builtin_sources() if item["source_id"] == source_id)
+        else:
+            source = {key: value for key, value in source.items() if key in _FIELDS}
+        return {"schema_version": 1, "source": copy.deepcopy(source)}
+
+    def import_plugin(self, package, expected_revision):
+        """Import data only; host tools, credentials and network access remain external."""
+        bounded_tree(package, budget=5000)
+        if (
+            not isinstance(package, dict)
+            or set(package) != {"schema_version", "source"}
+            or type(package["schema_version"]) is not int
+            or package["schema_version"] != 1
+            or not isinstance(package["source"], dict)
+        ):
+            raise ResearchError("Source plugin package needs schema_version 1 and one source.")
+        source = package["source"]
+        if source.get("source_id") in {item["source_id"] for item in builtin_sources()}:
+            raise ResearchError("A source plugin cannot replace a packaged builtin definition.", 5)
+        source = validate_source(source)
+        if "plugin_version" not in source or "agent" not in source:
+            raise ResearchError("A source plugin package needs its version and complete agent guidance.")
+        return self.register(source, expected_revision=expected_revision)
+
+    def set_enabled(self, source_id, enabled, expected_revision):
+        current = self.list_sources()
+        if type(expected_revision) is not int or expected_revision != current["revision"]:
+            raise ResearchError("Recommendation sources changed; read them before updating.", 5)
+        if type(enabled) is not bool:
+            raise ResearchError("A source enabled state must be a boolean.")
+        source = self.get_source(source_id)
+        if enabled and source["status"] != "available":
+            raise ResearchError("A planned source cannot be enabled.", 7)
+        if source["origin"] == "registered":
+            definition = self.export_plugin(source_id)["source"]
+            definition["enabled"] = enabled
+            return self.register(definition, expected_revision=expected_revision)
+        definition = self.export_plugin(source_id)["source"]
+        receipt = self.store.set_builtin_source_enabled(
+            source_id, enabled=enabled, expected_revision=expected_revision,
+            default_enabled=definition["enabled"],
+        )
+        definition["enabled"] = enabled
+        return {**receipt, "source": definition}
+
+    def guide(self, source_id, *, profile="personal"):
+        """Join current source instructions and shared records without provider access."""
+        if profile not in {"personal", "test"}:
+            raise ResearchError("Unknown recommendation profile.")
+        catalog = self.list_sources()
+        source = next((item for item in catalog["items"] if item["source_id"] == source_id), None)
+        if source is None:
+            raise ResearchError("The requested recommendation source is not registered.", 3)
+        return {
+            "profile": profile,
+            "source": source,
+            "catalog_revision": catalog["revision"],
+            "requirements": self.store.list_requirements(source_id=source_id),
+            "context": self.store.source_context(source_id),
+            "recent_operations": self.store.source_history(source_id),
+            "discovery": {"method": "host_native", "require_current_tool_schema": True},
+            "submission": {
+                "schema": f"scholar-research recommendations --profile {profile} schema",
+                "entry": f"scholar-research recommendations --profile {profile} submit",
+            },
+        }

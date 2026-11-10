@@ -557,6 +557,11 @@
       "id": "report-content-style-disclosure",
       "description": "Report ownership routes to report contract, then applicable content-and-style Skill and its shared requirements. Existing paper/experiment/knowledge formats and original records remain authoritative; no fixed chapter/word/image quota. Deliver actual selected medium and obtain explicit human acceptance. Recommendation missing-abstract synopses reuse shared prose without becoming full reports.",
       "status": "pending"
+    },
+    {
+      "id": "recommendation-source-plugin-lifecycle",
+      "description": "G19: portable custom source packages import/export and update through generic CLI/settings, with stable IDs, CAS and pool-local builtin enablement. External agents obtain selected-source requirements/context and native discovery guidance without a source-specific page, command executor or account proxy. Development, installed, native-tool and human acceptance remain distinct.",
+      "status": "pending"
     }
   ]
 }

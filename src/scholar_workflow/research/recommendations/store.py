@@ -990,6 +990,39 @@ class RecommendationStore:
                              (_json(catalog),))
         return {"revision": catalog["revision"], "source": source, "changed": True}
 
+    def set_builtin_source_enabled(self, source_id, *, enabled, expected_revision, default_enabled):
+        """Keep only local builtin enable overrides under the same catalog CAS."""
+        self._source_id(source_id)
+        if (
+            type(enabled) is not bool
+            or type(default_enabled) is not bool
+            or type(expected_revision) is not int
+            or expected_revision < 0
+        ):
+            raise ResearchError("Read the source catalog before setting a boolean enable state.")
+        with self._database(write=True) as database:
+            row = database.execute("SELECT record FROM source_catalog WHERE name='catalog'").fetchone()
+            catalog = json.loads(row["record"]) if row else {"revision": 0, "items": []}
+            if catalog["revision"] != expected_revision:
+                raise ResearchError("The source directory changed; read it before updating.", 5)
+            overrides = catalog.get("overrides", {})
+            current_enabled = overrides.get(source_id, {}).get("enabled", default_enabled)
+            if current_enabled == enabled:
+                return {"revision": catalog["revision"], "changed": False}
+            if enabled == default_enabled:
+                overrides.pop(source_id, None)
+            else:
+                if source_id not in overrides and len(overrides) >= 200:
+                    raise ResearchError("The source enable-state directory is full.", 7)
+                overrides[source_id] = {"enabled": enabled}
+            catalog["overrides"] = overrides
+            catalog["revision"] += 1
+            database.execute(
+                "INSERT INTO source_catalog VALUES('catalog',?) ON CONFLICT(name) DO UPDATE SET record=excluded.record",
+                (_json(catalog),),
+            )
+        return {"revision": catalog["revision"], "changed": True}
+
     def source_context(self, source_id):
         self._source_id(source_id)
         with self._database() as database:

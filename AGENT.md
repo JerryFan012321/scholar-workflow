@@ -99,6 +99,8 @@ Skill、内容格式与确定性校验保留，原生工具对接采用必要的
 - 资产管理由manage-assets统一查询/登记/复用入口持有，先查已有台账与Source/Field后再问缺项。
   明确提供或选用的自有服务器按任务授权登记非秘密事实；偶遇主机不自动收集。服务器、知识库、
   推荐关注名单/来源保留各自事实源，不建第二套通用registry；具体流程唯一持于references/asset-management.md。
+- 推荐源包与外部agent交接由recommend-papers及references/recommendation-source-plugins.md持有；
+  设置不执行来源，宿主保留原生工具发现、认证和执行；源要求/context/history复用当前pool。
 - 非论文研究渠道由track-research持有明确订阅与增量观察，运行契约唯一见references/research-tracking.md。
   本地Vault的Knowledge Source与网上发布渠道不同；发现/选中不是入库。既有recommend.yml论文源和
   S2作者名单不迁移，论文/Canvas格式不改；外部获取走独立scholar-research入口，不建立Hub或隐式调度。

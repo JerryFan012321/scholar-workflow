@@ -394,16 +394,16 @@ def test_evaluation_is_available_without_review_and_changed_content_is_explicit(
     assert not nodes(result["detail"], "evaluation-save")[0]["disabled"]
 
 
-def test_read_only_source_catalog_never_calls_mcp_or_launches_an_agent():
+def test_reading_source_settings_never_calls_mcp_or_launches_an_agent():
     result = render(action="sources")
     assert result["views"] == {"recommendations": True, "sources": False, "ingestion": True}
     assert "alphaXiv" in result["sources"]["text"]
-    assert "已收录" in result["sources"]["text"] and "计划接入" in result["sources"]["text"]
+    assert "已启用" in result["sources"]["text"] and "计划接入" in result["sources"]["text"]
     assert "连接未检查" in result["sources"]["text"] and "连接尚未实现" in result["sources"]["text"]
     assert "https://api.alphaxiv.org/mcp/v1" in result["sources"]["text"]
     assert "由 agent 宿主授权" in result["sources"]["text"]
-    assert "不证明账号已授权" in result["sources"]["text"]
-    assert "宿主 MCP：alphaxiv" in result["sources"]["text"]
+    assert "工具由 agent 宿主发现" in result["sources"]["text"]
+    assert "alphaxiv" in result["sources"]["text"]
     assert result["posts"] == []
     assert "/api/sources" in result["reads"]
     assert not any("/api/alphaxiv" in path for path in result["reads"])

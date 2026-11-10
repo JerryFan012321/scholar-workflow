@@ -1,3 +1,19 @@
+# 当前实施：推荐源插件管理（2026-11-10）
+
+用户指出推荐源尚未插件化。只读审计确认0.53.0仅描述目录：custom没有完整操作/宿主提示，
+页面只读，新增源仍需CLI；旧aggregator保留硬编码，不冒称通用采集器。
+独立codex/hotfix-source-plugins，基于已发布0.53.0；原asset-management无关WIP不动。
+本轮补可版本化的声明式来源包、导入/导出、编辑/启停，以及外部agent统一guide入口。
+源包持有非秘密接口、宿主连接提示、操作输入/输出/读写性质；真实MCP工具与schema仍由宿主现场发现。
+不建设MCP代理/模型执行器/调度器，不把声明或安装当作已授权或已调用成功。
+推荐要求、context/history仍引用同一源ID和既有事实源；不复制成另一套插件库。
+测试仅用合成描述和test隔离对象；不改日常推荐、Zotero、既有论文/Canvas。
+0.54.0开发候选已完成，最终504项定向检查通过（20.69秒）；Ruff/JS/Skill及35文档目标通过。
+CLI/HTTP/设置交互只在合成环境验证；完整结果见validation/source-plugins-results.md。
+尚未发布安装或切换服务，当前页面仍0.53.0；安装态可见交互与人工评鉴待续。
+
+---
+
 # 当前：0.53.0已发布并正常安装（2026-11-10）
 
 源码c4ec9e6d，runtime c594d0b8；codex/hotfix-content-report与release已推送，未合并main。

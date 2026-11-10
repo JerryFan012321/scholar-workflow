@@ -213,6 +213,18 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
                     self._respond(200, store.get_requirement(requirement_id, revision))
                 elif path.path == "/api/sources" and not path.query:
                     self._respond(200, SourceCatalog(store).list_sources())
+                elif path.path in {"/api/sources/export", "/api/sources/guide"}:
+                    try:
+                        values = parse_qs(path.query, keep_blank_values=True,
+                                          strict_parsing=True, max_num_fields=1)
+                    except ValueError:
+                        raise ResearchError("Source query needs one source_id.") from None
+                    if set(values) != {"source_id"} or len(values["source_id"]) != 1:
+                        raise ResearchError("Source query needs one source_id.")
+                    catalog = SourceCatalog(store)
+                    source_id = values["source_id"][0]
+                    result = catalog.export_plugin(source_id) if path.path.endswith("/export") else catalog.guide(source_id, profile=profile)
+                    self._respond(200, result)
                 elif path.path == "/api/ingestion/history" and not path.query:
                     self._respond(200, {"items": ingestion.history()})
                 elif path.path == "/api/ingestion/targets" and not path.query:
@@ -249,6 +261,17 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
                     self._respond(200, {"token": token})
                     return
                 payload = self._body(limit=96 * 1024 if path.path in {"/api/requirements", "/api/ranking/context"} else _MAX_BODY)
+                if path.path == "/api/sources/import":
+                    if set(payload) != {"expected_revision", "plugin"}:
+                        raise ResearchError("Source import needs its plugin and current catalog revision.")
+                    self._respond(200, SourceCatalog(store).import_plugin(
+                        payload["plugin"], payload["expected_revision"]))
+                    return
+                if path.path == "/api/sources/enabled":
+                    if set(payload) != {"source_id", "enabled", "expected_revision"}:
+                        raise ResearchError("Source enablement needs its identity, enabled state and current catalog revision.")
+                    self._respond(200, SourceCatalog(store).set_enabled(**payload))
+                    return
                 if path.path == "/api/ranking/context":
                     if set(payload) != {"content", "expected_revision"}:
                         raise ResearchError("Shared context needs text and its current revision.")
