@@ -114,9 +114,11 @@ network failures never become successful empty observations.
 
 The dedicated recommendation page follows [Recommendation intake](recommendation-intake.md).
 It has separate personal/test candidate state and browser authentication, accepts
-only candidate identities, exact revisions and documented review/decision fields,
-and exports selected items without writing Zotero or knowledge content. External
-resource URLs remain navigation data, never commands or implicit server fetches.
+only documented identities, exact revisions and bounded review, source-record or
+ingestion inputs. Exporting a selection performs no external write; a separate
+explicitly confirmed bibliography plan can write through the Zotero Local API as
+described below. It does not create Vault knowledge content. External resource URLs
+remain navigation data, never commands or implicit server fetches.
 Its CLI starts/stops only the identified profile service; it never revives the
 legacy Hub's workspace, editor or agent-task control surface.
 
@@ -202,3 +204,39 @@ copying source content or expanding folder permissions. See `project-context.md`
 
 Never log tokens, Local API keys, paper full text, or sensitive absolute paths. Log
 normalized relative paths and resource IDs only.
+
+
+## Recommendation sources and bibliography operations
+
+The recommendation page presents prepared candidates, source-management records and
+actual ingestion receipts. External harnesses own native MCP/API/tooling connections,
+credentials and execution. Source records supply non-secret capability and connection
+information under [recommendation sources](recommendation-sources.md); registration
+neither authorizes execution nor proves a live connection. No source record or page
+request may become an arbitrary command, executable path, environment or credential.
+The page does not implement an alphaXiv client, read another harness's OAuth/token
+store, receive source API keys or proxy native account mutations.
+
+Source-scoped notes, researcher suggestions and operation records retain user or
+agent management intent. Externally reported outcomes are `agent_reported`, not
+independently verified provider results. They do not execute or retry operations,
+change native account state, grant a new action, or mirror a cloud library. Tokens,
+keys, cookies and credential-bearing links must not enter ordinary records, logs,
+Git or browser content. Follow [alphaXiv](alphaxiv-source.md) for its source mapping.
+
+A current reviewed selection may explicitly preview and confirm Zotero bibliography
+ingestion under [recommendation intake](recommendation-intake.md). The browser sends
+only candidate/plan identities, exact revisions, a selected existing collection key
+and documented confirmation/retry flags. Metadata and provider identity are resolved
+server-side. Plans expire and revalidate selection, content, provider and collection
+before writes; duplicate completed execution returns the recorded receipt. Conflicts
+require a new reviewed preview, and uncertain results retain their known item keys
+and need explicit inspection before retrying. There is no arbitrary file/download
+path in this operation.
+
+Completion requires the observed Zotero item and read-back collection membership.
+It is limited to `zotero_bibliography`; PDF and Vault-unit status remain
+`not_requested`. No successful bibliography or local agent-reported receipt proves
+a complete knowledge unit, attachment, analysis or native-reader acceptance. Test
+recommendations cannot use the native Zotero library; isolated synthetic fixtures
+cannot grant personal permissions.

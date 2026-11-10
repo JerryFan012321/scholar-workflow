@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "source_id": "alphaxiv",
+      "name": "alphaXiv",
+      "purpose": "Popular research discovery and optional native researcher/library management.",
+      "status": "available",
+      "enabled": true,
+      "scope": "authorized_account",
+      "interfaces": [
+        {
+          "kind": "mcp",
+          "url": "https://api.alphaxiv.org/mcp/v1"
+        }
+      ],
+      "capabilities": [
+        "popular research feed",
+        "personalized research feed",
+        "topic discovery",
+        "paper reading",
+        "researcher discovery",
+        "researcher follow management",
+        "native reading-library management"
+      ],
+      "documentation": [
+        "https://www.alphaxiv.org/docs/mcp"
+      ],
+      "auth": {
+        "method": "host_oauth",
+        "reference": "host:alphaxiv",
+        "instructions": "Use the external harness native alphaXiv MCP connection. The host owns OAuth and account selection; this descriptor is not authorization."
+      },
+      "execution": {
+        "kind": "native_mcp",
+        "host_connection_name": "alphaxiv"
+      }
+    },
+    {
+      "source_id": "hf-daily",
+      "name": "Hugging Face Daily Papers",
+      "purpose": "Community-discovered papers and their source observations.",
+      "status": "available",
+      "enabled": true,
+      "scope": "public_research_feed",
+      "interfaces": [
+        {
+          "kind": "api",
+          "url": "https://huggingface.co/api/daily_papers"
+        },
+        {
+          "kind": "cli",
+          "instructions": "Use the existing configured recommend-papers aggregator with hf_daily enabled; its candidate output still needs the shared submission envelope."
+        }
+      ],
+      "capabilities": [
+        "daily paper metadata",
+        "community upvotes"
+      ],
+      "documentation": [
+        "https://huggingface.co/papers"
+      ],
+      "auth": {
+        "method": "none",
+        "instructions": "The existing public adapter uses the operator configured proxy route. Availability is checked on actual retrieval."
+      },
+      "execution": {
+        "kind": "existing_aggregator",
+        "entry": "recommend-papers"
+      }
+    },
+    {
+      "source_id": "x-self",
+      "name": "X — own-account curated posts",
+      "purpose": "Future collection of only the selected own account reposts or bookmarks.",
+      "status": "planned",
+      "enabled": false,
+      "scope": "self_account_only",
+      "interfaces": [
+        {
+          "kind": "api",
+          "url": "https://api.x.com/2/"
+        }
+      ],
+      "capabilities": [
+        "own reposts",
+        "own bookmarks"
+      ],
+      "documentation": [
+        "https://docs.x.com/x-api/users/get-posts",
+        "https://docs.x.com/x-api/getting-started/pricing"
+      ],
+      "auth": {
+        "method": "not_configured",
+        "instructions": "Future integration must use only the user selected own account and an explicit cost boundary. No other accounts or home timeline collection."
+      },
+      "execution": {
+        "kind": "planned"
+      }
+    },
+    {
+      "source_id": "zhihu-self",
+      "name": "Zhihu — own-account collections",
+      "purpose": "Future collection of only the selected own account collection or collection folder.",
+      "status": "planned",
+      "enabled": false,
+      "scope": "self_account_only",
+      "interfaces": [
+        {
+          "kind": "cli",
+          "instructions": "Future thin integration may use the official Zhihu CLI for the selected own account collection."
+        }
+      ],
+      "capabilities": [
+        "own recent collections",
+        "own selected collection folder"
+      ],
+      "documentation": [
+        "https://developer.zhihu.com/",
+        "https://developer.zhihu.com/console/api/v3/docs"
+      ],
+      "auth": {
+        "method": "not_configured",
+        "instructions": "Future native credential setup belongs to the official tool. This catalog does not read accounts, private collections or credentials."
+      },
+      "execution": {
+        "kind": "planned"
+      }
+    }
+  ]
+}

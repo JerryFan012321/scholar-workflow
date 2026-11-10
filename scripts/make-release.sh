@@ -20,6 +20,7 @@ RUNTIME_PATHS=(
   ".agents"
   ".claude-plugin"
   ".codex-plugin"
+  ".mcp.json"
   "agents"
   "bin"
   "contracts"

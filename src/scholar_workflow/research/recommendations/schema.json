@@ -9,6 +9,7 @@
     "schema_version": {"type": "integer", "const": 1},
     "producer": {"$ref": "#/$defs/producer"},
     "run_id": {"$ref": "#/$defs/id"},
+    "requirement": {"$ref": "#/$defs/requirement"},
     "items": {"type": "array", "minItems": 1, "maxItems": 200, "items": {"$ref": "#/$defs/item"}}
   },
   "$defs": {
@@ -16,6 +17,10 @@
     "shortText": {"type": "string", "minLength": 1, "maxLength": 500},
     "url": {"type": "string", "minLength": 1, "maxLength": 4096, "format": "uri"},
     "longText": {"type": "string", "minLength": 1, "maxLength": 60000},
+    "requirement": {
+      "type": "object", "additionalProperties": false, "required": ["requirement_id", "revision"],
+      "properties": {"requirement_id": {"$ref": "#/$defs/id"}, "revision": {"type": "integer", "minimum": 1}}
+    },
     "producer": {
       "type": "object", "additionalProperties": false,
       "required": ["producer_id", "name"],
@@ -71,6 +76,7 @@
       "required": ["submission_id", "resource", "tags"],
       "properties": {
         "submission_id": {"$ref": "#/$defs/id"}, "resource": {"$ref": "#/$defs/resource"},
+        "recommendation_reason": {"type": "string", "minLength": 1, "maxLength": 6000},
         "tags": {"type": "array", "maxItems": 40, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 120}},
         "channels": {"type": "array", "maxItems": 30, "items": {"$ref": "#/$defs/channel"}},
         "metrics": {"type": "array", "maxItems": 30, "items": {"$ref": "#/$defs/metric"}}

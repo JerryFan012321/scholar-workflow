@@ -54,6 +54,12 @@ The external write dependencies are:
   Bibliographic creation and snapshot registration have separate receipts;
   neither is a paper import or a completed analysis.
 
+For recommendation-page bibliography receipts, first read the direct-intake section
+of [recommendation intake](../../references/recommendation-intake.md). Reuse the
+observed Zotero item key after checking current identity; do not create a second
+bibliography. PDF, whole-unit registration and analysis are separate requested
+outcomes, not implied by `zotero_bibliography` completion.
+
 ## Write gates
 
 The user's ingest request authorizes additive download, create, import, metadata fill, and

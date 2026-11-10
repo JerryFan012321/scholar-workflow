@@ -542,6 +542,11 @@
       "id": "recommendation-raw-metrics-and-sourced-summary",
       "description": "G19/G4：旧候选能显式补采GitHub stars及HF model/dataset/Space likes，标题旁显示对象、时间及缺值/失败；刷新保留人工决定/审阅与推荐次数。无摘要时仅基于实际正文给有来源的agent总结，有作者摘要缺译文仍需译文。Blog及其他附件保持灵活links，当前内容/依据变更重新审阅。模拟API/存储/CLI/HTTP/真实JS DOM、公开小元数据、正常安装及人工评鉴分别取证；未完成不冒称已部署。",
       "status": "pending"
+    },
+    {
+      "id": "alphaxiv-shared-management-and-direct-bibliography",
+      "description": "G19/G4：外部agent按统一Skill查询可扩展源目录，经宿主原生MCP/API取源并common submit；alphaXiv与专项agent共同推荐。首页紧凑、详情保留完整摘要/总结及灵活附件。人或agent在对应推荐源条目内编辑自由文本推荐要求，按source_id查询；各任务明确选版本并保留历史快照，不按去重论文混合要求。来源context/history可跨对话续接，操作结果明确agent_reported；目录不冒称已授权。书目入库预览目标、显式确认并读回实际Zotero条目，不冒称PDF/Vault完成；合成、安装、认证与人工分别取证。",
+      "status": "pending"
     }
   ]
 }

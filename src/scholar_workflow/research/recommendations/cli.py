@@ -1,12 +1,12 @@
 """Host-neutral submission and opening commands for recommendation candidates."""
 from __future__ import annotations
 
-from functools import wraps
 import html
 import json
-from pathlib import Path
 import sys
 import webbrowser
+from functools import wraps
+from pathlib import Path
 
 import click
 
@@ -117,15 +117,16 @@ def submit(context, input_path, refresh_metrics):
 @click.option("--producer-id")
 @click.option("--decision", type=click.Choice(["unread", "saved", "selected", "ignored"]))
 @click.option("--since", help="Published on or after this ISO date, YYYY-MM-DD.")
+@click.option("--sort", type=click.Choice(["newest", "oldest", "published", "agent"]), default="newest")
 @click.option("--limit", type=click.IntRange(1, 100), default=40)
 @click.option("--offset", type=click.IntRange(min=0), default=0)
 @click.option("--format", "fmt", type=click.Choice(["json", "md"]), default="md")
 @click.pass_obj
 @guarded
-def candidates(context, query, kind, tag, producer_id, decision, since, limit, offset, fmt):
+def candidates(context, query, kind, tag, producer_id, decision, since, sort, limit, offset, fmt):
     """List shared candidates, with producer and topic matched on the same recommendation."""
     payload = _store(context).list_candidates(query=query, kind=kind, tag=tag,
-        producer_id=producer_id, decision=decision, since=since, limit=limit, offset=offset)
+        producer_id=producer_id, decision=decision, since=since, sort=sort, limit=limit, offset=offset)
     if fmt == "json":
         _json(payload)
         return
@@ -138,6 +139,66 @@ def candidates(context, query, kind, tag, producer_id, decision, since, limit, o
             click.echo("  领域：" + "、".join(item["tags"]))
     if not payload["items"]:
         click.echo("当前没有匹配项。agent可通过 recommendations submit 提交候选。")
+
+
+@recommendations.group(name="context")
+def context_commands():
+    """Read or maintain shared context for external recommendation agents."""
+
+
+def _ranking(context):
+    from scholar_workflow.research.recommendations.ranking import RecommendationRanking
+    return RecommendationRanking(_store(context))
+
+
+@context_commands.command(name="show")
+@click.pass_obj
+@guarded
+def context_show(context):
+    """Show maintained notes and the current external ranking status."""
+    _json(_ranking(context).context())
+
+
+@context_commands.command(name="snapshot")
+@click.pass_obj
+@guarded
+def context_snapshot(context):
+    """Export live candidates, reasons, feedback, metrics and requirements with a digest."""
+    _json(_ranking(context).snapshot())
+
+
+@context_commands.command(name="save")
+@click.option("--input", "input_path", required=True)
+@click.pass_obj
+@guarded
+def context_save(context, input_path):
+    """Save shared notes with their expected revision and human/agent attribution."""
+    payload = _read_input(input_path)
+    if set(payload) != {"content", "expected_revision", "updated_by"}:
+        raise ResearchError("Shared context needs content, expected_revision and updated_by.")
+    _json(_ranking(context).save_context(**payload))
+
+
+@recommendations.group(name="ranking")
+def ranking_commands():
+    """Accept and inspect explicit ordering computed by an external agent."""
+
+
+@ranking_commands.command(name="submit")
+@click.option("--input", "input_path", required=True)
+@click.pass_obj
+@guarded
+def ranking_submit(context, input_path):
+    """Save a complete ordered candidate list, bound to its input snapshot and revision."""
+    _json(_ranking(context).submit(_read_input(input_path)))
+
+
+@ranking_commands.command(name="history")
+@click.pass_obj
+@guarded
+def ranking_history(context):
+    """Read recorded external rankings without invoking a model or provider."""
+    _json(_ranking(context).history())
 
 
 @recommendations.command(name="refresh-metrics")
@@ -216,6 +277,158 @@ def stop(context):
 def serve(context):
     """Run the private owned child process; credentials arrive through stdin."""
     lifecycle.serve(context["state_dir"], context["profile"], _read_input("-"))
+
+
+@recommendations.group(name="requirements")
+def requirement_commands():
+    """Edit shared free-text recommendation requirements, preserving every version."""
+
+
+@requirement_commands.command(name="list")
+@click.option("--source-id", help="List only requirements explicitly assigned to this registered source.")
+@click.pass_obj
+@guarded
+def requirements_list(context, source_id):
+    _json(_store(context).list_requirements(source_id=source_id))
+
+
+@requirement_commands.command(name="show")
+@click.argument("requirement_id")
+@click.option("--revision", type=click.IntRange(min=1))
+@click.pass_obj
+@guarded
+def requirements_show(context, requirement_id, revision):
+    _json(_store(context).get_requirement(requirement_id, revision))
+
+
+@requirement_commands.command(name="save")
+@click.option("--input", "input_path", required=True,
+              help="JSON with requirement_id,title,content,enabled,expected_revision,updated_by; optional source_id; or - for stdin.")
+@click.pass_obj
+@guarded
+def requirements_save(context, input_path):
+    payload = _read_input(input_path)
+    expected = {"requirement_id", "title", "content", "enabled", "expected_revision", "updated_by"}
+    if not expected <= set(payload) <= expected | {"source_id"}:
+        raise ResearchError("A requirement save needs its identity, text, enabled state, revision and declared editing source.")
+    _json(_store(context).save_requirement(**payload))
+
+
+@recommendations.group(name="sources")
+def source_commands():
+    """Discover reusable source connections; native tools remain owned by the agent harness."""
+
+
+def _catalog(context):
+    from scholar_workflow.research.recommendations.source_catalog import SourceCatalog
+    return SourceCatalog(_store(context))
+
+
+@source_commands.command(name="list")
+@click.pass_obj
+@guarded
+def sources_list(context):
+    _json(_catalog(context).list_sources())
+
+
+@source_commands.command(name="show")
+@click.argument("source_id")
+@click.pass_obj
+@guarded
+def sources_show(context, source_id):
+    _json(_catalog(context).get_source(source_id))
+
+
+@source_commands.command(name="register")
+@click.option("--input", "input_path", required=True, help="Non-secret source descriptor JSON file or - for stdin.")
+@click.option("--expected-revision", type=click.IntRange(min=0), required=True)
+@click.pass_obj
+@guarded
+def sources_register(context, input_path, expected_revision):
+    _json(_catalog(context).register(_read_input(input_path), expected_revision))
+
+
+@source_commands.command(name="context")
+@click.argument("source_id")
+@click.option("--input", "input_path", help="Update {expected_revision,topics,notes}; omit to read.")
+@click.pass_obj
+@guarded
+def sources_context(context, source_id, input_path):
+    _catalog(context).get_source(source_id)
+    if input_path:
+        payload = _read_input(input_path)
+        if set(payload) != {"expected_revision", "topics", "notes"}:
+            raise ResearchError("Source context update needs revision, topics and notes.")
+        _json(_store(context).update_source_context(source_id, **payload))
+    else:
+        _json(_store(context).source_context(source_id))
+
+
+@source_commands.command(name="record-operation")
+@click.option("--input", "input_path", required=True, help="Explicit external-agent observation, not a remote tool invocation.")
+@click.pass_obj
+@guarded
+def sources_record(context, input_path):
+    payload = _read_input(input_path)
+    _catalog(context).get_source(payload.get("source_id"))
+    _json(_store(context).record_source_operation(payload))
+
+
+@source_commands.command(name="history")
+@click.option("--source-id")
+@click.pass_obj
+@guarded
+def sources_history(context, source_id):
+    if source_id:
+        _catalog(context).get_source(source_id)
+    _json(_store(context).source_history(source_id))
+
+
+@recommendations.group(name="ingestion")
+def ingestion_commands():
+    """Preview and explicitly execute reviewed Zotero bibliography ingestion."""
+
+
+def _ingestion(context):
+    from scholar_workflow.research.recommendations.ingestion import IngestionService
+    return IngestionService(_store(context), context["profile"])
+
+
+@ingestion_commands.command(name="targets")
+@click.pass_obj
+@guarded
+def ingestion_targets(context):
+    _json(_ingestion(context).targets())
+
+
+@ingestion_commands.command(name="plan")
+@click.option("--candidate-id", required=True)
+@click.option("--expected-revision", type=click.IntRange(min=1), required=True)
+@click.option("--collection-key", required=True)
+@click.pass_obj
+@guarded
+def ingestion_plan(context, candidate_id, expected_revision, collection_key):
+    _json(_ingestion(context).plan(candidate_id, expected_revision, collection_key))
+
+
+@ingestion_commands.command(name="execute")
+@click.option("--plan-id", required=True)
+@click.option("--confirmed", is_flag=True, required=True)
+@click.option("--retry", is_flag=True, help="Explicitly retry a needs-attention operation after inspecting the provider.")
+@click.pass_obj
+@guarded
+def ingestion_execute(context, plan_id, confirmed, retry):
+    result = _ingestion(context).execute(plan_id, confirmed, retry=retry)
+    _json(result)
+    if result.get("status") != "completed":
+        click.get_current_context().exit(result.get("exit_code", 6))
+
+
+@ingestion_commands.command(name="history")
+@click.pass_obj
+@guarded
+def ingestion_history(context):
+    _json({"items": _ingestion(context).history()})
 
 
 if __name__ == "__main__":

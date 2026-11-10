@@ -1,6 +1,7 @@
 """Execute the shipped browser script against an isolated synthetic DOM.
 
-Expected behavior is declared by fixtures before UI changes: absent observations
+These complete-content scenarios explicitly open the details drawer. Expected
+behavior is declared by fixtures before UI changes: absent observations
 stay unknown, refreshes preserve old values and human state, and sourced agent
 summaries remain visibly distinct from original abstracts.
 """
@@ -8,12 +9,11 @@ from __future__ import annotations
 
 import copy
 import json
-from pathlib import Path
 import shutil
 import subprocess
+from pathlib import Path
 
 import pytest
-
 
 APP = Path(__file__).resolve().parents[2] / "src/scholar_workflow/research/recommendations/static/app.js"
 NODE = shutil.which("node")
@@ -40,6 +40,12 @@ class Element {
   replaceChildren(...nodes) { this._text = ""; this.children = nodes; }
   setAttribute(name, value) { this.attributes[name] = String(value); }
   addEventListener(name, callback) { (this.listeners[name] ||= []).push(callback); }
+  querySelectorAll(selector) {
+    const tags = selector.split(",").map(value => value.trim());
+    return collect(this).filter(node => node !== this && tags.includes(node.tagName));
+  }
+  contains(node) { return collect(this).includes(node); }
+  focus() {}
   async fire(name) { await Promise.all((this.listeners[name] || []).map(callback => callback({target: this}))); }
 }
 const ids = new Map();
@@ -79,6 +85,7 @@ function find(node, predicate) {
   if (predicate(node)) return node;
   for (const child of node.children) { const result = find(child, predicate); if (result) return result; }
 }
+function collect(node) { return [node, ...node.children.flatMap(collect)]; }
 function snapshot(node) {
   return {tag: node.tagName, class: node.className, text: node.textContent,
     attributes: node.attributes, href: node.href || null, title: node.title || null,
@@ -89,16 +96,21 @@ const settle = async () => { for (let n = 0; n < 5; n++) await new Promise(setIm
 (async () => {
   vm.runInNewContext(fs.readFileSync(process.argv[1], "utf8"), context);
   await settle();
+  // Complete-content checks explicitly open the recommendation details.
+  const detail = find(get("feed"), node => node.className.split(" ").includes("entry-details"));
+  if (!detail) throw new Error("Expected details entry");
+  await detail.fire("click");
+  await settle();
   if (input.action) {
     const className = input.action === "review" ? "review" : "metric-refresh";
-    let control = find(get("feed"), node => node.className.split(" ").includes(className));
+    let control = find(get("detail-content"), node => node.className.split(" ").includes(className));
     if (!control) throw new Error("Expected action control: " + className);
     if (input.action === "review") control = control.children.find(node => node.tagName === "input");
     if (control.disabled) throw new Error("Expected enabled action control");
     await control.fire(input.action === "review" ? "change" : "click");
     await settle();
   }
-  process.stdout.write(JSON.stringify({feed: snapshot(get("feed")), notice: get("notice").textContent,
+  process.stdout.write(JSON.stringify({feed: snapshot(get("detail-content")), notice: get("notice").textContent,
     selected_count: get("selected-count").textContent, requests}));
 })().catch(error => { process.stderr.write(String(error)); process.exitCode = 1; });
 """
@@ -142,7 +154,7 @@ def observation(value, **fields):
     return {**target(), "value": value, "observed_at": "2026-11-08T00:00:00Z", **fields}
 
 
-def test_legacy_card_shows_unknown_before_abstract_and_disabled_refresh():
+def test_legacy_card_keeps_unknown_metrics_after_abstract_and_disabled_refresh():
     item = candidate()
     item.pop("metrics")
     item.pop("metric_targets")
@@ -154,7 +166,7 @@ def test_legacy_card_shows_unknown_before_abstract_and_disabled_refresh():
     assert "尚无已核验 GitHub/HF 链接" in metrics["text"]
     assert not nodes(metrics, "metric-value")
     assert nodes(metrics, "metric-refresh")[0]["disabled"]
-    assert card["children"].index(metrics) < card["children"].index(nodes(card, "summary")[0])
+    assert card["children"].index(nodes(card, "summary")[0]) < card["children"].index(metrics)
 
 
 def test_target_refresh_posts_only_identity_and_revision_and_preserves_human_state():

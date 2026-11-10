@@ -547,6 +547,18 @@
       "action": "Refresh an existing recommendation with a forged browser URL, local/private object link, API redirect, missing counter or failed platform request.",
       "expected": "Derive bounded anonymous API requests solely from declared supported object identities; reject arbitrary request fields, do not read credentials or follow redirects. Missing/failed is unknown and retains earlier values, never fabricated zero, altered human review or another recommendation.",
       "enforcement_layer": "host_llm"
+    },
+    {
+      "id": "alphaxiv-account-and-ingestion-write-boundary",
+      "action": "Submit credentials, private paths or executor commands as source metadata; claim agent-reported operations are verified provider results; invoke the removed remote-tool proxy; or execute an unreviewed/stale/foreign-provider bibliography preview.",
+      "expected": "Reject unsafe metadata and removed RPC routes. Source records remain declarative; native tools, credentials and remote authorization belong to the external agent host. History is explicitly agent_reported, never a verified mirror or executor. Test profile never obtains personal credentials or native library access; bibliography completion requires observed item identity and collection membership.",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "recommendation-requirement-history-and-cas",
+      "action": "Overwrite a newer recommendation requirement with a stale revision, switch requirements inside one producer/run, submit new recommendations under a disabled/old version, or replace historical task requirements with the candidate latest value.",
+      "expected": "Refuse stale edits and invalid new references while preserving exact retry receipts. Each recommendation resolves its own immutable saved requirements version; different producers can recommend the same candidate under different requirements. Saving text never starts a command, source request or agent.",
+      "enforcement_layer": "cli"
     }
   ]
 }

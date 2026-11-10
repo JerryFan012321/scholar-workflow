@@ -65,3 +65,5 @@ See [SKILL.md](./SKILL.md) for the full procedure and constraints.
 
 For recommendation handoffs, an unavailable author abstract may use the explicitly
 labeled, source-backed summary branch in the [intake contract](../../references/recommendation-intake.md); current human review and selection remain required.
+
+Recommendation cards can now preview and confirm Zotero bibliography intake; existing item keys are reused when completing separately requested PDF or Vault-unit work.

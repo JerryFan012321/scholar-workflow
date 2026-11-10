@@ -11,6 +11,10 @@ RUNTIME_FILES = {
     ".agents/plugins/marketplace.json": '{"plugins": []}\n',
     ".claude-plugin/plugin.json": '{"name": "fixture"}\n',
     ".codex-plugin/plugin.json": '{"name": "fixture", "skills": "./skills/"}\n',
+    ".mcp.json": (
+        '{"mcpServers":{"fixture-source":{"type":"http",'
+        '"url":"https://example.org/mcp"}}}\n'
+    ),
     "agents/intake.md": "Runtime intake fixture.\n",
     "bin/scholar-workflow": "#!/bin/sh\nexit 0\n",
     "contracts/fixture.json": '{}\n',

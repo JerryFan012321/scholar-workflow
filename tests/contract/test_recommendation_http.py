@@ -10,7 +10,6 @@ import pytest
 
 from scholar_workflow.research.models import ResearchError
 
-
 TOKEN = "test-session-token-that-is-not-a-real-credential"
 
 
@@ -90,7 +89,10 @@ def test_health_identifies_service_without_exposing_session(tmp_path, monkeypatc
         assert health["service"] == "scholar-recommendations"
         assert health["generation"] == "synthetic-generation"
         assert health["profile"] == "test"
+        assert health["pool_id"].startswith("pool-") and len(health["pool_id"]) == 37
+        assert json.loads(request(service, "GET", "/health", authenticated=False)[2])["pool_id"] == health["pool_id"]
         assert TOKEN not in content.decode()
+        assert str(tmp_path) not in content.decode()
 
 
 def test_api_requires_auth_and_checks_host_and_origin(tmp_path, monkeypatch):
