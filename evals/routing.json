@@ -415,6 +415,42 @@
       "input": "推荐几篇研究博客文章供我看，先不订阅或入库",
       "expected_skill": "recommend-papers",
       "must_not_trigger": "track-research"
+    },
+    {
+      "id": "shared-content-and-style-explicit-edit",
+      "input": "按统一内容与文风要求修改这段已有说明，保留数字和原有结构，不另存文件",
+      "expected_skill": "content-and-style",
+      "must_not_trigger": "analyze-paper"
+    },
+    {
+      "id": "shared-content-and-style-business-composition",
+      "input": "分析这篇已入库论文，正文遵循共用内容文风要求，Canvas保持简短及原有五分支格式",
+      "expected_skill": "analyze-paper",
+      "comment": "analyze-paper保有任务与模板；通过共同呈现入口按需使用content-and-style，不替换成通用报告。"
+    },
+    {
+      "id": "shared-content-and-style-unrelated-code",
+      "input": "修复这个Python函数的索引错误，保持接口不变",
+      "expected_skill": null,
+      "must_not_trigger": "content-and-style"
+    },
+    {
+      "id": "shared-content-and-style-lookup-only",
+      "input": "帮我找到Zotero里这篇论文的位置，不分析正文",
+      "expected_skill": "find-resource",
+      "must_not_trigger": "content-and-style"
+    },
+    {
+      "id": "create-report-open-purpose",
+      "input": "用这些已选材料做一份阶段汇报，交付Markdown，按统一内容和文风要求",
+      "expected_skill": "create-report",
+      "must_not_trigger": "recommend-papers"
+    },
+    {
+      "id": "reading-report-stays-recommendation",
+      "input": "推荐这几篇论文并提供Reading Report和摘要",
+      "expected_skill": "recommend-papers",
+      "must_not_trigger": "create-report"
     }
   ]
 }

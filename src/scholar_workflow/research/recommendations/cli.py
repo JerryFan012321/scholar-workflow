@@ -110,6 +110,27 @@ def submit(context, input_path, refresh_metrics):
         click.get_current_context().exit(code)
 
 
+@recommendations.command(name="revise-content")
+@click.option("--input", "input_path", required=True, help="Content correction JSON file, or - for stdin.")
+@click.pass_obj
+@guarded
+def revise_content(context, input_path):
+    """Correct an existing reading body without submitting another recommendation."""
+    payload = _read_input(input_path)
+    if set(payload) != {"candidate_id", "expected_revision", "changes", "updated_by"}:
+        raise ResearchError("Content correction needs candidate_id, expected_revision, changes and updated_by.")
+    _json(_store(context).revise_content(**payload))
+
+
+@recommendations.command(name="content-history")
+@click.option("--candidate-id", required=True)
+@click.pass_obj
+@guarded
+def content_history(context, candidate_id):
+    """Read attributed before/after content corrections from the selected pool."""
+    _json(_store(context).content_revision_history(candidate_id))
+
+
 @recommendations.command(name="list")
 @click.option("--query", default="")
 @click.option("--kind", type=click.Choice(["paper", "project", "blog"]))

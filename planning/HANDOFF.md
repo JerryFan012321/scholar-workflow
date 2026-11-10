@@ -1,3 +1,27 @@
+# 0.53.0发布安装进行中
+
+内容/文风共用Skill、薄create-report和推荐简介修正已实现；433项定向通过，两个Skill/47链接校验通过。
+独立合成报告样例已产生，待人工评阅。见validation/content-report-results.md。
+用户批准已定框架一并落地，运行格式不简化；五条真实简介后续通过安装CLI受控修正并留历史。
+不做Notion等其他WIP、不写Zotero、不合并main。下文为各轮记录，不覆盖最新实际回执。
+
+---
+
+# 当前实施：推荐内容质量、共用文风和报告Skill（2026-11-10）
+
+用户批准此前推荐简介修正，并要求缺abstract时自行总结遵循已确认共用文风，report/内容规范一并落地，
+采用层层引用。独立codex/hotfix-content-report，基于0.52.1，不改已有论文包/Canvas或实验事实。
+复用asset-management未发布的content-and-style四文件；report薄入口只落实已定外延、载体、
+既有格式路由和人工评阅，不发明统一章节、字数或图表配额。Reading Report仍归推荐。
+推荐Skill→简介输出规范→content-and-style Skill→共用规范；各业务通过原human-presentation按需桥接。
+五个旧项目/Blog摘句均已核官方正文，AgiWorld项目页有作者Abstract，应完整翻译。
+新增CLI受控阅读内容修订与历史，CAS/before-after/署名，不新增推荐次数，不触碰评分/旧入库事实。
+前端只用摘要/项目简介/内容简介，出处按需展开。代码不冒充语义完整性评审。
+测试用合成对象和原test对象一组示例；五条真实简介修正属于用户选定的业务修正，不是整库测试。
+发布安装、真实修订与可见效果须分别留实际回执；本节尚不证明完成。拟版本0.53.0。
+
+---
+
 # 当前安装：0.52.1普通URL与后台Skill（2026-11-10）
 
 源码28451c8，runtime01f2858；hotfix/release已普通推送，pipx/Codex/Claude正常更新到0.52.1，

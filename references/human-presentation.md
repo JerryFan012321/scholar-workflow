@@ -24,10 +24,6 @@ geometry, table columns, filenames, and edit behavior.
   ordinary paragraphs, cards or tables. Audit details belong in a linked supplement
   or machine record. Do not strip existing anchors that links depend on: changing
   opaque anchors requires coordinated link migration, not cosmetic hiding.
-- Use ordinary, precise language. Explain necessary technical terms on first use;
-  do not invent jargon for a simple operation, failure or result. Separate the
-  conclusion, supporting observations and limits without repeating a disclaimer
-  on every line.
 - Primary links need actual relevance: current code/configuration, the authoritative
   plan, experiment conclusions/results and explicitly related paper-unit files.
   Explain each relation. Put inventories, hashes, full logs, snapshots and historical
@@ -49,45 +45,17 @@ geometry, table columns, filenames, and edit behavior.
 
 ## Standalone explanations
 
-The body is a durable explanation, not a speaking outline. It must remain useful
-after the reader has forgotten the conversation and without code, oral commentary,
-an expanded quotation or a diagram supplying missing essential explanations.
-This is a delivered-content requirement, not a prescribed reasoning sequence.
+When drafting or revising explanatory prose, apply the
+[content-and-style Skill](../skills/content-and-style/SKILL.md). Its
+[shared contract](content-and-style.md) owns explanation depth, Chinese prose,
+typography and human-review delivery requirements. Read only the sections relevant
+to the task; a lookup, status message or machine-only response does not require
+long-form explanations.
 
-- A discussed method explains the problem it addresses, its actual inputs,
-  transformation and outputs, and how those outputs serve the surrounding method.
-  Naming an algorithm, representation or module does not supply that explanation.
-  Keep the roles of the actual representation, model, optimization, evaluation and
-  display components distinct where relevant; do not imply that changing one
-  replaced the whole system.
-- Important parameters identify what they act on, meaning, units or dimensionless
-  status, source and mode of application. Distinguish separate values/settings
-  from ratios, and a physical quantity from a display transform. Measured values,
-  author choices, synthetic inputs and analyst inferences remain distinguishable.
-  Missing source details stay explicit rather than being invented for completeness.
-- A reported metric states what question it answers, the compared objects and
-  calculation/evaluation space, along with its definition, units and applicable
-  conditions. Identically named errors from different comparisons are not interchangeable.
-  Keep a comparison's shared and changed conditions, results and judgment together;
-  identify the baseline and variant rather than making the reader reconstruct which
-  settings stayed fixed or changed from separate inventories.
-  Give an evidence-supported judgment of the result and its usable scope. An
-  unmet stated acceptance condition requires an explicit failure/unsuitability
-  judgment; absent criteria do not authorize an invented threshold. Separate what
-  a control supports from causes that remain untested. A caveat is not a verdict.
-- Useful source figures and tables accompany their explanations, with readable
-  labels, conditions, source locations and an account of what to observe. Preserve
-  the important source material needed for later understanding; choose by explanatory
-  relevance, not an exemplar's image count. A complete archive or image gallery
-  does not replace a readable selection, captions or interpretation. Source originals
-  and human notes remain intact; transformations follow their existing ownership
-  and update protections. An explanatory redraw is not labeled as an original.
-
-Concise views navigate to that body; they do not impose their brevity on it. The
-owning template determines any genuinely one-sentence slots. Detail elsewhere is
-proportional to the explanation needed, not a fixed paragraph or word quota.
-Review whether the reader can independently explain the method and judge the
-evidence, separately from checking headings, numbers, images, links and geometry.
+The owning format still determines structure and scope. Full bodies remain
+independently readable, compact views remain compact, and verbatim excerpts retain
+their words. The Skill adds no report sections to a knowledge note, Canvas or
+Reading Report and grants no new write permission.
 
 ## Compact tree connections
 

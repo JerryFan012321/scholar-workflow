@@ -428,45 +428,52 @@
 
     const isPaper = resource.kind === "paper";
     const sources = Array.isArray(resource.summary_sources) ? resource.summary_sources : [];
-    const hasAbstract = isPaper && Boolean(resource.abstract_original);
+    const hasAbstract = Boolean(resource.abstract_original);
     const hasDescription = !isPaper && Boolean(resource.description_zh || resource.description_original);
     const hasSummary = !hasAbstract && Boolean(resource.summary_zh && sources.length);
     const readingKind = candidate.reading_kind || (hasAbstract ? "abstract"
       : hasSummary ? "summary" : hasDescription ? "description" : "unavailable");
     const summaryActive = readingKind === "summary" && hasSummary;
-    const reviewRequired = typeof candidate.review_required === "boolean" ? candidate.review_required : isPaper || summaryActive;
+    const reviewRequired = typeof candidate.review_required === "boolean" ? candidate.review_required : isPaper || hasAbstract || summaryActive;
     const reviewAvailable = typeof candidate.review_available === "boolean" ? candidate.review_available
       : Boolean((readingKind === "abstract" && resource.abstract_original && resource.abstract_zh) || summaryActive);
-    const translated = isPaper ? resource.abstract_zh : resource.description_zh;
-    const original = isPaper ? resource.abstract_original : resource.description_original;
-    const label = isPaper ? "摘要译文" : "原文简介译文";
+    const translated = hasAbstract || isPaper ? resource.abstract_zh : resource.description_zh;
+    const original = hasAbstract || isPaper ? resource.abstract_original : resource.description_original;
+    const label = (hasAbstract || isPaper) && !summaryActive ? "摘要"
+      : resource.kind === "project" ? "项目简介" : "内容简介";
     if (summaryActive) {
-      article.append(element("div", "summary-label", "资料总结（agent整理，非原文摘要）"));
+      article.append(element("div", "summary-label", label));
       article.append(element("p", "summary", resource.summary_zh));
-      const references = element("nav", "summary-sources");
-      references.setAttribute("aria-label", "总结依据");
-      references.append(element("span", null, "总结依据"));
-      for (const [index, url] of sources.entries()) {
-        const link = externalLink(`来源 ${index + 1} ↗`, url);
-        if (link) references.append(link);
-      }
-      article.append(references);
     } else if (translated) {
       article.append(element("div", "summary-label", label));
       article.append(element("p", "summary", translated));
-    } else if (original && !isPaper) {
-      article.append(element("div", "summary-label", "原文简介"));
+    } else if (original && !hasAbstract && !isPaper) {
+      article.append(element("div", "summary-label", label));
       article.append(element("p", "summary", original));
     } else {
-      article.append(element("p", "unavailable", isPaper
+      article.append(element("p", "unavailable", isPaper || hasAbstract
         ? "尚无完整摘要译文。补齐后才能确认审阅并选择入库。"
-        : "尚未提供原文简介，可直接打开原文查看。"));
+        : "尚未提供完整简介，可直接打开原文查看。"));
     }
-    if (original && (translated || isPaper || summaryActive)) {
-      const detail = element("details", "original");
-      detail.append(element("summary", null, isPaper ? "查看原文摘要" : "查看原文简介"));
-      detail.append(element("p", null, original));
-      article.append(detail);
+    if (original || summaryActive) {
+      const provenance = element("details", "original provenance");
+      provenance.open = false;
+      provenance.append(element("summary", null, "出处"));
+      provenance.append(element("p", "quiet", summaryActive ? "根据来源正文整理。"
+        : translated ? (hasAbstract || isPaper ? "作者摘要的中文译文。" : "原文简介的中文译文。")
+          : hasAbstract || isPaper ? "作者摘要原文。" : "原文简介。"));
+      if (summaryActive) {
+        const references = element("nav", "summary-sources");
+        references.setAttribute("aria-label", "出处链接");
+        references.append(element("span", null, "来源"));
+        for (const [index, url] of sources.entries()) {
+          const link = externalLink(`来源 ${index + 1} ↗`, url);
+          if (link) references.append(link);
+        }
+        provenance.append(references);
+      }
+      if (original) provenance.append(element("p", "source-original", original));
+      article.append(provenance);
     }
 
     const links = element("nav", "links");

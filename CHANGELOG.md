@@ -5,6 +5,21 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.53.0] - 2026-11-10
+
+### Added
+
+- Shared content-and-style Skill and a thin create-report Skill with progressive
+  references, preserving each business format and the agreed human review boundary.
+- Attributed CAS reading-content correction/history without inflating recommendation
+  counts or overwriting human evaluations and completed intake facts.
+
+### Fixed
+
+- Require complete source-backed synopses in recommendation output; reuse shared
+  prose requirements for no-abstract summaries and preserve complete author abstracts.
+- Simplify reading labels and move preparation/source details into collapsed Sources.
+
 ### Documentation
 
 - Record the 0.52.1 normal installation, plain-URL multi-tab check and preserved

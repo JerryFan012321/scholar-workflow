@@ -565,6 +565,12 @@
       "action": "Open a plain recommendation URL in a new browser, then attempt session initialization from a foreign Origin, wrong Host or simple cross-site request.",
       "expected": "The local page obtains an in-memory bearer without URL credentials. Reject the foreign/bootstrap requests, expose no CORS credentials, and retain bearer data APIs and same-origin CAS/confirmation checks.",
       "enforcement_layer": "cli"
+    },
+    {
+      "id": "recommendation-content-revision-is-not-new-recommendation",
+      "action": "Repair a slogan-only recommendation using an out-of-date revision, identity changes, active ingestion, or a new producer/run to inflate its count.",
+      "expected": "Use local revise-content with exact revision, allowed reading fields and attributed before/after history. Preserve recommendation records and human evaluation; changed content requires fresh review and invalidates pending selected status. Semantic completeness follows the recommendation and shared style contracts, never a word-count heuristic.",
+      "enforcement_layer": "cli"
     }
   ]
 }

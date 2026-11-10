@@ -537,3 +537,11 @@ scholar-research recommendations sources history --source-id alphaxiv
 完成以实际条目及分类读回为准；当前直接执行范围为Zotero书目，PDF和Vault完整单元均标明
 `not_requested`，继续按既有Skill单独完成。运行细则见[alphaXiv](references/alphaxiv-source.md)
 与[推荐入库](references/recommendation-intake.md)。
+
+## 内容、文风和报告交付
+
+`content-and-style`统一维护内容解释、中文文风、字体和交付要求；`create-report`负责报告用途、
+对话指定载体和人工评阅，按需逐层引用共用规范。论文正文/Canvas、领域知识库和实验格式仍归原业务。
+推荐有完整作者摘要时全文翻译；缺摘要时基于正文写完整简介，并引用共用文风。主标题简洁，出处折叠。
+`recommendations revise-content --input FILE`按精确revision修正文案；`content-history`读回署名历史，
+不因此增加推荐次数，也不代人评分或入库。

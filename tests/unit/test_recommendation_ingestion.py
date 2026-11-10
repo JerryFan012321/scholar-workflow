@@ -283,3 +283,12 @@ def test_history_projects_readable_plan_and_result_without_private_metadata(setu
     assert row["checked_at"] == result["checked_at"]
     assert row["receipt"] == result
     assert "private-provider-identity" not in str(row)
+
+
+def test_project_author_abstract_is_preserved_in_bibliography_metadata():
+    from scholar_workflow.research.recommendations.ingestion import _resource_metadata
+    result = _resource_metadata({"kind":"project", "title":"Synthetic project with an author abstract",
+        "url":"https://example.org/project", "abstract_original":"Complete author abstract.",
+        "description_original":"Old short subtitle."})
+    assert result["itemType"] == "webpage"
+    assert result["abstractNote"] == "Complete author abstract."

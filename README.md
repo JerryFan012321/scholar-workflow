@@ -656,3 +656,14 @@ completion. PDF and Vault-unit preparation remain separate and explicitly marked
 `not_requested`; a successful bibliography receipt does not complete a paper unit.
 See [alphaXiv source use](references/alphaxiv-source.md) and
 [recommendation intake](references/recommendation-intake.md).
+
+## Shared writing and report delivery
+
+`content-and-style` supplies shared explanation quality, Chinese prose and typography
+through conditional references; `create-report` handles report purpose, selected
+medium and human review. Existing paper/Canvas, knowledge and experiment templates
+retain ownership. Recommendation synopses reuse the shared prose requirements.
+They preserve complete author abstracts or summarize actual source bodies, with
+brief labels and expandable Sources. `recommendations revise-content --input FILE`
+corrects an existing reading body with its exact revision; `content-history` reads
+its attributed changes without adding another recommendation.

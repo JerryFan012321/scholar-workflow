@@ -552,6 +552,11 @@
       "id": "recommendation-headless-producers-and-curator",
       "description": "With no browser or HTTP service, two attributed agents submit to one test pool and a curator reads/saves shared context and submits a digest-bound ranking through the installed CLI. Opening the plain local URL later in two independent windows shows the same data; filters/drafts remain local, stale edits fail. External harness scheduling and account access are not implied by saving context. Development, installation and human review remain separate.",
       "status": "pending"
+    },
+    {
+      "id": "report-content-style-disclosure",
+      "description": "Report ownership routes to report contract, then applicable content-and-style Skill and its shared requirements. Existing paper/experiment/knowledge formats and original records remain authoritative; no fixed chapter/word/image quota. Deliver actual selected medium and obtain explicit human acceptance. Recommendation missing-abstract synopses reuse shared prose without becoming full reports.",
+      "status": "pending"
     }
   ]
 }

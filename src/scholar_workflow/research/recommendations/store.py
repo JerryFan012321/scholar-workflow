@@ -191,9 +191,8 @@ def _validate_item(item, schema):
 
 def reading_kind(resource):
     """Identify the actual reading content without substituting a summary for a translation."""
-    if resource["kind"] == "paper":
-        if resource.get("abstract_original"):
-            return "abstract" if resource.get("abstract_zh") else "unavailable"
+    if resource.get("abstract_original"):
+        return "abstract" if resource.get("abstract_zh") else "unavailable"
     if resource.get("summary_zh") and resource.get("summary_sources"):
         return "summary"
     if resource["kind"] != "paper" and resource.get("description_original"):
@@ -206,7 +205,7 @@ def _review_digest(resource):
     if kind == "summary":
         return _digest({key: resource.get(key) for key in
                         ("kind", "title", "url", "arxiv_id", "doi", "summary_zh", "summary_sources")})
-    if resource["kind"] != "paper":
+    if kind != "abstract":
         return None
     # Preserve existing abstract-review hashes across this additive change.
     return _digest({key: resource.get(key) for key in
@@ -282,6 +281,9 @@ class RecommendationStore:
         connection.execute("""CREATE TABLE IF NOT EXISTS recommendation_rankings (
             revision INTEGER PRIMARY KEY, producer_id TEXT NOT NULL, run_id TEXT NOT NULL,
             payload_digest TEXT NOT NULL, record TEXT NOT NULL, UNIQUE(producer_id,run_id))""")
+        connection.execute("""CREATE TABLE IF NOT EXISTS candidate_content_revisions (
+            candidate_id TEXT NOT NULL REFERENCES candidates(candidate_id), revision INTEGER NOT NULL,
+            record TEXT NOT NULL, PRIMARY KEY(candidate_id,revision))""")
         connection.execute("PRAGMA foreign_keys=ON")
         return connection
 
@@ -469,7 +471,8 @@ class RecommendationStore:
                 "metric_targets": targets, "metric_refresh": {"checks": [
                     item for item in snapshot["checks"]
                     if (item["platform"], item["metric"], item["url"]) in keys]},
-                "reading_kind": kind, "review_required": resource["kind"] == "paper" or kind == "summary",
+                "reading_kind": kind, "review_required": resource["kind"] == "paper"
+                or bool(resource.get("abstract_original")) or kind == "summary",
                 "review_available": kind in {"abstract", "summary"},
                 "producers": list(producers.values()), "recommendations": recommendations,
                 "metrics": metrics, "decision": row["decision"], "revision": row["revision"],
@@ -499,6 +502,69 @@ class RecommendationStore:
         record = json.loads(row["record"])
         return {key: record[key] for key in ("score", "comment", "revision", "updated_at")} | {
             "matches_current_content": record["resource_digest"] == _digest(resource)}
+
+    def revise_content(self, candidate_id, expected_revision, changes, updated_by):
+        """Correct an existing reading body without adding a recommendation event."""
+        allowed = {"abstract_original", "abstract_zh", "description_original", "description_zh",
+                   "summary_zh", "summary_sources"}
+        if (type(expected_revision) is not int or not 1 <= expected_revision < 2**63 - 1
+                or not isinstance(changes, dict) or not changes or set(changes) - allowed):
+            raise ResearchError("Content correction needs an exact revision and supported reading fields.")
+        if (not isinstance(updated_by, dict) or set(updated_by) != {"kind", "name"}
+                or not isinstance(updated_by.get("kind"), str) or updated_by["kind"] not in {"human", "agent"}
+                or not isinstance(updated_by.get("name"), str) or not 1 <= len(updated_by["name"]) <= 200):
+            raise ResearchError("Content correction needs a named human or agent editor.")
+        _safe_text(updated_by["name"])
+        _nonsecret_management(updated_by)
+        try:
+            if len(_json(changes).encode("utf-8")) > 512 * 1024:
+                raise ResearchError("Content correction exceeds the supported input limit.")
+        except (TypeError, ValueError, RecursionError):
+            raise ResearchError("Content correction must contain finite UTF-8 JSON.") from None
+        with self._database(write=True) as database:
+            row = self._row(database, candidate_id)
+            if row["revision"] != expected_revision:
+                raise ResearchError("Recommendation content changed; reload before correcting it.", 5)
+            if self._ingestion_active(database, candidate_id):
+                raise ResearchError("Bibliography ingestion is in progress; wait for its receipt before correcting content.", 5)
+            previous = json.loads(row["resource"])
+            # Updating original text invalidates an omitted old translation.
+            incoming = {key: value for key, value in changes.items() if value is not None}
+            resource = _merge_resource(previous, incoming)
+            for key, value in changes.items():
+                if value is None:
+                    resource.pop(key, None)
+            normalized, identity = _validate_item({"submission_id": "content-correction",
+                "resource": resource, "tags": []}, load_submission_schema())
+            resource = normalized["resource"]
+            if identity != row["identity"]:
+                raise ResearchError("Content correction cannot change resource identity.", 5)
+            if reading_kind(resource) not in {"abstract", "summary"}:
+                raise ResearchError("Complete the author abstract translation or provide a source-backed summary before correcting content.", 7)
+            if resource == previous:
+                return {"status": "unchanged", "candidate": self._candidate(database, row), "revision_record": None}
+            timestamp = _now()
+            revision = row["revision"] + 1
+            decision = "unread" if row["decision"] == "selected" else row["decision"]
+            record = {"candidate_id": candidate_id, "revision": revision, "updated_at": timestamp,
+                      "updated_by": copy.deepcopy(updated_by), "changes": copy.deepcopy(changes),
+                      "before": {"resource": previous, "revision": row["revision"], "decision": row["decision"],
+                                 "abstract_reviewed": bool(row["review_digest"] and row["review_digest"] == _review_digest(previous))},
+                      "after": {"resource": resource, "revision": revision, "decision": decision,
+                                "abstract_reviewed": False}}
+            database.execute("""UPDATE candidates SET resource=?,review_digest=NULL,decision=?,revision=?,updated_at=?
+                WHERE candidate_id=?""", (_json(resource), decision, revision, timestamp, candidate_id))
+            database.execute("INSERT INTO candidate_content_revisions VALUES(?,?,?)",
+                             (candidate_id, revision, _json(record)))
+            return {"status": "updated", "candidate": self._candidate(database, self._row(database, candidate_id)),
+                    "revision_record": record}
+
+    def content_revision_history(self, candidate_id):
+        """Read attributed before/after records from this candidate's own pool."""
+        with self._database() as database:
+            self._row(database, candidate_id)
+            return {"candidate_id": candidate_id, "items": [json.loads(row["record"]) for row in database.execute(
+                "SELECT record FROM candidate_content_revisions WHERE candidate_id=? ORDER BY revision", (candidate_id,))]}
 
     def save_evaluation(self, candidate_id, score, comment, expected_revision, expected_candidate_revision):
         """Save a person's evaluation without changing review or ingestion revisions."""

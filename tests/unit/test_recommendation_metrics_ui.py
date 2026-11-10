@@ -90,7 +90,7 @@ function collect(node) { return [node, ...node.children.flatMap(collect)]; }
 function snapshot(node) {
   return {tag: node.tagName, class: node.className, text: node.textContent,
     attributes: node.attributes, href: node.href || null, title: node.title || null,
-    datetime: node.dateTime || null, disabled: node.disabled, checked: node.checked,
+    datetime: node.dateTime || null, open: node.open === true, disabled: node.disabled, checked: node.checked,
     children: node.children.map(snapshot)};
 }
 const settle = async () => { for (let n = 0; n < 5; n++) await new Promise(setImmediate); };
@@ -242,9 +242,9 @@ def test_sourced_agent_summary_is_labeled_linked_and_reviewable(kind, current_co
     item["resource"]["links"] = [{"kind": "blog", "label": "相关 Blog", "url": "https://example.org/blog"}]
     result = render(item, action="review")
     card = nodes(result["feed"], "card")[0]
-    assert nodes(card, "summary-label")[0]["text"] == "资料总结（agent整理，非原文摘要）"
+    assert nodes(card, "summary-label")[0]["text"] == ("项目简介" if kind == "project" else "内容简介")
     sources = nodes(card, "summary-sources")[0]
-    assert "总结依据" in sources["text"]
+    assert "来源" in sources["text"]
     assert sources["children"][1]["href"] == "https://example.org/article"
     assert "我已阅读这份资料总结" in nodes(card, "review")[0]["text"]
     assert not nodes(card, "review")[0]["children"][0]["disabled"]
@@ -258,7 +258,7 @@ def test_original_abstract_translation_takes_priority_over_agent_summary():
     item = candidate()
     item["resource"].update(summary_zh="An unused summary.", summary_sources=["https://example.org/article"])
     card = nodes(render(item)["feed"], "card")[0]
-    assert nodes(card, "summary-label")[0]["text"] == "摘要译文"
+    assert nodes(card, "summary-label")[0]["text"] == "摘要"
     assert nodes(card, "summary")[0]["text"] == "完整摘要译文。"
     assert not nodes(card, "summary-sources")
     assert "这份摘要译文已确认审阅" in nodes(card, "review")[0]["text"]
@@ -317,3 +317,39 @@ def test_nonpaper_description_is_preserved_with_explicit_summary(include_summary
     if include_summary:
         assert "Original source introduction." in nodes(card, "original")[0]["text"]
     assert nodes(card, "select-input")[0]["disabled"] == include_summary
+
+
+@pytest.mark.parametrize("kind", ["paper", "project", "blog"])
+def test_summary_provenance_is_folded_away_from_main_reading(kind):
+    item = with_summary(kind)
+    card = nodes(render(item)["feed"], "card")[0]
+    provenance = nodes(card, "provenance")[0]
+    assert provenance["tag"] == "details" and not provenance["open"]
+    assert provenance["children"][0]["text"] == "出处"
+    assert "根据来源正文整理" in provenance["text"]
+    assert nodes(provenance, "summary-sources")[0]["children"][1]["href"] == "https://example.org/article"
+    assert nodes(card, "summary")[0]["text"] == item["resource"]["summary_zh"]
+    assert "非原文摘要" not in card["text"]
+
+
+@pytest.mark.parametrize("translated", [False, True])
+def test_project_with_author_abstract_uses_abstract_without_summary_bypass(translated):
+    item = candidate()
+    item.update(decision="unread", abstract_reviewed=False)
+    item["resource"].update(kind="project", summary_zh="Unused body summary.",
+                            summary_sources=["https://example.org/project"])
+    if not translated:
+        item["resource"].pop("abstract_zh")
+    card = nodes(render(item)["feed"], "card")[0]
+    assert "Unused body summary." not in card["text"]
+    assert not nodes(card, "summary-sources")
+    assert item["resource"]["abstract_original"] in nodes(card, "provenance")[0]["text"]
+    assert not nodes(card, "provenance")[0]["open"]
+    if translated:
+        assert nodes(card, "summary-label")[0]["text"] == "摘要"
+        assert nodes(card, "summary")[0]["text"] == item["resource"]["abstract_zh"]
+        assert nodes(card, "review")[0]["children"][0]["disabled"] is False
+    else:
+        assert not nodes(card, "summary")
+        assert nodes(card, "unavailable")
+        assert nodes(card, "review")[0]["children"][0]["disabled"]
