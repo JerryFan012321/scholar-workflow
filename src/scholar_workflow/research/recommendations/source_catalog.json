@@ -34,6 +34,66 @@
       "execution": {
         "kind": "native_mcp",
         "host_connection_name": "alphaxiv"
+      },
+      "plugin_version": "1.0.0",
+      "agent": {
+        "connection_name": "alphaxiv",
+        "instructions": "Use the host native alphaXiv connection. Discover its currently exposed tool descriptions and input schemas before choosing or calling a tool. Operation tool names below are hints, not guarantees of present availability. The host owns authentication and permissions. Read the saved source requirements and context; prepare complete reading content through the shared recommendation submission entry. Account writes require the actual requested scope and are recorded separately from proposals.",
+        "operations": [
+          {
+            "operation_id": "popular-research",
+            "description": "Read the source-ordered popular research feed. Resolve returned universal IDs to verified papers, projects or Blogs before recommendation.",
+            "tool_name": "get_hot_feed",
+            "effect": "read",
+            "inputs": "Use the current native tool schema for supported feed conditions; do not invent pagination.",
+            "outputs": "A bounded source-ordered feed of universal IDs and any metadata actually returned."
+          },
+          {
+            "operation_id": "personalized-research",
+            "description": "Read the connected account personalized research feed when the requested scope calls for it.",
+            "tool_name": "get_for_you_feed",
+            "effect": "read",
+            "inputs": "The selected host-authorized account and arguments supported by the current tool schema.",
+            "outputs": "Personalized feed entries, retaining actual identity and ordering from the source."
+          },
+          {
+            "operation_id": "paper-content",
+            "description": "Retrieve paper content in its actual reported mode. AI intermediate reports are not author abstracts; request raw extraction only through supported arguments.",
+            "tool_name": "get_paper_content",
+            "effect": "read",
+            "inputs": "A verified paper identity and current native arguments, including fullText only when supported and requested.",
+            "outputs": "An AI intermediate report or extracted text, with its actual scope preserved."
+          },
+          {
+            "operation_id": "paper-questions",
+            "description": "Obtain relevant paper passages for a selected question without presenting a partial answer as a complete source reading.",
+            "tool_name": "answer_pdf_queries",
+            "effect": "read",
+            "inputs": "A verified paper identity and the selected questions under the current tool schema.",
+            "outputs": "Relevant returned passages or answers, retaining available source locations and limitations."
+          },
+          {
+            "operation_id": "researcher-discovery",
+            "description": "Find researchers relevant to selected topics using only actually exposed native capabilities.",
+            "effect": "read",
+            "inputs": "The selected topic or researcher identity, mapped to a discovered native tool schema.",
+            "outputs": "Researcher candidates and evidence links; a suggestion does not follow an account."
+          },
+          {
+            "operation_id": "researcher-follow-management",
+            "description": "Apply an explicitly authorized researcher follow change through a supported native account operation.",
+            "effect": "write",
+            "inputs": "An unambiguous researcher identity and the requested follow change, using the current native schema and host authorization.",
+            "outputs": "The actual reported remote result or uncertainty; record it through source operation history without blind retries."
+          },
+          {
+            "operation_id": "reading-library-management",
+            "description": "Manage the native alphaXiv reading library within the explicit user request; do not create a second local library authority.",
+            "effect": "write",
+            "inputs": "The selected native item and requested library operation, checked against currently available tools and permissions.",
+            "outputs": "The actual native result and public evidence when available, recorded as agent-reported rather than verified cloud truth."
+          }
+        ]
       }
     },
     {
@@ -67,6 +127,19 @@
       "execution": {
         "kind": "existing_aggregator",
         "entry": "recommend-papers"
+      },
+      "plugin_version": "1.0.0",
+      "agent": {
+        "instructions": "Read the public Hugging Face Daily Papers API with the host HTTP tool or use the existing installed recommend-papers aggregator with hf_daily enabled. Check current API or CLI documentation before selecting arguments. The aggregator returns source candidates, not the shared recommendation submission envelope; obtain complete authoritative abstracts and translate them before submission. Preserve the configured provider network route. Daily Papers upvotes are distinct from model likes and repository stars.",
+        "operations": [
+          {
+            "operation_id": "daily-papers",
+            "description": "Read public daily-paper metadata and observed community upvotes.",
+            "effect": "read",
+            "inputs": "A bounded requested result count and any conditions supported by the current API or configured aggregator.",
+            "outputs": "Paper identities, titles, authors, original summaries and community upvotes when provided; no invented counts or automatic ingestion."
+          }
+        ]
       }
     },
     {

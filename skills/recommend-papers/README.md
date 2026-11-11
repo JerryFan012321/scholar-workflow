@@ -106,6 +106,14 @@ summary and reviewed before handoff. Related Blogs use the existing flexible
 
 ## Reusable recommendation sources
 
+Settings → Sources supports creating, importing, editing, exporting and enabling
+declarative source packages. Versioned definitions carry interfaces, host connection
+hints and operation inputs/outputs; new sources reuse the common page and Skill.
+Agents read `sources guide SOURCE_ID`, then discover current native tools/schemas
+in their own host. See the [plugin contract](../../references/recommendation-source-plugins.md);
+import does not configure an account or execute a tool.
+
+
 Use `scholar-research recommendations sources list` and `sources show <source-id>`
 to inspect non-secret MCP/API/feed/native-CLI descriptions. Explicit registration
 uses the current catalog revision. [Source contract](../../references/recommendation-sources.md)

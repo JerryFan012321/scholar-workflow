@@ -5,6 +5,28 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.54.0] - 2026-11-11
+
+### Fixed
+
+- Preserve the 0.53-readable source descriptor projection while retaining new
+  plugin contracts in additive metadata. Older clients omit newer tag overrides.
+
+### Added
+
+- recommend-papers: reversible manual candidate tags through detail editing, CLI
+  and authenticated HTTP, retaining original producer tags and CAS protection.
+
+### Added
+
+- recommend-papers: versioned declarative source packages, shared agent handoff,
+  import/export, editing and pool-local enablement through CLI and settings.
+
+### Documentation
+
+- Record the 0.53.0 normal release/install, five attributed reading corrections,
+  installed file parity and visible review artifacts; keep human acceptance pending.
+
 ## [0.53.0] - 2026-11-10
 
 ### Added

@@ -81,6 +81,12 @@ scholar-research recommendations --profile personal stop
 
 ## 可复用推荐源
 
+设置→推荐源支持新建、导入、编辑、导出和启停声明式来源包。源包包含版本、接口、
+宿主连接提示和操作输入/输出；新增源复用同一组件，无需修改页面或Skill。agent先读
+`sources guide SOURCE_ID`，获取该源要求与续接上下文，再由宿主发现实际MCP工具和schema。
+[插件契约](../../references/recommendation-source-plugins.md)给出格式和CLI；导入不会配置账号或执行工具。
+
+
 使用 `scholar-research recommendations sources list` 和 `sources show <source-id>`
 查询共用的 MCP／API／feed／原生 CLI 说明。显式登记使用目录当前 revision。
 [来源契约](../../references/recommendation-sources.md)说明字段、共用上下文／历史和 agent

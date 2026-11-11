@@ -423,3 +423,16 @@ history under the same pool without adding a producer/run or recommendation coun
 Read it with `recommendations content-history --candidate-id ID`; do not edit the
 pool database. After a correction, report the actual receipt and need for fresh
 human review, not an automatic adoption or ingestion result.
+
+## Manual candidate tags
+
+People may edit tags in the candidate detail panel or through
+`recommendations tags set --input FILE` with `candidate_id`, `expected_revision`
+and the desired `tags` list. `tags reset CANDIDATE_ID --expected-revision N`
+restores current producer tags. HTTP uses authenticated same-origin `/api/tags`
+and `/api/tags/reset`. Manual additions/removals affect this pool's candidate,
+not original producer records, Zotero or Vault classification. Removed producer
+tags remain suppressed on subsequent recommendations until explicitly restored.
+Global manual additions may match any producer of that candidate; unchanged
+producer tags still require the original same-record producer/tag match.
+Tag edits use CAS and preserve reading review, decisions and resource content.

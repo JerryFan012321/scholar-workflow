@@ -1,6 +1,8 @@
 # Shared recommendation source catalog
 
-The catalog records reusable non-secret source interfaces for external agents.
+The catalog records reusable non-secret source definitions for external agents.
+For versioned packages, import/export, editing, enablement and the agent handoff,
+load [source plugins](recommendation-source-plugins.md).
 It does not fetch sources, run an agent, start a model, install a connector or
 maintain another account registry. Every host/model can query the same installed
 CLI and then use its own native tools. Candidates still enter the one
@@ -34,6 +36,7 @@ A descriptor contains:
 | `capabilities` | Free-form descriptions of what this source provides |
 | `documentation` | Public documentation URLs |
 | Optional `auth` | Method, symbolic reference and setup instructions; never actual credentials |
+| Optional `plugin_version`, `agent` | Portable version and operation contract, defined by [source plugins](recommendation-source-plugins.md) |
 
 `interfaces` supports `mcp`, `api`, `feed` and `cli`. New provider IDs and capability
 labels do not require a new global platform enumeration. Network interfaces use
@@ -69,9 +72,11 @@ These projection fields must not be copied into a registration payload.
   registering these descriptions. Follow the future provider's actual permissions,
   cost limits and acquisition contract before claiming integration.
 
-A registered custom source is likewise descriptive. The external agent inspects
-its actual native tool and documentation and reports an unavailable interface;
-it must not invent a connection or dynamically execute a descriptor's URL/text.
+A registered custom plugin supplies its own operation contract and connection hints.
+The external agent reads `sources guide SOURCE_ID`, then discovers the actual native
+tools and schemas. A legacy description may lack that contract; neither form grants
+permission or proves a connection. The [plugin contract](recommendation-source-plugins.md)
+owns those fields and lifecycle operations.
 
 Each source entry contains an expandable recommendation-requirements list/editor;
 agents query it with `recommendations requirements list --source-id SOURCE_ID`.

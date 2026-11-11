@@ -335,6 +335,31 @@ def requirements_save(context, input_path):
     _json(_store(context).save_requirement(**payload))
 
 
+@recommendations.group(name="tags")
+def tag_commands():
+    """Read or edit candidate tags without changing original recommendations."""
+
+
+@tag_commands.command(name="set")
+@click.option("--input", "input_path", required=True, help="JSON with candidate_id,expected_revision,tags; or - for stdin.")
+@click.pass_obj
+@guarded
+def tags_set(context, input_path):
+    payload = _read_input(input_path)
+    if set(payload) != {"candidate_id", "expected_revision", "tags"}:
+        raise ResearchError("Tag edits need a candidate, current revision and tags.")
+    _json(_store(context).edit_tags(**payload))
+
+
+@tag_commands.command(name="reset")
+@click.argument("candidate_id")
+@click.option("--expected-revision", type=click.IntRange(min=0), required=True)
+@click.pass_obj
+@guarded
+def tags_reset(context, candidate_id, expected_revision):
+    _json(_store(context).edit_tags(candidate_id, expected_revision, reset=True))
+
+
 @recommendations.group(name="sources")
 def source_commands():
     """Discover reusable source connections; native tools remain owned by the agent harness."""
@@ -367,6 +392,51 @@ def sources_show(context, source_id):
 @guarded
 def sources_register(context, input_path, expected_revision):
     _json(_catalog(context).register(_read_input(input_path), expected_revision))
+
+
+@source_commands.command(name="import")
+@click.option("--input", "input_path", required=True, help="Versioned non-secret source plugin JSON file or - for stdin.")
+@click.option("--expected-revision", type=click.IntRange(min=0), required=True)
+@click.pass_obj
+@guarded
+def sources_import(context, input_path, expected_revision):
+    _json(_catalog(context).import_plugin(_read_input(input_path), expected_revision))
+
+
+@source_commands.command(name="export")
+@click.argument("source_id")
+@click.pass_obj
+@guarded
+def sources_export(context, source_id):
+    """Export the portable source definition, excluding local account/context state."""
+    _json(_catalog(context).export_plugin(source_id))
+
+
+@source_commands.command(name="guide")
+@click.argument("source_id")
+@click.pass_obj
+@guarded
+def sources_guide(context, source_id):
+    """Describe source operations, current requirements and cross-agent context."""
+    _json(_catalog(context).guide(source_id, profile=context["profile"]))
+
+
+@source_commands.command(name="enable")
+@click.argument("source_id")
+@click.option("--expected-revision", type=click.IntRange(min=0), required=True)
+@click.pass_obj
+@guarded
+def sources_enable(context, source_id, expected_revision):
+    _json(_catalog(context).set_enabled(source_id, True, expected_revision))
+
+
+@source_commands.command(name="disable")
+@click.argument("source_id")
+@click.option("--expected-revision", type=click.IntRange(min=0), required=True)
+@click.pass_obj
+@guarded
+def sources_disable(context, source_id, expected_revision):
+    _json(_catalog(context).set_enabled(source_id, False, expected_revision))
 
 
 @source_commands.command(name="context")

@@ -13,6 +13,14 @@
   let activePage = "recommendations";
   let navigationTouched = false;
   let sourcesLoaded = false;
+  let sourcesRevision = 0;
+  let sourceItems = [];
+  let sourceBusy = false;
+  let sourceEditorBase = "";
+  let sourceEditorRevision = 0;
+  let sourceEditingId = null;
+  let latestSourceCatalog = null;
+  let sourceOutputName = "source-plugin.json";
   const pageScroll = new Map();
   let contextLoaded = false;
   let contextBusy = false;
@@ -199,42 +207,136 @@
     contextNotice(contextDirty() ? "已采用最新版作为基线；草稿内容保持不变，合并后请保存。" : "内容与最新版相同，无需保存。");
   });
 
+  function sourceNotice(text, failed = false) {
+    const notice = $("source-plugin-notice");
+    notice.textContent = text; notice.hidden = !text; notice.classList.toggle("error", failed);
+  }
+
+  function sourceDirty() {
+    return !$("source-plugin-editor").hidden && $("source-plugin-json").value !== sourceEditorBase;
+  }
+
+  function sourceControls(busy, saving = false) {
+    sourceBusy = busy;
+    for (const id of ["sources-new", "sources-import", "sources-refresh", "source-plugin-cancel", "source-plugin-reload", "source-plugin-adopt"]) $(id).disabled = busy;
+    $("source-plugin-json").disabled = busy;
+    $("source-plugin-save").disabled = busy || !sourceDirty();
+    $("source-plugin-save").textContent = saving ? "保存中…" : "保存来源包";
+  }
+
+  function newSourcePlugin() {
+    return {schema_version: 1, source: {source_id: "", name: "", purpose: "", plugin_version: "1.0.0",
+      status: "available", enabled: true, scope: "selected_channel",
+      interfaces: [{kind: "mcp", url: ""}], capabilities: [""], documentation: [],
+      agent: {connection_name: "", instructions: "", operations: [{operation_id: "discover",
+        description: "", effect: "read", inputs: "", outputs: ""}]}}};
+  }
+
+  function openSourceEditor(plugin, {editingId = null, imported = false, revision = sourcesRevision} = {}) {
+    if (sourceDirty() && !window.confirm?.("当前来源包有未保存的修改，是否放弃这些修改？")) return;
+    const value = typeof plugin === "string" ? plugin : JSON.stringify(plugin, null, 2);
+    sourceEditingId = editingId; sourceEditorRevision = revision;
+    sourceEditorBase = imported ? "" : value;
+    latestSourceCatalog = null;
+    $("source-plugin-json").value = value;
+    $("source-plugin-title").textContent = editingId ? "编辑推荐源" : imported ? "预览导入的来源包" : "添加推荐源";
+    $("source-plugin-editor-meta").textContent = `基于目录第 ${revision} 版${editingId ? ` · ${editingId}` : ""}`;
+    $("source-plugin-editor").hidden = false;
+    $("source-plugin-latest").hidden = true;
+    $("source-plugin-output").hidden = true;
+    sourceControls(false);
+    sourceNotice(imported ? "来源包已载入预览；检查后点击保存，不会自动接入账号或获取内容。" : "填写来源包后保存。导入或编辑不会执行其中的接口和说明。");
+    $("source-plugin-title").focus?.({preventScroll: true});
+    $("source-plugin-editor").scrollIntoView?.({block: "start", behavior: "smooth"});
+  }
+
   function sourceStatus(source) {
     if (source.status === "planned") return "计划接入";
     if (source.enabled === false) return "已停用";
-    return source.status === "available" ? "已收录" : "状态待确认";
+    return source.status === "available" ? "已启用" : "状态待确认";
+  }
+
+  function showSourceOutput(value, {title, filename, note}) {
+    $("source-plugin-output-title").textContent = title;
+    $("source-plugin-output-note").textContent = note;
+    $("source-plugin-output-content").value = JSON.stringify(value, null, 2);
+    sourceOutputName = filename;
+    $("source-plugin-output").hidden = false;
+    $("source-plugin-output-title").focus?.({preventScroll: true});
+    $("source-plugin-output").scrollIntoView?.({block: "start", behavior: "smooth"});
+  }
+
+  async function sourceRead(source, kind) {
+    if (sourceBusy) return;
+    sourceControls(true);
+    try {
+      const value = await api(`/api/sources/${kind}?source_id=${encodeURIComponent(source.source_id)}`);
+      showSourceOutput(value, {title: kind === "guide" ? `${source.name} · agent 使用说明` : `${source.name} · 来源包`,
+        filename: `${source.source_id}-${kind === "guide" ? "agent-guide" : "source-plugin"}.json`,
+        note: kind === "guide" ? "交给外部 agent 使用；工具名称与参数须由当前宿主发现，来源说明不证明已连接或已获账号权限。"
+          : source.origin === "builtin" ? "这是插件随包分发的定义。内置定义由插件更新；本地启停设置不写入此包。"
+          : "可在其他推荐池导入；不包含当前池的推荐要求、账号凭据或操作历史。"});
+    } catch (error) { sourceNotice(errorText(error), true); }
+    finally { sourceControls(false); }
+  }
+
+  async function editSource(source) {
+    if (sourceBusy || source.origin === "builtin") return;
+    const revision = sourcesRevision;
+    sourceControls(true);
+    try {
+      const plugin = await api(`/api/sources/export?source_id=${encodeURIComponent(source.source_id)}`);
+      openSourceEditor(plugin, {editingId: source.source_id, revision});
+    } catch (error) { sourceNotice(errorText(error), true); }
+    finally { sourceControls(false); }
+  }
+
+  async function setSourceEnabled(source, button) {
+    if (sourceBusy) return;
+    sourceControls(true); button.disabled = true;
+    try {
+      const result = await api("/api/sources/enabled", {source_id: source.source_id,
+        enabled: source.enabled === false, expected_revision: sourcesRevision});
+      sourcesRevision = result.revision;
+      await loadSources();
+      sourceNotice(result.source.enabled ? "推荐源已启用；实际连接与取源由外部 agent 完成。" : "推荐源已停用；原推荐、要求和历史均保留。");
+    } catch (error) {
+      sourceNotice(error.code === 5 ? "目录已更新，请刷新后重新选择启停状态。" : errorText(error), true);
+    } finally { sourceControls(false); button.disabled = false; }
   }
 
   function sourceCard(source) {
-    const names = {"x-self": "X 本人精选", "zhihu-self": "知乎本人收藏"};
-    const purposes = {
-      alphaxiv: "提供热门、个性化研究与主题发现，可由现有 agent 调用原生能力。",
-      "hf-daily": "提供社区发现的每日论文与原始投票数据。",
-      "x-self": "计划跟踪你选定的本人账号 repost 或书签。",
-      "zhihu-self": "计划跟踪你选定的本人账号收藏或收藏夹。"
-    };
-    const capabilityNames = {"popular research feed": "热门研究", "personalized research feed": "个性化推荐",
-      "topic discovery": "主题发现", "paper reading": "论文阅读", "researcher discovery": "查找研究者",
-      "researcher follow management": "关注研究者", "native reading-library management": "原生阅读文库",
-      "daily paper metadata": "每日论文信息", "community upvotes": "社区投票", "own reposts": "本人 repost",
-      "own bookmarks": "本人书签", "own recent collections": "本人近期收藏", "own selected collection folder": "本人指定收藏夹"};
-    const instructions = {
-      alphaxiv: "账号授权由外部 agent 的宿主连接管理。本目录只描述来源，不证明账号已授权。",
-      "hf-daily": "使用既有公开来源适配器；实际获取时确认是否可用。",
-      "x-self": "后续接入仅限你选定的本人账号，并需要明确读取费用边界。",
-      "zhihu-self": "后续通过官方工具配置本人账号；本目录不会读取账户、收藏或凭据。"
-    };
     const card = element("article", "source-card");
     const heading = element("div", "source-heading");
-    heading.append(element("h2", null, names[source.source_id] || source.name || "推荐源"),
+    heading.append(element("h2", null, source.name || "推荐源"),
       element("span", "status-chip", sourceStatus(source)));
     card.append(heading);
-    const capabilities = element("p", "source-capabilities", (source.capabilities || [])
-      .map(value => capabilityNames[value] || value).join(" · "));
+    const meta = `${source.origin === "builtin" ? "内置" : "自定义"} · ${source.plugin_version ? `v${source.plugin_version}` : "旧版描述"}`;
+    card.append(element("p", "source-plugin-meta", meta));
+    const capabilities = element("p", "source-capabilities", (source.capabilities || []).join(" · "));
     if (capabilities.textContent) card.append(capabilities);
-    if (source.purpose) card.append(element("p", "muted", purposes[source.source_id] || source.purpose));
+    if (source.purpose) card.append(element("p", "muted", source.purpose));
     const connection = source.connection_status || (source.status === "planned" ? "not_implemented" : "not_checked");
-    card.append(element("p", "source-connection", {not_checked: "连接未检查", not_implemented: "连接尚未实现"}[connection] || "连接状态待确认"));
+    card.append(element("p", "source-connection", {not_checked: "连接未检查 · 工具由 agent 宿主发现", not_implemented: "连接尚未实现"}[connection] || "连接状态待确认"));
+    const definitionComplete = typeof source.plugin_version === "string" && source.plugin_version.length > 0
+      && typeof source.agent?.instructions === "string" && source.agent.instructions.trim().length > 0
+      && Array.isArray(source.agent?.operations) && source.agent.operations.length > 0;
+    card.append(element("p", "source-plugin-readiness", definitionComplete ? "使用说明完整" : "使用说明待补全"));
+    const actions = element("div", "source-plugin-actions");
+    const enabled = element("button", "secondary source-enabled", source.enabled === false ? "启用" : "停用");
+    enabled.type = "button"; enabled.disabled = source.status === "planned";
+    if (enabled.disabled) enabled.title = "计划中的来源尚不能启用。";
+    enabled.addEventListener("click", () => setSourceEnabled(source, enabled));
+    const guide = element("button", "text-button source-guide", "agent 使用说明"); guide.type = "button";
+    guide.addEventListener("click", () => sourceRead(source, "guide"));
+    const exportButton = element("button", "text-button source-export", "导出来源包"); exportButton.type = "button";
+    exportButton.addEventListener("click", () => sourceRead(source, "export"));
+    actions.append(enabled, guide, exportButton);
+    if (source.origin !== "builtin") {
+      const edit = element("button", "text-button source-edit", "编辑"); edit.type = "button";
+      edit.addEventListener("click", () => editSource(source)); actions.append(edit);
+    }
+    card.append(actions);
     const detail = element("details", "source-details");
     detail.append(element("summary", null, "接入信息"));
     const entries = element("dl", "source-info");
@@ -242,16 +344,16 @@
     const authNames = {host_oauth: "由 agent 宿主授权", oauth: "账号授权", api_key: "本机安全凭据", none: "无需账号凭据", not_configured: "尚未配置"};
     const scopes = {authorized_account: "按授权账户范围", self_account_only: "仅你选定的本人账号", public_research_feed: "公开研究信息流"};
     for (const [label, value] of [["使用范围", scopes[source.scope] || source.scope], ["授权方式", authNames[auth.method] || auth.method],
-      ["agent 入口", execution.entry || (execution.host_connection_name ? `宿主 MCP：${execution.host_connection_name}` : null)]]) {
+      ["agent 入口", source.agent?.connection_name || execution.entry || execution.host_connection_name]]) {
       if (value) entries.append(element("dt", null, label), element("dd", null, value));
     }
-    const interfaceKinds = {mcp: "MCP 接口", api: "API 接口", cli: "命令行接口"};
+    const interfaceKinds = {mcp: "MCP 接口", api: "API 接口", feed: "订阅接口", cli: "命令行接口"};
     for (const item of source.interfaces || []) {
       const value = item.url || item.instructions;
       if (value) entries.append(element("dt", null, interfaceKinds[item.kind] || item.kind || "接口"), element("dd", null, value));
     }
     detail.append(entries);
-    if (auth.instructions) detail.append(element("p", "muted", instructions[source.source_id] || auth.instructions));
+    if (auth.instructions) detail.append(element("p", "muted", auth.instructions));
     for (const [index, url] of (source.documentation || []).entries()) {
       const docs = externalLink(index ? `补充说明 ${index + 1} ↗` : "官方说明 ↗", url);
       if (docs) detail.append(docs);
@@ -274,10 +376,109 @@
     try {
       const result = await api("/api/sources");
       sourcesLoaded = true;
-      list.replaceChildren(...(result.items || []).map(sourceCard));
-      if (!result.items?.length) list.append(element("div", "empty-state", "当前没有已登记的推荐源。"));
+      sourcesRevision = Number.isInteger(result.revision) ? result.revision : 0;
+      sourceItems = result.items || [];
+      list.replaceChildren(...sourceItems.map(sourceCard));
+      if (!sourceItems.length) list.append(element("div", "empty-state", "当前没有已登记的推荐源。"));
     } catch (error) { list.textContent = errorText(error); }
   }
+
+  async function showLatestSource() {
+    const catalog = await api("/api/sources");
+    latestSourceCatalog = catalog;
+    const identifier = sourceEditingId;
+    let value = catalog;
+    if (identifier && catalog.items.some(item => item.source_id === identifier)) {
+      value = await api(`/api/sources/export?source_id=${encodeURIComponent(identifier)}`);
+    }
+    $("source-plugin-latest-content").textContent = JSON.stringify(value, null, 2);
+    $("source-plugin-latest").hidden = false; $("source-plugin-latest").open = true;
+  }
+
+  $("sources-new").addEventListener("click", () => {
+    if (!sourceBusy) openSourceEditor(newSourcePlugin());
+  });
+  $("sources-import").addEventListener("click", () => { if (!sourceBusy) $("source-plugin-file").click(); });
+  $("source-plugin-file").addEventListener("change", async () => {
+    const file = $("source-plugin-file").files?.[0];
+    if (!file || sourceBusy) return;
+    if (file.size > 65536) { sourceNotice("来源包最多 64 KiB，请只保留来源定义，不包含候选、历史或凭据。", true); return; }
+    try {
+      const raw = await file.text();
+      JSON.parse(raw);
+      openSourceEditor(raw, {imported: true});
+    } catch (_) { sourceNotice("文件不是有效 JSON，当前草稿保持不变。", true); }
+    finally { $("source-plugin-file").value = ""; }
+  });
+  $("source-plugin-json").addEventListener("input", () => {
+    sourceControls(false); sourceNotice(sourceDirty() ? "有未保存的来源包修改。" : "没有未保存的修改。");
+  });
+  $("source-plugin-save").addEventListener("click", async () => {
+    if (sourceBusy || !sourceDirty()) return;
+    let plugin;
+    try { plugin = JSON.parse($("source-plugin-json").value); }
+    catch (_) { sourceNotice("JSON 格式有误，当前草稿已保留。", true); return; }
+    if (sourceEditingId && plugin?.source?.source_id !== sourceEditingId) {
+      sourceNotice("编辑时请保留 source_id；新来源请使用“添加推荐源”。当前草稿已保留。", true); return;
+    }
+    const existing = sourceItems.find(item => item.source_id === plugin?.source?.source_id);
+    if (existing?.origin === "builtin") { sourceNotice("内置来源定义随插件更新，只能在此启停或导出。当前草稿已保留。", true); return; }
+    if (!sourceEditingId && existing && !window.confirm?.("相同 source_id 已存在，保存将更新该来源定义。是否继续？")) return;
+    sourceControls(true, true); sourceNotice("保存中…");
+    try {
+      const result = await api("/api/sources/import", {plugin, expected_revision: sourceEditorRevision});
+      sourceEditorBase = $("source-plugin-json").value;
+      $("source-plugin-editor").hidden = true;
+      sourcesRevision = result.revision;
+      await loadSources();
+      sourceNotice(result.changed ? "来源包已保存。账号连接与取源仍由外部 agent 完成。" : "来源包内容未变化。");
+    } catch (error) {
+      if (error.code === 5) {
+        try { await showLatestSource(); } catch (_) { /* A failed comparison must not replace the draft. */ }
+        sourceNotice("来源目录已更新，当前草稿已保留。请对照最新版后继续编辑，或取消修改。", true);
+      } else sourceNotice(`来源包未保存，草稿已保留。${errorText(error)}`, true);
+    } finally { sourceControls(false); }
+  });
+  $("source-plugin-cancel").addEventListener("click", () => {
+    if (sourceBusy || (sourceDirty() && !window.confirm?.("取消会放弃当前未保存的来源包修改，是否继续？"))) return;
+    $("source-plugin-json").value = sourceEditorBase;
+    $("source-plugin-editor").hidden = true;
+    $("source-plugin-latest").hidden = true;
+    sourceControls(false); sourceNotice("编辑已取消。");
+  });
+  $("source-plugin-reload").addEventListener("click", async () => {
+    if (sourceBusy) return;
+    sourceControls(true);
+    try { await showLatestSource(); sourceNotice("已显示最新已保存内容；当前草稿保持不变。"); }
+    catch (error) { sourceNotice(errorText(error), true); }
+    finally { sourceControls(false); }
+  });
+  $("source-plugin-adopt").addEventListener("click", () => {
+    if (sourceBusy || !latestSourceCatalog) return;
+    sourceEditorRevision = latestSourceCatalog.revision;
+    sourceItems = latestSourceCatalog.items || [];
+    sourcesRevision = sourceEditorRevision;
+    $("source-plugin-editor-meta").textContent = `基于目录第 ${sourceEditorRevision} 版${sourceEditingId ? ` · ${sourceEditingId}` : ""}`;
+    sourceNotice("已采用最新版目录编号；草稿保持不变。请合并差异后保存。");
+  });
+  $("source-plugin-copy").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText($("source-plugin-output-content").value);
+      sourceNotice("内容已复制。");
+    } catch (_) {
+      $("source-plugin-output-content").focus?.(); $("source-plugin-output-content").select?.();
+      sourceNotice("请复制已选中的 JSON 内容。");
+    }
+  });
+  $("source-plugin-download").addEventListener("click", () => {
+    const url = URL.createObjectURL(new Blob([$("source-plugin-output-content").value + "\n"], {type: "application/json"}));
+    const link = document.createElement("a"); link.href = url; link.download = sourceOutputName;
+    document.body.append(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+  });
+  $("source-plugin-output-close").addEventListener("click", () => { $("source-plugin-output").hidden = true; });
+  window.addEventListener?.("beforeunload", event => {
+    if (sourceDirty()) { event.preventDefault(); event.returnValue = ""; }
+  });
 
   function managementTime(value) {
     const time = element("time");
