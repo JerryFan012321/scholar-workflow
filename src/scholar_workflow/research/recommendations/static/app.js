@@ -19,6 +19,9 @@
   let detailCandidate = null;
   let detailFocus = null;
   let feedCandidates = [];
+  let knownTags = [];
+  let activeTagPicker = null;
+  const tagUndos = new Map();
   let readerQueue = [];
   let readerOffset = 0;
   let readerTotal = 0;
@@ -33,6 +36,96 @@
     if (text !== undefined && text !== null) node.textContent = String(text);
     return node;
   }
+
+  function tagPicker(candidate) {
+    let current = candidate, busy = false, undoTags = tagUndos.get(candidate.candidate_id) || null;
+    const area = element("section", "tag-manager"); area.setAttribute("aria-label", "条目标签");
+    const chips = element("div", "tag-chips");
+    const picker = element("details", "tag-picker");
+    const trigger = element("summary", "tag-add", "+ 标签");
+    const panel = element("div", "tag-popover");
+    const input = element("input", "tag-search"); input.type = "text";
+    input.placeholder = "搜索或创建标签"; input.maxLength = 120;
+    input.setAttribute("aria-label", "搜索或创建标签");
+    const options = element("div", "tag-options"); options.setAttribute("role", "group"); options.setAttribute("aria-label", "可选标签");
+    const status = element("div", "tag-feedback"); status.setAttribute("role", "status");
+    const undo = element("button", "text-button tag-undo", "撤销"); undo.type = "button"; undo.hidden = !undoTags;
+    const more = element("details", "tag-more");
+    more.append(element("summary", null, "更多"));
+    const reset = element("button", "text-button tag-reset", "恢复推荐标签"); reset.type = "button";
+    more.append(reset); panel.append(input, options, more);
+    picker.append(trigger, panel); area.append(chips, picker, status, undo);
+
+    function paint() {
+      chips.replaceChildren();
+      for (const tag of current.tags || []) {
+        const chip = element("span", "tag-chip"); chip.append(element("span", null, tag));
+        const remove = element("button", "tag-remove", "×"); remove.type = "button";
+        remove.setAttribute("aria-label", `移除标签：${tag}`); remove.disabled = busy;
+        remove.addEventListener("click", () => save((current.tags || []).filter(value => value !== tag)));
+        chip.append(remove); chips.append(chip);
+      }
+      const query = input.value.trim();
+      const available = [...new Set([...(current.tags || []), ...(current.source_tags || []), ...knownTags])]
+        .filter(tag => tag.toLocaleLowerCase().includes(query.toLocaleLowerCase())).sort();
+      options.replaceChildren();
+      for (const tag of available) {
+        const selected = (current.tags || []).includes(tag);
+        const option = element("button", "tag-option", `${selected ? "✓" : "+"}  ${tag}`);
+        option.type = "button"; option.disabled = busy; option.setAttribute("aria-pressed", String(selected));
+        option.addEventListener("click", () => save(selected ? current.tags.filter(value => value !== tag) : [...current.tags, tag]));
+        options.append(option);
+      }
+      if (query && !available.includes(query)) {
+        const create = element("button", "tag-create tag-option", `创建“${query}”`); create.type = "button"; create.disabled = busy;
+        create.addEventListener("click", () => save([...current.tags, query])); options.append(create);
+      }
+      if (!available.length && !query) options.append(element("p", "quiet", "输入名称，回车添加标签"));
+      input.disabled = busy; reset.disabled = busy; undo.disabled = busy;
+    }
+    async function save(next, restoring = false, undoing = false) {
+      if (busy) return;
+      const previous = [...(current.tags || [])]; busy = true; status.textContent = "保存中…"; paint();
+      try {
+        const updated = await api(restoring ? "/api/tags/reset" : "/api/tags", {
+          candidate_id: current.candidate_id, expected_revision: current.revision,
+          ...(restoring ? {} : {tags: [...new Set(next)]})});
+        current = updated; undoTags = undoing ? null : previous; undo.hidden = !undoTags;
+        if (undoTags) tagUndos.set(current.candidate_id, undoTags); else tagUndos.delete(current.candidate_id);
+        if (detailCandidate?.candidate_id === current.candidate_id) detailCandidate = current;
+        readerQueue = readerQueue.map(row => row.candidate_id === current.candidate_id ? current : row);
+        input.value = ""; status.textContent = undoing ? "已撤销" : "已保存";
+      } catch (error) {
+        status.textContent = readableError(error) + " 输入和原标签已保留。";
+      } finally {
+        busy = false; paint();
+        if (picker.open) input.focus();
+        else await load();
+      }
+    }
+    picker.addEventListener("toggle", () => {
+      if (picker.open) { activeTagPicker = picker; input.focus(); }
+      else { if (activeTagPicker === picker) activeTagPicker = null; if (!busy) load(); }
+    });
+    input.addEventListener("input", paint);
+    input.addEventListener("keydown", event => {
+      if (event.isComposing) return;
+      if (event.key === "Enter") {
+        event.preventDefault(); const tag = input.value.trim();
+        if (tag && !current.tags.includes(tag)) save([...current.tags, tag]);
+      } else if (event.key === "Escape") {
+        event.preventDefault(); event.stopPropagation(); picker.open = false; trigger.focus();
+      }
+    });
+    reset.addEventListener("click", () => {
+      if (window.confirm?.("恢复后将移除人工新增标签，并重新显示原推荐标签。是否继续？")) save([], true);
+    });
+    undo.addEventListener("click", () => { if (undoTags) save(undoTags, false, true); });
+    paint(); return area;
+  }
+  document.addEventListener("click", event => {
+    if (activeTagPicker && !activeTagPicker.contains(event.target)) activeTagPicker.open = false;
+  });
 
   function externalLink(label, value, className) {
     try {
@@ -423,8 +516,6 @@
     if (Array.isArray(resource.authors) && resource.authors.length) {
       article.append(element("p", "authors", resource.authors.join(" · ")));
     }
-    const tags = element("div", "tags");
-    for (const tag of candidate.tags || []) tags.append(element("span", "tag", tag));
 
     const isPaper = resource.kind === "paper";
     const sources = Array.isArray(resource.summary_sources) ? resource.summary_sources : [];
@@ -488,32 +579,7 @@
       if (anchor) { links.append(anchor); seen.add(value.url); }
     }
     article.append(links);
-    if (tags.childElementCount) article.append(tags);
-    const tagEditor = element("details", "tag-editor");
-    tagEditor.append(element("summary", null, "编辑标签"));
-    const tagInput = element("textarea", "tag-input");
-    tagInput.value = (candidate.tags || []).join("\n");
-    tagInput.rows = 4; tagInput.setAttribute("aria-label", "条目标签，每行一个");
-    const tagLabel = element("label", null, "每行一个标签"); tagLabel.append(tagInput);
-    const tagNotice = element("p", "quiet"); tagNotice.setAttribute("role", "status");
-    const tagSave = element("button", "secondary tag-save", "保存标签"); tagSave.type = "button";
-    const tagReset = element("button", "text-button tag-reset", "恢复推荐标签"); tagReset.type = "button";
-    async function saveTags(reset) {
-      tagSave.disabled = true; tagReset.disabled = true;
-      try {
-        const updated = await api(reset ? "/api/tags/reset" : "/api/tags", {
-          candidate_id: candidate.candidate_id, expected_revision: candidate.revision,
-          ...(reset ? {} : {tags: tagInput.value.split("\n").map(x => x.trim()).filter(Boolean)})});
-        if (detailCandidate?.candidate_id === candidate.candidate_id) detailCandidate = updated;
-        readerQueue = readerQueue.map(row => row.candidate_id === updated.candidate_id ? updated : row);
-        await load();
-      } catch (error) {
-        tagNotice.textContent = readableError(error) + " 当前标签草稿已保留。";
-      } finally { tagSave.disabled = false; tagReset.disabled = false; }
-    }
-    tagSave.addEventListener("click", () => saveTags(false));
-    tagReset.addEventListener("click", () => saveTags(true));
-    tagEditor.append(tagLabel, tagSave, tagReset, tagNotice); article.append(tagEditor);
+    article.append(tagPicker(candidate));
 
     if (candidate.ranking_reason) {
       const ranking = element("details", "recommendation-requirement");
@@ -830,6 +896,7 @@
       if (current !== sequence) return;
       state.total = result.total || 0;
       feedCandidates = result.items || [];
+      knownTags = result.facets?.tags || [];
       const currentById = new Map(feedCandidates.map(row => [row.candidate_id, row]));
       readerQueue = readerQueue.map(row => currentById.get(row.candidate_id) || row);
       const rankingStatus = $("ranking-status");

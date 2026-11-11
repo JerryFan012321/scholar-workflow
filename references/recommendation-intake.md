@@ -436,3 +436,8 @@ tags remain suppressed on subsequent recommendations until explicitly restored.
 Global manual additions may match any producer of that candidate; unchanged
 producer tags still require the original same-record producer/tag match.
 Tag edits use CAS and preserve reading review, decisions and resource content.
+
+The detail view uses removable chips and a searchable tag picker. Enter adds a
+new name; selecting/removing a tag saves it automatically with current CAS. An
+undo action restores the previous effective tags, and errors preserve the input.
+Source-tag restoration is a secondary More action with explicit confirmation.

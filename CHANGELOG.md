@@ -5,6 +5,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.54.1] - 2026-11-11
+
+### Changed
+
+- Replace manual tag textareas with compact removable chips, searchable choices,
+  Enter-to-create, automatic saving and undo; keep source restoration in More.
+
+### Documentation
+
+- Record 0.54.0 normal installation, preserved personal data, compatibility
+  readback and pending label-editor UX revision.
+
 ## [0.54.0] - 2026-11-11
 
 ### Fixed
