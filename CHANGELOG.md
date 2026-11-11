@@ -5,6 +5,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+### Documentation
+
+- Record 0.54.0 normal installation, preserved personal data, compatibility
+  readback and pending label-editor UX revision.
+
 ## [0.54.0] - 2026-11-11
 
 ### Fixed
