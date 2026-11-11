@@ -37,8 +37,8 @@ class Element{
  closest(selector){let node=this;while(node){if(selector.split(",").some(part=>matches(node,part.trim())))return node;node=node.parentElement;}return null;}
  contains(node){return all(this,item=>item===node).length>0;}getClientRects(){return this.hidden?[]:[{}];}
  scrollIntoView(){}scrollTo(options){this.scrollTop=options?.top||0;}
- async fire(name){if(this.disabled)throw Error("disabled control");
-  await Promise.all((this.listeners[name]||[]).map(fn=>fn({target:this,preventDefault(){}})));}focus(){activeNode=this;}
+ async fire(name,extra={}){if(this.disabled)throw Error("disabled control");
+  await Promise.all((this.listeners[name]||[]).map(fn=>fn({target:this,preventDefault(){},stopPropagation(){},...extra})));}focus(){activeNode=this;}
 }
 function matches(node,selector){if(selector.startsWith("."))return node.className.split(" ").includes(selector.slice(1));if(selector==="[hidden]")return node.hidden;return node.tagName===selector;}
 const ids=new Map();const get=id=>{if(!ids.has(id)){const item=new Element("div");item.id=id;ids.set(id,item);}return ids.get(id);};
@@ -50,7 +50,7 @@ const storage=new Map(Object.entries(input.storage||{})),posts=[],reads=[],sessi
 let candidates=input.candidates||[current];
 let contextRecord=input.context||{context:{content:"",revision:0},ranking:{status:"empty",revision:0},candidate_count:1};
 const context={URL,URLSearchParams,Date,Math,JSON,Error,SyntaxError,Set,Map,TextEncoder,Uint8Array,setTimeout,clearTimeout,
- window:{location:{hash:input.fragment||"",pathname:"/",search:""},scrollY:0,scrollTo(options){this.scrollY=typeof options==="object"?options.top:0;},addEventListener(name,fn){(windowEvents[name]||=[]).push(fn);},
+ window:{confirm:()=>true,location:{hash:input.fragment||"",pathname:"/",search:""},scrollY:0,scrollTo(options){this.scrollY=typeof options==="object"?options.top:0;},addEventListener(name,fn){(windowEvents[name]||=[]).push(fn);},
   history:{state:null,stack:[null],index:0,replaceState(value){this.state=value;this.stack[this.index]=value;},pushState(value){this.state=value;this.stack=this.stack.slice(0,++this.index);this.stack.push(value);},back(){if(this.index>0){this.state=this.stack[--this.index];for(const fn of windowEvents.popstate||[])fn({state:this.state});}}},crypto:{randomUUID:()=>"safe-fixture-id"}},
  document:{getElementById:get,createElement:tag=>new Element(tag),body:new Element("body"),
   get activeElement(){return activeNode;},querySelectorAll:selector=>selector==="[data-page]"?pages:tabs,addEventListener(name,fn){(documentEvents[name]||=[]).push(fn);}},
@@ -105,7 +105,19 @@ const openDetails=async()=>{await byClass("feed","entry-details").fire("click");
  vm.runInNewContext(fs.readFileSync(process.argv[3],"utf8"),context);await settle();
  const initial=snap(get("feed"));let settingsJourney=null;
  if(!["sources","history","initial","source_requirements","settings_roundtrip"].includes(input.action)&&!input.action.startsWith("context_")&&!input.action.startsWith("quick_")&&!input.action.startsWith("filter_")){await openDetails();}
- if(["tags_save","tags_conflict","tags_reset"].includes(input.action)){byClass("detail-content","tag-input").value="场景编排\n多模态基础模型";await byClass("detail-content",input.action==="tags_reset"?"tag-reset":"tag-save").fire("click");await settle();}
+ if(input.action.startsWith("tags_")){
+  const picker=byClass("detail-content","tag-picker");picker.open=true;await picker.fire("toggle");
+  const search=byClass("detail-content","tag-search");search.value=input.action==="tags_existing"?"jep":"场景编排";await search.fire("input");
+  if(input.action==="tags_reset")await byClass("detail-content","tag-reset").fire("click");
+  else if(input.action==="tags_existing")await byClass("detail-content","tag-option").fire("click");
+  else if(input.action==="tags_closed_undo"){picker.open=false;await byClass("detail-content","tag-remove").fire("click");}
+  else if(input.action==="tags_remove")await byClass("detail-content","tag-remove").fire("click");
+  else if(input.action==="tags_escape")await search.fire("keydown",{key:"Escape"});
+  else if(input.action!=="tags_search")await search.fire("keydown",{key:"Enter"});
+  await settle();
+  if(["tags_undo","tags_closed_undo"].includes(input.action)){await byClass("detail-content","tag-undo").fire("click");await settle();}
+ }
+
  if(input.action==="reopen_detail"){await get("detail-close").fire("click");if(get("detail-content").childElementCount)throw Error("detail body not cleared");await openDetails();}
  if(input.action==="sources_then_ingest"){await pages[1].fire("click");await settle();await pages[0].fire("click");await settle();await openDetails();}
  if(["review","review_conflict","review_then_select"].includes(input.action)){
@@ -329,7 +341,7 @@ def test_reading_content_and_links_precede_metadata_controls_in_both_views():
     result = render(action="detail")
     classes = [child["class"].split(" ")[0] for child in result["detail"]["children"][0]["children"]]
     assert classes.index("summary") < classes.index("links") < classes.index("metrics") < classes.index("evaluation")
-    assert classes.index("summary") < classes.index("tags")
+    assert classes.index("summary") < classes.index("tag-manager")
     compact = [child["class"] for child in result["feed"]["children"][0]["children"]]
     assert compact.index("compact-introduction") < compact.index("compact-tags")
 
@@ -612,16 +624,44 @@ def test_bootstrap_failure_never_loads_recommendation_data():
     assert not any(path.startswith("/api/candidates") for path in result["reads"])
 
 
-def test_manual_tag_detail_save_and_reset():
+
+def test_manual_tag_picker_add_reset_and_undo():
     result = render(action="tags_save")
     assert result["posts"] == [{"path": "/api/tags", "body": {
         "candidate_id": candidate()["candidate_id"], "expected_revision": 3,
-        "tags": ["场景编排", "多模态基础模型"]}}]
+        "tags": [*candidate()["tags"], "场景编排"]}}]
     reset = render(action="tags_reset")
     assert reset["posts"][0]["path"] == "/api/tags/reset"
+    undone = render(action="tags_undo")
+    assert len(undone["posts"]) == 2
+    assert undone["posts"][1]["body"]["expected_revision"] == 4
+    assert undone["posts"][1]["body"]["tags"] == candidate()["tags"]
 
 
-def test_manual_tag_conflict_keeps_draft():
+def test_manual_tag_picker_conflict_keeps_input_and_original_chips():
     result = render(action="tags_conflict")
-    assert nodes(result["detail"], "tag-input")[0]["value"] == "场景编排\n多模态基础模型"
-    assert "草稿已保留" in result["detail"]["text"]
+    assert nodes(result["detail"], "tag-search")[0]["value"] == "场景编排"
+    assert "输入和原标签已保留" in result["detail"]["text"]
+    assert nodes(result["detail"], "tag-chip")
+
+
+def test_manual_tag_picker_search_and_escape_do_not_write():
+    searched = render(action="tags_search")
+    assert not searched["posts"]
+    assert "创建“场景编排”" in searched["detail"]["text"]
+    escaped = render(action="tags_escape")
+    assert not escaped["posts"]
+    assert not nodes(escaped["detail"], "tag-picker")[0]["open"]
+
+
+def test_manual_tag_picker_removes_only_selected_association():
+    result = render(action="tags_remove")
+    assert result["posts"][0]["body"]["tags"] == candidate()["tags"][1:]
+
+
+def test_tag_picker_existing_label_and_closed_picker_undo():
+    result = render(action="tags_existing")
+    assert result["posts"][0]["body"]["tags"] == ["world-models"]
+    result = render(action="tags_closed_undo")
+    assert len(result["posts"]) == 2
+    assert result["posts"][1]["body"]["tags"] == candidate()["tags"]

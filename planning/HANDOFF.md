@@ -1,3 +1,12 @@
+# 当前：标签选择器交互修正
+
+用户同意参考Notion/Linear的紧凑标签与选择面板。独立codex/hotfix-tag-picker，拟0.54.1。
+只替换前端标签交互与样式，不改变store/API/来源和人工覆盖规则；原0.54.0服务不变。
+105项合成UI事件/必要回归通过；详情见validation/tag-picker-results.md。
+未发布安装，安装态外观待正常安装与人工评鉴。
+
+---
+
 # 0.54.0已发布并安装（2026-11-11）
 
 源码d41aeef7，runtime ab671c7e；366发布文件blob/mode一致，517定向检查通过。
