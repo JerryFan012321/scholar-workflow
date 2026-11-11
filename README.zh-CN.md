@@ -547,10 +547,9 @@ scholar-research recommendations sources history --source-id alphaxiv
 不因此增加推荐次数，也不代人评分或入库。
 
 
-## 推荐源插件（开发中）
+## 推荐源插件（0.54.0）
 
 设置→推荐源增加版本化来源包的新建、导入、编辑、导出和启停；agent用
 `scholar-research recommendations sources guide SOURCE_ID`读取操作说明、推荐要求及续接上下文。
 插件不接管宿主MCP授权和执行；新增源无需修改核心或页面枚举。
-格式和CLI见[来源插件契约](references/recommendation-source-plugins.md)。当前尚未发布安装，
-日常0.53.0页面保持原状。
+格式和CLI见[来源插件契约](references/recommendation-source-plugins.md)。此能力随0.54.0分发，使用正常安装和更新入口。

@@ -235,3 +235,15 @@ def test_builtins_describe_real_agent_entrypoints_without_claiming_connection(ca
         assert source["connection_status"] == "not_checked"
     assert catalog.get_source("x-self")["plugin_ready"] is False
 
+
+
+def test_source_storage_keeps_053_readable_projection(catalog):
+    import json
+    package = plugin()
+    catalog.import_plugin(package, expected_revision=0)
+    with catalog.store._database() as db:
+        raw = json.loads(db.execute("SELECT record FROM source_catalog WHERE name='catalog'").fetchone()[0])
+    legacy = raw["items"][0]
+    assert "agent" not in legacy and "plugin_version" not in legacy
+    assert raw["plugin_contracts"][legacy["source_id"]]["agent"] == package["source"]["agent"]
+    assert catalog.export_plugin(legacy["source_id"]) == package

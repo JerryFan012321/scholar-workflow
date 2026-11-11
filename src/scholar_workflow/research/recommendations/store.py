@@ -1007,7 +1007,16 @@ class RecommendationStore:
     def recommendation_sources(self):
         with self._database() as database:
             row = database.execute("SELECT record FROM source_catalog WHERE name='catalog'").fetchone()
-            return json.loads(row["record"]) if row else {"revision": 0, "items": []}
+            catalog = json.loads(row["record"]) if row else {"revision": 0, "items": []}
+            extensions = catalog.get("plugin_contracts", {})
+            if not isinstance(extensions, dict):
+                raise ResearchError("Source plugin extensions are invalid.", 7)
+            for item in catalog["items"]:
+                extra = extensions.get(item["source_id"], {})
+                if not isinstance(extra, dict) or set(extra) - {"plugin_version", "agent"}:
+                    raise ResearchError("Source plugin extension fields are invalid.", 7)
+                item.update(extra)
+            return catalog
 
     def register_recommendation_source(self, source, expected_revision):
         self._source_id(source.get("source_id"))
@@ -1020,14 +1029,20 @@ class RecommendationStore:
             if catalog["revision"] != expected_revision:
                 raise ResearchError("The source directory changed; read it before updating.", 5)
             index = next((i for i, item in enumerate(catalog["items"]) if item["source_id"] == source["source_id"]), None)
-            if index is not None and catalog["items"][index] == source:
+            extensions = catalog.setdefault("plugin_contracts", {})
+            legacy = {key: value for key, value in source.items() if key not in {"plugin_version", "agent"}}
+            extra = {key: value for key, value in source.items() if key in {"plugin_version", "agent"}}
+            previous = ({**catalog["items"][index], **extensions.get(source["source_id"], {})}
+                        if index is not None else None)
+            if previous == source:
                 return {"revision": catalog["revision"], "source": source, "changed": False}
             if index is None:
                 if len(catalog["items"]) >= 200:
                     raise ResearchError("The recommendation-source directory is full.", 7)
-                catalog["items"].append(copy.deepcopy(source))
+                catalog["items"].append(copy.deepcopy(legacy))
             else:
-                catalog["items"][index] = copy.deepcopy(source)
+                catalog["items"][index] = copy.deepcopy(legacy)
+            extensions[source["source_id"]] = copy.deepcopy(extra)
             catalog["revision"] += 1
             database.execute("INSERT INTO source_catalog VALUES('catalog',?) ON CONFLICT(name) DO UPDATE SET record=excluded.record",
                              (_json(catalog),))

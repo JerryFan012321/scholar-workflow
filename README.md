@@ -669,11 +669,10 @@ corrects an existing reading body with its exact revision; `content-history` rea
 its attributed changes without adding another recommendation.
 
 
-## Source plugins (in development)
+## Source plugins (0.54.0)
 
 Settings → Sources adds versioned packages with create/import/edit/export/enable
 operations. External agents use `scholar-research recommendations sources guide SOURCE_ID`
 for operation contracts, requirements and shared context, then discover native tools
 in their own host. New sources need no core/UI enumeration. See the
-[source-plugin contract](references/recommendation-source-plugins.md). This increment
-is not yet published or installed; the daily page remains 0.53.0.
+[source-plugin contract](references/recommendation-source-plugins.md). This capability ships in 0.54.0; use the normal installation and update commands.

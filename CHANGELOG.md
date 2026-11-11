@@ -5,6 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.54.0] - 2026-11-11
+
+### Fixed
+
+- Preserve the 0.53-readable source descriptor projection while retaining new
+  plugin contracts in additive metadata. Older clients omit newer tag overrides.
+
 ### Added
 
 - recommend-papers: reversible manual candidate tags through detail editing, CLI
