@@ -5,6 +5,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.54.1] - 2026-11-11
+
 ### Changed
 
 - Replace manual tag textareas with compact removable chips, searchable choices,
