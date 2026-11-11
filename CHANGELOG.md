@@ -7,6 +7,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ### Added
 
+- recommend-papers: reversible manual candidate tags through detail editing, CLI
+  and authenticated HTTP, retaining original producer tags and CAS protection.
+
+### Added
+
 - recommend-papers: versioned declarative source packages, shared agent handoff,
   import/export, editing and pool-local enablement through CLI and settings.
 

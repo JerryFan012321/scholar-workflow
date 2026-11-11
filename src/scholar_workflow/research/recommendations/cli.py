@@ -335,6 +335,31 @@ def requirements_save(context, input_path):
     _json(_store(context).save_requirement(**payload))
 
 
+@recommendations.group(name="tags")
+def tag_commands():
+    """Read or edit candidate tags without changing original recommendations."""
+
+
+@tag_commands.command(name="set")
+@click.option("--input", "input_path", required=True, help="JSON with candidate_id,expected_revision,tags; or - for stdin.")
+@click.pass_obj
+@guarded
+def tags_set(context, input_path):
+    payload = _read_input(input_path)
+    if set(payload) != {"candidate_id", "expected_revision", "tags"}:
+        raise ResearchError("Tag edits need a candidate, current revision and tags.")
+    _json(_store(context).edit_tags(**payload))
+
+
+@tag_commands.command(name="reset")
+@click.argument("candidate_id")
+@click.option("--expected-revision", type=click.IntRange(min=0), required=True)
+@click.pass_obj
+@guarded
+def tags_reset(context, candidate_id, expected_revision):
+    _json(_store(context).edit_tags(candidate_id, expected_revision, reset=True))
+
+
 @recommendations.group(name="sources")
 def source_commands():
     """Discover reusable source connections; native tools remain owned by the agent harness."""

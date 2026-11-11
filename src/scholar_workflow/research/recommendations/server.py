@@ -278,6 +278,14 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
                     self._respond(200, RecommendationRanking(store).save_context(
                         **payload, updated_by={"kind": "human", "name": "推荐页"}))
                     return
+                if path.path in {"/api/tags", "/api/tags/reset"}:
+                    expected = {"candidate_id", "expected_revision"}
+                    if path.path == "/api/tags":
+                        expected.add("tags")
+                    if set(payload) != expected:
+                        raise ResearchError("Tag edits need a candidate, current revision and tag list.")
+                    self._respond(200, store.edit_tags(**payload, reset=path.path.endswith("/reset")))
+                    return
                 if path.path == "/api/evaluations":
                     if set(payload) != {"candidate_id", "score", "comment", "expected_revision", "expected_candidate_revision"}:
                         raise ResearchError("Evaluation needs a candidate, score, comment and both displayed revisions.")

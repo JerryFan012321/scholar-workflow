@@ -67,12 +67,14 @@ const context={URL,URLSearchParams,Date,Math,JSON,Error,SyntaxError,Set,Map,Text
   if(input.action==="context_conflict"&&path==="/api/ranking/context"&&payload)return{ok:false,status:409,json:async()=>({exit_code:5})};
   if(input.action==="evaluation_conflict"&&path==="/api/evaluations")return{ok:false,status:409,json:async()=>({exit_code:5})};
   if(input.action==="evaluation_error"&&path==="/api/evaluations")return{ok:false,status:503,json:async()=>({exit_code:3})};
+  if(input.action==="tags_conflict"&&path==="/api/tags")return{ok:false,status:409,json:async()=>({exit_code:5})};
   let value;
   if(path==="/health")value={profile:input.profile||"test",pool_id:input.pool_id||"pool-"+"b".repeat(32)};
   else if(path.startsWith("/api/candidates")){const params=new URLSearchParams(path.split("?")[1]||"");let rows=candidates.map(row=>row.candidate_id===current.candidate_id?current:row);if(params.get("decision"))rows=rows.filter(row=>row.decision===params.get("decision"));value={items:rows.slice(Number(params.get("offset")||0),Number(params.get("offset")||0)+Number(params.get("limit")||40)),total:rows.length,facets:{tags:[],producers:[],kinds:["paper"]}};}
   else if(path==="/api/reviews"){current={...current,revision:current.revision+1,abstract_reviewed:true};value=current;}
   else if(path==="/api/reviews/revoke"){current={...current,revision:current.revision+1,abstract_reviewed:false,decision:current.decision==="selected"?"unread":current.decision};value=current;}
   else if(path==="/api/decisions"){current={...current,revision:current.revision+1,decision:payload.decision};value=current;}
+  else if(path==="/api/tags"||path==="/api/tags/reset"){current={...current,revision:current.revision+1,tags:payload.tags||["original"]};value=current;}
   else if(path==="/api/metrics")value=current;
   else if(path==="/api/ranking/context"){
    if(payload)contextRecord={...contextRecord,context:{content:payload.content,revision:contextRecord.context.revision+1,updated_by:{name:"推荐页"},updated_at:"2026-11-10T00:00:00Z"}};
@@ -103,6 +105,7 @@ const openDetails=async()=>{await byClass("feed","entry-details").fire("click");
  vm.runInNewContext(fs.readFileSync(process.argv[3],"utf8"),context);await settle();
  const initial=snap(get("feed"));let settingsJourney=null;
  if(!["sources","history","initial","source_requirements","settings_roundtrip"].includes(input.action)&&!input.action.startsWith("context_")&&!input.action.startsWith("quick_")&&!input.action.startsWith("filter_")){await openDetails();}
+ if(["tags_save","tags_conflict","tags_reset"].includes(input.action)){byClass("detail-content","tag-input").value="场景编排\n多模态基础模型";await byClass("detail-content",input.action==="tags_reset"?"tag-reset":"tag-save").fire("click");await settle();}
  if(input.action==="reopen_detail"){await get("detail-close").fire("click");if(get("detail-content").childElementCount)throw Error("detail body not cleared");await openDetails();}
  if(input.action==="sources_then_ingest"){await pages[1].fire("click");await settle();await pages[0].fire("click");await settle();await openDetails();}
  if(["review","review_conflict","review_then_select"].includes(input.action)){
@@ -607,3 +610,18 @@ def test_bootstrap_failure_never_loads_recommendation_data():
     result = render(action="initial", session_failure=True)
     assert not result["initial"]["children"]
     assert not any(path.startswith("/api/candidates") for path in result["reads"])
+
+
+def test_manual_tag_detail_save_and_reset():
+    result = render(action="tags_save")
+    assert result["posts"] == [{"path": "/api/tags", "body": {
+        "candidate_id": candidate()["candidate_id"], "expected_revision": 3,
+        "tags": ["场景编排", "多模态基础模型"]}}]
+    reset = render(action="tags_reset")
+    assert reset["posts"][0]["path"] == "/api/tags/reset"
+
+
+def test_manual_tag_conflict_keeps_draft():
+    result = render(action="tags_conflict")
+    assert nodes(result["detail"], "tag-input")[0]["value"] == "场景编排\n多模态基础模型"
+    assert "草稿已保留" in result["detail"]["text"]

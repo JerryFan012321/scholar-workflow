@@ -489,6 +489,32 @@
     }
     article.append(links);
     if (tags.childElementCount) article.append(tags);
+    const tagEditor = element("details", "tag-editor");
+    tagEditor.append(element("summary", null, "编辑标签"));
+    const tagInput = element("textarea", "tag-input");
+    tagInput.value = (candidate.tags || []).join("\n");
+    tagInput.rows = 4; tagInput.setAttribute("aria-label", "条目标签，每行一个");
+    const tagLabel = element("label", null, "每行一个标签"); tagLabel.append(tagInput);
+    const tagNotice = element("p", "quiet"); tagNotice.setAttribute("role", "status");
+    const tagSave = element("button", "secondary tag-save", "保存标签"); tagSave.type = "button";
+    const tagReset = element("button", "text-button tag-reset", "恢复推荐标签"); tagReset.type = "button";
+    async function saveTags(reset) {
+      tagSave.disabled = true; tagReset.disabled = true;
+      try {
+        const updated = await api(reset ? "/api/tags/reset" : "/api/tags", {
+          candidate_id: candidate.candidate_id, expected_revision: candidate.revision,
+          ...(reset ? {} : {tags: tagInput.value.split("\n").map(x => x.trim()).filter(Boolean)})});
+        if (detailCandidate?.candidate_id === candidate.candidate_id) detailCandidate = updated;
+        readerQueue = readerQueue.map(row => row.candidate_id === updated.candidate_id ? updated : row);
+        await load();
+      } catch (error) {
+        tagNotice.textContent = readableError(error) + " 当前标签草稿已保留。";
+      } finally { tagSave.disabled = false; tagReset.disabled = false; }
+    }
+    tagSave.addEventListener("click", () => saveTags(false));
+    tagReset.addEventListener("click", () => saveTags(true));
+    tagEditor.append(tagLabel, tagSave, tagReset, tagNotice); article.append(tagEditor);
+
     if (candidate.ranking_reason) {
       const ranking = element("details", "recommendation-requirement");
       ranking.append(element("summary", null, "本次排序理由"), element("p", "requirement-snapshot", candidate.ranking_reason));

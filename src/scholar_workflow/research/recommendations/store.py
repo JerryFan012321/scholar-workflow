@@ -284,6 +284,8 @@ class RecommendationStore:
         connection.execute("""CREATE TABLE IF NOT EXISTS candidate_content_revisions (
             candidate_id TEXT NOT NULL REFERENCES candidates(candidate_id), revision INTEGER NOT NULL,
             record TEXT NOT NULL, PRIMARY KEY(candidate_id,revision))""")
+        connection.execute("""CREATE TABLE IF NOT EXISTS candidate_tags (
+            candidate_id TEXT PRIMARY KEY REFERENCES candidates(candidate_id), record TEXT NOT NULL)""")
         connection.execute("PRAGMA foreign_keys=ON")
         return connection
 
@@ -448,6 +450,11 @@ class RecommendationStore:
                 if key not in metric_keys:
                     metrics.append(metric)
                     metric_keys.add(key)
+        source_tags = sorted(tags)
+        edited = database.execute("SELECT record FROM candidate_tags WHERE candidate_id=?",
+                                  (row["candidate_id"],)).fetchone()
+        tag_edits = json.loads(edited["record"]) if edited else {"added": [], "removed": []}
+        tags = (tags | set(tag_edits["added"])) - set(tag_edits["removed"])
         from scholar_workflow.research.recommendations.metrics import metric_targets
 
         targets = [{key: target[key] for key in ("platform", "metric", "url")}
@@ -463,6 +470,7 @@ class RecommendationStore:
                                      (row["candidate_id"],)).fetchone()
         ingestion = json.loads(ingestion["record"]) if ingestion else None
         return {"candidate_id": row["candidate_id"], "resource": resource, "tags": sorted(tags),
+                "source_tags": source_tags, "tag_edits": tag_edits,
                 "evaluation": RecommendationStore._evaluation(database, row["candidate_id"], resource),
                 "ingestion": ({"plan_id": ingestion["plan_id"], "status": ingestion["status"],
                                "scope": "zotero_bibliography", "receipt": ingestion.get("receipt"),
@@ -566,6 +574,39 @@ class RecommendationStore:
             return {"candidate_id": candidate_id, "items": [json.loads(row["record"]) for row in database.execute(
                 "SELECT record FROM candidate_content_revisions WHERE candidate_id=? ORDER BY revision", (candidate_id,))]}
 
+    def edit_tags(self, candidate_id, expected_revision, tags=None, *, reset=False):
+        """Apply explicit candidate tags without rewriting producer attribution."""
+        if type(expected_revision) is not int or expected_revision < 0:
+            raise ResearchError("Tag edits need an exact current revision.")
+        if not reset:
+            if not isinstance(tags, list) or len(tags) > 1000:
+                raise ResearchError("Tags must be a bounded list.")
+            normalized = set()
+            for tag in tags:
+                if not isinstance(tag, str) or not tag.strip() or len(tag.strip()) > 120:
+                    raise ResearchError("Each tag needs 1 to 120 characters.")
+                _safe_text(tag.strip())
+                _nonsecret_management(tag.strip())
+                normalized.add(tag.strip())
+        with self._database(write=True) as database:
+            row = self._row(database, candidate_id)
+            if row["revision"] != expected_revision:
+                raise ResearchError("Candidate changed; reload before editing tags.", 5)
+            if self._ingestion_active(database, candidate_id):
+                raise ResearchError("Candidate ingestion is active; retry after completion.", 5)
+            current = self._candidate(database, row)
+            source = set(current["source_tags"])
+            edits = {"added": [] if reset else sorted(normalized - source),
+                     "removed": [] if reset else sorted(source - normalized)}
+            if all(current["tag_edits"][key] == edits[key] for key in edits):
+                return current
+            edits["updated_at"] = _now()
+            database.execute("INSERT INTO candidate_tags VALUES(?,?) ON CONFLICT(candidate_id) DO UPDATE SET record=excluded.record",
+                             (candidate_id, _json(edits)))
+            database.execute("UPDATE candidates SET revision=revision+1,updated_at=? WHERE candidate_id=?",
+                             (_now(), candidate_id))
+            return self._candidate(database, self._row(database, candidate_id))
+
     def save_evaluation(self, candidate_id, score, comment, expected_revision, expected_candidate_revision):
         """Save a person's evaluation without changing review or ingestion revisions."""
         if score is not None and (type(score) is not int or not 1 <= score <= 5):
@@ -632,8 +673,10 @@ class RecommendationStore:
                 continue
             if query.casefold() not in " ".join([resource["title"], *resource.get("authors", [])]).casefold():
                 continue
+            if tag and tag not in row["tags"]:
+                continue
             if (tag or producer_id) and not any(
-                (not tag or tag in record["tags"])
+                (not tag or tag in record["tags"] or tag in row["tag_edits"]["added"])
                 and (not producer_id or producer_id == record["producer"]["producer_id"])
                 for record in row["recommendations"]
             ):
