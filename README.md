@@ -469,7 +469,11 @@ or HTTP service required. Their harness owns scheduling. For people, run
 `scholar-research recommendations start` and open the plain URL returned by it;
 `status` rediscovers that URL and `open --no-browser` prints it. Multiple local
 browser/cmux windows work without URL tokens or existing browser credentials.
-Closing windows does not stop the service; `stop` does not disable data CLI access.
+The personal address defaults to **http://127.0.0.1:61201/** and survives restarts.
+On macOS the personal service starts at login and recovers after abnormal exit.
+`stop` removes its login job without disabling data CLI access; `restart` reuses the
+saved port. Test pools retain separate ports and never install login jobs. See
+[service lifecycle](references/recommendation-service.md) for conflicts and platform limits.
 
 ## Installation
 

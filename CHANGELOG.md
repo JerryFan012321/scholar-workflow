@@ -5,6 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [Unreleased]
 
+## [0.54.2] - 2026-11-12
+
+### Fixed
+- Keep a saved recommendation address across restarts; personal default is loopback port 61201, with explicit conflict errors instead of silent port changes.
+- Supervise the installed personal service through a macOS user LaunchAgent for login startup and abnormal-exit recovery; explicit stop removes supervision without deleting data.
+- Keep test pools isolated with their own persistent ports and no login jobs; add restart and observable supervision status.
+
 ## [0.54.1] - 2026-11-11
 
 ### Changed
