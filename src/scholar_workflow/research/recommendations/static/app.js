@@ -679,27 +679,27 @@
       group.append(button);
     }
     const rejection = element("details", "rejection-picker");
-    rejection.append(element("summary", "text-button", candidate.decision === "ignored" ? "已忽略 · 修改" : "忽略"));
+    rejection.append(element("summary", "text-button", candidate.decision === "ignored" && candidate.disposition?.reason !== "quality" ? "已忽略 · 修改" : "忽略"));
     const quality = element("button", "text-button", "质量不符合要求");
     quality.type = "button";
     quality.addEventListener("click", () => updateCandidate(candidate, "/api/decisions", {decision: "ignored", reason: "quality"}));
-    const scope = element("input", "rejection-scope");
-    scope.type = "text"; scope.maxLength = 300;
-    scope.placeholder = "当前项目或方向，例如：世界模型评测";
-    scope.setAttribute("aria-label", "不相关的项目或方向");
-    scope.value = candidate.disposition?.scope || "";
-    const unrelated = element("button", "text-button", "与这个方向无关");
-    unrelated.type = "button"; unrelated.disabled = !scope.value.trim();
-    scope.addEventListener("input", () => { unrelated.disabled = !scope.value.trim(); });
+    quality.setAttribute("aria-pressed", String(candidate.disposition?.reason === "quality"));
+    group.append(quality);
+    const unrelated = element("button", "text-button", "不是当前想关注的方向");
+    unrelated.type = "button";
     unrelated.addEventListener("click", () => updateCandidate(candidate, "/api/decisions", {
-      decision: "ignored", reason: "not_relevant", scope: scope.value.trim()}));
-    rejection.append(quality, scope, unrelated);
+      decision: "ignored", reason: "not_relevant"}));
+    const other = element("button", "text-button", "其他");
+    other.type = "button";
+    other.addEventListener("click", () => updateCandidate(candidate, "/api/decisions", {
+      decision: "ignored", reason: "other"}));
+    rejection.append(unrelated, other);
+    group.append(rejection);
     if (candidate.decision === "ignored") {
       const restore = element("button", "text-button", "恢复未处理"); restore.type = "button";
       restore.addEventListener("click", () => updateCandidate(candidate, "/api/decisions", {decision: "unread"}));
-      rejection.append(restore);
+      group.append(restore);
     }
-    group.append(rejection);
     actions.append(group);
     const evaluate = element("button", "text-button evaluation-open", "评价");
     evaluate.type = "button";
@@ -714,14 +714,18 @@
     if (candidate.decision && candidate.decision !== "unread") {
       const completed = candidate.intake_job?.status === "completed" || candidate.ingestion?.status === "completed";
       const changed = candidate.ingestion?.matches_current_content === false;
-      article.append(element("div", "decision-note", `${decisionNames[candidate.decision] || ""} · ${changed
+      article.append(element("div", "decision-note", `${candidate.disposition?.reason === "quality" ? "质量不符合要求" : decisionNames[candidate.decision] || ""} · ${changed
         ? "旧内容已有入库记录，当前内容已更新" : completed
            ? (state.profile === "test" ? "模拟书目入库完成" : candidate.intake_job?.status === "completed"
              ? "Zotero 元信息与收录说明已入库" : "Zotero 书目已入库")
            : candidate.decision !== "selected" ? "处理已记录" : candidate.intake_job?.status === "retry"
              ? "处理已记录，等待 Zotero 可用后写入" : "处理已记录，待写入 Zotero"}`));
       if (candidate.disposition?.reason === "not_relevant") {
-        article.append(element("p", "muted", `与 ${candidate.disposition.scope} 无关；保留以后重新考虑的记录。`));
+        const scope = candidate.disposition.scope;
+        const message = scope === "current_research" || !scope
+          ? "不是当前想关注的方向；以后可以重新考虑。"
+          : `与 ${scope} 无关；保留以后重新考虑的记录。`;
+        article.append(element("p", "muted", message));
       }
     }
     if (typeof window.ScholarRecommendationWorkspace?.decorateCard === "function") {
@@ -897,7 +901,7 @@
     const receipt = candidate.ingestion;
     const status = receipt?.matches_current_content === false ? "旧内容有入库记录"
       : receipt?.status === "completed" ? (state.profile === "test" ? "模拟书目入库完成" : "书目已入库")
-        : decisionNames[candidate.decision] || "未处理";
+        : candidate.disposition?.reason === "quality" ? "质量不符合要求" : decisionNames[candidate.decision] || "未处理";
     provenance.append(element("span", "compact-state", status));
     if (candidate.evaluation?.score || candidate.evaluation?.comment) {
       const evaluation = element("span", "compact-evaluation", `我的评价 ${evaluationLabel(candidate.evaluation)}`);

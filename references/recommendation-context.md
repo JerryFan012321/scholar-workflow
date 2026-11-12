@@ -86,11 +86,19 @@ score/comment/revision/time and its original content digest. Tasks retain stable
 project/producer identity and title. JSONL is JSON records, not an additional YAML
 representation. Never hand-edit derived feedback to change a person's judgment.
 
-`ignored` may carry `reason: quality | not_relevant | other`. `not_relevant` requires
-an explicit `scope` naming the project or research direction. Legacy unqualified
-ignores retain an unknown reason. A project-scoped relevance judgment does not
-establish global dislike. Saved/later, selected and quality rejection retain their
-separate meanings; scores do not overwrite those meanings.
+The UI exposes quality rejection as a separate action. Its Ignore menu contains
+only “不是当前想关注的方向” (`not_relevant`) and “其他” (`other`). Restore is outside
+that menu. Quality rejection must display its own label, not “已忽略”. For storage
+compatibility these dispositions use `decision: ignored` with distinct
+`reason: quality | not_relevant | other`; consumers must read the reason rather
+than interpret every ignored item as poor quality. New `not_relevant`
+feedback defaults to `scope: current_research`: unrelated to the user's entire
+current research scope, not just the originating project. No scope input is
+required. This is a current relevance judgment, not a quality rejection or a
+permanent dislike; the user may reconsider it later. Existing explicit scopes
+retain their original meaning; legacy unqualified ignores retain an unknown
+reason. Saved/later, selected and quality rejection retain their separate meanings;
+scores do not overwrite those meanings.
 
 ```text
 scholar-research recommendations --profile personal feedback status

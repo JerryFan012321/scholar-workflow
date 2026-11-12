@@ -3,6 +3,15 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.55.1] - 2026-11-13
+
+### Fixed
+- Separate quality rejection from the Ignore menu, which now contains only current
+  research disinterest and other reasons; preserve distinct feedback reasons.
+- Remove the recommendation rejection scope input. Irrelevance now defaults to the
+  user's entire current research scope, separate from quality rejection; preserve
+  existing explicitly scoped feedback without rewriting history.
+
 ## [0.55.0] - 2026-11-12
 
 ### Added
