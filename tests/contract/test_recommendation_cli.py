@@ -116,6 +116,16 @@ def test_owned_service_starts_reuses_and_stops_without_losing_candidates(tmp_pat
     assert json.loads(stopped.output)["status"] == "stopped"
     assert json.loads(invoke(tmp_path, "--profile", "test", "list", "--format", "json").output)["total"] == 1
     assert json.loads(invoke(tmp_path, "--profile", "test", "stop").output)["status"] == "stopped"
+    try:
+        restarted = invoke(tmp_path, "--profile", "test", "start")
+        assert restarted.exit_code == 0, restarted.output
+        assert json.loads(restarted.output)["port"] == status["port"]
+        again = invoke(tmp_path, "--profile", "test", "restart")
+        assert again.exit_code == 0, again.output
+        assert json.loads(again.output)["port"] == status["port"]
+        assert json.loads(again.output)["manager"] == "detached"
+    finally:
+        invoke(tmp_path, "--profile", "test", "stop")
 
 
 def test_refresh_metrics_uses_current_registered_candidate_without_resubmitting(tmp_path, monkeypatch):

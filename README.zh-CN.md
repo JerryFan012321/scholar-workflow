@@ -19,9 +19,10 @@ Notion、cmux 和外部 Codex 的原生能力，不另建工具控制面。
 
 外部推荐agent和管家agent通过共享CLI读写同一数据池，无需打开网页或HTTP服务。
 执行/定时归外部宿主。人类运行 `scholar-research recommendations start` 后，
-用它输出的普通本地URL打开即可；`status`查询地址，`open --no-browser`只输出URL。
-支持多个浏览器/cmux窗口，无需URL凭据或已登录窗口。关闭窗口不停止服务，
-`stop`关闭HTTP也不影响agent的CLI操作。刷新查看外部agent的新结果。
+日常默认打开 **http://127.0.0.1:61201/**；`status`查询运行情况，`open --no-browser`只输出URL。
+macOS登录后自动启动、异常退出后恢复；重启仍使用原地址。支持多个浏览器/cmux窗口，
+无需URL凭据或已登录窗口。`restart`重启；`stop`停止并关闭登录自动启动，不影响agent的CLI操作。
+测试池地址独立保存，不创建登录任务。端口冲突会报错，不静默换址。完整操作见[推荐服务](references/recommendation-service.md)。
 
 ## 推荐页面——第一期（0.51.0）
 

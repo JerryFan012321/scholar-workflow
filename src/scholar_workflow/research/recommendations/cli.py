@@ -260,11 +260,12 @@ def status(context):
 
 
 @recommendations.command(name="start")
+@click.option("--port", type=click.IntRange(1024, 65535), help="Save a different stable local port.")
 @click.pass_obj
 @guarded
-def start(context):
+def start(context, port):
     """Start or reuse this profile's identified local recommendation service."""
-    lifecycle.start(context["state_dir"], context["profile"])
+    lifecycle.start(context["state_dir"], context["profile"], port=port)
     _json(lifecycle.status(context["state_dir"], context["profile"]))
 
 
@@ -290,6 +291,27 @@ def open_page(context, no_browser):
 def stop(context):
     """Stop only this profile's identified service; preserve all candidates."""
     _json(lifecycle.stop(context["state_dir"], context["profile"]))
+
+
+@recommendations.command(name="restart")
+@click.pass_obj
+@guarded
+def restart(context):
+    """Restart this pool at its saved address, preserving candidates."""
+    lifecycle.stop(context["state_dir"], context["profile"])
+    lifecycle.start(context["state_dir"], context["profile"])
+    _json(lifecycle.status(context["state_dir"], context["profile"]))
+
+
+@recommendations.command(name="serve-managed", hidden=True)
+@click.pass_obj
+@guarded
+def serve_managed(context):
+    """Run in launchd; generate credentials in memory, never in its plist."""
+    import secrets
+
+    lifecycle.serve(context["state_dir"], context["profile"], {
+        "generation": secrets.token_urlsafe(24), "token": secrets.token_urlsafe(32)})
 
 
 @recommendations.command(name="serve", hidden=True)

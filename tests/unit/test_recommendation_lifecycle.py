@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
@@ -73,3 +72,48 @@ def test_private_directory_rejects_symlink_ancestor(tmp_path):
     with pytest.raises(ResearchError):
         lifecycle.ensure_private_dir(link / "state")
     assert not (actual / "state").exists()
+
+
+def test_personal_default_and_saved_endpoint(tmp_path):
+    assert lifecycle._desired_port(tmp_path, "personal") == 61201
+    assert lifecycle._desired_port(tmp_path, "test") == 0
+    lifecycle._save_port(tmp_path, 61203)
+    assert lifecycle._desired_port(tmp_path, "personal") == 61203
+    assert lifecycle._desired_port(tmp_path, "test") == 61203
+    assert lifecycle._desired_port(tmp_path, "personal", 61204) == 61204
+    assert (tmp_path / "endpoint.json").stat().st_mode & 0o777 == 0o600
+
+
+@pytest.mark.parametrize("value", [True, 0, 80, 65536, "61201"])
+def test_invalid_explicit_port_is_refused(tmp_path, value):
+    with pytest.raises(ResearchError):
+        lifecycle._desired_port(tmp_path, "personal", value)
+
+
+def test_symlink_endpoint_is_refused(tmp_path):
+    other = tmp_path / "other"
+    other.write_text('{"port": 61201}')
+    (tmp_path / "endpoint.json").symlink_to(other)
+    with pytest.raises(ResearchError):
+        lifecycle._desired_port(tmp_path, "personal")
+    with pytest.raises(ResearchError):
+        lifecycle._save_port(tmp_path, 61201)
+    assert other.read_text() == '{"port": 61201}'
+
+
+def test_occupied_requested_port_preserves_existing_service(tmp_path, monkeypatch):
+    runtime = {**record(), "profile": "personal"}
+    monkeypatch.setattr(lifecycle, "_read_runtime", lambda path: runtime)
+    def occupied(port):
+        raise ResearchError("occupied", 3)
+    monkeypatch.setattr(lifecycle, "_check_port", occupied)
+    monkeypatch.setattr(lifecycle, "_stop_record", lambda *args: pytest.fail("must not stop"))
+    with pytest.raises(ResearchError, match="occupied"):
+        lifecycle.start(tmp_path, "personal", port=61204)
+
+
+def test_stopped_status_reports_bookmark_without_credentials(tmp_path):
+    result = lifecycle.status(tmp_path, "test")
+    assert result["status"] == "stopped" and not result["login_start"]
+    lifecycle._save_port(tmp_path, 61204)
+    assert lifecycle.status(tmp_path, "test")["url"] == "http://127.0.0.1:61204/"

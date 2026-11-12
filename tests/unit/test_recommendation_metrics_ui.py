@@ -64,7 +64,7 @@ const context = {
   window: {location: {hash: "#token=" + "a".repeat(32), pathname: "/", search: ""},
     history: {replaceState() {}}},
   document: {getElementById: get, createElement: tag => new Element(tag),
-    querySelectorAll: () => tabs, body: new Element("body")},
+    addEventListener() {}, querySelectorAll: () => tabs, body: new Element("body")},
   sessionStorage: {getItem: key => storage.get(key) || null,
     setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key)},
   fetch: async (path, options = {}) => {

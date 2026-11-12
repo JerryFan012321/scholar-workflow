@@ -386,9 +386,11 @@ preferences or unsourced metrics. On conflict, reread the relevant records befor
 submitting a new run; uncertain retries preserve the same idempotency identity.
 
 Data access is independent of both the frontend and its HTTP service. The installed
-`recommendations start` command starts a detached local UI service and returns a
+`recommendations start` command starts or reuses the local UI service and returns a
 plain URL; closing every browser window or the launching terminal does not stop it.
-Use `status` to rediscover the current URL and `stop` to stop that service explicitly.
+The personal default is `http://127.0.0.1:61201/`; macOS login/recovery supervision,
+stop/restart semantics and port conflicts follow [service lifecycle](recommendation-service.md).
+Use `status` to inspect the actual service and `stop` to stop it explicitly.
 Stopping the HTTP service still leaves CLI submission and curator operations usable.
 The application does not start, schedule or supervise the external agents: their
 harness owns execution, wakeups and account access. Do not report a recurring agent
@@ -399,7 +401,7 @@ No fragment, query token, previous browser session or clipboard secret is needed
 Fresh independent windows initialize their local API session automatically. They
 share saved data, while filters and drafts remain tab-local; refresh to see another
 agent/window's updates. A stale edit conflicts instead of replacing newer data.
-The dynamic port is discovered via status, not a permanent content identity. The
+The saved port is a local service address, not a permanent content identity. The
 URL works in browsers on this machine; `127.0.0.1` on a phone points to that phone,
 not the Mac. No LAN listener or remote access is enabled.
 

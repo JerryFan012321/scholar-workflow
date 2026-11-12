@@ -34,7 +34,7 @@ _MAX_BODY = 64 * 1024
 
 class RecommendationHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
-    allow_reuse_address = False
+    allow_reuse_address = True
 
 
 def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> ThreadingHTTPServer:
