@@ -115,9 +115,11 @@ network failures never become successful empty observations.
 The dedicated recommendation page follows [Recommendation intake](recommendation-intake.md).
 It has separate personal/test candidate state and browser authentication, accepts
 only documented identities, exact revisions and bounded review, source-record or
-ingestion inputs. Exporting a selection performs no external write; a separate
-explicitly confirmed bibliography plan can write through the Zotero Local API as
-described below. It does not create Vault knowledge content. External resource URLs
+ingestion inputs. Exporting a selection performs no external write. A reviewed human
+selection may trigger code-only metadata/opinion intake into the explicitly configured
+Local API receiving collection under [Zotero intake](zotero-intake.md); legacy explicit
+bibliography plans remain supported. It does not transfer original files or create
+Vault knowledge content. External resource URLs
 remain navigation data, never commands or implicit server fetches.
 Its CLI starts/stops only the identified profile service; it never revives the
 legacy Hub's workspace, editor or agent-task control surface.
@@ -233,6 +235,13 @@ before writes; duplicate completed execution returns the recorded receipt. Confl
 require a new reviewed preview, and uncertain results retain their known item keys
 and need explicit inspection before retrying. There is no arbitrary file/download
 path in this operation.
+
+For the configured receiving flow, [Zotero intake](zotero-intake.md) defines the
+human-selection authorization, provider-bound target, code-only queue and verified
+managed child note. Human metadata/opinion reception transfers no original files;
+an edited note is a conflict. [Project recommendation context](recommendation-context.md)
+defines explicit CLI root registration, automatic feedback projections and separate
+consumer progress. Browser requests cannot provide project roots or task file paths.
 
 Completion requires the observed Zotero item and read-back collection membership.
 It is limited to `zotero_bibliography`; PDF and Vault-unit status remain

@@ -13,6 +13,7 @@ import click
 from scholar_workflow.research.cli import ResearchCommandError, _spec, root
 from scholar_workflow.research.models import ResearchError
 from scholar_workflow.research.recommendations import lifecycle
+from scholar_workflow.research.recommendations.context_cli import install as _install_context_commands
 from scholar_workflow.research.recommendations.refresh import refresh_candidate_metrics
 
 
@@ -542,6 +543,9 @@ def ingestion_execute(context, plan_id, confirmed, retry):
 @guarded
 def ingestion_history(context):
     _json({"items": _ingestion(context).history()})
+
+
+_install_context_commands(recommendations, _store, _read_input, _json, guarded)
 
 
 if __name__ == "__main__":

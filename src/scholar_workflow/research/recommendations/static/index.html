@@ -80,6 +80,14 @@
     <section id="ingestion-view" class="workspace-view" aria-labelledby="ingestion-title" hidden>
       <div class="page-heading"><div><h2 id="ingestion-title" class="settings-section-title" tabindex="-1">入库记录</h2><p class="subtitle">查看每项书目入库的目标、状态和实际回执。</p></div><button id="ingestion-refresh" type="button" class="secondary">刷新记录</button></div>
       <div class="scope-note">当前页面支持 Zotero 书目入库。PDF 附件和 Vault 知识单元的完成情况另行确认。</div>
+      <section class="intake-target" aria-labelledby="intake-target-title">
+        <h3 id="intake-target-title">待整理条目的接收分类</h3>
+        <p class="muted">保存一次后，新的“选择入库”操作会自动接收元信息、相关链接和你的意见。原始文件与知识整理由后续任务处理；已有候选不会批量入库。</p>
+        <label for="intake-target-collection">Zotero 分类</label>
+        <select id="intake-target-collection"><option value="">正在读取分类…</option></select>
+        <div class="action-group"><button id="intake-target-save" type="button" class="primary">保存接收分类</button><button id="intake-target-disable" type="button" class="secondary">暂停自动接收</button><button id="intake-retry" type="button" class="secondary">重试待处理入库</button></div>
+        <p id="intake-target-status" class="muted" role="status" aria-live="polite"></p>
+      </section>
       <div id="ingestion-history" class="history-list"></div>
     </section>
     <section id="context-view" class="workspace-view" aria-labelledby="context-title" hidden>

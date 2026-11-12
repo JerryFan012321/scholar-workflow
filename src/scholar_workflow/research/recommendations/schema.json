@@ -37,6 +37,7 @@
       "dependentRequired": {"abstract_zh": ["abstract_original"], "description_zh": ["description_original"], "summary_zh": ["summary_sources"], "summary_sources": ["summary_zh"]},
       "properties": {
         "kind": {"enum": ["paper", "project", "blog"]},
+        "item_type": {"enum": ["preprint", "journalArticle", "conferencePaper", "report", "manuscript", "blogPost", "webpage"]},
         "title": {"type": "string", "minLength": 1, "maxLength": 1000},
         "url": {"$ref": "#/$defs/url"},
         "arxiv_id": {"type": "string", "minLength": 1, "maxLength": 100},

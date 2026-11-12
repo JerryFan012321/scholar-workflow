@@ -399,7 +399,9 @@
       await load();
       if (path === "/api/decisions" && offerUndo && updated.decision !== candidate.decision) {
         notify(`已${{saved: "加入稍后看", ignored: "忽略", selected: "选择入库", unread: "恢复未处理"}[updated.decision] || "更新选择"}`, false, async () => {
-          const restored = await updateCandidate(updated, "/api/decisions", {decision: candidate.decision}, {offerUndo: false});
+          const previous = {decision: candidate.decision};
+          if (candidate.disposition) Object.assign(previous, candidate.disposition);
+          const restored = await updateCandidate(updated, "/api/decisions", previous, {offerUndo: false});
           if (restored) notify("已撤销本次选择。");
         });
       }
@@ -654,6 +656,10 @@
     selected.type = "checkbox";
     selected.checked = candidate.decision === "selected";
     selected.disabled = reviewRequired && !candidate.abstract_reviewed && candidate.decision !== "selected";
+    if (Object.prototype.hasOwnProperty.call(candidate, "intake_target") && !reviewAvailable && candidate.decision !== "selected") {
+      selected.disabled = true;
+      selected.title = "完整摘要译文或资料总结尚未准备好。";
+    }
     selected.addEventListener("change", () => {
       selected.disabled = true;
       updateCandidate(candidate, "/api/decisions", {decision: selected.checked ? "selected" : "unread"});
@@ -661,7 +667,7 @@
     selection.append(selected, element("span", null, "选择入库"));
     actions.append(selection);
     const group = element("div", "action-group");
-    for (const [decision, text] of [["saved", "稍后看"], ["ignored", "忽略"]]) {
+    for (const [decision, text] of [["saved", "稍后看"]]) {
       const button = element("button", "text-button", text);
       button.type = "button";
       button.setAttribute("aria-pressed", String(candidate.decision === decision));
@@ -672,6 +678,28 @@
       });
       group.append(button);
     }
+    const rejection = element("details", "rejection-picker");
+    rejection.append(element("summary", "text-button", candidate.decision === "ignored" ? "已忽略 · 修改" : "忽略"));
+    const quality = element("button", "text-button", "质量不符合要求");
+    quality.type = "button";
+    quality.addEventListener("click", () => updateCandidate(candidate, "/api/decisions", {decision: "ignored", reason: "quality"}));
+    const scope = element("input", "rejection-scope");
+    scope.type = "text"; scope.maxLength = 300;
+    scope.placeholder = "当前项目或方向，例如：世界模型评测";
+    scope.setAttribute("aria-label", "不相关的项目或方向");
+    scope.value = candidate.disposition?.scope || "";
+    const unrelated = element("button", "text-button", "与这个方向无关");
+    unrelated.type = "button"; unrelated.disabled = !scope.value.trim();
+    scope.addEventListener("input", () => { unrelated.disabled = !scope.value.trim(); });
+    unrelated.addEventListener("click", () => updateCandidate(candidate, "/api/decisions", {
+      decision: "ignored", reason: "not_relevant", scope: scope.value.trim()}));
+    rejection.append(quality, scope, unrelated);
+    if (candidate.decision === "ignored") {
+      const restore = element("button", "text-button", "恢复未处理"); restore.type = "button";
+      restore.addEventListener("click", () => updateCandidate(candidate, "/api/decisions", {decision: "unread"}));
+      rejection.append(restore);
+    }
+    group.append(rejection);
     actions.append(group);
     const evaluate = element("button", "text-button evaluation-open", "评价");
     evaluate.type = "button";
@@ -684,11 +712,17 @@
     actions.append(evaluate);
     article.append(actions);
     if (candidate.decision && candidate.decision !== "unread") {
-      const completed = candidate.ingestion?.status === "completed";
+      const completed = candidate.intake_job?.status === "completed" || candidate.ingestion?.status === "completed";
       const changed = candidate.ingestion?.matches_current_content === false;
       article.append(element("div", "decision-note", `${decisionNames[candidate.decision] || ""} · ${changed
         ? "旧内容已有入库记录，当前内容已更新" : completed
-          ? (state.profile === "test" ? "模拟书目入库完成" : "Zotero 书目已入库") : "尚未完成入库"}`));
+           ? (state.profile === "test" ? "模拟书目入库完成" : candidate.intake_job?.status === "completed"
+             ? "Zotero 元信息与收录说明已入库" : "Zotero 书目已入库")
+           : candidate.decision !== "selected" ? "处理已记录" : candidate.intake_job?.status === "retry"
+             ? "处理已记录，等待 Zotero 可用后写入" : "处理已记录，待写入 Zotero"}`));
+      if (candidate.disposition?.reason === "not_relevant") {
+        article.append(element("p", "muted", `与 ${candidate.disposition.scope} 无关；保留以后重新考虑的记录。`));
+      }
     }
     if (typeof window.ScholarRecommendationWorkspace?.decorateCard === "function") {
       window.ScholarRecommendationWorkspace.decorateCard(article, candidate);

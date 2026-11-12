@@ -608,14 +608,19 @@ class ZoteroLocalAdapter:
         return response.json()
 
     def get_collection_items(
-        self, collection_key: str, *, limit: int | None = None
+        self, collection_key: str, *, limit: int | None = None, start: int | None = None
     ) -> list[dict[str, Any]]:
         collection_key = _validate_key(collection_key)
+        params = {"limit": limit} if limit is not None else {}
+        if start is not None:
+            if type(start) is not int or start < 0 or type(limit) is not int or not 1 <= limit <= 100:
+                raise ValueError("Collection pages require a non-negative start and limit between 1 and 100")
+            params.update(start=start, sort="dateAdded", direction="asc")
         response = self._request(
             "GET",
             f"users/0/collections/{collection_key}/items/top",
             headers={"Zotero-API-Version": API_VERSION},
-            params={"limit": limit} if limit is not None else None,
+            params=params or None,
         )
         return response.json()
 

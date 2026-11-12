@@ -1,5 +1,10 @@
 # init-project
 
+For explicitly requested project recommendations, enable the optional component
+after initialization through [project recommendation context](../../references/recommendation-context.md).
+It preserves human AGENTS rules, adds one discovery link and keeps recurring-task
+background in the project; ordinary initialization registers no task.
+
 Initialize a Git-managed project with the standard research-oriented directory skeleton and
 host-neutral project instructions.
 

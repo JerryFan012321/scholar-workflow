@@ -25,6 +25,7 @@ source references to the caller; the project owns its material inventory, not a 
 - Stable source/reader links usable in the selected native editor, with explicit availability
 
 ## Skills
+- `manage-knowledge` — read the selected Zotero receiving queue and route the authorized asset-unit operation
 - `sync-projections`
 - `export-annotations` — turn a paper's Zotero annotations into a vault note
 - `analyze-paper` — project Zotero indexed-paper analysis into a canonical Markdown/Canvas pair

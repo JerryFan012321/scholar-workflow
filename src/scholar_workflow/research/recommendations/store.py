@@ -286,11 +286,14 @@ class RecommendationStore:
             record TEXT NOT NULL, PRIMARY KEY(candidate_id,revision))""")
         connection.execute("""CREATE TABLE IF NOT EXISTS candidate_tags (
             candidate_id TEXT PRIMARY KEY REFERENCES candidates(candidate_id), record TEXT NOT NULL)""")
+        from scholar_workflow.research.recommendations.feedback import DDL as feedback_ddl
+        from scholar_workflow.research.recommendations.project_tasks import DDL as tasks_ddl
+        connection.executescript(tasks_ddl + feedback_ddl)
         connection.execute("PRAGMA foreign_keys=ON")
         return connection
 
     @contextmanager
-    def _database(self, *, write=False):
+    def _database(self, *, write=False, dispatch=True):
         connection = None
         try:
             with root_directory(self.state_dir, create=write) as directory:
@@ -327,6 +330,13 @@ class RecommendationStore:
                                 os.unlink(name, dir_fd=directory)
                             except FileNotFoundError:
                                 pass
+            if write and dispatch:
+                # File delivery is recoverable and must never roll back a committed human decision.
+                from scholar_workflow.research.recommendations.feedback import Feedback
+                try:
+                    Feedback(self).flush()
+                except (ResearchError, OSError):
+                    pass
         except FileNotFoundError:
             if write:
                 raise ResearchError("Recommendation storage is unavailable.", 7) from None
@@ -413,6 +423,9 @@ class RecommendationStore:
                     if "recommendation_reason" in normalized:
                         database.execute("INSERT INTO recommendation_reasons VALUES(?,?)",
                                          (inserted.lastrowid, normalized["recommendation_reason"]))
+                    from scholar_workflow.research.recommendations.feedback import record_baseline
+                    if database.execute("SELECT 1 FROM recommendation_tasks WHERE producer_id=?", (producer["producer_id"],)).fetchone():
+                        record_baseline(self, database, producer["producer_id"], candidate_id)
                     receipts.append({**receipt, "status": "accepted", "candidate_id": candidate_id})
                 except ResearchError as error:
                     receipts.append({**receipt, "status": "invalid", "message": str(error)})
@@ -469,7 +482,14 @@ class RecommendationStore:
         ingestion = database.execute("SELECT record FROM ingestion_plans WHERE candidate_id=? ORDER BY rowid DESC LIMIT 1",
                                      (row["candidate_id"],)).fetchone()
         ingestion = json.loads(ingestion["record"]) if ingestion else None
+        disposition = database.execute("SELECT record FROM candidate_dispositions WHERE candidate_id=?", (row["candidate_id"],)).fetchone()
+        intake_job = database.execute("SELECT record FROM intake_jobs WHERE candidate_id=?", (row["candidate_id"],)).fetchone()
+        intake_config = database.execute("SELECT record FROM intake_configuration WHERE id=1").fetchone()
+        intake_config = json.loads(intake_config[0]) if intake_config else {}
         return {"candidate_id": row["candidate_id"], "resource": resource, "tags": sorted(tags),
+                "disposition": json.loads(disposition[0]) if disposition else None,
+                "intake_job": json.loads(intake_job[0]) if intake_job else None,
+                "intake_target": ({"collection_name": intake_config["collection_name"]} if intake_config.get("enabled") else None),
                 "source_tags": source_tags, "tag_edits": tag_edits,
                 "evaluation": RecommendationStore._evaluation(database, row["candidate_id"], resource),
                 "ingestion": ({"plan_id": ingestion["plan_id"], "status": ingestion["status"],
@@ -605,6 +625,11 @@ class RecommendationStore:
                              (candidate_id, _json(edits)))
             database.execute("UPDATE candidates SET revision=revision+1,updated_at=? WHERE candidate_id=?",
                              (_now(), candidate_id))
+            result = self._candidate(database, self._row(database, candidate_id))
+            from scholar_workflow.research.recommendations.feedback import has_feedback, queue_intake, record_event
+            if has_feedback(result):
+                record_event(self, database, result, "tags")
+            queue_intake(database, result)
             return self._candidate(database, self._row(database, candidate_id))
 
     def save_evaluation(self, candidate_id, score, comment, expected_revision, expected_candidate_revision):
@@ -621,6 +646,9 @@ class RecommendationStore:
             raise ResearchError("Evaluation needs the revision of the displayed candidate.")
         with self._database(write=True) as database:
             row = self._row(database, candidate_id)
+            active = database.execute("SELECT record FROM intake_jobs WHERE candidate_id=?", (candidate_id,)).fetchone()
+            if active is not None and json.loads(active[0])["status"] == "running":
+                raise ResearchError("Metadata/opinion intake is running; wait for its receipt before editing feedback.", 5)
             if row["revision"] != expected_candidate_revision:
                 raise ResearchError("Recommendation content changed; reload before evaluating it.", 5)
             current = self._evaluation(database, candidate_id, json.loads(row["resource"]))
@@ -638,6 +666,11 @@ class RecommendationStore:
             database.execute("INSERT INTO candidate_evaluations(candidate_id,record) VALUES(?,?) "
                              "ON CONFLICT(candidate_id) DO UPDATE SET record=excluded.record",
                              (candidate_id, _json(record)))
+            result = self._candidate(database, row)
+            from scholar_workflow.research.recommendations.feedback import queue_intake, record_event
+            if (current["score"], current["comment"]) != (score, comment):
+                record_event(self, database, result, "evaluation")
+            queue_intake(database, result)
             return self._candidate(database, row)
 
     def list_candidates(self, query="", kind=None, tag=None, producer_id=None, decision=None,
@@ -700,7 +733,8 @@ class RecommendationStore:
                 "facets": {"tags": sorted(all_tags), "producers": sorted(all_producers.values(), key=lambda p: p["name"]),
                            "kinds": sorted(all_kinds)}}
 
-    def _update(self, candidate_id, expected_revision, *, decision=None, review=False, clear_review=False):
+    def _update(self, candidate_id, expected_revision, *, decision=None, review=False, clear_review=False,
+                reason=None, scope=None):
         if type(expected_revision) is not int or expected_revision < 1:
             raise ResearchError("Recommendation revision must be a positive integer.")
         with self._database(write=True) as database:
@@ -709,6 +743,7 @@ class RecommendationStore:
                 raise ResearchError("Bibliography ingestion is in progress; wait for its receipt before changing this candidate.", 5)
             if row["revision"] != expected_revision:
                 raise ResearchError("Recommendation changed; reload before updating your choice.", 5)
+            before = self._candidate(database, row)
             if clear_review:
                 database.execute("""UPDATE candidates SET review_digest=NULL,
                     decision=CASE WHEN decision='selected' THEN 'unread' ELSE decision END,
@@ -722,6 +757,18 @@ class RecommendationStore:
             else:
                 database.execute("UPDATE candidates SET decision=?,revision=revision+1,updated_at=? WHERE candidate_id=?",
                                  (decision, _now(), candidate_id))
+                if decision == "ignored" and reason is not None:
+                    database.execute("INSERT INTO candidate_dispositions VALUES(?,?) ON CONFLICT(candidate_id) DO UPDATE SET record=excluded.record",
+                                     (candidate_id, _json({"reason": reason, "scope": scope})))
+                else:
+                    database.execute("DELETE FROM candidate_dispositions WHERE candidate_id=?", (candidate_id,))
+            result = self._candidate(database, self._row(database, candidate_id))
+            from scholar_workflow.research.recommendations.feedback import has_feedback, queue_intake, record_event
+            if (before["decision"], before["disposition"]) != (result["decision"], result["disposition"]):
+                record_event(self, database, result, "review_revoked" if clear_review else "decision")
+            elif clear_review and has_feedback(before):
+                record_event(self, database, result, "review_revoked")
+            queue_intake(database, result, new_selection=decision == "selected" and not review and not clear_review)
             return self._candidate(database, self._row(database, candidate_id))
 
     def record_metric_refresh(self, candidate_id, expected_revision, result):
@@ -780,10 +827,20 @@ class RecommendationStore:
                              (candidate_id, _json(snapshot)))
             return self._candidate(database, row)
 
-    def set_decision(self, candidate_id, decision, expected_revision):
+    def set_decision(self, candidate_id, decision, expected_revision, reason=None, scope=None):
         if decision not in DECISIONS:
             raise ResearchError("Recommendation decision is invalid.")
-        return self._update(candidate_id, expected_revision, decision=decision)
+        if reason is not None:
+            if decision != "ignored" or reason not in {"quality", "not_relevant", "other"}:
+                raise ResearchError("Rejection reason must be quality, not_relevant or other on an ignored item.")
+            if scope is not None and (not isinstance(scope, str) or not 1 <= len(scope) <= 300):
+                raise ResearchError("Feedback scope must be a project or direction description within 300 characters.")
+            if reason == "not_relevant" and not scope:
+                raise ResearchError("Not-relevant feedback needs its project or direction scope.")
+            _nonsecret_management(scope)
+        elif scope is not None:
+            raise ResearchError("A feedback scope needs an explicit rejection reason.")
+        return self._update(candidate_id, expected_revision, decision=decision, reason=reason, scope=scope)
 
     def review_candidate(self, candidate_id, expected_revision):
         return self._update(candidate_id, expected_revision, review=True)
@@ -821,8 +878,10 @@ class RecommendationStore:
 
     @staticmethod
     def _ingestion_active(database, candidate_id):
-        return any(json.loads(row["record"])["status"] == "in_progress" for row in database.execute(
+        legacy = any(json.loads(row["record"])["status"] == "in_progress" for row in database.execute(
             "SELECT record FROM ingestion_plans WHERE candidate_id=?", (candidate_id,)))
+        job = database.execute("SELECT record FROM intake_jobs WHERE candidate_id=?", (candidate_id,)).fetchone()
+        return legacy or (job is not None and json.loads(job[0])["status"] == "running")
 
     def create_ingestion_plan(self, plan):
         plan = copy.deepcopy(plan)
@@ -866,6 +925,9 @@ class RecommendationStore:
             plan = self._ingestion_plan(database, plan_id)
             if plan["status"] == "completed":
                 return plan
+            job = database.execute("SELECT record FROM intake_jobs WHERE candidate_id=?", (plan["candidate_id"],)).fetchone()
+            if job is not None and json.loads(job[0])["status"] == "running":
+                raise ResearchError("Metadata intake is already running for this candidate.", 5)
             self._admit_plan(database, plan)
             if plan["status"] != "pending" and not (retry is True and plan["status"] in {"needs_attention", "interrupted"}):
                 raise ResearchError("This operation needs explicit inspection before retrying.", 5)

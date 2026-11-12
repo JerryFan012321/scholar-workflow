@@ -1,5 +1,14 @@
 # recommend-papers
 
+Project-owned recurring tasks use the optional context component documented in
+[project recommendation context](../../references/recommendation-context.md). Each task
+has a stable producer ID and local context; human feedback is automatically written
+without an agent. Start curator maintenance with `curator batch`, not all project files.
+
+Configure the receiving Zotero collection once through settings or `intake target`.
+Reviewed selections then receive metadata, links and exact human opinions through
+code, without transferring originals. See [Zotero intake](../../references/zotero-intake.md).
+
 Collect recommendations in one review page. Independent agents and recurring tasks
 can submit papers, project homepages and blogs through the same installed CLI.
 The page merges duplicate resources, preserves who recommended each one and lets

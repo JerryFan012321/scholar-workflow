@@ -1,6 +1,6 @@
 ---
 name: feed-agent
-description: Daily paper recommendation feed — aggregate multiple sources, present paper information and complete abstracts, and register watchlist authors. Owns recommend-papers. The report is ephemeral (never written to the vault or Zotero); picked papers may be passed to intake-agent through the caller or explicit agent collaboration for normal dedup-gated ingest.
+description: Daily paper recommendation feed — aggregate multiple sources, present paper information and complete abstracts, and register watchlist authors. Owns recommend-papers.
 ---
 
 # feed-agent
@@ -9,6 +9,10 @@ description: Daily paper recommendation feed — aggregate multiple sources, pre
 Push-mode paper discovery: surface a daily/periodic feed of new papers worth reading,
 skim a shortlist cheaply, and let the user decide what to pursue. Distinct from
 intake-agent (pull, targeted) — this agent is the "what's new today" stream.
+
+For a project-owned recurring task, follow the conditional project-context entry in
+`recommend-papers`; keep its mutable background in the project. Human feedback is
+recorded and delivered by code even when no agent is running.
 
 ## Input
 - A request for today's/this-week's papers, or "what should I read"
@@ -30,15 +34,17 @@ intake-agent (pull, targeted) — this agent is the "what's new today" stream.
 - `agent-collaboration` — explicit bounded delegation to or from another available agent
 
 ## Forbidden
-- Writing the Reading Report to the vault or Zotero — it is ephemeral (INV23)
-- Auto-ingesting picked papers — an explicit import belongs to `ingest-resource`, with its
-  two-step identity check; no particular agent is a required intermediary
+- Turning discovery into an unrequested Vault unit, full-text analysis or original-file import
+- Treating an agent's recommendation as human selection; code-only metadata/opinion
+  intake requires the configured target and the person's current reviewed choice
 - Adding analysis or full-text reading without the corresponding user request
 - Relaying non-arXiv paper PDFs — follow the shared source policy; blog/project
   candidates remain their own resource types
 
 ## Boundary
 Ends at recommendations, review and selected-candidate handoff; it never mutates the
-library itself. An explicit import may invoke `ingest-resource` directly or be assigned
-through `agent-collaboration`, after the paper's translated abstract is shown and the
-person selects it. The owning skill's identity/write gates remain in force.
+library itself. Code receives reviewed human selections under
+[Zotero intake](../references/zotero-intake.md); no intermediary agent is required.
+Later original acquisition or knowledge management uses the owning Skill and its
+separate write/identity boundaries. Shared context and source data persist under
+the selected recommendation pool rather than a particular agent's memory.

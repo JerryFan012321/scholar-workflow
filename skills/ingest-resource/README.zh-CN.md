@@ -1,5 +1,7 @@
 # ingest-resource
 
+推荐页的元信息接收使用[独立接收契约](../../references/zotero-intake.md)：代码传入准备好的介绍、链接和人的意见，不传原始文件；完整论文/PDF 导入仍是另外明确请求的操作。
+
 经 Zotero Local API 把论文导入、把技术文档归档到本地库。元数据来自权威网源，不从 PDF 解析；
 可用的 PDF 来自 arXiv，只有书目信息的情况明确保留缺 PDF 原因。获取分三个阶段:
 

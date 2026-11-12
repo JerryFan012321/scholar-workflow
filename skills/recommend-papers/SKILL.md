@@ -48,6 +48,12 @@ sourced-summary branch and label the result explicitly; never fabricate an abstr
 
 ## Task requirements
 
+For a project-owned recurring task, its registration or its feedback/context update,
+follow [project recommendation context](../../references/recommendation-context.md).
+Resolve the selected task through `tasks list/guide`; task background stays in the
+project. Any authorized project agent can continue it. Human feedback is delivered
+by code; read it before updating that task's context, not as a prerequisite to recording it.
+
 When the task uses or maintains saved recommendation requirements, follow
 [recommendation requirements](../../references/recommendation-requirements.md).
 People and agents use the same versioned records under each source entry; agents
@@ -114,10 +120,17 @@ NotebookLM package, account, login or fallback is used.
   routing.
 - Missing Scholar Inbox login skips that source. Its session state must remain
   outside config and Git.
-- Never auto-ingest. The normal identity and source gates run after user selection.
+- Discovery/submission never authorizes ingestion. A reviewed human selection can
+  trigger code-only metadata/opinion intake into the configured Zotero collection;
+  follow [Zotero intake](../../references/zotero-intake.md). Original files and
+  knowledge-unit construction belong to the later selected knowledge task.
 
 ## References
 
+- [Project task context](../../references/recommendation-context.md) — project tasks,
+  feedback delivery/consumption and curator preferences; expand only the selected role.
+- [Zotero intake](../../references/zotero-intake.md) — receiving target and human-selected
+  metadata/opinion handoff, without original files.
 - [Recommendation intake](../../references/recommendation-intake.md) — required for
   submissions, the recommendation page and Reading Report/handoff output.
 - [Recommendation requirements](../../references/recommendation-requirements.md) — when
