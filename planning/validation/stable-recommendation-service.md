@@ -28,8 +28,12 @@ Machine-local JUnit receipts retain original and rerun results.
 
 ## Installed acceptance
 
-Pending normal release/install. Check package/build identity, current manager and
-fixed URL, reuse, restart, abnormal-exit recovery, plain sessions in two windows,
-explicit stop and restart, test separation and candidate snapshot conservation.
-Only verified owned HTTP service processes may be interrupted; no agent is launched.
-Actual logout/reboot is not performed automatically or claimed as observed.
+Normal 0.54.2 release/install completed on pipx and both plugin hosts. All six
+scoped checks passed: reuse, stable restart, explicit stop without supervision,
+health-identified HTTP abnormal-exit recovery, two independent plain URL sessions,
+and test restart with its separate saved address and no login job.
+Both pools retained identical complete candidate API snapshots before/after.
+Browser displayed the fixed personal URL. Local detailed receipts/screenshots are
+private; no candidate data or runtime paths are published here.
+Actual logout/reboot remains unexecuted. Login startup policy and loaded job were
+verified, not represented as an observed reboot/login test.
