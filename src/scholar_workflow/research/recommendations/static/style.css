@@ -258,4 +258,3 @@ body.reader-open{overflow:hidden}.metrics.metrics-compact{padding:11px 0;border-
 .rejection-picker { position: relative; }
 .rejection-picker[open] { padding: .5rem; border: 1px solid #dce3e9; border-radius: 8px; }
 .rejection-picker[open] > button, .rejection-picker[open] > input { display: block; margin-top: .5rem; }
-.rejection-scope { width: min(100%, 24rem); }

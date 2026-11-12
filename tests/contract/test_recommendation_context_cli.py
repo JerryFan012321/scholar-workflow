@@ -50,8 +50,8 @@ def test_cli_human_action_persists_files_without_a_page_or_agent(tmp_path, monke
     candidate_id = submitted["receipts"][0]["candidate_id"]
     result = invoke(runner, "feedback", "decision", "--input", "-", input=json.dumps({
         "candidate_id": candidate_id, "decision": "ignored", "expected_revision": 1,
-        "reason": "not_relevant", "scope": "Current evaluation project"}))
-    assert result["disposition"]["reason"] == "not_relevant"
+        "reason": "not_relevant"}))
+    assert result["disposition"] == {"reason": "not_relevant", "scope": "current_research"}
     assert list((home / "recommendations/test/context/inbox").glob("*.jsonl"))
     batch = invoke(runner, "curator", "batch")
     invoke(runner, "curator", "consume", "--input", "-", input=json.dumps({

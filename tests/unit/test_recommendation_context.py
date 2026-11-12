@@ -118,13 +118,13 @@ def test_quality_and_scoped_irrelevance_have_distinct_feedback(setup):
     row = submit(store)
     row = store.set_decision(row["candidate_id"], "ignored", row["revision"], "not_relevant", "My evaluation project")
     assert row["disposition"] == {"reason": "not_relevant", "scope": "My evaluation project"}
-    with pytest.raises(ResearchError):
-        store.set_decision(row["candidate_id"], "ignored", row["revision"], "not_relevant")
+    row = store.set_decision(row["candidate_id"], "ignored", row["revision"], "not_relevant")
+    assert row["disposition"] == {"reason": "not_relevant", "scope": "current_research"}
     row = store.set_decision(row["candidate_id"], "ignored", row["revision"], "quality")
     assert row["disposition"]["reason"] == "quality"
     row = store.set_decision(row["candidate_id"], "unread", row["revision"])
     assert row["disposition"] is None
-    assert [i["decision"] for i in Feedback(store).events()["items"]] == ["ignored", "ignored", "unread"]
+    assert [i["decision"] for i in Feedback(store).events()["items"]] == ["ignored", "ignored", "ignored", "unread"]
 
 
 def test_evaluation_edits_clear_and_stale_revision_are_recorded(setup):

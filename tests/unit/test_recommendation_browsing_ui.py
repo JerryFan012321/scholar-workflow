@@ -167,12 +167,17 @@ const openDetails=async()=>{await byClass("feed","entry-details").fire("click");
  }
  if(input.action==="reject_quality"){
   const panel=byClass("detail-content","rejection-picker");
-  await find(panel,node=>node.tagName==="button"&&node.textContent==="质量不符合要求").fire("click");await settle();
+  if(find(panel,node=>node.tagName==="button"&&node.textContent==="质量不符合要求"))throw new Error("Quality belongs outside ignore");
+  await find(get("detail-content"),node=>node.tagName==="button"&&node.textContent==="质量不符合要求").fire("click");await settle();
  }
  if(input.action==="reject_scope"){
-  const panel=byClass("detail-content","rejection-picker"),scope=byClass("detail-content","rejection-scope");
-  scope.value="My evaluation project";await scope.fire("input");
-  await find(panel,node=>node.tagName==="button"&&node.textContent==="与这个方向无关").fire("click");await settle();
+  const panel=byClass("detail-content","rejection-picker");
+  if(byClass("detail-content","rejection-scope"))throw new Error("Unexpected relevance scope input");
+  await find(panel,node=>node.tagName==="button"&&node.textContent==="不是当前想关注的方向").fire("click");await settle();
+ }
+ if(input.action==="reject_other"){
+  const panel=byClass("detail-content","rejection-picker");
+  await find(panel,node=>node.tagName==="button"&&node.textContent==="其他").fire("click");await settle();
  }
  if(input.action==="source_requirements"){
   await pages[1].fire("click");await settle();
@@ -285,13 +290,13 @@ def test_receiving_target_is_configured_once_under_settings():
         "collection_key": "ABCDEFGH", "expected_revision": 0, "enabled": True}}]
 
 
-@pytest.mark.parametrize("action,reason", [("reject_quality", "quality"), ("reject_scope", "not_relevant")])
+@pytest.mark.parametrize("action,reason", [("reject_quality", "quality"), ("reject_scope", "not_relevant"), ("reject_other", "other")])
 def test_rejection_interaction_preserves_quality_vs_direction_meaning(action, reason):
     result = render(action=action, candidate=candidate(intake_target=None))
     assert result["posts"][-1]["body"]["reason"] == reason
     assert result["posts"][-1]["body"]["decision"] == "ignored"
     if reason == "not_relevant":
-        assert result["posts"][-1]["body"]["scope"] == "My evaluation project"
+        assert "scope" not in result["posts"][-1]["body"]
 
 
 def nodes(tree, name):
@@ -711,3 +716,14 @@ def test_tag_picker_existing_label_and_closed_picker_undo():
     result = render(action="tags_closed_undo")
     assert len(result["posts"]) == 2
     assert result["posts"][1]["body"]["tags"] == candidate()["tags"]
+
+
+def test_quality_rejection_has_its_own_visible_status():
+    result = render(action="details", candidate=candidate(decision="ignored", disposition={"reason": "quality", "scope": None}))
+    assert "质量不符合要求 · 处理已记录" in result["detail"]["text"]
+    panels = nodes(result["detail"], "rejection-picker")
+    assert len(panels) == 1
+    assert "质量不符合要求" not in panels[0]["text"]
+    assert "不是当前想关注的方向" in panels[0]["text"]
+    assert "其他" in panels[0]["text"]
+    assert "恢复未处理" not in panels[0]["text"]

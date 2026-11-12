@@ -836,7 +836,7 @@ class RecommendationStore:
             if scope is not None and (not isinstance(scope, str) or not 1 <= len(scope) <= 300):
                 raise ResearchError("Feedback scope must be a project or direction description within 300 characters.")
             if reason == "not_relevant" and not scope:
-                raise ResearchError("Not-relevant feedback needs its project or direction scope.")
+                scope = "current_research"
             _nonsecret_management(scope)
         elif scope is not None:
             raise ResearchError("A feedback scope needs an explicit rejection reason.")
