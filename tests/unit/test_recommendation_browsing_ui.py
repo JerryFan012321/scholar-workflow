@@ -88,6 +88,8 @@ const context={URL,URLSearchParams,Date,Math,JSON,Error,SyntaxError,Set,Map,Text
   else if(path==="/api/ingestion/plan")value={plan_id:"plan-synthetic",title:current.resource.title,collection:{key:"ABCDEFGH",name:"World Models"},item_type:"preprint",existing:input.existing||false,warnings:["PDF 尚未保存。"]};
   else if(path==="/api/ingestion/execute"){value={status:"completed",item_key:"1234ABCD",collection_key:"ABCDEFGH",title:current.resource.title};current={...current,ingestion:value};}
   else if(path==="/api/ingestion/history")value={items:input.history||[{status:"completed",item_key:"1234ABCD",title:current.resource.title,collection:{name:"World Models"},completed_at:"2026-11-09T00:00:00Z"}]};
+  else if(path==="/api/intake/history")value={items:[],configuration:{revision:0,enabled:false,collection_key:null,collection_name:null}};
+  else if(path==="/api/intake/configuration")value={revision:1,enabled:payload.enabled,collection_key:payload.collection_key,collection_name:"World Models"};
   else throw Error("Unexpected request "+path);
   return{ok:true,status:200,json:async()=>value};
  }};
@@ -158,6 +160,20 @@ const openDetails=async()=>{await byClass("feed","entry-details").fire("click");
  }
  if(input.action==="sources"){await pages[1].fire("click");await settle();}
  if(input.action==="history"){await pages[2].fire("click");await settle();}
+ if(input.action==="intake_settings"){
+  await pages[2].fire("click");await settle();
+  get("intake-target-collection").value="ABCDEFGH";
+  await get("intake-target-save").fire("click");await settle();
+ }
+ if(input.action==="reject_quality"){
+  const panel=byClass("detail-content","rejection-picker");
+  await find(panel,node=>node.tagName==="button"&&node.textContent==="质量不符合要求").fire("click");await settle();
+ }
+ if(input.action==="reject_scope"){
+  const panel=byClass("detail-content","rejection-picker"),scope=byClass("detail-content","rejection-scope");
+  scope.value="My evaluation project";await scope.fire("input");
+  await find(panel,node=>node.tagName==="button"&&node.textContent==="与这个方向无关").fire("click");await settle();
+ }
  if(input.action==="source_requirements"){
   await pages[1].fire("click");await settle();
   const fold=byClass("sources-list","source-requirements");fold.open=true;await fold.fire("toggle");await settle();
@@ -248,6 +264,36 @@ def render(**scenario):
     return json.loads(result.stdout)
 
 
+def test_configured_intake_selection_needs_no_second_preview_action():
+    result = render(action="review_then_select", candidate=candidate(decision="unread", abstract_reviewed=False,
+                    intake_target={"collection_name": "待整理条目"}, intake_job=None))
+    assert [post["path"] for post in result["posts"]] == ["/api/reviews", "/api/decisions"]
+    assert not nodes(result["detail"], "ingestion-open")
+    assert "选择后自动接收到 待整理条目" in result["detail"]["text"]
+
+
+def test_unconfigured_new_intake_routes_to_settings_without_claiming_ingestion():
+    result = render(action="details", candidate=candidate(intake_target=None, intake_job=None))
+    assert "先在设置中指定待整理条目的接收分类" in result["detail"]["text"]
+    assert not nodes(result["detail"], "ingestion-open")
+    assert not result["posts"]
+
+
+def test_receiving_target_is_configured_once_under_settings():
+    result = render(action="intake_settings", candidate=candidate(intake_target=None))
+    assert result["posts"] == [{"path": "/api/intake/configuration", "body": {
+        "collection_key": "ABCDEFGH", "expected_revision": 0, "enabled": True}}]
+
+
+@pytest.mark.parametrize("action,reason", [("reject_quality", "quality"), ("reject_scope", "not_relevant")])
+def test_rejection_interaction_preserves_quality_vs_direction_meaning(action, reason):
+    result = render(action=action, candidate=candidate(intake_target=None))
+    assert result["posts"][-1]["body"]["reason"] == reason
+    assert result["posts"][-1]["body"]["decision"] == "ignored"
+    if reason == "not_relevant":
+        assert result["posts"][-1]["body"]["scope"] == "My evaluation project"
+
+
 def nodes(tree, name):
     return ([tree] if name in tree["class"].split() else []) + [node for child in tree["children"] for node in nodes(child, name)]
 
@@ -314,7 +360,7 @@ def test_settings_gear_opens_sources_and_records_without_resetting_recommendatio
     journey = result["settingsJourney"]
     assert journey["sourcesVisible"] and journey["historyVisible"]
     assert journey["query"] == "draft search kept" and journey["sort"] == "oldest"
-    assert journey["reads"] == ["/api/sources", "/api/ingestion/history"]
+    assert journey["reads"] == ["/api/sources", "/api/ingestion/history", "/api/intake/history", "/api/ingestion/targets"]
     assert result["settings_hidden"] and not result["views"]["recommendations"]
     assert result["initial"]["text"] == result["feed"]["text"]
     assert "alphaXiv" in result["sources"]["text"] and "书目" in result["history"]["text"]

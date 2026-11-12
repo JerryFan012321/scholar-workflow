@@ -451,6 +451,18 @@
       "input": "推荐这几篇论文并提供Reading Report和摘要",
       "expected_skill": "recommend-papers",
       "must_not_trigger": "create-report"
+    },
+    {
+      "id": "knowledge-inbox-starts-at-zotero",
+      "input": "处理 Zotero 待整理条目，先读取我的批注和归类意见，再安排知识整理",
+      "expected_skill": "manage-knowledge",
+      "must_not_trigger": "recommend-papers"
+    },
+    {
+      "id": "full-paper-import-not-knowledge-inbox",
+      "input": "把这篇已选论文和 PDF 导入 Zotero",
+      "expected_skill": "ingest-resource",
+      "must_not_trigger": "manage-knowledge"
     }
   ]
 }

@@ -577,6 +577,24 @@
       "action": "Import a source package with operations, toggle it, or read its guide.",
       "expected": "Validate data and CAS, preserve builtin definitions and source-bound history. Never fetch its endpoint, run descriptor text, or treat operation hints as current native tools or account authorization.",
       "enforcement_layer": "cli"
+    },
+    {
+      "id": "project-task-context-isolation",
+      "action": "A curator inspects registered recommendation tasks while maintaining shared preferences.",
+      "expected": "Return project/task locators and a bounded feedback batch without reading project background. Expand a selected task only within its authorized scope. Roles do not grant cross-project privileges.",
+      "enforcement_layer": "host_llm"
+    },
+    {
+      "id": "feedback-delivery-without-agent",
+      "action": "A person saves a decision or evaluation while no agent is running; a project destination is unavailable.",
+      "expected": "Persist the human state and sequenced event together, immediately materialize available JSONL destinations and retain the missing delivery for safe idempotent retry. Never require an agent to record the action.",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "metadata-intake-preserves-original-file-boundary",
+      "action": "Receive a reviewed paper, Blog or release page into a configured Zotero collection.",
+      "expected": "Write metadata, prepared Chinese introduction, links and exact human opinions through Local API. Verify parent/collection/note identity and retain partial results. Do not transfer PDF/HTML originals, generate a new summary, create Vault content or overwrite edited notes.",
+      "enforcement_layer": "cli"
     }
   ]
 }

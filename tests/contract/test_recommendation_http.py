@@ -21,14 +21,19 @@ class FakeStore:
         return {"items": [], "total": 0, "facets": {"tags": [], "producers": [], "kinds": []},
                 "filters": kwargs}
 
-    def set_decision(self, candidate_id, decision, expected_revision):
+    def set_decision(self, candidate_id, decision, expected_revision, reason=None, scope=None):
         if expected_revision != 3:
             raise ResearchError("Candidate revision changed; refresh before retrying.", 5)
-        return {"candidate_id": candidate_id, "decision": decision, "revision": 4}
+        self.latest = {"candidate_id": candidate_id, "decision": decision, "revision": 4}
+        return self.latest
 
     def review_candidate(self, candidate_id, expected_revision):
-        return {"candidate_id": candidate_id, "abstract_reviewed": True,
-                "revision": expected_revision + 1}
+        self.latest = {"candidate_id": candidate_id, "abstract_reviewed": True,
+                       "revision": expected_revision + 1}
+        return self.latest
+
+    def get_candidate(self, candidate_id):
+        return self.latest
 
     def prepare_handoff(self):
         return {"schema_version": 1, "status": "ready", "items": []}
@@ -39,6 +44,13 @@ def running_server(tmp_path, monkeypatch):
     from scholar_workflow.research.recommendations import server as module
 
     monkeypatch.setattr(module, "RecommendationStore", FakeStore)
+    class DisabledIntake:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def drain(self, **_kwargs):
+            return {"status": "disabled", "items": []}
+    monkeypatch.setattr(module, "IntakeQueue", DisabledIntake)
     service = module.create_server(tmp_path / "isolated-state", "test", TOKEN)
     service.runtime_identity = {"generation": "synthetic-generation", "pid": 123,
                                 "profile": "test", "version": "test", "build": "synthetic"}

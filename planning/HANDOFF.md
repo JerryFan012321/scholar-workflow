@@ -1,3 +1,136 @@
+# 发布执行：0.55.0（2026-11-12）
+
+用户已授权提交、发布与安装。本批完整 unit/contract：4614 passed、22 skipped，无失败。
+安装与源码回执见 planning/releases/0.55.0-release.md；此前“未提交安装”描述属于开发时状态。
+不合并 main，不配置真实接收分类或执行真实 Zotero 写入。
+
+# 当前交接：推荐任务上下文与 Zotero 元信息交接（2026-11-12）
+
+用户已批准实现最近确认的完整方案。当前开发工作树为既有 `scholar-recommendation-tags`，
+分支 `codex/hotfix-recommendation-context`，基于 main `46b7fe1`；此前文档勘误及闲置模块删除
+仍是未提交内容，完整保留。旧 asset-management 工作树不覆盖、不归位或清理。
+
+本轮实现：项目内多推荐任务及可发现上下文；人类处理时由代码立即保存反馈并向项目/中央
+待处理文件分发；中央管家按批读取、更新偏好并确认消费；一次配置 Zotero 接收分类后，
+人类选择触发元信息与收录说明交接。论文/Blog/项目网页使用实际书目类型，用户评价、批注
+及分类意见原话保留。接收阶段不下载或传输原始文件，不创建 Vault 知识单元，不执行模型。
+原有分析正文、Canvas、实验/项目格式及真实资料保持原样。
+
+运行 Skill 只增加实际接口及按需 reference，不把可变任务上下文写入通用 Skill；项目 agent
+平权，producer_id 标识任务而非会话。中央仅登记项目任务定位，默认不读取项目背景。
+
+先实施，再按独立合成输入做定向单元/CLI/HTTP检查；只使用临时合成项目和假 Zotero provider。
+安装态/原生人工验收、发布、安装、服务切换及 main 合并未获本轮授权，不宣称完成。
+验证输入与结果见本轮 validation 记录。以下是上轮状态，按当时事实保留。
+
+## 本轮源码结果
+
+- 已实现项目推荐组件与多任务登记、默认只披露定位的 guide、显式上下文展开与 CAS 更新。
+- 人类处置/评价与事件同事务保存，自动生成项目任务与中央每日 JSONL；不可用/被编辑目标
+  保留待同步。质量拒绝与方向无关分开，游标校验所属 pool。
+- 管家保存偏好与确认确切批次同事务；清理已消费临时文件，保留新增反馈与原始历史。
+- 已实现一次配置接收分类、代码队列、Zotero 元信息与单条收录说明、部分成功恢复和分页
+  接手入口。原始文件/知识建设保持 not_requested；人的原话及人工笔记修改受保护。
+- 用户补充确认使用 Zotero 本地 API；所有 Zotero 调用复用既有 Local API 适配器，默认
+  `http://127.0.0.1:23119/api/`。本轮未连接或写入真实文库。
+- 已新增 manage-knowledge，更新 recommend-papers/init-project/ingest-resource、相关按需
+  references、GOALS 的 INV23 与 feed 的过时临时报告表述；原有正文/Canvas格式文件未改。
+- 最终定向回归 **641 passed**（23.87s）；新 Skill quick_validate 通过，运行引用检查通过。
+  新增测试只使用临时合成项目、模拟 Local API 和受控 loopback；发布边界测试仅操作临时
+  合成 Git 仓库。独立输入、命令、结果见
+  [验证记录](validation/recommendation-context-test-plan.md)。
+- 未提交、发布、安装、切换服务或合并 main；正常安装和真实界面/原生 Zotero 验收仍未执行。
+  用户先前未提交的文档/闲置模块清理保留，历史 HANDOFF 原件与 Git 基线逐字节一致。
+
+---
+
+# 上轮交接：文档勘误与闲置模块清理（2026-11-12）
+
+## 本轮范围
+
+用户先授权文档勘误和只读清单，随后要求清除所列闲置模块。本批仅删除已核实无生产调用的 codex_setup、task_control、target_setup、workflows/service 和 workflows/document 五个实现，及其独占测试；保留其他候选。本轮不新增功能，不调整规则拓扑，不搬迁文件，不操作分支、工作树、虚拟环境、服务或业务数据，不发布、安装或合并。
+
+## 当前基线
+
+- 文档修改基于 main `46b7fe1`。当前对话所在的旧工作树已有未提交内容，本轮不覆盖它们。
+- 正常安装的 Python 包、Codex 插件和 Claude 插件均核对为 **0.54.2**；runtime 为 `3675136`，发布事实见 [0.54.2 回执](releases/0.54.2-release.md)。本轮文档改动尚未提交或发布。
+- 推荐页日常默认地址为 `http://127.0.0.1:61201/`；地址和服务状态以安装 CLI 的 `recommendations status` 为准，操作见 [服务契约](../references/recommendation-service.md)。旧记录中的动态端口不作为当前入口。
+- 此前扩大范围的整理已按用户要求回滚；本轮从恢复后的状态开始。原有未完成需求和历史人工认可均保留，不因本次文档整理更改其结论。
+
+## 本轮结果
+
+- 两份 README 修正旧安装版本、已发布能力仍称候选、旧 Hub 登记引导、推荐数据临时性及 NotebookLM 依赖等过时说明；补齐已存在的共用文风与报告 Skill 条目。
+- 历史交接原文完整保存在本文件下方的折叠区。默认先读本节，仅在追溯时打开历史区；其中“当前”“下一步”“未发布”、旧端口与旧许可均只描述当时。
+- 五个闲置实现和三份独占单元测试已从源码移除；旧 CLI／HTTP 退役诊断与历史任务读取保留。51 项定向契约通过；隔离构建包的 167 个运行文件逐字节核对通过，五个模块不可导入，原生知识／分析帮助、推荐 schema、兼容转发和退役 CLI 均通过检查。未发布安装。
+- 首轮 HTTP 受沙箱 bind 限制；取得本机回环权限后，旧测试的个人登记依赖暴露为四项超时。仅为 test_hub_v3 增加临时状态隔离后，同一组 51 项全部通过。未修改业务健康检查或超时策略，不隐藏首次结果。
+- 代码审查为静态入口／引用分析，不是实际调用统计。生产引用、测试引用、兼容转发和未接入实现分别判断；未找到引用不直接等于允许删除。
+
+## 代码清理结果与其余待议清单
+
+| 对象 | 观察与建议 |
+|---|---|
+| planning 顶层旧发布与 hotfix 回执 | 可逐批归入已有 releases 目录，必须同步修复引用，保留历史事实；尚未移动。 |
+| planning 顶层测试计划／结果 | 可按用途归入已有 validation 目录，保留原测试输入、失败及人工结论；清单可能与发布记录重叠，不合计删除数量。 |
+| GOALS / BACKLOG 中的旧“当前”叙述 | 后续只修正状态与历史标识，不取消仍有效的目标、ID 或未完成要求。 |
+| hub/codex_setup.py、hub/task_control.py、hub/target_setup.py | 已清除未接入的旧设置／派发实现；保留公共退役诊断与历史 Task/Run 读取。 |
+| workflows/service.py | 已清除旧固定端口 LaunchAgent 渲染器；serve-links/install-service 的退役诊断及当前推荐服务管理保留。 |
+| workflows/document.py | 已清除仅被测试调用的 archive_document；现有 .meta.json 文件、正式登记及知识内容均未改。 |
+| adapters/local_links.py | 旧启动包装器未找到生产调用，但有兼容测试，先核实外部调用约定。 |
+| hub/paper_placement.py、hub/provider_bootstrap.py、hub/joint_field_transaction.py | 旧联合迁移实现未找到生产入口，但存在恢复／保全测试，属于未接入能力候选，不因本次审查删除。 |
+| hub/fields.py、hub/models.py、hub/obsidian_contract.py | 是指向 knowledge 实现的兼容转发，保留；旧目录名不代表数据已无效。 |
+| adapters/knowledge_explorer.py、adapters/explorer_static/、dev-guide/demos/ | Explorer 仍有显式 CLI、打包与测试／演示引用；不能列作已无引用的散文件。 |
+
+<details>
+<summary>展开具体文件归位候选：13 份旧发布回执、17 份 hotfix 记录</summary>
+
+以下只列现有文件与建议位置，未移动。hotfix 中的测试计划建议归 validation，发布／安装结果建议归 releases；每次实际归位前仍需核对并修复入站与出站引用。这里只改变存放建议，不把记录判为失效或删除。
+
+| 当前文件 | 建议位置 |
+|---|---|
+| `planning/0.43.2-release.md` | `planning/releases/0.43.2-release.md` |
+| `planning/0.44.0-release.md` | `planning/releases/0.44.0-release.md` |
+| `planning/0.44.7-release.md` | `planning/releases/0.44.7-release.md` |
+| `planning/0.45.0-release.md` | `planning/releases/0.45.0-release.md` |
+| `planning/0.45.1-release.md` | `planning/releases/0.45.1-release.md` |
+| `planning/0.46.0-release.md` | `planning/releases/0.46.0-release.md` |
+| `planning/0.47.0-release.md` | `planning/releases/0.47.0-release.md` |
+| `planning/0.47.1-release.md` | `planning/releases/0.47.1-release.md` |
+| `planning/0.47.2-release.md` | `planning/releases/0.47.2-release.md` |
+| `planning/0.47.3-release.md` | `planning/releases/0.47.3-release.md` |
+| `planning/0.47.4-release.md` | `planning/releases/0.47.4-release.md` |
+| `planning/0.47.5-release.md` | `planning/releases/0.47.5-release.md` |
+| `planning/0.48.0-release.md` | `planning/releases/0.48.0-release.md` |
+| `planning/hotfix-0.31.1-install-test-plan.md` | `planning/validation/hotfix-0.31.1-install-test-plan.md` |
+| `planning/hotfix-0.31.1-results.md` | `planning/releases/hotfix-0.31.1-results.md` |
+| `planning/hotfix-0.32.0-results.md` | `planning/releases/hotfix-0.32.0-results.md` |
+| `planning/hotfix-0.32.1-results.md` | `planning/releases/hotfix-0.32.1-results.md` |
+| `planning/hotfix-0.32.2-results.md` | `planning/releases/hotfix-0.32.2-results.md` |
+| `planning/hotfix-0.32.2-test-plan.md` | `planning/validation/hotfix-0.32.2-test-plan.md` |
+| `planning/hotfix-0.32.3-results.md` | `planning/releases/hotfix-0.32.3-results.md` |
+| `planning/hotfix-0.32.3-test-plan.md` | `planning/validation/hotfix-0.32.3-test-plan.md` |
+| `planning/hotfix-0.33.0-results.md` | `planning/releases/hotfix-0.33.0-results.md` |
+| `planning/hotfix-0.34.0-results.md` | `planning/releases/hotfix-0.34.0-results.md` |
+| `planning/hotfix-0.35.0-results.md` | `planning/releases/hotfix-0.35.0-results.md` |
+| `planning/hotfix-0.36.0-results.md` | `planning/releases/hotfix-0.36.0-results.md` |
+| `planning/hotfix-0.37.0-results.md` | `planning/releases/hotfix-0.37.0-results.md` |
+| `planning/hotfix-0.38.0-results.md` | `planning/releases/hotfix-0.38.0-results.md` |
+| `planning/hotfix-0.38.1-results.md` | `planning/releases/hotfix-0.38.1-results.md` |
+| `planning/hotfix-0.38.3-results.md` | `planning/releases/hotfix-0.38.3-results.md` |
+| `planning/hotfix-0.39.0-results.md` | `planning/releases/hotfix-0.39.0-results.md` |
+
+其他测试计划／结果共 108 个名称匹配（与上述 hotfix 有重叠），其中有尚未完成或仍被引用的内容；本轮不把它们整批列为过时文件。`planning/GOALS.md`、`planning/BACKLOG.md` 和运行 references 的待勘误项也保持原样。
+
+</details>
+
+本轮完成后等待用户审阅清单。下一步不能从历史记录自动推导为删除、迁移、功能退役或上下文开发。
+
+## 历史交接记录
+
+以下保留本轮修改前的全部原文，不改写旧验收事实。历史区中的相对文件链接仍以本文件所在目录为基准。
+
+<details>
+<summary>展开历史交接原文（截至本轮文档整理前）</summary>
+
 # 当前：0.54.2已发布并安装（2026-11-12）
 
 固定推荐地址及macOS后台托管已正常发布并安装到pipx/Codex/Claude。
@@ -5423,3 +5556,6 @@ Zotero item/attachment key 与 Web Source，Hub 在运行时由稳定身份派�
 - prefs.js 含多个插件的明文 API token。本次仅按名提及、未记值。若介意可迁到隔离处,超出本轮范围。
 - 旧本地 `resources` 缓存镜像已废止(INV13);主题召回使用 Local API 全文 quicksearch +
   宿主模型排序，本项目不自建 embedding/向量索引(INV14)。
+
+
+</details>

@@ -5,6 +5,13 @@ description: Add papers to Zotero through the Local API or archive technical doc
 
 # ingest-resource
 
+For the recommendation page's metadata-only receiving queue, follow
+[Zotero intake](../../references/zotero-intake.md). That branch writes existing
+metadata, prepared reading content and exact human opinions to the chosen Zotero
+collection; it never downloads/uploads original files or initializes a Vault unit.
+The full paper/PDF and selected document-registration operations below apply only
+when separately requested, including by an authorized later knowledge-management task.
+
 ## Result and write boundary
 
 Each item reports its kind, result (`reused | created | conflict | failed`),

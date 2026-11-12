@@ -6,6 +6,7 @@ import os
 import re
 import secrets
 import threading
+import time
 from datetime import date
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
@@ -15,6 +16,8 @@ from urllib.parse import parse_qs, urlsplit
 from scholar_workflow import __version__
 from scholar_workflow.research.models import ResearchError
 from scholar_workflow.research.recommendations.ingestion import IngestionService
+from scholar_workflow.research.recommendations.intake import IntakeQueue
+from scholar_workflow.research.recommendations.feedback import Feedback
 from scholar_workflow.research.recommendations.ranking import RecommendationRanking
 from scholar_workflow.research.recommendations.refresh import refresh_candidate_metrics
 from scholar_workflow.research.recommendations.source_catalog import SourceCatalog
@@ -36,6 +39,15 @@ class RecommendationHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
+    def service_actions(self):
+        if time.monotonic() - getattr(self, "last_maintenance", time.monotonic()) >= 5:
+            self.last_maintenance = time.monotonic()
+            try:
+                self.maintenance()
+            except (ResearchError, OSError):
+                # Durable pending delivery/intake records remain visible for recovery.
+                pass
+
 
 def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> ThreadingHTTPServer:
     """Bind loopback; expose browser credentials only through constrained bootstrap."""
@@ -47,6 +59,14 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
         raise ResearchError("Invalid recommendation service port.")
     store = RecommendationStore(Path(state_dir))
     ingestion = IngestionService(store, profile)
+    intake = IntakeQueue(store, profile, service=ingestion)
+
+    def process_intake():
+        try:
+            return intake.drain(limit=1)
+        except ResearchError:
+            # The human mutation has already committed. A competing queue owner can finish it.
+            return {"status": "pending"}
 
     class Handler(BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.1"
@@ -183,6 +203,12 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
                     self._respond(200, store.list_candidates(**self._query(path.query)))
                 elif path.path == "/api/ranking/context" and not path.query:
                     self._respond(200, RecommendationRanking(store).context())
+                elif path.path == "/api/feedback/status" and not path.query:
+                    self._respond(200, Feedback(store).status())
+                elif path.path == "/api/intake/configuration" and not path.query:
+                    self._respond(200, intake.configuration())
+                elif path.path == "/api/intake/history" and not path.query:
+                    self._respond(200, intake.history())
                 elif path.path == "/api/handoff" and not path.query:
                     self._respond(200, {**store.prepare_handoff(), "profile": profile})
                 elif path.path == "/api/requirements":
@@ -261,6 +287,16 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
                     self._respond(200, {"token": token})
                     return
                 payload = self._body(limit=96 * 1024 if path.path in {"/api/requirements", "/api/ranking/context"} else _MAX_BODY)
+                if path.path == "/api/intake/configuration":
+                    if set(payload) != {"collection_key", "expected_revision", "enabled"}:
+                        raise ResearchError("Intake target needs a collection key, revision and enabled state.")
+                    self._respond(200, intake.configure(**payload))
+                    return
+                if path.path == "/api/intake/process":
+                    if set(payload) - {"retry"} or type(payload.get("retry", False)) is not bool:
+                        raise ResearchError("Intake processing only accepts an explicit retry boolean.")
+                    self._respond(200, intake.drain(limit=1, retry=payload.get("retry", False)))
+                    return
                 if path.path == "/api/sources/import":
                     if set(payload) != {"expected_revision", "plugin"}:
                         raise ResearchError("Source import needs its plugin and current catalog revision.")
@@ -289,7 +325,9 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
                 if path.path == "/api/evaluations":
                     if set(payload) != {"candidate_id", "score", "comment", "expected_revision", "expected_candidate_revision"}:
                         raise ResearchError("Evaluation needs a candidate, score, comment and both displayed revisions.")
-                    self._respond(200, store.save_evaluation(**payload))
+                    result = store.save_evaluation(**payload)
+                    process_intake()
+                    self._respond(200, store.get_candidate(result["candidate_id"]))
                     return
                 if path.path == "/api/requirements":
                     expected = {"requirement_id", "title", "content", "enabled", "expected_revision"}
@@ -326,7 +364,8 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
                 elif path.path not in {"/api/reviews", "/api/reviews/revoke", "/api/metrics"}:
                     self._error("Recommendation route was not found.", 2, 404)
                     return
-                if (set(payload) != expected or not isinstance(payload.get("candidate_id"), str)
+                extra = {"reason", "scope"} if path.path == "/api/decisions" else set()
+                if (not expected <= set(payload) <= expected | extra or not isinstance(payload.get("candidate_id"), str)
                         or not 1 <= len(payload["candidate_id"]) <= 128
                         or type(payload.get("expected_revision")) is not int
                         or payload["expected_revision"] < 0):
@@ -336,13 +375,16 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
                             or payload["decision"] not in {"unread", "saved", "selected", "ignored"}):
                         raise ResearchError("Unknown recommendation decision.")
                     result = store.set_decision(payload["candidate_id"], payload["decision"],
-                                                payload["expected_revision"])
+                                                 payload["expected_revision"], payload.get("reason"), payload.get("scope"))
                 elif path.path == "/api/metrics":
                     result = refresh_candidate_metrics(store, payload["candidate_id"], payload["expected_revision"])
                 elif path.path == "/api/reviews/revoke":
                     result = store.revoke_review(payload["candidate_id"], payload["expected_revision"])
                 else:
                     result = store.review_candidate(payload["candidate_id"], payload["expected_revision"])
+                if path.path != "/api/metrics":
+                    process_intake()
+                    result = store.get_candidate(result["candidate_id"])
                 self._respond(200, result)
             except ResearchError as exc:
                 self._error(str(exc), exc.exit_code)
@@ -356,6 +398,11 @@ def create_server(state_dir: Path, profile: str, token: str, port: int = 0) -> T
     server = RecommendationHTTPServer(("127.0.0.1", port), Handler)
     server.runtime_identity = {"pid": os.getpid(), "profile": profile, "version": __version__}
     server.timeout = 1
+    server.last_maintenance = time.monotonic()
+    def maintenance():
+        Feedback(store).flush()
+        process_intake()
+    server.maintenance = maintenance
     return server
 
 

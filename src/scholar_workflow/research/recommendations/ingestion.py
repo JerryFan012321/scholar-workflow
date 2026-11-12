@@ -46,6 +46,12 @@ def _resource_metadata(resource: dict[str, Any]) -> dict[str, Any]:
         raise ResearchError("Paper authors are missing; complete verified metadata before ingestion.", 2)
     item_type = "preprint" if kind == "paper" and resource.get("arxiv_id") else {
         "paper": "document", "blog": "blogPost", "project": "webpage"}[kind]
+    if resource.get("item_type"):
+        allowed = {"paper": {"preprint", "journalArticle", "conferencePaper", "report", "manuscript"},
+                   "blog": {"blogPost", "webpage"}, "project": {"webpage", "report"}}
+        if resource["item_type"] not in allowed[kind] or (resource.get("arxiv_id") and resource["item_type"] != "preprint"):
+            raise ResearchError("The verified Zotero item type conflicts with this resource identity.")
+        item_type = resource["item_type"]
     metadata: dict[str, Any] = {"itemType": item_type, "title": resource["title"], "url": resource["url"]}
     if authors:
         # Preserve source names rather than guessing personal-name components.

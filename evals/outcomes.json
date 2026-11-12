@@ -562,6 +562,16 @@
       "id": "recommendation-source-plugin-lifecycle",
       "description": "G19: portable custom source packages import/export and update through generic CLI/settings, with stable IDs, CAS and pool-local builtin enablement. External agents obtain selected-source requirements/context and native discovery guidance without a source-specific page, command executor or account proxy. Development, installed, native-tool and human acceptance remain distinct.",
       "status": "pending"
+    },
+    {
+      "id": "project-recommendation-feedback-context",
+      "description": "G19: multiple stable project tasks have discoverable local context. Human actions automatically produce task-scoped and curator JSONL; exact-batch preference updates preserve new arrivals and original history. Source tests, installed behavior and human review remain separate.",
+      "status": "pending"
+    },
+    {
+      "id": "zotero-metadata-knowledge-handoff",
+      "description": "G19: one configured receiving collection accepts reviewed human selections through code, retaining prepared metadata and exact opinions in a verified child note without original files. Knowledge management starts from the collection and preserves existing asset-unit formats.",
+      "status": "pending"
     }
   ]
 }

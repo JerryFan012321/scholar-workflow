@@ -499,7 +499,7 @@
     if (isTestProfile() && ["completed", "complete", "created", "existing", "existing_updated"].includes(value)) return "模拟书目入库完成";
     return {completed: "书目已入库", complete: "书目已入库", created: "书目已入库", existing: "已复用书目",
       existing_updated: "已更新分类", failed: "入库失败", needs_attention: "需要处理", pending: "等待处理",
-      running: "正在处理", in_progress: "正在处理", interrupted: "执行中断", conflict: "身份冲突", planned: "已生成计划"}[value] || "状态待确认";
+      running: "正在处理", retry: "等待重试", cancelled: "已撤销待入库", in_progress: "正在处理", interrupted: "执行中断", conflict: "身份冲突", planned: "已生成计划"}[value] || "状态待确认";
   }
 
   function receiptView(receipt) {
@@ -554,11 +554,52 @@
       + "PDF 附件和 Vault 知识单元的完成情况另行确认。";
     list.replaceChildren(element("p", "muted", "正在读取入库记录…"));
     try {
-      const result = await api("/api/ingestion/history");
-      list.replaceChildren(...(result.items || []).map(historyRow));
-      if (!result.items?.length) list.append(element("div", "empty-state", "还没有入库记录。可在推荐详情中审阅、选中资料，再加入 Zotero。"));
+      const [legacy, current] = await Promise.all([api("/api/ingestion/history"), api("/api/intake/history")]);
+      const items = [...current.items.map(job => ({...job, ...job.receipt,
+        collection_name: current.configuration.collection_name})), ...(legacy.items || [])];
+      list.replaceChildren(...items.map(historyRow));
+      if (!items.length) list.append(element("div", "empty-state", "还没有入库记录。先设置接收分类，再在推荐详情中选择入库。"));
+      await loadIntakeTarget(current.configuration);
     } catch (error) { list.textContent = errorText(error); }
   }
+
+  let intakeConfiguration = {revision: 0, enabled: false};
+  async function loadIntakeTarget(configuration) {
+    intakeConfiguration = configuration;
+    const select = $("intake-target-collection");
+    select.replaceChildren(element("option", null, "请选择接收分类")); select.options[0].value = "";
+    $("intake-target-status").textContent = configuration.enabled
+      ? `自动接收到：${configuration.collection_name}` : "尚未启用自动接收。";
+    try {
+      const result = await api("/api/ingestion/targets");
+      if (!result.available) throw new Error(result.reason || "Zotero 暂不可用");
+      for (const target of result.targets) {
+        const option = element("option", null, target.name); option.value = target.key || target.collection_key;
+        select.append(option);
+      }
+      select.value = configuration.collection_key || "";
+    } catch (error) { $("intake-target-status").textContent += ` ${errorText(error)}`; }
+  }
+  async function saveIntakeTarget(enabled) {
+    const status = $("intake-target-status");
+    const collection = $("intake-target-collection").value;
+    if (enabled && !collection) { status.textContent = "请先选择一个现有 Zotero 分类。"; return; }
+    $("intake-target-save").disabled = true; $("intake-target-disable").disabled = true;
+    try {
+      const result = await api("/api/intake/configuration", {collection_key: collection || null,
+        expected_revision: intakeConfiguration.revision, enabled});
+      await loadIntakeTarget(result); await bridge.reload();
+    } catch (error) { status.textContent = errorText(error); }
+    finally { $("intake-target-save").disabled = false; $("intake-target-disable").disabled = false; }
+  }
+  $("intake-target-save").addEventListener("click", () => saveIntakeTarget(true));
+  $("intake-target-disable").addEventListener("click", () => saveIntakeTarget(false));
+  $("intake-retry").addEventListener("click", async () => {
+    $("intake-retry").disabled = true;
+    try { await api("/api/intake/process", {retry: true}); await loadHistory(); await bridge.reload(); }
+    catch (error) { $("intake-target-status").textContent = errorText(error); }
+    finally { $("intake-retry").disabled = false; }
+  });
 
   function modalStatus(text, failed = false) {
     const node = $("ingestion-dialog-status"); node.textContent = text; node.hidden = !text;
@@ -654,6 +695,17 @@
   $("ingestion-refresh").addEventListener("click", loadHistory);
   window.ScholarRecommendationWorkspace = {
     decorateCard(article, candidate) {
+      if (Object.prototype.hasOwnProperty.call(candidate, "intake_target")) {
+        const line = element("div", "ingestion-card-action");
+        const text = candidate.intake_target
+          ? `选择后自动接收到 ${candidate.intake_target.collection_name}` : "先在设置中指定待整理条目的接收分类";
+        line.append(element("span", "muted", text));
+        const settings = element("button", "text-button", "接收设置"); settings.type = "button";
+        settings.addEventListener("click", () => switchPage("ingestion")); line.append(settings);
+        if (candidate.intake_job) line.append(element("span", "status-chip", historyStatus(candidate.intake_job.status)));
+        (article.querySelector?.(".card-actions") || article).append(line);
+        return;
+      }
       const button = element("button", "primary ingestion-open", isTestProfile() ? "预览模拟书目入库" : "预览 Zotero 书目入库");
       button.type = "button";
       button.disabled = candidate.decision !== "selected" || (candidate.review_required !== false && !candidate.abstract_reviewed);

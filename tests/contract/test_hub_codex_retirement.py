@@ -1,7 +1,10 @@
 """Retired entry points must not reactivate the old Codex execution broker."""
 from __future__ import annotations
 
+import importlib.util
 import json
+
+import pytest
 from types import SimpleNamespace
 
 from click.testing import CliRunner
@@ -18,7 +21,6 @@ def test_retired_cli_configure_does_not_probe_or_write_state(tmp_path, monkeypat
     executable = tmp_path / "codex"
     executable.write_text("not an executable", encoding="utf-8")
     state = tmp_path / "state"
-    monkeypatch.setattr("scholar_workflow.hub.codex_setup.CodexSetupService", _unexpected)
     monkeypatch.setattr("scholar_workflow.hub.tasks.CodexCapabilityProbe.probe", _unexpected)
 
     result = CliRunner().invoke(main, ["hub", "codex", "configure", "--executable",
@@ -82,3 +84,25 @@ def test_retired_status_can_read_retained_metadata_without_activation(tmp_path, 
     assert payload["retired"] is True
     assert payload["available"] is False
     assert worker.runtime_path.read_bytes() == before
+
+
+@pytest.mark.parametrize("module", [
+    "scholar_workflow.hub.codex_setup",
+    "scholar_workflow.hub.task_control",
+    "scholar_workflow.hub.target_setup",
+    "scholar_workflow.workflows.service",
+    "scholar_workflow.workflows.document",
+])
+def test_removed_private_execution_and_archival_modules_are_not_importable(module):
+    assert importlib.util.find_spec(module) is None
+
+
+@pytest.mark.parametrize("command", ["serve-links", "install-service"])
+def test_retired_service_entry_never_installs_or_starts_a_process(tmp_path, monkeypatch, command):
+    import subprocess
+    state = tmp_path / "state"
+    monkeypatch.setattr(subprocess, "Popen", _unexpected)
+    result = CliRunner().invoke(main, [command], env={"SCHOLAR_WORKFLOW_HOME": str(state)})
+    assert result.exit_code == 3, result.output
+    assert "retired" in result.output.lower()
+    assert not state.exists()

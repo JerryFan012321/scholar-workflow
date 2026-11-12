@@ -4,7 +4,7 @@
 
 ```
 5 Agents: intake / lineage / knowledge / feed / audit（任务级自足单元，skill 可跨 agent 复用；无固定单向 handoff，显式跨 agent 协作由宿主 LLM 或 agent-collaboration 编排）
-20 Runtime Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / track-research / explore-knowledge / analyze-paper / manage-assets / env-setup / agent-collaboration / init-project / organize-project / config-setup / review-experiments / content-and-style / create-report（manage-assets与agent-collaboration为所有宿主/agent共享；其余独立入口用户直呼）。project-backlog仅属dev-guide/skills开发层，不进入运行插件。
+21 Runtime Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / track-research / explore-knowledge / analyze-paper / manage-assets / env-setup / agent-collaboration / init-project / organize-project / config-setup / review-experiments / content-and-style / create-report / manage-knowledge（manage-assets与agent-collaboration为所有宿主/agent共享；其余独立入口用户直呼）。project-backlog仅属dev-guide/skills开发层，不进入运行插件。
 2 Host manifests: .claude-plugin/plugin.json / .codex-plugin/plugin.json（同名、同版本；共享 skills/hooks，MCP 配置保持等价）
 确定性 CLI: src/scholar_workflow/ + bin/(scholar-workflow, zotero-annotations.py, recommend-papers.py)
 Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入(create/import/元数据)均经 `scholar-workflow zotero` 命令;主题召回用 Local API 全字段/全文 quicksearch 后由宿主模型排序,不自建向量库;任何组件都不得直接读取或写入 zotero.sqlite
@@ -99,6 +99,8 @@ Skill、内容格式与确定性校验保留，原生工具对接采用必要的
 - 资产管理由manage-assets统一查询/登记/复用入口持有，先查已有台账与Source/Field后再问缺项。
   明确提供或选用的自有服务器按任务授权登记非秘密事实；偶遇主机不自动收集。服务器、知识库、
   推荐关注名单/来源保留各自事实源，不建第二套通用registry；具体流程唯一持于references/asset-management.md。
+- 项目推荐任务、自动反馈与中央偏好按需遵循 references/recommendation-context.md；
+  已审阅选择的代码元信息接收与知识管理交接遵循 references/zotero-intake.md，原始文件由后续管理获取。
 - 推荐页固定本机地址、日常macOS登录/恢复与test隔离由references/recommendation-service.md持有；
   不托管agent，不因端口冲突改地址或终止未知进程。
 - 推荐源包与外部agent交接由recommend-papers及references/recommendation-source-plugins.md持有；
@@ -371,7 +373,7 @@ Agent 之间没有固定 handoff 图。默认完成自己的任务并把结果�
 |---|---|---|
 | intake | 定向获取（找 + 入库） | find-resource, ingest-resource |
 | lineage | 方向级调研 + 建文献树 | find-resource, ingest-resource, build-literature-tree |
-| knowledge | 单篇知识投影（分析 / 批注 / 索引） | analyze-paper, export-annotations, sync-projections |
+| knowledge | Zotero接收与知识管理、单篇投影 | manage-knowledge, analyze-paper, export-annotations, sync-projections |
 | feed | 每日推荐流（略读 + watchlist） | recommend-papers |
 | audit | 跨系统一致性审计（只读） | check-consistency |
 | （宿主 LLM 顶层编排，不挂 agent） | 开放式调研的 scope + 委派 | survey-topic |

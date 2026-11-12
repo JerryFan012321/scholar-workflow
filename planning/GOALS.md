@@ -1,4 +1,13 @@
-# 本轮：稳定推荐入口（2026-11-12）
+# 本轮：推荐上下文与元信息交接（2026-11-12）
+
+用户批准将知识发现、代码接收与知识库管理分离。项目内多推荐任务保持平权和上下文隔离，
+中央登记定位；人的处理由代码自动记录并分发，管家只消费明确反馈批次并维护分领域偏好。
+已审阅选择只向指定 Zotero 分类接收元信息、准备好的介绍、资源链接和人的原话意见，
+原始文件获取和完整资产单元建设交给后续知识管理。G19 的已有推荐接口继续复用。
+具体运行契约为 references/recommendation-context.md 与 references/zotero-intake.md；
+源码实现不等于发布、安装、真实 Zotero 写入或人工验收。当前状态由 HANDOFF 持有。
+
+# 上轮：稳定推荐入口（2026-11-12）
 
 日常推荐页固定本机URL；macOS用户级登录/异常恢复只托管HTTP服务，外部agent独立运行。
 显式停止撤销登录任务，重启保留地址；端口冲突拒绝、test独立持久端口且无登录任务。
@@ -739,7 +748,7 @@ check-bundle通过。0.41.1最小列定位修复的169项定向检查通过，�
 | INV21 | **Notion 双库模型**：**Papers 库**每篇论文一行，upsert 键为现有稳定投影 `Resource ID`（显式映射 Zotero item key / work identity，不参与 library 判重）；**Related Docs 库**每个 Vault 附属文档一行，目标 upsert 键为稳定 artifact/resource ID，并经 `Paper` relation 指回论文。v0.27.2 仍以 Vault 相对路径 `Doc ID` 作为 legacy key，迁移必须保留兼容映射。编排顺序仍是先 upsert 论文取得 page_id，再 upsert 相关文档带 relation。Notion 只镜像 Vault/Zotero 的权威关系，不接管 Hub Projects 集合或项目 `docs/` | 已激活：Papers `Resource ID` + legacy Related Docs `Doc ID` + `notion-two-db-relation-order`；stable artifact ID 为**目标态（未激活）** |
 | INV20 | **论文类原子资源的主题内 Hub 文档**：每篇论文可按需挂一个相关资料文档，聚合该论文的周边资料位置链接（阅读笔记/分析笔记/方向笔记/补充材料），不重复论文元数据（元数据属 Zotero）。既有统一命名与落点为主题文件夹内 `paper_assets/<年>-<第一作者>-<标题>.md`；它是 INV37 通用 resource hub 的论文类历史布局，不再被视为全知识库的顶层模型。索引行、文献树和 analyze-paper 共用稳定 resource ID 关联该 Hub；同一论文可在不同主题拥有不同语境的 Hub（见 INV25），重投影不得覆盖人工正文 | 已激活：现有 paper hub、稳定关联与人工正文保护；INV37 通用 resource-hub 重解释为**目标态（未激活）** |
 | INV22 | **唯一蓝本与四视图共存**：新领域库/明确模范结构整理遵守 `field-library-v2`；用户指定模范知识库是唯一蓝本，该有的必须有、没有的默认不加，后续目录/正文/导航/图形必须一致，不混用旧库/测试候选。01完整列表、02横向时间线、03放射路线、04放射问题解法共存。03/04各论文叶端一句做法与实际入口，条件/限制在对应分支与正文；02标题下简短说明，仅有依据的类1/2贡献位列主干/主要支线。具体变体、样式、卡宽、可编辑性与链接由 `skills/build-literature-tree/references/field-library-format.md` 唯一持有；不固定论文数/个人路径，不复制owner，不降级单篇分析，不以占位分析冒充完整复现。旧writer/schema只原接口兼容。 | outcomes: field-library-portable-three-views（v2源码修订，尚未安装/原生验收；0.44.2为上一契约）；legacy: novelty-tree-topology-and-paperlist / module-level-and-challenge-tree |
-| INV23 | **略读级(recommend-papers)临时性**:略读经外部服务(四推荐源 REST + NotebookLM)进行,四源(S2 Recommendations / Scholar Inbox / S2 author watchlist / HF Daily)按 arXiv id 合并去重,仅对用户细化后的 shortlist 走 NotebookLM 略读(省 token,不略读全池);产物为**临时 Reading Report,绝不落 vault、不改 Zotero**;看中的论文经 find/ingest 正式管线入库(精确判重)。推荐聚合器不访问 Zotero,种子由 Local API CLI 注入 | （待补） |
+| INV23 | **知识发现与知识管理分离**：外部 Agent 经统一推荐入口提交论文、Blog 和项目网页；候选与人的处理历史持久保存。项目任务上下文留在项目，反馈由代码自动分发。已审阅的人类选择可触发指定 Zotero 分类的元信息、介绍、链接和原话意见接收，不传原始文件；后续知识管理另行获取、补全并维护完整资产单元。具体契约只由 recommendation-context.md 与 zotero-intake.md 持有，保留旧聚合器兼容，不依赖 NotebookLM 或固定来源集合。 | recommendation context/intake contracts; eval outcomes pending installed/human acceptance |
 | INV24 | **详细分析级(analyze-paper)源、落点与人类投影**：详细分析只经 Zotero Local API 读取索引全文（承 INV10 不直接解析 PDF 本体），每篇论文按稳定投影 `resource_id`（显式映射 Zotero item/work identity）维护一份 canonical 人类可读 Markdown 分析和一份可编辑概览 Canvas，与人工批注分立并互链；论文进入多个 topic 时，各 topic hub 只链接同一分析对，不复制真源。Markdown 是详细、证据完备的正文真源；新分析使用参考图的 `Abstract / Introduction / Method / Experiments / Limitation` 完整层级和子槽位，Canvas 只保留可编辑、紧凑且与正文同源的主张/逐点投影，不逐字段复制正文。旧“任务 → 输入 → 分步流程 → 输出 → 边界”仅供 IR v1–v3 兼容读取，不能静默重渲染为新框架。Method 呈现实际流程，不添加原图没有的“对应挑战 / 贡献”；不生成独立 Evidence 节点或 field-to-anchor 重复索引。证据与对应 claim/point 同处，提供原文入口和准确正文反链；仍区分作者陈述与分析推断，以及`论文未报告`、`当前正文通道无法核实`、`不适用`。复杂 canonical path、baseline hash 和节点映射进入 manifest/sidecar，不淹没人类正文。局部更新只替换声明的完整分支并保留未选分支、人工正文、自建节点、布局和 stable ID；冲突返回拟议 patch 而不静默覆盖。主题特有解读须另建 topic-owned context artifact，不冒充第二份 canonical 分析 | **v5 已正常发布安装；installed 0.41.1 的现有完整单篇成对检查通过**。五分支与逐点投影已可用；源摘录充分性、人工阅读/审美及正式迁移分别评鉴，安装/结构检查不代替这些验收。 |
 | INV25 | **论文↔文献树多对多，主题 Hub 可分身但 canonical 资源产物不分身**：同一篇论文按 Zotero work identity 唯一，并显式映射到现有稳定投影 `resource_id`；它可被任意多个概念节点、多棵树引用——同 topic 内多树（`02-`/`03-`…含技术树+挑战树）、跨不同主题文件夹的树皆可。树节点只引用投影 ID、不复制元数据；`resource_id` 不参与 library 判重。反链是复数关系：一篇论文可同时指向多棵树的多个位置。既有 `paper_assets/…` 是按 topic 分身的语境 Hub，可聚合该 topic 的反链与周边资料位置；它只链接 INV24 的单一 canonical 分析/Canvas。若确需主题特有解读，使用独立 topic-owned context artifact 与新 ID。`01-Paperlist.md` 是每个主题文件夹内的 catalog 视图，同一论文入多个主题可各登记一行。绝不增加“一个 resource_id 只归一个节点/一棵树”的唯一性检查，也绝不因多 topic 复制 resource-owned 正文真源 | 已激活：outcomes: paper-in-multiple-trees；canonical resource artifact 不分身为**目标态（未激活）**，守护待补 |
 | INV26 | **跨 agent 委派不扩权**:调用方与目标方地位对称,但目标 agent 的任务范围、工作目录和副作用权限只能等于或窄于用户已授予调用方的范围;破坏性动作、对外发布、凭据访问或任务扩张必须返回调用方走原有决策门禁。调用方负责检查实际产物、整合与最终验证 | safety: no-agent-permission-expansion |

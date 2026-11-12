@@ -73,6 +73,14 @@ or a claim that full migration and archive reception are complete.
 
 ## Project material context
 
+When project recommendations are requested, follow
+[project recommendation context](../../references/recommendation-context.md) after
+the ordinary schema-2 project identity exists. Enable the optional component with
+`scholar-research recommendations --profile personal projects enable --project-root TARGET`;
+it adds the AGENTS discovery link while preserving human rules. Register each
+selected recurring task separately. Ordinary initialization creates no task, copies
+no central preferences, and grants no agent special privileges.
+
 Initialization creates layout, not research facts. When project materials are explicitly selected,
 the project may own a separate `project-context.json` inventory of code, papers, knowledge notes,
 experiments and results. Follow the shared project-context result contract; keep external content

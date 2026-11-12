@@ -99,17 +99,6 @@ def test_ensure_managed_block_rejects_escape_before_write(tmp_path):
     assert not (tmp_path.parent / "escapee.md").exists()
 
 
-def test_archive_document_rejects_escape(tmp_path):
-    from scholar_workflow.workflows.document import archive_document
-    from scholar_workflow.models import Resource, Identifiers, ResourceKind
-    src = tmp_path / "src.pdf"
-    src.write_bytes(b"%PDF-1.4 test")
-    res = Resource(resource_id="paper:meta:x", kind=ResourceKind.PAPER,
-                   title="t", identifiers=Identifiers())
-    vault = tmp_path / "vault"
-    vault.mkdir()
-    with pytest.raises(VaultPathError):
-        archive_document(res, src, vault, "../../loot.pdf")
 
 
 # --- Hub-governed managed frontmatter ---

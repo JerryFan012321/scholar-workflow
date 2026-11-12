@@ -3,7 +3,35 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
-## [Unreleased]
+## [0.55.0] - 2026-11-12
+
+### Added
+- Register multiple stable recommendation tasks per project, with a project-owned
+  AGENTS/context entry, explicit context expansion and revision-checked interpretation updates.
+- Persist human feedback with decisions/evaluations and automatically deliver recoverable
+  JSONL views to project tasks and a central daily inbox without an agent. Consume
+  exact curator batches together with version-checked preference updates.
+- Configure one Zotero receiving collection and process reviewed human selections through
+  code-only metadata/opinion intake, preserving prepared Chinese content, related links
+  and exact human comments in one verified child note without transferring original files.
+- Add manage-knowledge and conditional runtime contracts for discovery-to-Zotero-to-knowledge
+  handoff; retain existing full-import, analysis and Canvas ownership boundaries.
+
+### Changed
+- Distinguish quality rejection from project/direction-specific irrelevance in explicit
+  feedback. Show automatic receiving setup and queue status under recommendation settings.
+
+### Removed
+- Delete unused private Codex setup, task-dispatch and execution-folder setup modules,
+  the retired fixed-port LaunchAgent renderer and the disconnected `.meta.json`
+  document-archive helper. Keep public retirement diagnostics, retained task metadata,
+  native knowledge registration, migration recovery and compatibility aliases.
+- Remove unit tests exclusive to those deleted implementations; retain and extend
+  public CLI/HTTP retirement and metadata-preservation coverage.
+
+### Fixed
+- Isolate legacy Hub health contract fixtures from personal Source/Field and
+  ZotFlow registrations; use per-test temporary state rather than live readers.
 
 ## [0.54.2] - 2026-11-12
 

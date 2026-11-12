@@ -5,15 +5,32 @@
 论文分析、文献树、入库与实验档案由插件维护；阅读、编辑和执行继续利用 Zotero、Obsidian、
 Notion、cmux 和外部 Codex 的原生能力，不另建工具控制面。
 
-当前0.51.0发布范围：保留科研Skill、已认可格式和原生工具薄适配，退役旧Hub网站，停止扩建独立探索网页。
+当前产品保留科研Skill、已认可格式和原生工具薄适配，旧Hub网站已退役，独立探索网页停止扩建。
 知识按完整论文／Blog／文档资产单元及明确上下文管理，区分管理、分析、查看与编辑。
 见[资产单元](references/asset-units.md)与[项目Skill分层](references/project-skills.md)。
-多维查看／编辑方式继续讨论，已有记录保留。0.51.0新增第一期推荐页和多agent统一提交入口。
+多维查看／编辑方式继续讨论，已有记录保留。推荐页提供多agent统一提交入口。
 
-本次后续修复将原目录设备号恢复与Canvas编辑器保存确认分开：不改文件，明确显示尚待确认，
+知识归属恢复将原目录设备号恢复与Canvas编辑器保存确认分开：不改文件，明确显示尚待确认，
 导出仍需完成单独的元数据确认。
 
 [English](./README.md)
+
+
+## 项目推荐上下文与 Zotero 元信息交接（0.55.0）
+
+当前开发分支新增项目内多推荐任务、项目自有上下文、人的反馈自动落盘和管家批次确认。
+这些接口随 0.55.0 提供；接收分类仍需在本机明确配置。
+
+仅为选定项目运行 `recommendations projects enable --project-root PROJECT`，再通过
+`recommendations tasks` 登记任务。项目 AGENTS 会指向任务入口；中央登记只保存定位，
+默认不读取项目背景。操作见[项目推荐上下文](references/recommendation-context.md)。
+
+在推荐设置或 `recommendations intake target` 中配置一次 Zotero 接收分类，后续已审阅
+的选择入库由代码写入元信息、准备好的介绍、相关链接和人的原话意见。原始文件获取、补全
+及知识单元建设由后续 [manage-knowledge](skills/manage-knowledge/SKILL.md) 接手。
+反馈、管家及接收 CLI 不依赖网页打开；运行中的服务会重试待同步记录，不托管 Agent。
+操作见[接收契约](references/zotero-intake.md)。
+
 
 ## 后台推荐与普通本地地址
 
@@ -24,7 +41,7 @@ macOS登录后自动启动、异常退出后恢复；重启仍使用原地址。
 无需URL凭据或已登录窗口。`restart`重启；`stop`停止并关闭登录自动启动，不影响agent的CLI操作。
 测试池地址独立保存，不创建登录任务。端口冲突会报错，不静默换址。完整操作见[推荐服务](references/recommendation-service.md)。
 
-## 推荐页面——第一期（0.51.0）
+## 推荐页面
 
 多个agent通过同一JSON/CLI入口提交论文、项目主页和Blog。首页紧凑显示领域/任务/类型筛选、
 原文及项目链接，以及带来源和采集时间的原始平台数据；展开条目后阅读完整摘要译文和相关链接。热度只列数据，
@@ -38,9 +55,9 @@ scholar-research recommendations status
 scholar-research recommendations stop
 ```
 
-个人候选池初始为空。让agent使用`recommend-papers` Skill即可发现统一提交入口。
+新建的个人候选池初始为空。让agent使用`recommend-papers` Skill即可发现统一提交入口。
 使用`recommendations --profile test`访问独立测试池。审阅后选择并导出清单，再交给
-`ingest-resource`；导出不等于入库。0.52.0开发候选另提供预览后明确确认的Zotero书目入库，
+`ingest-resource`；导出不等于入库。推荐页也提供预览后明确确认的Zotero书目入库，
 范围见下文。具体格式见[统一入口契约](references/recommendation-intake.md)。
 知识单元、原生阅读器和agent执行仍由各自工具持有。
 
@@ -66,10 +83,10 @@ Local API。主题召回由 Local API 全字段/全文 quicksearch 加宿主模�
 可扩展维度、条件记录、证据和保存查询不改；显式CLI查询／导出仍可使用。
 导出只向stdout输出可读导航，不修改论文单元。精确数据接口见[运行契约](references/knowledge-exploration.md)。
 
-0.50.0源码候选补齐论文、Blog和技术文档的完整单元引用。只读查看可用
+论文、Blog和技术文档均可按完整的已登记单元引用。只读查看可用
 `knowledge list --asset-units --source-id SOURCE --field-id FIELD --language zh`；
 `--paper-units`仍只列论文。新引用经实际登记导入，旧未登记记录保留只读并明确标为未核实。
-当前0.49.0安装版尚无该选项；这不增加网页、复制正文或自动采用旧资料。
+该操作不增加网页、复制正文或自动采用旧资料。
 
 - **Knowledge System** 以人类可读 Markdown 为正文。论文、重要技术文档和 Blog 是原子资源；
   分析、Canvas 和附件是显式归属的附属产物。新生成的全文分析采用原图的 Abstract、
@@ -128,9 +145,9 @@ README 仍负责对外展示；此能力独立于初始化和简短资料清单�
 
 ### 项目资料与已收集实验总览
 
-源码候选新增可编辑的`--selection-file`（YAML/JSON）：选择指标、配置、报告和图表，模型载荷
+结果收集支持可编辑的`--selection-file`（YAML/JSON）：选择指标、配置、报告和图表，模型载荷
 留在源端；原始Run/Attempt/产物记录保持不变。接收、读取、更新和恢复沿用同一清单，必需成果
-若明确延后则显示尚未收齐。现用0.49.0尚无此入口，实际使用先核对安装版帮助；这不等于已实现
+若明确延后则显示尚未收齐。实际使用先核对安装版帮助；这不等于已实现
 远端自动导出或SSH拉取。详见[结果选择与交付](references/experiment-result-selection.md)。
 
 已收集的子项目实验，用正常安装且 `scholar-workflow experiment --help` 中有 `collected` 的版本：
@@ -251,9 +268,9 @@ scholar-workflow analysis check-bundle /论文目录绝对路径 \
 
 ### 保留兼容服务，退役旧网站
 
-当前源码已移除旧Hub网站的HTML/JS/CSS，`/hub/`和`/hub/assets/*`返回HTTP 410。
+旧Hub网站的HTML/JS/CSS已从运行包移除，`/hub/`和`/hub/assets/*`返回HTTP 410。
 `open-hub`在启动服务、路由终端或打开浏览器前明确拒绝，不自动跳往尚未决定的多维界面。
-已安装0.49.0在新版本正常安装前仍保留旧行为。
+已发布的兼容服务同样保留这一退役行为。
 
 目录、health、PDF及受控原生打开的兼容API保留，已有状态和服务管理边界保持：
 
@@ -263,7 +280,7 @@ scholar-workflow hub doctor
 scholar-workflow hub stop
 ```
 
-停止／重启只影响经身份核实的自有服务。本次源码删除不自动停止已安装服务、不删除状态。
+停止／重启只影响经身份核实的自有服务。旧网站退役保留原有状态，不自动执行服务关闭。
 论文原生打开见[资料定位契约](skills/find-resource/references/resource-location.md)，
 笔记可使用独立`knowledge open`命令；均无需网站。
 
@@ -341,6 +358,9 @@ snapshot 不是 verified backup；真正备份仍需要独立介质和恢复演�
 | organize-project | 内部 PROJECT、模块图、资料入口与唯一计划（0.43.0起） |
 | review-experiments | 只读整理与比较选定实验档案（0.43.0起） |
 | config-setup | 初始化、查询和更新插件配置 |
+| content-and-style | 共用内容解释、中文文风和字体要求 |
+| create-report | 按指定载体与共用规范交付人类报告 |
+| manage-knowledge | 从 Zotero 待整理分类接手元信息、人的批注与完整资产单元管理 |
 
 ## 本地科研资产
 
@@ -375,8 +395,6 @@ Obsidian已知Vault、已登记Source和论文归属分别报告。详见[资产
     不自动升级 Obsidian。可选 Obsidian CLI 仅用于 ZotFlow 的此项证明，不是 Zotero 主动作的
     前置条件。Zotero Web API 密钥只留在 Obsidian SecretStorage。
   - Notion 集成 token —— 仅启用 Notion 投影时需要。
-  - `notebooklm-py` + Google 登录 —— 仅显式选择的文献树 NotebookLM
-    批读需要。
   - Scholar Inbox 账号 —— 仅该推荐源需要。
   - 目标 agent 的 CLI 与既有登录态 —— 仅 `agent-collaboration` 跨宿主运行时调用时需要;
     使用宿主原生 agent 工具时不需要。
@@ -474,8 +492,8 @@ pipx install --force "git+https://github.com/JerryFan012321/scholar-workflow.git
 - *"用标准骨架初始化这个项目"* → init-project
 - *"根据这些选定资料，整理一份内部 PROJECT 预览"* → organize-project
 
-各 skill 自己的 `README`(在 `skills/<名>/` 下)详述其选项与配置。推荐清单是临时的;你
-留下的论文走常规 find/ingest 管线,不经判重不入库。
+各 skill 自己的 `README`(在 `skills/<名>/` 下)详述其选项与配置。推荐候选、人的评价和来源记录
+保存在所选本地数据池中；选择的论文仍按常规身份与判重流程入库，导出清单本身不执行入库。
 
 ## 状态与已知限制
 
@@ -491,7 +509,7 @@ pipx install --force "git+https://github.com/JerryFan012321/scholar-workflow.git
 - **真实数据继续逐 Field 门禁:** 明确选择已登记 Source/Field，在迁移改写前审议当前 preview；
   其他 Vault/项目保持不动，单个样本验收不批准其他 Field 或整库迁移。
 - **ZotFlow 可用性只诊断、不自动修复:** 版本不兼容、本机 storage 模式关闭、CLI 无法证明或本机
-  PDF 不存在时，Hub 只禁用 ZotFlow 动作并说明原因；不会自动升级 Obsidian、卸载插件或通过
+  PDF 不存在时，适配器只禁用 ZotFlow 动作并说明原因；不会自动升级 Obsidian、卸载插件或通过
   Zotero Web API/WebDAV 下载 PDF 来补齐本机文件。
 - **已实现但尚未真实端到端跑通:** 旧 `build-literature-tree` Mermaid CLI投影（尤其第四层
   `module`）、`check-consistency`。
@@ -519,7 +537,7 @@ scholar-research recommendations sources context alphaxiv
 scholar-research recommendations sources history --source-id alphaxiv
 ```
 
-本批候选增加[推荐要求](references/recommendation-requirements.md)：在对应推荐源条目中展开查看和编辑，
+[推荐要求](references/recommendation-requirements.md)已可使用：在对应推荐源条目中展开查看和编辑，
 不再单列“推荐要求”页面。agent用 `scholar-research recommendations requirements list --source-id ID`
 查询该源要求，再通过同一`show/save`入口读取或修改。正常新记录填写已登记的来源；旧无归属记录
 仍可查询和查看历史，不自动猜源或迁移。

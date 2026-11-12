@@ -12,16 +12,38 @@ is managed as complete paper/blog/document asset units with explicit context. Th
 management, analysis, viewing and editing are separate operations. See
 [asset units](references/asset-units.md) and [project Skills](references/project-skills.md).
 Multidimensional viewing/editing remains under discussion; existing records are retained.
-Version 0.51.0 adds the first-phase recommendation page and shared agent intake.
+The dedicated recommendation page provides shared intake for external agents.
 
-The follow-up recovery fix separates a same-directory device-number recovery from
+Knowledge recovery separates a same-directory device-number recovery from
 acknowledging an additive Canvas editor save. It preserves all file bytes and reports
 the remaining acknowledgement; export stays strict until that separate step completes.
 
 
 [中文文档](./README.zh-CN.md)
 
-## Recommendation page — first phase (0.51.0)
+
+## Project recommendation context and Zotero intake (0.55.0)
+
+The development branch adds multiple stable tasks per project, project-owned context,
+automatic human-feedback files and exact curator-batch consumption. These interfaces
+ship with 0.55.0; receiving collection configuration remains an explicit local operation.
+
+Enable only a selected project's optional component with `recommendations projects
+enable --project-root PROJECT`, then register tasks through `recommendations tasks`.
+The project AGENTS entry points new agents to the task context; the central registry
+stores locators and does not read all project background. See
+[project task operations](references/recommendation-context.md).
+
+Choose one receiving collection in recommendation settings or `recommendations intake
+target`. Future reviewed human selections trigger code-only Zotero metadata and one
+intake note containing the prepared introduction, related links and exact personal
+opinions. Original files and knowledge-unit construction belong to the later
+[manage-knowledge](skills/manage-knowledge/SKILL.md) operation. CLI feedback/curator/intake
+operations work without an open page; the running service retries pending deliveries.
+See [intake operations](references/zotero-intake.md). No agent is hosted by this service.
+
+
+## Recommendation page
 
 Independent agents submit papers, project homepages and blogs to one versioned
 JSON/CLI entry. The compact page provides topic/task/type filters, original/project
@@ -37,10 +59,10 @@ scholar-research recommendations status
 scholar-research recommendations stop
 ```
 
-The personal pool begins empty. Ask an agent to use the `recommend-papers` Skill;
+A newly created personal pool begins empty. Ask an agent to use the `recommend-papers` Skill;
 it knows the shared submission entry. Use `recommendations --profile test` for an
 independent test pool. Exported reviewed selections go to `ingest-resource`; export
-does not ingest. The 0.52.0 candidate also supports explicitly confirmed Zotero
+does not ingest. The recommendation page also supports explicitly confirmed Zotero
 bibliography writes, described below. See the
 [intake contract](references/recommendation-intake.md). This is a bounded recommendation/review page. Existing knowledge units, native
 readers and agent runtimes keep their own interfaces and authority.
@@ -74,11 +96,10 @@ evidence and saved queries remain intact. Explicit CLI query/export operations
 remain available; export writes readable navigation to stdout only and does not
 change paper units. See the [data contract](references/knowledge-exploration.md).
 
-The unpublished0.50.0 candidate adds complete registered paper, Blog and technical
-document references. `knowledge list --asset-units --source-id SOURCE --field-id FIELD --language en`
+Complete registered paper, Blog and technical-document units can be referenced. `knowledge list --asset-units --source-id SOURCE --field-id FIELD --language en`
 lists their members and availability; `--paper-units` stays paper-only. New references
 use registered import. Unqualified legacy rows remain readable and unverified,
-not silently adopted. The installed0.49.0 does not have this option.
+not silently adopted.
 
 For non-paper updates, use [track-research](skills/track-research/README.md):
 `research sources list/register` manages selected blogs, institutional pages,
@@ -86,8 +107,8 @@ release repositories and model lists; `scholar-research check` observes them onc
 `research updates/mark` reviews retained events. The first success establishes a
 baseline, failures remain visible, and selection does not automatically ingest.
 No Hub, scheduled service, source checkout or model-weight download is required.
-See [source and update contract](references/research-tracking.md). Publication and
-installed acceptance of the current development batch remain separate.
+See [source and update contract](references/research-tracking.md) for the implemented
+observation flow and the remaining archive/ingestion handoff.
 
 - **Knowledge System** keeps readable Markdown as the primary knowledge artifact. Papers,
   technical documents, and blog posts are atomic resources; analyses, Canvas overviews, and
@@ -164,12 +185,12 @@ separate from initialization and the short inventory overview. See
 
 ### Project material and collected experiment views
 
-The source candidate adds an editable YAML/JSON `--selection-file` for readable
+Result collection accepts an editable YAML/JSON `--selection-file` for readable
 metrics, configuration, reports and figures, while model payloads remain at the
 source. Original Run/Attempt/artifact records stay unchanged; reception, reading,
 updates and recovery use the same selection. Explicitly deferred required evidence
-remains incomplete. Installed 0.49.0 does not expose this option; check installed
-help before use. Remote export/SSH pulling is not provided by this interface.
+remains incomplete. Check the installed command help before use. Remote export/SSH
+pulling is not provided by this interface.
 See [result selection and delivery](references/experiment-result-selection.md).
 
 For collected child experiments, use a normally installed version whose
@@ -314,8 +335,8 @@ The deterministic example does not establish scientific validity or replace huma
 The old Hub website and its bundled HTML/JavaScript/CSS are retired in current
 source. `/hub/` and `/hub/assets/*` return HTTP 410. `open-hub` refuses before
 starting a service, routing a terminal or opening a browser. It does not redirect
-to the undecided multidimensional interface. Installed 0.49.0 keeps its old
-behavior until an updated package is normally installed.
+to the undecided multidimensional interface. This applies to the released
+compatibility service as well as the source checkout.
 
 Existing catalog/health/PDF and controlled native-open compatibility APIs remain.
 Their safety boundaries, existing state and lifecycle commands are retained:
@@ -326,8 +347,8 @@ scholar-workflow hub doctor
 scholar-workflow hub stop
 ```
 
-Stop/restart only affect a process verified as Scholar-managed. This source change
-does not stop installed services or delete their state. Native paper/note opening
+Stop/restart only affect a process verified as Scholar-managed. Existing service
+state is retained; website retirement does not perform a service shutdown. Native paper/note opening
 uses the [resource-location contract](skills/find-resource/references/resource-location.md)
 and independent `knowledge open` commands. No website is required.
 
@@ -391,8 +412,8 @@ not a verified backup. Do not use this compatibility path to initialize the Worl
 See [`references/hub-contract.md`](references/hub-contract.md) for the complete runtime contract.
 Recovery snapshots created during a Field migration are not verified backups; a separate backup
 medium and restore exercise remain required.
-Older v1 HTTP write/upload/action routes return `410 Gone`; use the v3 Field, target, and action
-flows instead of treating a compatibility response as write authority.
+Older v1 HTTP write/upload/action routes return `410 Gone`. Use the supported knowledge
+CLI or native-resource actions; a compatibility response grants no write authority.
 
 ## Skills
 
@@ -416,6 +437,9 @@ flows instead of treating a compatibility response as write authority.
 | organize-project | Internal PROJECT entry with module views, material links and a single plan (0.43.0+) |
 | review-experiments | Read-only review/comparison of selected experiment archives (0.43.0+) |
 | config-setup | Initialize, query, and update the plugin configuration |
+| content-and-style | Shared explanation, Chinese prose and typography requirements |
+| create-report | Human-facing reports using the requested medium and shared writing requirements |
+| manage-knowledge | Start knowledge management from the Zotero receiving queue and human intake instructions |
 
 ## Personal research assets
 
@@ -450,14 +474,12 @@ keep their recommendation store and are not yet providers in `assets list`.
   Codex run may need localhost/network permission before it can reach port 23119; retry with
   that permission before interpreting exit 3 as Zotero being offline.
 - **Optional, per feature:**
-  - **Obsidian + ZotFlow** — for in-Obsidian PDF annotation. Hub checks the installed app/plugin
+  - **Obsidian + ZotFlow** — for in-Obsidian PDF annotation. The ZotFlow adapter checks the installed app/plugin
     versions, ZotFlow's `minAppVersion`, and a narrow live proof of local-only storage mode; it
     reports incompatibility but never upgrades Obsidian. The optional Obsidian CLI is needed only
     for this ZotFlow-specific proof, not for the Zotero primary action. ZotFlow keeps its Zotero
     Web API key in Obsidian SecretStorage.
   - Notion integration token — only if you enable the Notion projection.
-  - `notebooklm-py` + a Google login — only for explicitly chosen NotebookLM-assisted
-    literature-tree reading; recommendations do not require it.
   - A Scholar Inbox account — only for that one recommendation source.
   - A target agent's CLI and existing login — only when `agent-collaboration` crosses
     host runtimes instead of using a native agent tool.
@@ -529,8 +551,11 @@ saved port. Test pools retain separate ports and never install login jobs. See
    ```
    This writes `~/.config/scholar-workflow/config.yml` (only the keys you name), validates
    it, and preserves comments on later edits. Override the location with
-   `SCHOLAR_WORKFLOW_HOME` if needed. Add each Vault or folder from **Hub → Fields → 选择 Vault / 目录**;
-   an old `research_vault_root` value is treated only as a migration candidate.
+   `SCHOLAR_WORKFLOW_HOME` if needed. Register selected knowledge folders through
+   `knowledge registration-plan/register`, as described in the
+   [registration contract](references/knowledge-registration.md). Native reading does
+   not require registering an entire Vault. An old `research_vault_root` value is
+   treated only as a migration candidate.
 
 4. **Authorize Zotero writes.** Start Zotero, then run:
    ```bash
@@ -576,8 +601,9 @@ you can also invoke a skill explicitly with `$skill-name`, e.g.:
 - *"prepare an internal PROJECT preview from these selected materials"* → organize-project
 
 Each skill's own `README` (under `skills/<name>/`) documents its options and setup in
-detail. Recommendation reports are ephemeral; papers you keep flow into the normal
-find/ingest pipeline so nothing enters your library without the dedup check.
+detail. Recommendation candidates, human feedback and source records persist in the
+selected local pool. Papers chosen for ingestion still go through the normal identity
+and deduplication checks; an exported selection alone does not ingest them.
 
 ## Status & limitations
 
@@ -598,7 +624,7 @@ The plugin is in active `0.x` development. What's solid vs. still settling:
   a sample's acceptance does not approve another Field or a whole-library migration.
 - **ZotFlow availability is diagnosed, not repaired automatically:** incompatible versions,
   disabled local-storage mode, missing CLI proof, or absent local PDF disable only the ZotFlow
-  action with a reason. Hub never upgrades Obsidian, removes another plugin, or retrieves a PDF
+  action with a reason. The adapter never upgrades Obsidian, removes another plugin, or retrieves a PDF
   from the Zotero Web API/WebDAV to repair local availability.
 - **Implemented but not yet exercised on a real end-to-end run:** the legacy
   `build-literature-tree` Mermaid CLI projection (especially the fourth `module`
@@ -632,7 +658,7 @@ scholar-research recommendations sources context alphaxiv
 scholar-research recommendations sources history --source-id alphaxiv
 ```
 
-This candidate adds shared [recommendation requirements](references/recommendation-requirements.md).
+Shared [recommendation requirements](references/recommendation-requirements.md) are available under each source.
 Each recommendation-source entry contains an expandable requirements list/editor;
 external agents use `scholar-research recommendations requirements list --source-id ID`
 and the same `show/save` interface against that pool. Normal new records include

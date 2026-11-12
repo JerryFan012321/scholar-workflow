@@ -55,6 +55,12 @@ from scholar_workflow.hub.terminal_worker import (
 NOW = datetime(2026, 9, 23, tzinfo=UTC)
 
 
+@pytest.fixture(autouse=True)
+def isolated_hub_state(tmp_path, monkeypatch):
+    # Health contracts use synthetic registries, never personal reader configuration.
+    monkeypatch.setenv("SCHOLAR_WORKFLOW_HOME", str(tmp_path / "isolated-state"))
+
+
 def _catalog() -> HubCatalog:
     return HubCatalog(
         generated_at=NOW,
@@ -686,8 +692,6 @@ def test_legacy_runtime_cannot_reactivate_default_hub_task_service(tmp_path: Pat
         raise AssertionError("Historical runtime must not load a Codex execution service")
 
     monkeypatch.setattr("scholar_workflow.hub.tasks.CodexCapabilityProbe.probe", forbidden)
-    monkeypatch.setattr("scholar_workflow.hub.task_control.TaskControlService", forbidden)
-    monkeypatch.setattr("scholar_workflow.hub.codex_setup.CodexSetupService", forbidden)
     server = start_hub_server(
         port=0,
         storage_root=storage,

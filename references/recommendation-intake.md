@@ -4,9 +4,15 @@ Read this contract before submitting recommendations, using their review page or
 preparing a selected-candidate handoff. The installed `scholar-research
 recommendations` CLI is shared by all recommending agents and recurring tasks.
 It accepts papers, project homepages and blogs. Submission does not ingest them.
-The separate explicit bibliography operation below can write reviewed selections
-to Zotero. Source acquisition and scheduling remain with external agent harnesses;
+The configured [metadata/opinion intake](zotero-intake.md) can automatically write
+reviewed human selections to a chosen Zotero receiving collection. The legacy
+per-item bibliography preview below remains compatible. Source acquisition and scheduling remain with external agent harnesses;
 the page does not run agents, edit knowledge units or download code/model weights.
+
+Project-owned tasks and automatic feedback follow
+[recommendation context](recommendation-context.md), loaded only for that operation.
+Human processing immediately records/project-delivers feedback without an agent.
+Original files and knowledge construction are managed after Zotero reception.
 
 ## Destination and installed entry
 
@@ -324,7 +330,11 @@ specialist recommending agents or the shared submission interface.
 
 ## Direct Zotero bibliography intake
 
-A selected and currently reviewed card can choose an existing Zotero collection,
+The default receiving flow follows [metadata/opinion intake](zotero-intake.md):
+configure once, then a reviewed human selection starts code-only reception. The
+remaining subsection documents the compatible legacy per-item preview API/CLI.
+
+A selected and currently reviewed entry in a compatibility client can choose an existing Zotero collection,
 prepare a zero-write preview and explicitly confirm bibliography ingestion in the
 page. The preview binds candidate revision/content, the derived bibliography metadata,
 collection version, provider identity and expiry. Missing paper authors require

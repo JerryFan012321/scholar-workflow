@@ -1,5 +1,7 @@
 # ingest-resource
 
+For recommendation-page metadata/opinion reception, use [Zotero intake](../../references/zotero-intake.md). This code-only branch transfers no original files; full paper/PDF import remains a separately requested operation.
+
 Import papers and archive technical documents through Zotero's Local API.
 A paper's metadata comes from an authoritative web source, never from the PDF;
 an available PDF comes from arXiv. Metadata-only cases retain their missing-PDF reason.

@@ -17,6 +17,12 @@ them. `PROJECT.md` owns the internal situation and navigation, with one detailed
 plan in PROJECT, the selected SCHEDULE or the existing plan authority. A skill is
 not a second plan, experiment ledger, server list or conversation-memory store.
 
+Project-owned recommendation task data belongs in the optional context component,
+not in SKILL.md. Its registration, AGENTS discovery link, multiple task identities,
+automatic feedback and revision-checked updates follow
+[recommendation context](recommendation-context.md). Generic Skills expose that
+entry; later project agents use the selected task rather than a privileged agent's memory.
+
 ## Management and execution are different tasks
 
 Generic `init-project` creates the declared skeleton, `organize-project` presents
