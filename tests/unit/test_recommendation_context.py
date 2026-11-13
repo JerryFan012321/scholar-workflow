@@ -276,3 +276,17 @@ def test_task_event_pagination_is_scoped_and_uses_sequence_not_date(setup):
     assert first["has_more"] and not second["has_more"]
     assert first["items"][0]["event_id"] != second["items"][0]["event_id"]
     assert not Feedback(store).events(producer_id="task-two")["items"]
+
+
+@pytest.mark.parametrize("reason", ["quality", "not_relevant", "other"])
+def test_processed_reason_is_automatically_delivered_to_task_and_curator(setup, reason):
+    store, _, root, _, task, _ = setup
+    row = submit(store)
+    store.set_decision(row["candidate_id"], "ignored", row["revision"], reason)
+    task_record = records(root / task["feedback_file"])[-1]
+    inbox_files = list((store.state_dir / "context/inbox").glob("*.jsonl"))
+    central = [record for path in inbox_files for record in records(path)]
+    assert task_record["disposition"]["reason"] == reason
+    assert central[-1]["event_id"] == task_record["event_id"]
+    assert central[-1]["disposition"] == task_record["disposition"]
+    assert not Feedback(store).status()["pending_deliveries"]

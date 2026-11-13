@@ -73,7 +73,11 @@ const context={URL,URLSearchParams,Date,Math,JSON,Error,SyntaxError,Set,Map,Text
   else if(path.startsWith("/api/candidates")){const params=new URLSearchParams(path.split("?")[1]||"");let rows=candidates.map(row=>row.candidate_id===current.candidate_id?current:row);if(params.get("decision"))rows=rows.filter(row=>row.decision===params.get("decision"));value={items:rows.slice(Number(params.get("offset")||0),Number(params.get("offset")||0)+Number(params.get("limit")||40)),total:rows.length,facets:{tags:[],producers:[],kinds:["paper"]}};}
   else if(path==="/api/reviews"){current={...current,revision:current.revision+1,abstract_reviewed:true};value=current;}
   else if(path==="/api/reviews/revoke"){current={...current,revision:current.revision+1,abstract_reviewed:false,decision:current.decision==="selected"?"unread":current.decision};value=current;}
-  else if(path==="/api/decisions"){current={...current,revision:current.revision+1,decision:payload.decision};value=current;}
+  else if(path==="/api/decisions"){
+   if(input.decision_failure)return{ok:false,status:409,json:async()=>({exit_code:5})};
+   current={...current,revision:current.revision+1,decision:payload.decision,
+    disposition:payload.reason?{reason:payload.reason,scope:payload.scope||(payload.reason==="not_relevant"?"current_research":null)}:null};value=current;
+  }
   else if(path==="/api/tags"||path==="/api/tags/reset"){current={...current,revision:current.revision+1,tags:payload.tags||["original"]};value=current;}
   else if(path==="/api/metrics")value=current;
   else if(path==="/api/ranking/context"){
@@ -105,6 +109,8 @@ const openDetails=async()=>{await byClass("feed","entry-details").fire("click");
  vm.runInNewContext(fs.readFileSync(process.argv[1],"utf8"),context);
  vm.runInNewContext(fs.readFileSync(process.argv[2],"utf8"),context);
  vm.runInNewContext(fs.readFileSync(process.argv[3],"utf8"),context);await settle();
+ // Existing reading journeys explicitly browse All; fresh-home journeys exercise the real default.
+ if(!input.fresh_home&&!input.session_failure){await tabs.find(tab=>tab.dataset.decision==="").fire("click");await settle();}
  const initial=snap(get("feed"));let settingsJourney=null;
  if(!["sources","history","initial","source_requirements","settings_roundtrip"].includes(input.action)&&!input.action.startsWith("context_")&&!input.action.startsWith("quick_")&&!input.action.startsWith("filter_")){await openDetails();}
  if(input.action.startsWith("tags_")){
@@ -207,6 +213,18 @@ const openDetails=async()=>{await byClass("feed","entry-details").fire("click");
   await byClass("feed","entry-save").fire("click");await settle();
   if(input.action==="quick_undo"){await byClass("notice","notice-undo").fire("click");await settle();}
  }
+ if(input.action.startsWith("quick_feedback")){
+  if(input.action==="quick_feedback_last_page"){await get("next").fire("click");await settle();}
+  const menu=byClass("feed","entry-more");menu.open=true;await menu.fire("toggle");
+  if(input.action==="quick_feedback_escape"){await menu.fire("keydown",{key:"Escape"});}
+  else if(input.action==="quick_feedback_outside"){for(const fn of documentEvents.click||[])fn({target:get("result-count")});}
+  else{
+   const key={quality:"entry-quality",not_relevant:"entry-unrelated",other:"entry-other",restore:"entry-restore"}[input.reason||"quality"];
+   await byClass("feed",key).fire("click");await settle();
+   if(input.action==="quick_feedback_undo"){await byClass("notice","notice-undo").fire("click");await settle();}
+  }
+ }
+ if(input.action==="quick_all"){await get("empty-all").fire("click");await settle();}
  if(input.action==="reader_next"||input.action==="reader_next_previous"){
   get("detail-panel").scrollTop=500;await get("detail-next").fire("click");await settle();
   if(input.action==="reader_next_previous"){await get("detail-previous").fire("click");await settle();}
@@ -231,7 +249,8 @@ const openDetails=async()=>{await byClass("feed","entry-details").fire("click");
   get("kind").value="paper";await get("kind").fire("change");await settle();
   await byClass("active-filters","filter-chip").fire("click");await settle();
  }
- process.stdout.write(JSON.stringify({posts,reads,sessions,initial,feed:snap(get("feed")),detail:snap(get("detail-content")),
+ process.stdout.write(JSON.stringify({posts,reads,sessions,initial,notice:snap(get("notice")),tabs:tabs.map(snap),
+  page_number:get("page-number").textContent,empty_title:get("empty-title").textContent,empty_all_hidden:get("empty-all").hidden,feed:snap(get("feed")),detail:snap(get("detail-content")),
   reader_position:get("detail-position").textContent,reader_scroll:get("detail-panel").scrollTop,reader_next_disabled:get("detail-next").disabled,reader_previous_disabled:get("detail-previous").disabled,filters:snap(get("active-filters")),filter_summary:get("filter-summary").textContent,storage:Object.fromEntries(storage),
   detail_hidden:get("detail-overlay").hidden,detail_notice:get("detail-notice").textContent,sources:snap(get("sources-list")),
   history:snap(get("ingestion-history")),plan:snap(get("ingestion-plan")),collection:snap(get("ingestion-collection")),

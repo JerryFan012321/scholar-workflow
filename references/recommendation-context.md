@@ -115,6 +115,32 @@ Human-decision/evaluation interfaces represent the person's explicit instruction
 Recommending or curator agents do not manufacture human feedback, scores or review
 confirmation from their own judgment. Agent interpretations retain agent attribution.
 
+## What each agent reads
+
+For an external project recommending task:
+
+1. Use `tasks guide PRODUCER_ID --read-context` for the selected authorized task's
+   background, context revision and checkpoint. Read its returned `feedback_file`,
+   selecting event IDs not yet in the checkpoint's `consumed_event_ids`; or use
+   the task-filtered `feedback events` cursor API above.
+2. Use `recommendations context show` for the shared maintained domain preferences.
+   Do not expand other projects' background or the full candidate snapshot by default.
+3. If maintaining the task context, save it and the incorporated event IDs through
+   `tasks save-context`. Reading feedback alone does not acknowledge it. Recommend
+   through the existing submission entry with that task's stable producer ID.
+
+For the curator, use `curator batch` for maintained preferences plus bounded pending
+human events; use `curator consume` only after incorporating that batch. No task
+background is read by that operation. The curator's consumption never clears a
+project task's independent checkpoint or feedback history. A deliberate ranking
+operation separately uses the explicit candidate snapshot/ranking interfaces.
+
+No agent is spawned or scheduled by this contract. A saved human judgment is not
+an automatically inferred preference or a new ranking. The external harness owns
+when the next recommending or curator task runs. Project file delivery requires
+that producer to be explicitly registered to the project; unregistered submissions
+still generate central human events, but do not create or guess project folders.
+
 ## Updating selected task context
 
 Read the task guide with `--read-context` and its own feedback file. Maintain actual

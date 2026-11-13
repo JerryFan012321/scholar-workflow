@@ -125,3 +125,75 @@ def test_delayed_history_restore_cannot_reopen_reader_after_entering_settings(le
     assert result["detail_hidden"] and not result["views"]["sources"]
     assert result["views"]["recommendations"] and result["posts"] == []
     assert any("offset=20" in path for path in result["reads"])
+
+
+def test_fresh_home_defaults_to_unprocessed_only():
+    pending = candidate(decision="unread")
+    rows = [pending, candidate(candidate_id="candidate-" + "b" * 64, decision="saved")]
+    result = render(action="initial", candidate=pending, candidates=rows, fresh_home=True)
+    assert len(nodes(result["feed"], "compact-card")) == 1
+    assert all("decision=unread" in path or "decision=selected" in path
+               for path in result["reads"] if path.startswith("/api/candidates?"))
+    assert next(tab for tab in result["tabs"] if tab["dataset"]["decision"] == "unread")["attributes"]["aria-pressed"] == "true"
+
+
+def test_old_all_filter_does_not_override_new_home_default():
+    result = render(action="initial", candidate=candidate(decision="unread"), fresh_home=True,
+                    storage={"scholar-recommendations-test-filters": json.dumps({"decision": "", "kind": "paper"})})
+    query = next(path for path in result["reads"] if path.startswith("/api/candidates?"))
+    assert "decision=unread" in query and "kind=paper" in query
+
+
+def test_empty_unprocessed_offers_explicit_all_and_remembers_new_choice():
+    result = render(action="initial", fresh_home=True)
+    assert result["empty_title"] == "未处理已清空" and not result["empty_all_hidden"]
+    all_view = render(action="quick_all", fresh_home=True)
+    assert len(nodes(all_view["feed"], "compact-card")) == 1
+    restored = render(action="initial", fresh_home=True, storage=all_view["storage"])
+    assert len(nodes(restored["feed"], "compact-card")) == 1
+
+
+@pytest.mark.parametrize("reason,label", [("quality", "已标记：质量不符合要求"),
+    ("not_relevant", "已忽略：不是当前想关注的方向"), ("other", "已忽略：其他")])
+def test_home_feedback_is_reasoned_removes_from_unprocessed_and_offers_undo(reason, label):
+    result = render(action="quick_feedback", candidate=candidate(decision="unread"), fresh_home=True, reason=reason)
+    assert result["detail_hidden"]
+    assert result["posts"] == [{"path": "/api/decisions", "body": {
+        "candidate_id": candidate()["candidate_id"], "expected_revision": 3, "decision": "ignored", "reason": reason}}]
+    assert not nodes(result["feed"], "compact-card")
+    assert label in result["notice"]["text"] and nodes(result["notice"], "notice-undo")
+    undo = render(action="quick_feedback_undo", candidate=candidate(decision="unread"), fresh_home=True, reason=reason)
+    assert len(nodes(undo["feed"], "compact-card")) == 1
+    assert undo["posts"][-1]["body"] == {"candidate_id": candidate()["candidate_id"], "expected_revision": 4, "decision": "unread"}
+
+
+def test_reason_change_can_undo_without_changing_the_ignored_status():
+    row = candidate(decision="ignored", disposition={"reason": "quality", "scope": None})
+    result = render(action="quick_feedback_undo", candidate=row, reason="other")
+    assert result["posts"][-1]["body"] == {"candidate_id": row["candidate_id"], "expected_revision": 4,
+        "decision": "ignored", "reason": "quality", "scope": None}
+
+
+def test_home_feedback_conflict_keeps_item_and_does_not_claim_success():
+    result = render(action="quick_feedback", candidate=candidate(decision="unread"), fresh_home=True, decision_failure=True)
+    assert len(nodes(result["feed"], "compact-card")) == 1
+    assert "刷新后重试" in result["notice"]["text"]
+    assert not nodes(result["notice"], "notice-undo")
+
+
+@pytest.mark.parametrize("action", ["quick_feedback_escape", "quick_feedback_outside"])
+def test_home_feedback_menu_dismisses_without_recording_a_judgment(action):
+    result = render(action=action, candidate=candidate(decision="unread"), fresh_home=True)
+    assert not nodes(result["feed"], "entry-more")[0]["open"]
+    assert not result["posts"]
+
+
+def test_processing_the_last_card_on_a_page_returns_to_remaining_pending_items():
+    rows = [candidate(candidate_id="candidate-" + f"{index:064x}", decision="unread") for index in range(21)]
+    result = render(action="quick_feedback_last_page", candidate=rows[-1], candidates=rows,
+                    fresh_home=True, reason="other")
+    assert len(nodes(result["feed"], "compact-card")) == 20
+    assert result["page_number"] == "1 / 1"
+    queries = [path for path in result["reads"] if path.startswith("/api/candidates?") and "decision=unread" in path]
+    assert any("offset=20" in query for query in queries)
+    assert "offset=0" in queries[-1]
