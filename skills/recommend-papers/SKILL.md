@@ -50,9 +50,11 @@ sourced-summary branch and label the result explicitly; never fabricate an abstr
 
 For a project-owned recurring task, its registration or its feedback/context update,
 follow [project recommendation context](../../references/recommendation-context.md).
-Resolve the selected task through `tasks list/guide`; task background stays in the
-project. Any authorized project agent can continue it. Human feedback is delivered
-by code; read it before updating that task's context, not as a prerequisite to recording it.
+Before continuing a registered task, resolve it through `tasks list/guide` and read
+its unconsumed feedback plus the shared maintained preferences, as specified there.
+Task background stays in the project. Any authorized project agent can continue it.
+Human feedback is delivered by code; agent interpretation is a later explicit update,
+not a prerequisite to recording a person's action.
 
 When the task uses or maintains saved recommendation requirements, follow
 [recommendation requirements](../../references/recommendation-requirements.md).

@@ -13,7 +13,7 @@
   const kindNames = {paper: "论文", project: "项目主页", blog: "博客"};
   const decisionNames = {unread: "未处理", saved: "稍后看", selected: "已选入库", ignored: "已忽略"};
   const state = {profile: "personal", query: "", kind: "", tag: "", producer_id: "",
-    since: "", decision: "", sort: "agent", offset: 0, limit: 20, total: 0, draftScope: null};
+    since: "", decision: "unread", sort: "agent", offset: 0, limit: 20, total: 0, draftScope: null};
   let sequence = 0;
   let searchTimer;
   let detailCandidate = null;
@@ -21,6 +21,7 @@
   let feedCandidates = [];
   let knownTags = [];
   let activeTagPicker = null;
+  let activeFeedbackMenu = null;
   const tagUndos = new Map();
   let readerQueue = [];
   let readerOffset = 0;
@@ -125,6 +126,7 @@
   }
   document.addEventListener("click", event => {
     if (activeTagPicker && !activeTagPicker.contains(event.target)) activeTagPicker.open = false;
+    if (activeFeedbackMenu && !activeFeedbackMenu.contains(event.target)) activeFeedbackMenu.open = false;
   });
 
   function externalLink(label, value, className) {
@@ -212,7 +214,7 @@
     try {
       const stored = Object.fromEntries(["query", "kind", "tag", "producer_id", "since", "decision", "sort"]
         .map((key) => [key, state[key]]));
-      sessionStorage.setItem(`scholar-recommendations-${state.profile}-filters`, JSON.stringify(stored));
+      sessionStorage.setItem(`scholar-recommendations-${state.profile}-filters`, JSON.stringify({...stored, version: 2}));
     } catch (_) { /* Filters are optional convenience state, never authentication. */ }
   }
 
@@ -220,6 +222,7 @@
     try {
       const stored = JSON.parse(sessionStorage.getItem(`scholar-recommendations-${state.profile}-filters`) || "{}");
       for (const key of ["query", "kind", "tag", "producer_id", "since", "decision", "sort"]) {
+        if (key === "decision" && stored.version !== 2) continue;
         if (typeof stored[key] === "string" && stored[key].length <= 300) state[key] = stored[key];
       }
     } catch (_) { /* A stale filter does not prevent opening the feed. */ }
@@ -397,8 +400,10 @@
       }
       if (updated.candidate_id) readerQueue = readerQueue.map(row => row.candidate_id === updated.candidate_id ? updated : row);
       await load();
-      if (path === "/api/decisions" && offerUndo && updated.decision !== candidate.decision) {
-        notify(`已${{saved: "加入稍后看", ignored: "忽略", selected: "选择入库", unread: "恢复未处理"}[updated.decision] || "更新选择"}`, false, async () => {
+      if (path === "/api/decisions" && offerUndo && (updated.decision !== candidate.decision
+          || JSON.stringify(updated.disposition) !== JSON.stringify(candidate.disposition))) {
+        const reasonMessage = {quality: "已标记：质量不符合要求", not_relevant: "已忽略：不是当前想关注的方向", other: "已忽略：其他"};
+        notify(reasonMessage[updated.disposition?.reason] || `已${{saved: "加入稍后看", ignored: "忽略", selected: "选择入库", unread: "恢复未处理"}[updated.decision] || "更新选择"}`, false, async () => {
           const previous = {decision: candidate.decision};
           if (candidate.disposition) Object.assign(previous, candidate.disposition);
           const restored = await updateCandidate(updated, "/api/decisions", previous, {offerUndo: false});
@@ -832,6 +837,48 @@
     } finally { readerBusy = false; readerControls(); }
   }
 
+  function feedbackMenu(candidate) {
+    const menu = element("details", "entry-more");
+    const trigger = element("summary", null, "⋯");
+    trigger.setAttribute("aria-label", "更多操作"); trigger.title = "更多操作";
+    const panel = element("div", "entry-feedback-panel");
+    panel.setAttribute("role", "group"); panel.setAttribute("aria-label", "推荐反馈");
+    const buttons = [];
+    const locked = candidate.ingestion?.status === "in_progress";
+    function action(label, reason, className) {
+      const button = element("button", `text-button ${className}`, label);
+      button.type = "button"; button.disabled = locked;
+      if (locked) button.title = "正在入库，完成后可以修改选择";
+      button.addEventListener("click", async () => {
+        buttons.forEach(node => { node.disabled = true; });
+        const updated = await updateCandidate(candidate, "/api/decisions", reason
+          ? {decision: "ignored", reason} : {decision: "unread"});
+        if (updated) menu.open = false;
+        else buttons.forEach(node => { node.disabled = locked; });
+      });
+      buttons.push(button); return button;
+    }
+    panel.append(element("span", "feedback-group-label", "质量判断"),
+      action("质量不符合要求", "quality", "entry-quality"),
+      element("span", "feedback-group-label", "忽略"),
+      action("不是当前想关注的方向", "not_relevant", "entry-unrelated"),
+      action("其他", "other", "entry-other"));
+    if (candidate.decision !== "unread") panel.append(action("恢复未处理", null, "entry-restore"));
+    menu.append(trigger, panel);
+    menu.addEventListener("toggle", () => {
+      if (menu.open) {
+        if (activeFeedbackMenu && activeFeedbackMenu !== menu) activeFeedbackMenu.open = false;
+        activeFeedbackMenu = menu;
+      } else if (activeFeedbackMenu === menu) activeFeedbackMenu = null;
+    });
+    menu.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        event.preventDefault(); event.stopPropagation(); menu.open = false; trigger.focus();
+      }
+    });
+    return menu;
+  }
+
   function compactCard(candidate) {
     const resource = candidate.resource || {};
     const article = element("article", "compact-card");
@@ -880,16 +927,7 @@
       saved.disabled = true;
       await updateCandidate(candidate, "/api/decisions", {decision: candidate.decision === "saved" ? "unread" : "saved"});
     });
-    const more = element("details", "entry-more");
-    more.append(element("summary", null, "更多"));
-    const ignore = element("button", "text-button entry-ignore", candidate.decision === "ignored" ? "恢复未处理" : "忽略");
-    ignore.type = "button";
-    ignore.disabled = candidate.ingestion?.status === "in_progress";
-    ignore.addEventListener("click", async () => {
-      ignore.disabled = true;
-      await updateCandidate(candidate, "/api/decisions", {decision: candidate.decision === "ignored" ? "unread" : "ignored"});
-    });
-    more.append(ignore);
+    const more = feedbackMenu(candidate);
     actions.append(saved, details, more);
     bottom.append(actions); article.append(bottom);
     const provenance = element("div", "compact-provenance");
@@ -933,6 +971,10 @@
         api(`/api/candidates?${params}`), api("/api/candidates?decision=selected&limit=1")]);
       if (current !== sequence) return;
       state.total = result.total || 0;
+      if (state.total && state.offset >= state.total) {
+        state.offset = Math.floor((state.total - 1) / state.limit) * state.limit;
+        return load();
+      }
       feedCandidates = result.items || [];
       knownTags = result.facets?.tags || [];
       const currentById = new Map(feedCandidates.map(row => [row.candidate_id, row]));
@@ -951,9 +993,11 @@
       }
       $("empty").hidden = Boolean(result.items?.length);
       const filtered = Boolean(state.query || state.kind || state.tag || state.producer_id || state.since || state.decision);
-      $("empty-title").textContent = filtered ? "没有符合条件的推荐" : "等待第一批推荐";
-      $("empty-description").textContent = filtered ? "可以调整筛选条件，或刷新列表查看最新提交。"
-        : "来源与专项 agent 提交的内容会汇集到这里。";
+      const unreadOnly = state.decision === "unread" && !state.query && !state.kind && !state.tag && !state.producer_id && !state.since;
+      $("empty-title").textContent = unreadOnly ? "未处理已清空" : filtered ? "没有符合条件的推荐" : "等待第一批推荐";
+      $("empty-description").textContent = unreadOnly ? "新推荐会出现在这里，已处理的内容可以在其他列表回看。"
+        : filtered ? "可以调整筛选条件，或刷新列表查看最新提交。" : "来源与专项 agent 提交的内容会汇集到这里。";
+      if ($("empty-all")) $("empty-all").hidden = !unreadOnly;
       $("empty-command").hidden = true;
       $("empty-command").textContent = `scholar-research recommendations${state.profile === "test" ? " --profile test" : ""} schema\nscholar-research recommendations${state.profile === "test" ? " --profile test" : ""} submit --input recommendations.json`;
       $("result-count").textContent = `${state.total} 项`;
@@ -996,6 +1040,9 @@
       syncDecisionTabs();
       load();
     });
+  });
+  $("empty-all")?.addEventListener("click", () => {
+    state.decision = ""; state.offset = 0; syncDecisionTabs(); load();
   });
   $("refresh").addEventListener("click", () => load());
   $("previous").addEventListener("click", () => { state.offset = Math.max(0, state.offset - state.limit); load(); });

@@ -3,6 +3,16 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.55.2] - 2026-11-13
+
+### Fixed
+- Start the recommendation feed on Unprocessed, migrate stale default-All filters,
+  and keep All available for deliberate history browsing.
+- Offer reasoned quality/ignore feedback directly from each feed card, with separate
+  groups, specific confirmation and undo including changes between ignore reasons.
+- Explain the independent project and curator feedback readers, registration
+  prerequisite and explicit preference/context consumption through the runtime Skill.
+
 ## [0.55.1] - 2026-11-13
 
 ### Fixed
