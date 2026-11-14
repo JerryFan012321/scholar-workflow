@@ -21,6 +21,12 @@ does not invoke those skills or pull result bytes. For a separate collection req
 the parent pulls selected human-readable evidence under the management contract;
 model, weights and checkpoint payloads are not local result deliverables.
 
+For new-format experiments also load
+[experiment management](../../references/experiment-management.md). Select actual
+experiment/result groups and their recipe versions; use their changelog and execution
+records instead of inventing Attempts. The legacy record-specific instructions below
+apply only to selected existing Run/Attempt bundles. Read-only scope is unchanged.
+
 ## Inputs and operations
 
 - Use the selected project root, Run/Attempt identities, metric artifacts and review

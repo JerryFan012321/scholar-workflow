@@ -4,7 +4,7 @@
 
 ```
 5 Agents: intake / lineage / knowledge / feed / audit（任务级自足单元，skill 可跨 agent 复用；无固定单向 handoff，显式跨 agent 协作由宿主 LLM 或 agent-collaboration 编排）
-21 Runtime Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / track-research / explore-knowledge / analyze-paper / manage-assets / env-setup / agent-collaboration / init-project / organize-project / config-setup / review-experiments / content-and-style / create-report / manage-knowledge（manage-assets与agent-collaboration为所有宿主/agent共享；其余独立入口用户直呼）。project-backlog仅属dev-guide/skills开发层，不进入运行插件。
+22 Runtime Skills: survey-topic（宿主 LLM 顶层编排，不挂 agent）/ find-resource / ingest-resource / sync-projections / build-literature-tree / check-consistency / export-annotations / recommend-papers / track-research / explore-knowledge / analyze-paper / manage-assets / env-setup / agent-collaboration / init-project / organize-project / config-setup / review-experiments / content-and-style / create-report / manage-knowledge / manage-experiments（manage-assets与agent-collaboration为所有宿主/agent共享；其余独立入口用户直呼）。project-backlog仅属dev-guide/skills开发层，不进入运行插件。
 2 Host manifests: .claude-plugin/plugin.json / .codex-plugin/plugin.json（同名、同版本；共享 skills/hooks，MCP 配置保持等价）
 确定性 CLI: src/scholar_workflow/ + bin/(scholar-workflow, zotero-annotations.py, recommend-papers.py)
 Zotero 经官方 Local API: 元数据/存在性/索引全文/批注读取/写入(create/import/元数据)均经 `scholar-workflow zotero` 命令;主题召回用 Local API 全字段/全文 quicksearch 后由宿主模型排序,不自建向量库;任何组件都不得直接读取或写入 zotero.sqlite
@@ -41,7 +41,10 @@ Skill、内容格式与确定性校验保留，原生工具对接采用必要的
 
 - **Project System** 持有便携 `project_id`、共同项目布局、源码/config profile 和
   Run/Attempt/Target/Artifact 档案；主机项目根只进入显式 host registry。
-- 项目管理定案（2026-10-16）：本地保留完整研究总项目及不推送的资料Git；
+- 新实验的配方／结果／changelog／阶段存档、每实验Git和工作区职责，唯一遵循
+  `references/experiment-management.md`；操作由manage-experiments按需引用。旧Run/Attempt接口
+  仅兼容既有档案，本轮不迁移。下述2026-10-16登记/收集实现不作为新实验版本体系。
+- 既有项目管理与Run/Attempt兼容边界（2026-10-16）：本地保留完整研究总项目及不推送的资料Git；
   所有执行子项目的代码/Git开发与运行均在远端，只有primary可推送项目自有GitHub，本地只留最简恢复材料。
   所有实验按子项目回传轻量档案，在本地分析；保留项目知识、唯一计划、规则/skills和既有呈现契约。
   成果由本地主项目主动拉取，只接收可供人识别、阅读与分析的配置、指标、图表和必要记录；
@@ -385,6 +388,7 @@ Agent 之间没有固定 handoff 图。默认完成自己的任务并把结果�
 | （无 agent，用户直呼） | 宿主中立的 Git 项目骨架初始化 | init-project |
 | （无 agent，用户直呼） | 内部 PROJECT 资料入口、模块图与唯一计划 | organize-project |
 | （无 agent，用户直呼） | 已选实验档案的只读整理与比较 | review-experiments |
+| （无 agent，用户直呼） | 新实验记录、材料选择与阶段存档 | manage-experiments |
 | （无 agent，用户直呼） | 非论文博客、机构与模型渠道登记和增量动态 | track-research |
 | （无 agent，用户直呼） | 可扩展多维定位、条件比较、关系编辑与完整资产导航 | explore-knowledge |
 | （无 agent，用户直呼） | 插件配置（config.yml 读写 + 初始化） | config-setup |

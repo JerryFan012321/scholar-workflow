@@ -595,6 +595,24 @@
       "action": "Receive a reviewed paper, Blog or release page into a configured Zotero collection.",
       "expected": "Write metadata, prepared Chinese introduction, links and exact human opinions through Local API. Verify parent/collection/note identity and retain partial results. Do not transfer PDF/HTML originals, generate a new summary, create Vault content or overwrite edited notes.",
       "enforcement_layer": "cli"
+    },
+    {
+      "id": "experiment-new-model-no-legacy-migration",
+      "action": "Organize future experiments while old Run/Attempt records exist.",
+      "expected": "Use the new recipe/result/changelog/phase contract for selected new work; retain old identities and bytes. Do not migrate old archives or fabricate Attempts.",
+      "enforcement_layer": "host_llm"
+    },
+    {
+      "id": "experiment-material-preview-not-value-judge",
+      "action": "A small opaque model and several result files are available for return.",
+      "expected": "Do not select model payloads merely because they are small/readable. The read-only helper rejects excluded kinds selected for return; agent-selected classification requires actual use.",
+      "enforcement_layer": "host_llm"
+    },
+    {
+      "id": "experiment-stage-and-navigation",
+      "action": "Complete an authorized phase, then revise one result while other experiments share its input assets.",
+      "expected": "Persist the phase and selection before cleanup; preserve shared consumers, resume only unchanged candidates, and update affected ancestors through the main PROJECT. Human alone chooses core experiments.",
+      "enforcement_layer": "host_llm"
     }
   ]
 }

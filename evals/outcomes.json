@@ -572,6 +572,11 @@
       "id": "zotero-metadata-knowledge-handoff",
       "description": "G19: one configured receiving collection accepts reviewed human selections through code, retaining prepared metadata and exact opinions in a verified child note without original files. Knowledge management starts from the collection and preserves existing asset-unit formats.",
       "status": "pending"
+    },
+    {
+      "id": "new-experiment-management-example",
+      "description": "新实验多配方/多结果、轻量changelog、阶段存档与回传清理独立、条件结果同处、人类清点和逐级导航；旧档案不迁移。合成单对象、安装态及人工评鉴分别取证。",
+      "status": "pending"
     }
   ]
 }

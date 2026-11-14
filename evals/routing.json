@@ -463,6 +463,18 @@
       "input": "把这篇已选论文和 PDF 导入 Zotero",
       "expected_skill": "ingest-resource",
       "must_not_trigger": "manage-knowledge"
+    },
+    {
+      "id": "new-experiment-material-phase-management",
+      "input": "清点这个新实验的材料，更新配方与结果对应，并按已经约定的范围做阶段存档",
+      "expected_skill": "manage-experiments",
+      "must_not_trigger": "review-experiments"
+    },
+    {
+      "id": "new-experiment-read-only-review",
+      "input": "只读比较这两个已经做完的实验结果，不清理或改记录",
+      "expected_skill": "review-experiments",
+      "must_not_trigger": "manage-experiments"
     }
   ]
 }

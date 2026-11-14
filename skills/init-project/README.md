@@ -1,5 +1,7 @@
 # init-project
 
+For future experiment organization use [experiment management](../../references/experiment-management.md). Old Run/Attempt instructions below apply to existing archives; they do not prescribe new experiment identities or migrate records.
+
 For explicitly requested project recommendations, enable the optional component
 after initialization through [project recommendation context](../../references/recommendation-context.md).
 It preserves human AGENTS rules, adds one discovery link and keeps recurring-task

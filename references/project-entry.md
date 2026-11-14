@@ -73,6 +73,15 @@ Proposed work is labelled proposed, not a user commitment or completed task.
 
 ### Experiments and results
 
+For newly organized experiments, use [experiment-management.md](experiment-management.md).
+Show purpose, current phase, paired recipes/results, conditions beside values and
+material state. A small project keeps the table here; a larger one links its one
+existing detailed inventory. Highlight core experiments only when the human selected
+them. Supplementary measurements and changelog entries do not require new experiment
+identities or fictitious Attempts. Preserve the six-section order and unique plan.
+
+**For selected legacy archives**, apply the following record-specific rules:
+
 For every selected Run, identify the selected result Attempt, recorded outcome,
 requested metric/unit when available, and direct recipe/report/artifact entries.
 Show all selected Attempts with their Run, status and failure/retry/replay meaning;

@@ -16,6 +16,13 @@ Notion、cmux 和外部 Codex 的原生能力，不另建工具控制面。
 [English](./README.md)
 
 
+## 新实验管理（0.56.0）
+
+未来实验遵循[实验契约](references/experiment-management.md)和
+[manage-experiments](skills/manage-experiments/SKILL.md)：同一实验可有多套配方与结果、
+轻量变更记录和多次阶段存档。只读工具预览明确的材料选择，实际回传、清理使用原生工具。
+旧 Run/Attempt 档案与命令保留；本批接口随 0.56.0 分发。
+
 ## 项目推荐上下文与 Zotero 元信息交接（0.55.0）
 
 当前开发分支新增项目内多推荐任务、项目自有上下文、人的反馈自动落盘和管家批次确认。

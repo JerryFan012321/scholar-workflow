@@ -1,5 +1,7 @@
 # review-experiments
 
+未来新实验按[实验管理契约](../../references/experiment-management.md)组织。下文 Run/Attempt 说明仅适用已有档案，不用其规则强制划分新实验，也不迁移旧档案。
+
 只读整理和比较已有实验，不重跑实验、不另建看板。明确项目、Run、结果对应的
 Attempt 和指标后，返回带档案链接的 Markdown 报告；选择有歧义时确认，不默认选最高分或最新结果。
 
