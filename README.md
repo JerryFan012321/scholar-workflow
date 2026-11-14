@@ -22,6 +22,14 @@ the remaining acknowledgement; export stays strict until that separate step comp
 [中文文档](./README.zh-CN.md)
 
 
+## New experiment management (0.56.0)
+
+Future experiments use the [experiment contract](references/experiment-management.md)
+and [manage-experiments](skills/manage-experiments/SKILL.md): one experiment may have
+multiple versioned recipes/results, a changelog and repeatable phase archives.
+A read-only helper previews explicit material choices. Native tools own actual SSH
+return and cleanup; old Run/Attempt archives and commands remain compatible. These interfaces ship with 0.56.0.
+
 ## Project recommendation context and Zotero intake (0.55.0)
 
 The development branch adds multiple stable tasks per project, project-owned context,

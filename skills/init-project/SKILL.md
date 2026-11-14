@@ -13,6 +13,15 @@ operations, not copies of plugin-development or generic research skills. When
 project skills are requested, follow the shared project-skills contract; ordinary
 initialization does not generate task skills or install remote runtime support.
 
+## Future experiment organization
+
+For new experiments read `${CLAUDE_PLUGIN_ROOT}/references/experiment-management.md`.
+It defines experiment repositories and multiple recipes/results, not one new
+experiment for each legacy Run. This initializer still supplies its existing project
+role skeleton; new experiment files are an explicit `manage-experiments` task.
+Do not initialize execution records, migrate archives or populate fake results as
+an ordinary project-initialization side effect.
+
 ## Research parent and execution child requests
 
 For a research parent or remote execution child, first load
@@ -58,7 +67,7 @@ or a claim that full migration and archive reception are complete.
 
 - Use the selected role's exact skeleton; explicit generic use retains the common base. Do not
   create parallel `plan/plans`, `report/reports`, or `scripts/data` layouts.
-- Generic/execution-child Runs retain their flat archive authority; indexes are derived.
+- Existing generic/execution-child Runs retain their flat archive authority; indexes are derived.
   Parent-qualified collection uses the shared project-management contract's separate
   commands, not an initialization side effect.
 - Preserve `project-layout.json` identity and profile versions. A different selection requires

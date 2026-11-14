@@ -1,4 +1,7 @@
-# Experiment Records
+# Legacy Run/Attempt Records
+
+For future experiment design use [experiment management](../../../references/experiment-management.md).
+The following existing commands retain their meaning for old archives; no migration is performed.
 
 Read this reference when initialization is followed by Run, Attempt, Target, artifact, or backup
 record management. These commands manage records only; they never launch training or construct

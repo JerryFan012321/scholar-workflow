@@ -1,5 +1,7 @@
 # organize-project
 
+未来新实验按[实验管理契约](../../references/experiment-management.md)组织。下文 Run/Attempt 说明仅适用已有档案，不用其规则强制划分新实验，也不迁移旧档案。
+
 从明确选定的项目资料编写或更新内部 PROJECT.md；对外展示仍使用 README.md。
 不需要 Hub，也不另建资料账本。
 

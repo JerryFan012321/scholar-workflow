@@ -23,6 +23,17 @@ execution, metric meaning, scientific support or a selected best result. Retain
 invalid/unavailable rows and use the captured local mapping rather than resolving
 original child-relative paths against the parent root.
 
+## New experiment records
+
+For future experiments use [experiment-management.md](experiment-management.md) for
+identity and recipe/result pairing. The same explanatory result roles below apply:
+experiment/result selections replace Run/result selections; actual recipe and
+execution records replace Attempt references; meaningful changelog and selected
+execution history replace mandatory Attempt history. Do not manufacture Run/Attempt
+objects to write a report. Conditions, metrics, evidence and limitations still belong
+beside the corresponding results. Review remains read-only; maintaining the parent
+entry is the result-producing/management task's separate duty.
+
 ## Required human result
 
 Use one presentation language. The following content roles are required; translate

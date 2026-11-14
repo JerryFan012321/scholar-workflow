@@ -1,5 +1,7 @@
 # organize-project
 
+For future experiment organization use [experiment management](../../references/experiment-management.md). Old Run/Attempt instructions below apply to existing archives; they do not prescribe new experiment identities or migrate records.
+
 Prepare or update an internal PROJECT.md from selected project materials. README.md
 remains the public presentation. No Hub or new registry is needed.
 

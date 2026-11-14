@@ -27,14 +27,16 @@ entry; later project agents use the selected task rather than a privileged agent
 
 Generic `init-project` creates the declared skeleton, `organize-project` presents
 selected project context, and `review-experiments` explains selected existing
-results. These management capabilities do not run an experiment or manufacture
+results. `manage-experiments` maintains the explicitly selected new experiment records,
+material decisions and phase operations under [experiment-management.md](experiment-management.md).
+It does not run scientific code implicitly. These management capabilities do not run an experiment or manufacture
 missing execution records. Existing record/collection commands retain their own
 explicit write boundaries.
 
 A project-specific **execution skill** describes a recurring operation of that
 project: for example, its actual baseline reproduction, data preparation or
 evaluation entry. It identifies the applicable child, real config/CLI inputs,
-required environment, produced Run/Attempt evidence and task-specific acceptance
+required environment, actual recipe/result evidence (or existing legacy Run/Attempt records) and task-specific acceptance
 conditions. It uses the project's actual operations rather than a copied generic
 example. New commands must exist before the skill advertises them.
 
@@ -77,7 +79,8 @@ interfaces are an explicit gap, not permission to rewrite old outputs.
 
 The local research parent keeps overall plans, knowledge and analysis. Each remote
 execution child keeps its own source/config operations and applicable local skills
-under its independent Git. `primary` follows the same boundary. Share selected
+with experiment repositories and shared-code references as defined by the new
+experiment contract; old child repositories remain until explicitly adapted. `primary` follows the same boundary. Share selected
 project rules or references through an explicit task handoff; do not duplicate all
 parent skills, knowledge or session history into every child.
 

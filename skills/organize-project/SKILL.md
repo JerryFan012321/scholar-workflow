@@ -18,6 +18,10 @@ their real configs, entries and acceptance conditions in the selected project;
 organizing its entry neither creates them nor runs them. Use the project-skills
 contract when their organization is explicitly in scope.
 
+For new experiment groups use [experiment management](../../references/experiment-management.md)
+for the human inventory, names and upward result updates. The legacy Run/Attempt
+references below apply only when those records are selected.
+
 ## Inputs and operations
 
 - Use the selected project root, explicit materials, desired output language and

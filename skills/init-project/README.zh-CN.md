@@ -1,5 +1,7 @@
 # init-project
 
+未来新实验按[实验管理契约](../../references/experiment-management.md)组织。下文 Run/Attempt 说明仅适用已有档案，不用其规则强制划分新实验，也不迁移旧档案。
+
 显式需要项目推荐时，可在初始化后启用[项目推荐组件](../../references/recommendation-context.md)。组件保留人的 AGENTS 规则，添加一个入口链接；多个任务的背景与反馈留在项目内，普通初始化不自动创建推荐任务。
 
 用标准的研究型目录骨架和宿主中立的项目规则，初始化一个由 Git 管理的项目。

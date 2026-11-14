@@ -5,6 +5,18 @@ when initializing a research parent/execution child, organizing the parent entry
 or reviewing collected child experiments. It does not prescribe how an agent thinks
 or turn a management request into permission to deploy, develop, or run experiments.
 
+## Select the applicable model
+
+New experiments use [experiment-management.md](experiment-management.md): experiment
+repositories, multiple versioned recipes/results, changelog and repeatable phase archives.
+Use `manage-experiments` for material decisions and operations. Shared project identity,
+knowledge, plan and human-editable operations remain applicable here.
+
+The Run/Attempt layouts, frozen-Run rules, milestone/interval delivery and reception
+commands below are **legacy compatibility only**. They protect existing archives;
+they do not prescribe a new experiment, continuous sync or an archive migration.
+Old archives will be adapted separately when the user selects that work.
+
 ## Ownership and required result
 
 | Object | Owner and required boundary |
@@ -35,24 +47,20 @@ these outputs with a file-tree dump, generic status dashboard or machine metadat
 
 ## Source Git and development location
 
-- All child code changes, whether human or agent, happen remotely. Every child has
-  its own remote source Git; the parent has separate local-only management Git.
-  The parent does not push and has no daily-development clone of any child.
-- `primary` means Primary Subproject, a role rather than the parent's identity or
-  a Git branch. Only primary may push project-owned development history to GitHub.
-  Other children may read/clone/fetch original upstreams but do not upload their
-  own changes. Repository creation, visibility and publishing are separate actions.
-- For a child executed on several servers, record its main development location.
-  Concurrent work uses separate branches/working directories; experiments execute
-  a fixed child commit in a separate directory that is not updated during the run.
-  Remote-only development does not eliminate merge conflicts or authorize force push.
-- Source/config profiles, `src/utils/dataset_toolkit/`, machine-neutral `env/`,
-  and per-dataset data organization belong to the remote execution child; they
-  have not been removed from the project system. Parent Git may track its readable
-  management documents and lightweight archives, not large data or code-recovery packs.
-  Existing tracked content/ignore rules are not changed implicitly.
+For new work follow the repository and workspace boundaries in
+[experiment-management.md](experiment-management.md#repositories-and-editable-files).
+Each experiment has its own remote repository and shares it among its recipes.
+The child is the experiment group/context; shared code may retain another existing
+repository, referenced at its actual version. Parent management Git does not track
+nested repositories. No daily local source clone or automatic GitHub publication is
+introduced. Existing publication permissions do not expand to new repositories.
 
-### Execution-child format conformance
+The existing source/config profiles, toolkit and environment/data capabilities
+remain available; use the project's real upstream layout. For an old child whose
+source is one repository, retain that layout until a selected migration. Concurrent
+remote edits still need explicit branches/worktrees and fixed execution revisions.
+
+### Legacy execution-child record conformance
 
 Use the execution-child layout in the
 [skeleton manifest](../skills/init-project/references/skeleton-manifest.md), its
@@ -108,7 +116,7 @@ file links; raw integrity details remain available in machine/diagnostic output.
   may call multiple modules/scripts; it does not mean a monolithic implementation
   or a fixed number of scientific stages. Humans and agents use the same public
   interface. Keep results/diagnostics readable; machine output is an additional mode.
-- Capture the effective inputs, entry and child commit in the owning Run; placement
+- For legacy archives, capture the effective inputs, entry and child commit in the owning Run; placement
   remains the Attempt's Target. Later config edits do not change previous Runs.
   An altered scientific recipe needs a new Run, not a different interpretation of
   an old result. Do not make parent `new-run` record management Git as child source.
@@ -119,7 +127,7 @@ fabricate a `./project` command, create extra config trees during a read-only ta
 or advertise a scaffold as a usable scientific launcher. A thin local management
 entry, if explicitly implemented, is not a local clone of child source.
 
-## Parent/child consistency and exchange
+## Legacy parent/child record exchange
 
 Keep authorities distinct; consistency means matching identities, versions and
 received evidence, not identical directories or bidirectional file mirroring.
@@ -213,7 +221,7 @@ or a guarantee against an uncooperative edit after the final check. A crash may 
 an unused staging file, not a second authoritative declaration. No silent cleanup of
 unrelated files or automatic recovery/backup claim is permitted.
 
-## Experiment registration, collection and analysis
+## Legacy experiment registration, collection and analysis
 
 Every child registers all experiments, including failed and interrupted executions.
 The required parent organization is
@@ -243,7 +251,7 @@ shared conditions, intentional differences and corresponding results together,
 using the existing review contract. Unknown, remote-only, failed and conflicted
 evidence stays visible; collection does not itself prove a scientific conclusion.
 
-### Timely experiment delivery
+### Legacy milestone delivery
 
 For an authorized execution-and-delivery task, the parent pulls lightweight
 evidence at Run registration, Attempt start, meaningful result/status milestones, and terminal
@@ -688,7 +696,7 @@ cleaned. Existing ignore files are unchanged: ensure recovery payloads are exclu
 before staging management Git. No commit, push, remote command or verified-backup
 writer is part of either command.
 
-## Current capability boundary
+## Existing role and legacy-command capabilities
 
 This contract is a required target and reporting boundary, not a claim that its
 automation exists. Determine the installed capability before an operation:

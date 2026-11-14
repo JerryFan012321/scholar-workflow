@@ -3,6 +3,17 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.56.0] - 2026-11-15
+
+### Added
+- `manage-experiments`: a progressively disclosed contract for future experiments,
+  multiple recipe/result pairs, phase archives, material choices and upward navigation.
+  A standard-library read-only helper previews and verifies explicit file selections.
+
+### Changed
+- Project initialization, entry and review references distinguish new experiment
+  organization from legacy Run/Attempt compatibility. Existing records are not migrated.
+
 ## [0.55.2] - 2026-11-13
 
 ### Fixed

@@ -1,5 +1,7 @@
 # review-experiments
 
+For future experiment organization use [experiment management](../../references/experiment-management.md). Old Run/Attempt instructions below apply to existing archives; they do not prescribe new experiment identities or migrate records.
+
 Review existing project experiments without rerunning them or building another
 dashboard. Select the project, Runs, result Attempts and metrics; the skill returns
 an evidence-linked Markdown report. Ambiguous selections are clarified, not replaced
