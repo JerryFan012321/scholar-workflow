@@ -5,9 +5,14 @@ description: Register, query and reuse personal research assets, starting with o
 
 # manage-assets
 
-One operational entry for personal research assets, not another database or execution
-control plane. Load `${CLAUDE_PLUGIN_ROOT}/references/asset-management.md` before
-querying, recording or reusing an asset.
+One operational entry for research asset records, not another database or execution
+control plane. For personal host/knowledge/channel inventories, load
+`${CLAUDE_PLUGIN_ROOT}/references/asset-management.md` before querying or recording.
+
+For a selected workspace's models, datasets or reusable experiment results, use
+[workspace assets](../../references/workspace-assets.md) and its existing index.
+Those records are workspace-owned; the personal `assets` CLI does not expose a pool
+provider or asset resolver. Phase operations belong to `manage-experiments`.
 
 ## Observable operations
 

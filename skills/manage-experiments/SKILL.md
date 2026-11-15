@@ -12,15 +12,23 @@ inventory. Load [material operations](references/material-operations.md) only fo
 inventory, return or cleanup. Existing Run/Attempt bundles retain their legacy
 identity and command semantics; never convert them implicitly.
 
+For shared inputs, reusable result assets or shared-material cleanup, follow
+[workspace assets](../../references/workspace-assets.md). Reuse the selected pool's
+versioned entries directly for read-only use. Only changes to asset content need a
+writable derivative; registration and separately selected transfers remain distinct.
+
 ## Operations
 
 - Resolve the selected project, child, experiment and actual workspace. Read their
   AGENTS entry and existing recipes, result records and resource index. Reuse the
   existing plan and scientific launcher; initialization or a record is not execution.
-- Preserve the actual recipe version and effective inputs beside each result.
+- Record the exact recipe version and resolved input references in each result record.
   Register supplementary measurements in the same experiment when its question is
   unchanged. Explain substantive changes in its changelog without copying old output
   trees. Result validity, execution success and human importance are separate facts.
+- At a phase archive, select exact recipe versions and their individual results;
+  verify their retained dependencies before clearing unselected intervening work,
+  including discarded recipes. Follow the shared archive-point contract.
 - For return/phase operations, make the selected files and their uses explicit.
   Use the read-only material helper for byte/selection previews; native SSH, Git
   and file tools perform only the authorized operation. Reuse established choices;

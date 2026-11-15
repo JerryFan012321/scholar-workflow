@@ -40,6 +40,11 @@ required environment, actual recipe/result evidence (or existing legacy Run/Atte
 conditions. It uses the project's actual operations rather than a copied generic
 example. New commands must exist before the skill advertises them.
 
+When an execution skill uses shared models/data or reusable results, follow
+[workspace assets](workspace-assets.md). Link the owning pool and exact asset
+versions from actual recipe inputs; keep project-specific mappings in the project,
+not in the generic Skill. Do not copy assets into each generated experiment scaffold.
+
 A project-specific **management skill** is warranted only when a recurring local
 management operation needs information or a workflow absent from the generic
 capabilities. It supplies those project-specific facts and reuses the generic

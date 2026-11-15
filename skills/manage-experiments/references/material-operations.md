@@ -5,6 +5,12 @@ a phase. The experiment model lives in
 [experiment-management](../../../references/experiment-management.md).
 These operations use explicit existing roots; they create no project or asset registry.
 
+For pooled inputs, retained result assets or shared copies, first follow
+[workspace assets](../../../references/workspace-assets.md). Registration can leave
+bytes in place; selecting a phase never selects the entire shared pool for cleanup.
+Resolve the selected version/location within scope before preparing a file selection.
+The helper below does not resolve asset references or check consumers in other roots.
+
 ## Discover outputs and choose by use
 
 Before a new substantial execution, use the actual launcher/configuration and, when
@@ -93,15 +99,23 @@ viewing through SSH. Record availability honestly. Source recovery/backup is sep
 
 One workspace-level operation can target an experiment, a child group or the
 workspace. It does not add an administrator project or a permanent worker.
+Select exact recipe/result pairs under the shared contract's
+[archive-point rules](../../../references/experiment-management.md#select-reciperesult-pairs-at-archive-points).
+Unselected recipes as well as results can be cleared from intervening phase work;
+selection and continuing use determine scope, not a date range or whole directory.
 
-1. Confirm the selected phase and existing authorization. Check retained recipes,
-   trustworthy results, reproducibility scope, future uses, active work and shared
+1. Confirm the selected phase and existing authorization. List the chosen recipe
+   versions and their individually selected results, including earlier retained
+   selections or explicit withdrawals. Check reproducibility scope, future uses, active work and shared
    consumers. Resolve undecided choices; do not impose a fresh human approval when
    the actual task and prior choices already authorize the operation.
-2. Save a small phase record **before cleanup**: purpose/outcome, meaningful recipe
+2. Save a small phase record **before cleanup**: purpose/outcome, selected recipe
    versions and result links, unresolved limits, retained assets and why, and a
    concrete file cleanup plan. Store hashes/stat observations for cleanup candidates.
-   Git records light versions; no full historical payload/recovery-tree copy is needed.
+   Verify selected results, their producing recipe/code and necessary asset references
+   are obtainable for the retained scope. An unresolved retained dependency blocks
+   cleanup that could remove its remaining source. Git records light versions;
+   no full historical payload/recovery-tree copy is needed.
 3. With relevant writers stopped, recheck the plan and remove only the selected,
    unchanged disposable files. Persist per-item progress. A whole directory can be
    removed only when its complete contents and purpose are known, no kept/unlisted

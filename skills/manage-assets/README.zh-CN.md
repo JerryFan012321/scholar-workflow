@@ -16,3 +16,7 @@ Vault”当成“插件已登记”或“论文有正式归属”。新登记仍
 `assets list --kind research` 还可查询非论文研究渠道；登记和检查由 `track-research` 持有。
 原 Semantic Scholar 学者 ID 和论文 feed 继续使用 `recommend.yml`，不自动迁移或重复登记。
 具体命令和边界见[资产管理契约](../../references/asset-management.md)。
+
+工作区内的模型、数据集索引与可复用实验成果，使用该工作区的
+[资产池入口](../../references/workspace-assets.md)。这是 Skill 指导的索引管理，
+没有新增个人资产 CLI 类型，也不会因登记自动搬移、复制或回传文件。

@@ -3,6 +3,21 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.56.1] - 2026-11-15
+
+### Changed
+- `manage-experiments` and `manage-assets`: share a progressively disclosed workspace
+  asset-pool contract for versioned recipe references, reusable result registration,
+  direct read-only reuse, change-scoped writable derivatives, separately selected
+  transfers and consumer-aware phase cleanup. No per-run input copies. Existing
+  CLI helpers, installed versions and legacy archives remain unchanged.
+- Project-owned execution skills reference shared asset versions rather than
+  copying inputs into every experiment; pool lookup remains separate from the
+  personal server/knowledge registry.
+- `manage-experiments`: define lightweight recipe contents and per-result archive
+  selections. Verify retained dependencies before clearing unselected intervening
+  recipes/results; preserve light Git history without full phase snapshots.
+
 ## [0.56.0] - 2026-11-15
 
 ### Added

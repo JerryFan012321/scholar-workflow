@@ -14,11 +14,11 @@ legacy commands are not an implementation of this new experiment model.
 | Remote workspace | Deployment/resource directory containing execution children and shared resource entries; not another research parent or privileged agent |
 | Child project | An experiment group and its working context, still a project; primary is its research role |
 | Experiment | A question or validation purpose with materially distinct conclusions; may contain several recipes, variants, seeds and result groups |
-| Recipe | Obtainable code versions, experiment scripts, effective configuration/overrides, input identities, environment and invocation for an explicit reproduction scope |
+| Recipe | A lightweight reproducible specification: obtainable code revisions, experiment scripts, effective configuration/overrides, versioned asset references, environment definition and invocation; no asset payloads |
 | Result group | Independently interpretable observations tied to the actual recipe/version and conditions that produced them |
 | Changelog | Meaningful corrections, supplementary measurements, comparisons and their effects on results, rather than another directory of output copies |
 | Execution record | Minimal observed facts: recipe/result references, start/end, execution location, outcome and necessary diagnostics; neither a new experiment nor a scientific verdict |
-| Phase archive | A recorded useful state of the experiment plus retention choices; repeatable, with cleanup and return tracked independently |
+| Phase archive | A retained selection of exact recipe versions and their chosen results at a phase boundary; repeatable, with cleanup of unretained phase work and selected return tracked separately |
 
 Supplementary measurements, correcting a calculation, improving explanation or
 execution efficiency normally stay in the experiment. A new question, comparison
@@ -53,7 +53,7 @@ names and combine documents when a separate file adds no useful navigation:
 experiment/
   EXPERIMENT.md       question, current phase, result/recipe entries and decisions
   CHANGELOG.md        changes and which results they affect
-  recipes/           editable configs; versioned together with scripts in Git
+  recipes/           light configs/asset references; versioned with scripts in Git
   run.py             the project's real entry (or retain its existing launcher)
   results/           interpretable groups with conditions, figures and data
   records/           small execution and phase records
@@ -66,11 +66,26 @@ can be workspace resources rather than additional copies below each experiment.
 
 ## Pair recipes and results
 
+A recipe and the experiment code stay lightweight. Preserve the following in the
+recipe or its explicitly linked versioned files, without duplicating shared code:
+
+| Component | What is retained |
+|---|---|
+| Code and scripts | Obtainable exact revisions, experiment-specific scripts and any required patch |
+| Configuration | Effective parameters, overrides, seeds and measurement/output choices |
+| Assets | Owning pool, exact asset versions and resolvable locators; no model/dataset/scene payloads |
+| Environment and invocation | The relevant environment definition/version, dependencies and actual entry/arguments |
+
+Several recipes may share the same code and assets. Recipes do not embed environment
+installations, input data, generated results or complete execution directories.
+
 Every result group identifies its question, actual recipe file and Git revision,
 resolved overrides/seeds, relevant code revision(s), input versions and execution
 environment. Keep these details in one authoritative execution/result record and
 link it from prose. A recipe edit does not relabel old results. Several result files
 may share one record; comparisons identify the recipe of each side.
+Manage retention at the result level without duplicating a shared comparison figure
+or analysis for every contributing recipe.
 
 For each comparison put **common conditions, differences, measured results and
 interpretation together**. Explain metric meaning, unit, comparison objects, evidence
@@ -83,6 +98,41 @@ of retained observations, or only a plot. An entry is usable only if its code an
 required assets can be obtained. Keep useful trustworthy earlier results; retract
 invalid results and affected conclusions, with a brief reason in the changelog.
 Git can retain light historical records; old large output trees need no automatic copy.
+
+## Select recipe/result pairs at archive points
+
+At a periodic or requested phase review, choose which exact recipe versions and
+which of their results to retain. One recipe may have several results with different
+retention decisions; retaining it never means keeping every output it produced.
+Every selected result keeps its actual producing recipe/code and required asset
+references obtainable for the declared reproduction scope, even if the current
+editable recipe has advanced.
+
+Use one readable selection in the existing phase record: **recipe/version, result
+entry or selected group, remaining purpose, keep/cleanup/undecided choice and required
+dependencies**. A recipe may be retained for future use without retaining its trial
+results; state that purpose. Reuse existing result and asset records rather than
+creating another full archive folder.
+
+After recording and verifying a new archive point, clear the intervening phase work
+that was not selected and has no continuing use: abandoned recipe files, unselected
+results and reproducible intermediates. Include discarded recipes in the cleanup
+decision, not just large output files. The phase is determined by its work/records;
+file creation/modification timestamps alone never select deletion candidates.
+Preserve earlier retained selections, current work and shared dependencies unless
+their retention is explicitly revised. Invalidated results may be withdrawn with
+their reason; an archive point does not mandate keeping untrustworthy results.
+
+Removing an unused recipe from the current working tree can be a normal Git change;
+light history and archive revisions remain obtainable by commit and path. Update
+result entries to distinguish retained, retrievable historical and cleared material;
+an old record that once retained a file does not prove it is still available.
+Clearing a result for lack of remaining use does not itself invalidate its scientific
+conclusion. Do not rewrite Git history,
+delete a whole experiment repository or remove shared code as routine phase cleanup.
+Keep a brief changelog of discarded work and decisions, not full payload snapshots.
+The ordered operation and interruption behavior are defined in
+[material operations](../skills/manage-experiments/references/material-operations.md).
 
 ## Human inventory and names
 
@@ -117,14 +167,15 @@ per-execution approval ceremony is required.
 
 ## Workspace, phase operations and selected return
 
-Keep one discoverable workspace description/resource index, or reuse the existing
-equivalent. Register existing environment names/locations and useful features;
-register dataset/model locations or indexes, availability and relevant consumers.
-The actual modifier updates the entry. Recipe records preserve the actual versions.
-Registration does not require environment cloning, freezing or new files per resource.
-Main/child AGENTS entries link the workspace/resource and experiment entry; all
-authorized agents may use them. Remote access and installed Skills are not inherited
-merely because a local agent knows the path.
+For shared inputs and retained reusable results follow
+[workspace assets](workspace-assets.md): the workspace pool owns asset/version
+locations and recipes reference them without requiring private payload copies.
+Read-only execution reuses the existing version; changed asset content uses a writable
+derivative. Registration, relocation and separately selected transfers remain distinct.
+Keep a discoverable workspace description and existing environment index; the actual
+modifier updates them. Main/child AGENTS entries link the workspace/resource and
+experiment entry. Remote access and installed Skills are not inherited merely
+because a local agent knows the path.
 
 Use [material operations](../skills/manage-experiments/references/material-operations.md)
 for the selection file, read-only checks, SSH return and repeatable phase cleanup.

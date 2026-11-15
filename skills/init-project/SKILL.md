@@ -22,6 +22,10 @@ role skeleton; new experiment files are an explicit `manage-experiments` task.
 Do not initialize execution records, migrate archives or populate fake results as
 an ordinary project-initialization side effect.
 
+When the selected project needs shared model/data/result references, follow
+[workspace assets](../../references/workspace-assets.md) to expose the existing pool
+entry. Initialization alone does not populate a pool, copy assets or scan servers.
+
 ## Research parent and execution child requests
 
 For a research parent or remote execution child, first load
