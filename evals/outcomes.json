@@ -575,7 +575,12 @@
     },
     {
       "id": "new-experiment-management-example",
-      "description": "新实验多配方/多结果、轻量changelog、阶段存档与回传清理独立、条件结果同处、人类清点和逐级导航；旧档案不迁移。合成单对象、安装态及人工评鉴分别取证。",
+      "description": "新实验多配方/多结果、轻量代码与配方只引用重资产、轻量changelog、阶段存档逐项选择配方版本及结果、核验依赖后清理未保留的期间配方/结果；Git历史与当前文件可用性分清，比较材料不复制，清理不冒称科学无效。存档/回传/清理状态独立、条件结果同处、人类清点和逐级导航；旧档案不迁移。合成单对象、安装态及人工评鉴分别取证。",
+      "status": "pending"
+    },
+    {
+      "id": "workspace-pool-recipe-result-reuse",
+      "description": "One controlled workspace has two experiments referencing the same exact input version, an external dataset index and a reusable result registered in place. Repeated read-only runs/phase archives create no input replicas. Asset modification produces only the necessary changed portions or required full derivative and preserves the source. Readable entries preserve producing recipe/result provenance and actual availability. Phase cleanup preserves the other consumer; selected transfers/derivatives/relocations are distinct, no whole-tree promotion or local model return occurs. Static contract review, actual execution and installed acceptance are reported separately; no legacy migration.",
       "status": "pending"
     }
   ]

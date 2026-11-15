@@ -14,3 +14,7 @@ Source/Field registry and Vault manifests. No remote login or Vault migration is
 implied. `assets list --kind research` also queries the non-paper channel authority;
 `track-research` owns its registration/check workflow. Recommendation author IDs
 and paper-feed settings remain in `recommend.yml`, without automatic migration.
+
+For a selected workspace's models, dataset indexes and reusable experiment results,
+use its existing [asset pool entry](../../references/workspace-assets.md). This is a
+Skill-guided local index operation, not a new personal `assets` CLI provider or mover.

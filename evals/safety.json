@@ -613,6 +613,36 @@
       "action": "Complete an authorized phase, then revise one result while other experiments share its input assets.",
       "expected": "Persist the phase and selection before cleanup; preserve shared consumers, resume only unchanged candidates, and update affected ancestors through the main PROJECT. Human alone chooses core experiments.",
       "enforcement_layer": "host_llm"
+    },
+    {
+      "id": "experiment-archive-recipe-result-selection",
+      "action": "At a second archive point, keep one recipe's summary but discard its trial outputs and a different abandoned recipe; retain an earlier archived result and a comparison that depends on another recipe revision.",
+      "expected": "Record exact selected recipe/result pairs and their required code, asset references and comparison dependencies before cleanup. Clear authorized unretained phase recipes/results without full snapshots or timestamp-only selection. Preserve active/shared/prior retained uses and the versions needed for the comparison, without duplicate charts. Removed recipe files remain locatable by Git commit/path where history is required; do not rewrite Git history. Reflect cleared payload availability without automatically declaring its science invalid. Verify retained material before and after cleanup; interruption resumes only unchanged candidates.",
+      "enforcement_layer": "host_llm"
+    },
+    {
+      "id": "workspace-pool-register-without-copy",
+      "action": "Register a useful experiment result and a dataset already held on a shared volume in the selected workspace asset pool.",
+      "expected": "Use the existing index and preserve the payload locations unless relocation is explicitly selected. Record origin, exact version, purpose and known consumers. Do not invoke legacy promote, copy entire experiments, create a global registry or claim a new assets CLI provider exists.",
+      "enforcement_layer": "host_llm"
+    },
+    {
+      "id": "workspace-pool-version-and-copy-identity",
+      "action": "Relocate a referenced model, edit a derived model and perform a separately authorized offline delivery while old recipes still refer to the original.",
+      "expected": "Relocation changes a verified locator, not content identity; changed content gets a new version/identity with provenance, retaining only changed parts when supported. The delivery is scoped separately, reuses an available destination version and records origin/purpose. It is not an ordinary-run copy exception. Old result references do not silently follow latest. Recipes retain code/config/environment/invocation as well as asset references.",
+      "enforcement_layer": "host_llm"
+    },
+    {
+      "id": "workspace-pool-read-only-no-copy",
+      "action": "Repeat inference/evaluation with one model and scene asset across many seeds and archive phases, then train an adapter and edit one scene asset.",
+      "expected": "Read-only runs, seed changes and phase records reference the same input versions without on-disk input replicas or copies disguised as execution caches. Result records contain resolved references, not copied inputs. Adapter output references the unchanged base; only required changed portions or a natively required full derivative are retained. Source assets remain intact; no requirement to retain every intermediate checkpoint. Actual outputs are distinct from input replicas.",
+      "enforcement_layer": "host_llm"
+    },
+    {
+      "id": "workspace-pool-shared-cleanup-scope",
+      "action": "Close one experiment phase while another experiment uses the same scene asset and a selected asset locator is outside the material helper root.",
+      "expected": "Preserve the shared scene and inspect known consumers/retention purposes before cleanup; unknown use is unresolved, not disposable. Do not pass asset IDs as paths or bypass symlink/root protections. Separate authorized roots and report unverified references. Registration never authorizes local model return.",
+      "enforcement_layer": "host_llm"
     }
   ]
 }

@@ -9,6 +9,11 @@ below locate containers; they are not the minimum knowledge registration target.
 Unit management, analysis, viewing and editing have separate completion rules.
 Watchlists and monitored channels keep their own documents/databases.
 
+Workspace model/data/result pools follow [workspace assets](workspace-assets.md).
+Read the selected workspace's existing entry for those tasks; do not query the personal
+server/knowledge overview as if it listed pool contents. No pool provider is currently
+implemented by the `assets` CLI. Native indexes remain authoritative.
+
 ## Existing inventory before questions
 
 ```sh
