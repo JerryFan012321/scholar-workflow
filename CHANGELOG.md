@@ -5,6 +5,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [0.57.0] - 2026-11-16
 
+Installed acceptance on 2026-11-17 verified one synthetic feedback message returning
+to its original chat, updating task context and recording a central completion receipt.
+
 ### Changed
 - `recommend-papers`: bind the original local Codex chat from recommendation
   provenance and keep only `context.md` and `recommended.md` per project task.

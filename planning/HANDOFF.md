@@ -1,4 +1,26 @@
-# 当前：0.57.0提交、发布、正常安装及原聊天闭环验收（2026-11-17）
+# 当前：0.57.0已发布安装，原聊天反馈完整闭环通过（2026-11-17）
+
+后续反馈已自动作为原聊天新一轮进入；正常CLI start、实际context修改及complete全部完成。
+回执completed，开始10:58:04、完成10:58:17（北京时间），context摘要
+`886997f0e70a79b0728b0f2c78bb39330e0027ddd46dbc33e0c1fc8f336f355c`。
+重复sync两次无重投：一候选、一事件、一次attempt，recommended字节未改，任务仍仅两文件，
+curator_pending=1且无intake job。合成意见仅限合成任务。技术闭环通过，文字质量待人工评鉴。
+以下入队阶段记录保留为时序证据；完整结论以发布回执末节为准。main与个人服务未改。
+
+源码97d9b2c、runtime35ba5c6，hotfix/release已推送，main未动。
+pipx固定runtime安装0.57.0；包内173个源码/资源和两宿主各381个运行文件均与发布提交一致。
+最终提交前4713通过、22跳过。个人推荐HTTP服务/定时任务未切换。
+已安装CLI在test Vault“Scholar Workflow 实验/推荐反馈闭环-0.57.0”的独立personal池
+提交一个合成条目并保存一次取舍，产品dispatcher真实入队：
+`feedback-e4ee29b8-7f8b-4537-8a1d-b5eb1e957d26`，queue message
+`01a1e76e-0246-74f3-8467-7fb363adaf52`，marker `RECO-QUEUE-20261117-A63CA55D`。
+原聊天 `01a1da7c-fb86-7451-a7e5-8dd6542f51c6`；独立HOME在Codex acceptance下
+`recommendation-queue-0.57.0-20261117`。producer `native-feedback-acceptance`。
+当前仅queued/attempt1，未手工替接收者start或改context。原轮结束后让排队消息进入下一轮，
+接收者按原消息精确HOME执行start→只修改该合成context→guide摘要→complete，再核对完整闭环。
+需保留推荐历史、人工背景与curator_pending=1；不再制造反馈或手工再次queue。
+验收记录位于该合成项目的“验收记录”，含acceptance-state.json和before两文件。
+随后补齐本回执/验证文档并提交验收证据；源码发布提交无需为规划证据变化重新安装。
 
 用户已明确授权提交本批源码、发布runtime-only版本、通过正常入口安装，再用单个合成条目
 验证反馈回原聊天、更新context.md并记录完成回执；明确不合并main。
