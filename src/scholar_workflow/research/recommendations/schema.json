@@ -28,7 +28,16 @@
         "producer_id": {"$ref": "#/$defs/id"},
         "name": {"$ref": "#/$defs/shortText"},
         "host": {"$ref": "#/$defs/shortText"},
-        "task_url": {"$ref": "#/$defs/url"}
+        "task_url": {"$ref": "#/$defs/url"},
+        "feedback_target": {
+          "type": "object", "additionalProperties": false,
+          "required": ["project_root", "thread_id"],
+          "properties": {
+            "project_root": {"type": "string", "minLength": 2, "maxLength": 4096, "pattern": "^/"},
+            "thread_id": {"type": "string", "format": "uuid"},
+            "host": {"const": "local"}
+          }
+        }
       }
     },
     "resource": {

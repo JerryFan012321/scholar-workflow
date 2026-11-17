@@ -238,8 +238,11 @@ def _merge_resource(previous, incoming):
 class RecommendationStore:
     """A single local candidate pool, independently usable by multiple agent processes."""
 
-    def __init__(self, state_dir: Path):
+    def __init__(self, state_dir: Path, *, profile=None):
         self.state_dir = root_path(state_dir)
+        self.profile = profile or ("test" if self.state_dir.name == "test" else "personal")
+        if self.profile not in {"personal", "test"}:
+            raise ResearchError("Unknown recommendation profile.")
 
     @staticmethod
     def _connect(data):
@@ -331,7 +334,7 @@ class RecommendationStore:
                             except FileNotFoundError:
                                 pass
             if write and dispatch:
-                # File delivery is recoverable and must never roll back a committed human decision.
+                # Delivery failures must never roll back a committed human decision.
                 from scholar_workflow.research.recommendations.feedback import Feedback
                 try:
                     Feedback(self).flush()
@@ -386,6 +389,7 @@ class RecommendationStore:
                     if existing:
                         status = "duplicate" if existing["payload_digest"] == digest else "conflict"
                         receipts.append({**receipt, "status": status, "candidate_id": existing["candidate_id"],
+                                         **(self._task_files(producer) if status == "duplicate" else {}),
                                          **({"message": "Submission identity already contains different content."}
                                             if status == "conflict" else {})})
                         continue
@@ -404,6 +408,12 @@ class RecommendationStore:
                                              "message": "Bibliography ingestion is in progress; retry this submission after its receipt."})
                             continue
                         resource = _json(_merge_resource(json.loads(existing_candidate["resource"]), normalized["resource"]))
+                    target = producer.get("feedback_target")
+                    if target:
+                        from scholar_workflow.research.recommendations.project_tasks import ProjectTasks
+                        ProjectTasks(self, self.profile).bind_in_transaction(
+                            database, producer_id=producer["producer_id"], title=producer["name"], **target)
+                    if existing_candidate:
                         database.execute("UPDATE candidates SET resource=?,revision=revision+1,updated_at=? WHERE candidate_id=?",
                                          (resource, timestamp, candidate_id))
                     else:
@@ -426,11 +436,22 @@ class RecommendationStore:
                     from scholar_workflow.research.recommendations.feedback import record_baseline
                     if database.execute("SELECT 1 FROM recommendation_tasks WHERE producer_id=?", (producer["producer_id"],)).fetchone():
                         record_baseline(self, database, producer["producer_id"], candidate_id)
-                    receipts.append({**receipt, "status": "accepted", "candidate_id": candidate_id})
+                    receipts.append({**receipt, "status": "accepted", "candidate_id": candidate_id,
+                                     **self._task_files(producer)})
                 except ResearchError as error:
                     receipts.append({**receipt, "status": "invalid", "message": str(error)})
         unsuccessful = any(row["status"] in {"invalid", "conflict"} for row in receipts)
         return {"schema_version": 1, "status": "partial" if unsuccessful else "complete", "receipts": receipts}
+
+    @staticmethod
+    def _task_files(producer):
+        target = producer.get("feedback_target")
+        if not target:
+            return {}
+        from scholar_workflow.research.recommendations.project_tasks import BASE
+        folder = Path(target["project_root"]) / BASE / producer["producer_id"]
+        return {"task_files": {"context_file": str(folder / "context.md"),
+                               "recommended_file": str(folder / "recommended.md")}}
 
     @staticmethod
     def _candidate(database, row):

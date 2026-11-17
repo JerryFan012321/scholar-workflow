@@ -1,7 +1,9 @@
 # recommend-papers（推荐与审阅）
 
-项目内可以登记多个独立推荐任务，各自保留上下文。人的处置和评价由程序自动写入项目反馈
-及中央待处理文件，不等待 Agent。操作见[项目推荐上下文](../../references/recommendation-context.md)。
+项目内每个推荐任务只保留 `context.md` 和 `recommended.md`，目录不再增加 `tasks/` 层。
+推荐时附带原本地 Codex 聊天的定位；人的反馈由代码保存于中心，再通过 `codex queue`
+发回原聊天。Agent 更新上下文后回报完成，本次不立即推荐，推荐仍由宿主定时任务触发。
+中心管家继续独立维护共享偏好与消费记录。操作见[项目推荐上下文](../../references/recommendation-context.md)。
 
 在设置中配置一次 Zotero 接收分类后，已审阅的选择入库会由代码传入元信息、链接和人的原话
 意见；原始文件和知识整理交给后续任务。详见[接收契约](../../references/zotero-intake.md)。

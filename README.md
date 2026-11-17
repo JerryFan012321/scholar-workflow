@@ -30,24 +30,29 @@ multiple versioned recipes/results, a changelog and repeatable phase archives.
 A read-only helper previews explicit material choices. Native tools own actual SSH
 return and cleanup; old Run/Attempt archives and commands remain compatible. These interfaces ship with 0.56.0.
 
-## Project recommendation context and Zotero intake (0.55.0)
+## Project recommendation context and Zotero intake
 
-The development branch adds multiple stable tasks per project, project-owned context,
-automatic human-feedback files and exact curator-batch consumption. These interfaces
-ship with 0.55.0; receiving collection configuration remains an explicit local operation.
+Each project recommendation task keeps only `context.md` and `recommended.md` in
+`.agents/context/recommendations/<producer_id>/`. It reads both before recommending
+and records actual recommendations in its own list. Producer metadata can bind the
+task to its original local Codex chat; explicit rebinding uses `recommendations tasks bind`.
 
-Enable only a selected project's optional component with `recommendations projects
-enable --project-root PROJECT`, then register tasks through `recommendations tasks`.
-The project AGENTS entry points new agents to the task context; the central registry
-stores locators and does not read all project background. See
-[project task operations](references/recommendation-context.md).
+Code records human feedback centrally and sends an attributed message to that chat
+through `codex queue`. The agent updates context and returns a completion receipt;
+the next recommendation still follows its existing schedule. The central curator
+retains its independent feedback batches and maintained preferences. Binding creates
+no recommendation component or AGENTS entry. See the current development
+[task and feedback contract](references/recommendation-context.md); native delivery,
+installation and human acceptance require their own evidence.
 
 Choose one receiving collection in recommendation settings or `recommendations intake
 target`. Future reviewed human selections trigger code-only Zotero metadata and one
 intake note containing the prepared introduction, related links and exact personal
 opinions. Original files and knowledge-unit construction belong to the later
 [manage-knowledge](skills/manage-knowledge/SKILL.md) operation. CLI feedback/curator/intake
-operations work without an open page; the running service retries pending deliveries.
+operations work without an open page; known retryable deliveries remain pending.
+Uncertain queue acceptance requires inspection and explicit retry review. Feedback
+messages carry the original pool locator and exact environment-bound CLI commands.
 See [intake operations](references/zotero-intake.md). No agent is hosted by this service.
 
 

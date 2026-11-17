@@ -240,8 +240,9 @@ For the configured receiving flow, [Zotero intake](zotero-intake.md) defines the
 human-selection authorization, provider-bound target, code-only queue and verified
 managed child note. Human metadata/opinion reception transfers no original files;
 an edited note is a conflict. [Project recommendation context](recommendation-context.md)
-defines explicit CLI root registration, automatic feedback projections and separate
-consumer progress. Browser requests cannot provide project roots or task file paths.
+defines explicit project/chat binding, parameterized local `codex queue` delivery,
+central completion receipts and independent curator consumption. Browser requests
+cannot provide project roots, task file paths, chat destinations or commands.
 
 Completion requires the observed Zotero item and read-back collection membership.
 It is limited to `zotero_bibliography`; PDF and Vault-unit status remain

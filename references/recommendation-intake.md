@@ -11,7 +11,9 @@ the page does not run agents, edit knowledge units or download code/model weight
 
 Project-owned tasks and automatic feedback follow
 [recommendation context](recommendation-context.md), loaded only for that operation.
-Human processing immediately records/project-delivers feedback without an agent.
+Human processing records feedback centrally without waiting for an agent, then code
+queues it to the bound original local Codex chat. Project tasks retain only their
+own `context.md` and `recommended.md`.
 Original files and knowledge construction are managed after Zotero reception.
 
 ## Destination and installed entry
@@ -79,6 +81,7 @@ to see the shape, not as real metadata to submit.
 |---|---|
 | `producer.producer_id`, `producer.name` | Stable task identity and readable name, reused across that recurring task's runs |
 | Optional producer `host`, `task_url` | Host attribution and a verified public task link when available; omit private/tokenized links |
+| Optional producer `feedback_target` | Explicit absolute `project_root`, original local Codex `thread_id` and optional `host` (default `local`); binds valid submitted items to the task's two files and feedback route under the [task contract](recommendation-context.md) |
 | `run_id` | One execution of that producer; not a fresh identity for each retry |
 | Optional top-level `requirement` | Selected requirements record/version, retained with each recommendation and producer/run snapshot |
 | Each `submission_id` | Stable within its producer for this submission; reuse with an identical payload on retries |
@@ -402,9 +405,10 @@ The personal default is `http://127.0.0.1:61201/`; macOS login/recovery supervis
 stop/restart semantics and port conflicts follow [service lifecycle](recommendation-service.md).
 Use `status` to inspect the actual service and `stop` to stop it explicitly.
 Stopping the HTTP service still leaves CLI submission and curator operations usable.
-The application does not start, schedule or supervise the external agents: their
-harness owns execution, wakeups and account access. Do not report a recurring agent
-as active merely because a source or context was saved.
+Code can queue saved human feedback to an explicitly bound original local Codex
+chat. The external harness still owns model execution, recommendation schedules and
+account access. A saved source, task binding or accepted queue command does not
+prove that an agent is active or that it has updated context.
 
 For people, `open` opens the same plain URL and `open --no-browser` prints it.
 No fragment, query token, previous browser session or clipboard secret is needed.

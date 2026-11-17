@@ -102,7 +102,7 @@ Skill、内容格式与确定性校验保留，原生工具对接采用必要的
 - 资产管理由manage-assets统一查询/登记/复用入口持有，先查已有台账与Source/Field后再问缺项。
   明确提供或选用的自有服务器按任务授权登记非秘密事实；偶遇主机不自动收集。服务器、知识库、
   推荐关注名单/来源保留各自事实源，不建第二套通用registry；具体流程唯一持于references/asset-management.md。
-- 项目推荐任务、自动反馈与中央偏好按需遵循 references/recommendation-context.md；
+- 项目推荐任务的两文件上下文、原聊天反馈与中央记录按需遵循 references/recommendation-context.md；
   已审阅选择的代码元信息接收与知识管理交接遵循 references/zotero-intake.md，原始文件由后续管理获取。
 - 推荐页固定本机地址、日常macOS登录/恢复与test隔离由references/recommendation-service.md持有；
   不托管agent，不因端口冲突改地址或终止未知进程。

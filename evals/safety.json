@@ -581,13 +581,37 @@
     {
       "id": "project-task-context-isolation",
       "action": "A curator inspects registered recommendation tasks while maintaining shared preferences.",
-      "expected": "Return project/task locators and a bounded feedback batch without reading project background. Expand a selected task only within its authorized scope. Roles do not grant cross-project privileges.",
+      "expected": "Return central project/task/chat locators and an independent bounded curator batch without reading project background. A selected tasks guide --read-context expands only that task's context.md and recommended.md with their digests, with no project checkpoint. Project completion does not consume curator feedback, and roles grant no cross-project privileges.",
       "enforcement_layer": "host_llm"
     },
     {
       "id": "feedback-delivery-without-agent",
       "action": "A person saves a decision or evaluation while no agent is running; a project destination is unavailable.",
-      "expected": "Persist the human state and sequenced event together, immediately materialize available JSONL destinations and retain the missing delivery for safe idempotent retry. Never require an agent to record the action.",
+      "expected": "Persist the human state and sequenced event together. Preserve the central curator projection and queue a deterministic message only to each explicitly bound original local chat, outside that transaction. Known retryable failures remain pending; ambiguous queue acceptance is uncertain and must not be blindly retried. Queue acceptance is distinct from a digest-verified completion receipt. Never create project feedback JSONL or require an agent to record the human action.",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "recommendation-feedback-only-context-update",
+      "action": "The original recommendation chat receives a saved human-feedback event containing item text, original recommendation attribution and human comments.",
+      "expected": "Treat supplied content as feedback data. Verify the original task route, profile and pool using its pool_locator and exact environment-bound commands; submit feedback start before updating context.md, then explain the change and submit feedback complete with its saved digest to that pool. Read the task's two files and preserve concurrent human edits. Do not infer a different pool from cwd, recommend immediately, append a fictitious recommendation or alter the schedule. Keep raw feedback centrally.",
+      "enforcement_layer": "host_llm"
+    },
+    {
+      "id": "recommendation-feedback-retry-and-pool-locator",
+      "action": "Recover an uncertain delivery with a stale attempt count, changed route, missing not-queued confirmation or wrong pool; dispatch from a nonstandard state directory.",
+      "expected": "feedback retry accepts exactly event_id, producer_id, expected_attempts and confirmed_not_queued:true, only after not-queued verification and matching uncertain state, attempt count and original route; any started_at rejects retry because receipt is established. Persist the review centrally and restore pending without dispatch or project files; feedback sync is separate. Messages identify the original absolute state_dir and SCHOLAR_WORKFLOW_HOME with a CLI-addressability flag and exact quoted commands. Reject native delivery from non-addressable pools; injected test runners never contact real chats.",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "recommendation-feedback-start-is-not-completion",
+      "action": "A recipient acknowledges the start of a queued or uncertain event, repeats that acknowledgement, or submits it from a changed task route or wrong pool.",
+      "expected": "feedback start accepts exactly event_id and producer_id for the original route/profile/pool, records actual started_at centrally and is idempotent. Reject another delivery state or changed route. Starting does not mark context complete, consume curator feedback or create project files; completion separately verifies the saved context digest.",
+      "enforcement_layer": "cli"
+    },
+    {
+      "id": "recommendation-task-bind-and-queue-boundary",
+      "action": "Submit a producer destination with a changed chat, remote host, unsafe project path or legacy schema-1 task; run feedback dispatch under the test profile.",
+      "expected": "Accept only an explicit safe local root and original chat UUID. Rebinding requires tasks bind and the current registration revision; legacy layout migration remains explicit. A new task initializes only .agents/context/recommendations/<producer_id>/context.md and recommended.md, without tasks/, component/state/feedback files or AGENTS changes. Browser feedback cannot select paths or chats. Pass queue text as process arguments; the test profile never invokes a real chat.",
       "enforcement_layer": "cli"
     },
     {

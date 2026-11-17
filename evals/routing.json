@@ -317,7 +317,7 @@
       "id": "recommend-daily-feed",
       "input": "今天有什么新论文值得看",
       "expected_skill": "recommend-papers",
-      "comment": "每日推荐流(多源聚合 + NotebookLM 略读)→ recommend-papers;临时 Reading Report、不落库"
+      "comment": "每日推荐流→ recommend-papers；按所选来源取得资料并提交共享推荐入口，推荐不等于入库。"
     },
     {
       "id": "sync-obsidian-index",

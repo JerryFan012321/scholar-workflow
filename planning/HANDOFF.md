@@ -1,3 +1,52 @@
+# 当前：0.57.0提交、发布、正常安装及原聊天闭环验收（2026-11-17）
+
+用户已明确授权提交本批源码、发布runtime-only版本、通过正常入口安装，再用单个合成条目
+验证反馈回原聊天、更新context.md并记录完成回执；明确不合并main。
+沿用独立分支 `codex/hotfix-recommendation-queue`，保留其他工作树和未提交内容。
+提交前重跑全部unit/contract；通过后提交并由正常release脚本生成发布分支，再推送hotfix/release。
+pipx与两宿主插件通过正常安装/更新入口统一到本批版本，核验实际commit、路径、版本和运行文件。
+原安装0.56.1/runtime `4c7b1a7583bbf12722c976f1a414b4aac63a7fe7` 保留为回退基线。
+
+安装态只使用test Vault中新建的合成项目和独立标准HOME/recommendations/personal池，
+允许该隔离池进行真实native投递；不向正式推荐池写条目，不启用Zotero接收，不改定时任务。
+原聊天身份由当前环境及App只读接口核对；只让反馈写入该项目对应的context.md。
+完成标准：真实消息可见、start记录、context实际吸收指定意见、complete摘要与文件相符，
+recommended不增项、curator保持独立待消费。队列若在原轮结束后处理，后续反馈轮继续完成验收。
+准确发布及验收状态见 [0.57.0发布回执](releases/0.57.0-recommendation-queue-release.md)。
+最终提交前全量回归：4713 passed、22 skipped、11 warnings，232.77秒；diff检查通过。
+后续源码提交、发布与安装身份在回执按实际结果补齐。
+
+# 当前：0.57.0推荐反馈源码与回归完成（2026-11-16，未发布安装）
+
+用户已授权实施框架第4节简化方案。独立工作树 recommendation-queue，分支
+`codex/hotfix-recommendation-queue`，基线`3a66365`（已安装0.56.1的开发历史）。
+主工作树、feedback-archive及knowledge-path-reconcile中的未提交内容保留，不并入本批源码。
+本树复制用户已确认的完整框架文档，保留其中学习/知识库等未实施的讨论内容。
+
+实施范围：推荐提交带原会话及项目定位，项目任务目录仅context.md/recommended.md；
+反馈事务保存后由代码打包经codex queue投递原聊天，中心保留投递与完成回执，推荐仍由宿主定时触发。
+移除旧项目enable/feedback.jsonl/state/component及项目消费游标机制、独占代码和运行指引；
+中央curator和原始历史继续保留。旧文件迁移须受控，不扫描或迁移真实项目。
+
+已完成：合同测试先行，两文件绑定/安全初始化、提交时携带反馈定位、原会话消息打包与投递、
+中央queued/started/completed事实、原池精确定位及uncertain显式恢复。已接受或已开始处理的消息
+不会因异常返回自动重投；test禁止真实native。后台精简PATH支持标准Codex安装路径。
+旧项目enable/register/save-context与项目JSONL/checkpoint链路退场，runtime Skill/reference、
+双语README及eval同步；中央curator保留，另修消费/投影确认竞态。实际legacy项目仍未迁移。
+
+测试使用临时合成项目/候选和注入的假runner，未运行真实Codex。第一轮全量unit/contract
+4690 passed、22 skipped（浏览器环境依赖）；收尾新增接口及竞态修正后，最终相关回归
+668 passed。两个Skill格式、版本/JSON/Python/92条本地链接及diff检查通过。
+本地0.57.0 wheel打包通过并比对8份源码/schema字节；不作为正式发布/安装。
+完整输入、步骤、结果和边界见[推荐反馈实施结果](validation/recommendation-queue-results.md)。
+
+源码与文档仍在独立工作树，未提交、发布、安装、切换服务或合并main；未发送真实反馈、
+改真实定时任务或迁移Vault。后续先确认本批源码后走正常runtime-only发布/安装，再对单个合成
+条目、明确原聊天和项目验证start→context修改→complete、无额外推荐与curator独立消费。
+原生闭环、未加载/关闭/休眠恢复和人工吸收质量均待验收，开发测试不冒充这些结果。
+
+以下原有交接按历史保留。
+
 # 当前：0.56.1 已发布安装，单对象操作验收通过
 
 源码 b8a06ca、runtime 4c7b1a7；pipx/Codex/Claude 正常安装，380 个运行文件一致。

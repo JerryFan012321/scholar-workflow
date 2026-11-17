@@ -23,19 +23,22 @@ Notion、cmux 和外部 Codex 的原生能力，不另建工具控制面。
 轻量变更记录和多次阶段存档。只读工具预览明确的材料选择，实际回传、清理使用原生工具。
 旧 Run/Attempt 档案与命令保留；本批接口随 0.56.0 分发。
 
-## 项目推荐上下文与 Zotero 元信息交接（0.55.0）
+## 项目推荐上下文与 Zotero 元信息交接
 
-当前开发分支新增项目内多推荐任务、项目自有上下文、人的反馈自动落盘和管家批次确认。
-这些接口随 0.55.0 提供；接收分类仍需在本机明确配置。
+每个项目推荐任务只在 `.agents/context/recommendations/<producer_id>/` 下保留
+`context.md` 与 `recommended.md`。推荐前读取两份文件，实际推荐后维护自己的已推荐列表。
+提交条目的 producer 信息可绑定原有本地 Codex 聊天；显式改绑使用 `recommendations tasks bind`。
 
-仅为选定项目运行 `recommendations projects enable --project-root PROJECT`，再通过
-`recommendations tasks` 登记任务。项目 AGENTS 会指向任务入口；中央登记只保存定位，
-默认不读取项目背景。操作见[项目推荐上下文](references/recommendation-context.md)。
+人保存条目反馈后，代码保留中央原始记录，并经 `codex queue` 向原聊天投递带出处的消息。
+Agent 只更新上下文并回传完成回执，下次推荐仍由原定时任务触发。中心管家的反馈批次与偏好
+维护独立保留。绑定不启用额外组件、不改写 AGENTS。当前开发契约见
+[项目推荐上下文](references/recommendation-context.md)；原生投递、安装和人工验收分别取证。
 
 在推荐设置或 `recommendations intake target` 中配置一次 Zotero 接收分类，后续已审阅
 的选择入库由代码写入元信息、准备好的介绍、相关链接和人的原话意见。原始文件获取、补全
 及知识单元建设由后续 [manage-knowledge](skills/manage-knowledge/SKILL.md) 接手。
-反馈、管家及接收 CLI 不依赖网页打开；运行中的服务会重试待同步记录，不托管 Agent。
+反馈、管家及接收 CLI 不依赖网页打开；明确可重试的投递保留待处理，不另建 Agent 宿主。
+入队结果不确定时，先核实再显式复核恢复；反馈消息携带原数据池定位及准确设置环境的 CLI 命令。
 操作见[接收契约](references/zotero-intake.md)。
 
 

@@ -1,5 +1,4 @@
-"""Thin headless interfaces for project tasks, feedback and Zotero intake."""
-from pathlib import Path
+"""Thin headless interfaces for routed tasks, central feedback and Zotero intake."""
 
 import click
 
@@ -16,20 +15,9 @@ def install(group, store_for, read_input, output, guarded):
     def intake(context):
         return IntakeQueue(store_for(context), context["profile"])
 
-    @group.group(name="projects")
-    def project_group():
-        """Enable a selected project's optional recommendation component."""
-
-    @project_group.command(name="enable")
-    @click.option("--project-root", type=click.Path(exists=True, file_okay=False, path_type=Path), required=True)
-    @click.pass_obj
-    @guarded
-    def enable(context, project_root):
-        output(tasks(context).enable(project_root))
-
     @group.group(name="tasks")
     def task_group():
-        """Register stable project tasks without running an agent or reading background."""
+        """Bind an original chat and locate its two project Markdown files."""
 
     @task_group.command(name="list")
     @click.option("--project-id")
@@ -38,33 +26,24 @@ def install(group, store_for, read_input, output, guarded):
     def list_tasks(context, project_id):
         output(tasks(context).list(project_id))
 
-    @task_group.command(name="register")
+    @task_group.command(name="bind")
     @click.option("--input", "input_path", required=True)
     @click.pass_obj
     @guarded
-    def register(context, input_path):
+    def bind(context, input_path):
         payload = read_input(input_path)
-        if set(payload) != {"project_id", "producer_id", "title", "expected_revision"}:
-            raise ResearchError("Task registration needs project_id, producer_id, title and expected_revision.")
-        output(tasks(context).register(**payload))
+        required = {"project_root", "producer_id", "title", "thread_id", "expected_revision"}
+        if not required <= set(payload) <= required | {"host"}:
+            raise ResearchError("Task binding needs project_root, producer_id, title, thread_id and expected_revision; host is optional.")
+        output(tasks(context).bind(**payload))
 
     @task_group.command(name="guide")
     @click.argument("producer_id")
-    @click.option("--read-context", is_flag=True, help="Explicitly expand only this project's selected task context.")
+    @click.option("--read-context", is_flag=True, help="Expand the selected task's context.md and recommended.md only.")
     @click.pass_obj
     @guarded
     def guide(context, producer_id, read_context):
         output(tasks(context).guide(producer_id, include_context=read_context))
-
-    @task_group.command(name="save-context")
-    @click.option("--input", "input_path", required=True)
-    @click.pass_obj
-    @guarded
-    def save_task_context(context, input_path):
-        payload = read_input(input_path)
-        if set(payload) != {"producer_id", "content", "expected_revision", "consumed_event_ids"}:
-            raise ResearchError("Task context needs producer_id, content, expected_revision and explicit consumed_event_ids.")
-        output(tasks(context).save_context(**payload))
 
     @group.group(name="feedback")
     def feedback_group():
@@ -75,6 +54,44 @@ def install(group, store_for, read_input, output, guarded):
     @guarded
     def feedback_status(context):
         output(Feedback(store_for(context)).status())
+
+    @feedback_group.command(name="deliveries")
+    @click.option("--producer-id")
+    @click.option("--event-id")
+    @click.pass_obj
+    @guarded
+    def deliveries(context, producer_id, event_id):
+        output(Feedback(store_for(context)).deliveries(producer_id=producer_id, event_id=event_id))
+
+    @feedback_group.command(name="start")
+    @click.option("--input", "input_path", required=True)
+    @click.pass_obj
+    @guarded
+    def start(context, input_path):
+        payload = read_input(input_path)
+        if set(payload) != {"event_id", "producer_id"}:
+            raise ResearchError("A start receipt needs event_id and producer_id.")
+        output(Feedback(store_for(context)).start(**payload))
+
+    @feedback_group.command(name="complete")
+    @click.option("--input", "input_path", required=True)
+    @click.pass_obj
+    @guarded
+    def complete(context, input_path):
+        payload = read_input(input_path)
+        if set(payload) != {"event_id", "producer_id", "context_digest", "summary"}:
+            raise ResearchError("Completion needs event_id, producer_id, context_digest and summary.")
+        output(Feedback(store_for(context)).complete(**payload))
+
+    @feedback_group.command(name="retry")
+    @click.option("--input", "input_path", required=True)
+    @click.pass_obj
+    @guarded
+    def retry(context, input_path):
+        payload = read_input(input_path)
+        if set(payload) != {"event_id", "producer_id", "expected_attempts", "confirmed_not_queued"}:
+            raise ResearchError("Retry needs event_id, producer_id, expected_attempts and confirmed_not_queued.")
+        output(Feedback(store_for(context)).retry(**payload))
 
     @feedback_group.command(name="sync")
     @click.pass_obj

@@ -1,7 +1,8 @@
-"""Behavioral checks for project task isolation and code-only human feedback delivery."""
+"""Central feedback stays durable while project context remains human-maintained."""
 from __future__ import annotations
 
 import json
+import subprocess
 import uuid
 
 import pytest
@@ -13,100 +14,108 @@ from scholar_workflow.research.recommendations.ranking import RecommendationRank
 from scholar_workflow.research.recommendations.store import RecommendationStore
 
 
-def project(path):
-    path.mkdir()
-    identifier = str(uuid.uuid4())
-    (path / "project-layout.json").write_text(json.dumps({"schema_version": 2, "project_id": identifier}))
-    (path / "AGENTS.md").write_text("# Human rules\n\nPreserve this original text.\n")
-    return identifier
+@pytest.fixture(autouse=True)
+def no_native_processes(monkeypatch):
+    calls = []
+
+    def forbidden(*args, **kwargs):
+        calls.append(args)
+        raise AssertionError("Unit tests must not launch native processes")
+
+    monkeypatch.setattr(subprocess, "run", forbidden)
+    monkeypatch.setattr(subprocess, "Popen", forbidden)
+    yield
+    assert not calls, "Test-profile feedback attempted to launch a native process"
 
 
-def submit(store, producer="task-one", *, title="Synthetic paper", item="paper", kind="paper"):
-    resource = {"kind": kind, "title": title, "url": "https://example.org/" + item,
-                "authors": ["Example Author"]}
-    if kind == "paper":
-        resource.update(arxiv_id="2401.12345", url="https://arxiv.org/abs/2401.12345",
-                        abstract_original="The complete synthetic abstract explains the task, method and result.",
-                        abstract_zh="完整合成摘要说明任务、方法、结果及使用边界。")
-    else:
-        resource.update(summary_zh="这份合成资料介绍研究任务、采用的方案与已公开结果，并说明尚未披露的细节。",
-                        summary_sources=[resource["url"]])
-    result = store.submit({"schema_version": 1, "producer": {"producer_id": producer, "name": producer},
-                           "run_id": "run-" + item, "items": [{"submission_id": item, "tags": ["world-models"],
-                                                               "resource": resource, "recommendation_reason": "Useful for this project's evaluation task."}]})
+def submit(store, producer="task-one", *, item="paper"):
+    result = store.submit({
+        "schema_version": 1, "producer": {"producer_id": producer, "name": producer},
+        "run_id": "run-" + item, "items": [{
+            "submission_id": item, "tags": ["world-models"],
+            "resource": {
+                "kind": "paper", "title": "Synthetic paper", "authors": ["Example Author"],
+                "arxiv_id": "2401.12345", "url": "https://arxiv.org/abs/2401.12345",
+                "abstract_original": "The complete synthetic abstract explains the task, method and result.",
+                "abstract_zh": "完整合成摘要说明任务、方法、结果及使用边界。",
+            },
+            "recommendation_reason": "Useful for this project's evaluation task.",
+        }],
+    })
     assert result["receipts"][0]["status"] == "accepted"
     return store.get_candidate(result["receipts"][0]["candidate_id"])
 
 
 @pytest.fixture
 def setup(tmp_path):
-    store = RecommendationStore(tmp_path / "state")
+    store = RecommendationStore(tmp_path / "recommendations/test")
     tasks = ProjectTasks(store, "test")
     root = tmp_path / "project"
-    project_id = project(root)
-    tasks.enable(root)
-    one = tasks.register(project_id, "task-one", "Evaluation papers")
-    two = tasks.register(project_id, "task-two", "World model progress")
-    return store, tasks, root, project_id, one, two
+    root.mkdir()
+    (root / "AGENTS.md").write_text("# Human rules\n\nPreserve this original text.\n")
+    one = tasks.bind(root, "task-one", "Evaluation papers", str(uuid.uuid4()))
+    two = tasks.bind(root, "task-two", "World model progress", str(uuid.uuid4()))
+    return store, tasks, root, one, two
 
 
 def records(path):
     return [json.loads(line) for line in path.read_text().splitlines() if line]
 
 
-def test_enable_preserves_human_rules_and_discovers_multiple_equal_tasks(setup):
-    store, tasks, root, project_id, *_ = setup
-    before = (root / "AGENTS.md").read_bytes()
-    tasks.enable(root)
-    assert (root / "AGENTS.md").read_bytes() == before
-    assert before.startswith(b"# Human rules\n\nPreserve this original text.\n")
-    assert len(tasks.list(project_id)["tasks"]) == 2
-    assert "context" not in tasks.guide("task-one")
-    assert "context" in tasks.guide("task-one", include_context=True)
-    assert not Feedback(store).events()["items"]
+def project_documents(root):
+    return {str(path.relative_to(root)): path.read_bytes()
+            for path in root.rglob("*") if path.is_file()}
 
 
-def test_unprocessed_submission_creates_no_feedback(setup):
-    store, _, root, _, one, _ = setup
+def test_unprocessed_submission_creates_no_feedback_or_project_changes(setup):
+    store, _, root, *_ = setup
+    before = project_documents(root)
     submit(store)
     assert not Feedback(store).events()["items"]
-    assert not (root / one["feedback_file"]).exists()
     assert not list(store.state_dir.glob("context/inbox/*.jsonl"))
+    assert project_documents(root) == before
 
 
-def test_decision_writes_project_and_daily_files_without_agent(setup):
-    store, _, root, _, one, two = setup
+def test_decision_records_central_feedback_without_rewriting_project_documents(setup):
+    store, _, root, *_ = setup
+    before = project_documents(root)
     row = submit(store)
     updated = store.set_decision(row["candidate_id"], "saved", row["revision"])
-    delivered = records(root / one["feedback_file"])
+    event = Feedback(store).events()["items"][0]
     daily = records(next(store.state_dir.glob("context/inbox/*.jsonl")))
-    assert delivered == daily
-    assert delivered[0]["decision"] == "saved"
-    assert delivered[0]["summary"] == row["resource"]["abstract_zh"]
-    assert delivered[0]["processed_at"]
-    assert not (root / two["feedback_file"]).exists()
+    assert daily == [event]
+    assert event["decision"] == "saved"
+    assert event["summary"] == row["resource"]["abstract_zh"]
+    assert event["processed_at"]
     assert updated["decision"] == "saved"
-    assert not Feedback(store).status()["pending_deliveries"]
+    assert project_documents(root) == before
+    assert not list(root.rglob("feedback.jsonl"))
+    assert not list(root.rglob("state.json"))
 
 
-def test_one_human_event_is_delivered_to_two_tasks_but_not_counted_twice(setup):
-    store, _, root, _, one, two = setup
+def test_one_human_event_can_address_two_tasks_without_counting_two_votes(setup):
+    store, _, root, *_ = setup
+    before = project_documents(root)
     row = submit(store)
     submit(store, "task-two")
     row = store.get_candidate(row["candidate_id"])
     store.set_decision(row["candidate_id"], "saved", row["revision"])
-    first, second = records(root / one["feedback_file"]), records(root / two["feedback_file"])
+    feedback = Feedback(store)
+    first = feedback.events(producer_id="task-one")["items"]
+    second = feedback.events(producer_id="task-two")["items"]
     assert len(first) == len(second) == 1
     assert first[0]["event_id"] == second[0]["event_id"]
-    assert Feedback(store).status()["curator_pending"] == 1
+    assert {task["producer_id"] for task in first[0]["tasks"]} == {"task-one", "task-two"}
+    assert feedback.status()["curator_pending"] == 1
+    assert project_documents(root) == before
 
 
 def test_late_task_attribution_gets_known_state_not_another_vote(setup):
-    store, _, root, _, _, two = setup
+    store, *_ = setup
     row = submit(store)
     store.set_decision(row["candidate_id"], "saved", row["revision"])
     submit(store, "task-two")
-    baseline = records(root / two["feedback_file"])[0]
+    baseline = Feedback(store).events(producer_id="task-two")["items"][0]
     assert baseline["kind"] == "baseline"
     assert baseline["processed_at"] is None
     assert baseline["decision"] == "saved"
@@ -124,85 +133,47 @@ def test_quality_and_scoped_irrelevance_have_distinct_feedback(setup):
     assert row["disposition"]["reason"] == "quality"
     row = store.set_decision(row["candidate_id"], "unread", row["revision"])
     assert row["disposition"] is None
-    assert [i["decision"] for i in Feedback(store).events()["items"]] == ["ignored", "ignored", "ignored", "unread"]
+    assert [item["decision"] for item in Feedback(store).events()["items"]] == [
+        "ignored", "ignored", "ignored", "unread",
+    ]
 
 
 def test_evaluation_edits_clear_and_stale_revision_are_recorded(setup):
-    store, _, root, _, one, _ = setup
+    store, _, root, *_ = setup
+    before = project_documents(root)
     row = submit(store)
     row = store.save_evaluation(row["candidate_id"], 5, "放入评测分类，暂时不分析。", 0, row["revision"])
     with pytest.raises(ResearchError):
         store.save_evaluation(row["candidate_id"], 1, "stale", 0, row["revision"])
     store.save_evaluation(row["candidate_id"], None, "", 1, row["revision"])
-    feedback = records(root / one["feedback_file"])
-    assert feedback[0]["evaluation"]["comment"] == "放入评测分类，暂时不分析。"
-    assert feedback[0]["evaluation"]["score"] == 5
-    assert feedback[1]["evaluation"]["score"] is None
-    assert feedback[1]["evaluation"]["comment"] == ""
+    events = Feedback(store).events()["items"]
+    assert events[0]["evaluation"]["comment"] == "放入评测分类，暂时不分析。"
+    assert events[0]["evaluation"]["score"] == 5
+    assert events[1]["evaluation"]["score"] is None
+    assert events[1]["evaluation"]["comment"] == ""
+    assert project_documents(root) == before
 
 
-def test_unavailable_project_preserves_decision_and_retries_idempotently(setup):
-    store, _, root, _, one, _ = setup
+def test_unavailable_project_never_rolls_back_a_human_decision(setup):
+    store, _, root, *_ = setup
+    before = project_documents(root)
     row = submit(store)
     moved = root.with_name("temporarily-unavailable")
     root.rename(moved)
     saved = store.set_decision(row["candidate_id"], "saved", row["revision"])
     assert saved["decision"] == "saved"
-    assert Feedback(store).status()["pending_deliveries"]
+    assert Feedback(store).events()["items"][0]["decision"] == "saved"
     moved.rename(root)
-    assert not Feedback(store).flush()["pending_deliveries"]
-    Feedback(store).flush()
-    assert len(records(root / one["feedback_file"])) == 1
-
-
-@pytest.mark.parametrize("attack", ["symlink", "hardlink", "edited", "nonobject"])
-def test_feedback_projection_never_overwrites_unsafe_or_edited_file(setup, tmp_path, attack):
-    store, _, root, _, one, _ = setup
-    row = submit(store)
-    row = store.set_decision(row["candidate_id"], "saved", row["revision"])
-    target = root / one["feedback_file"]
-    other = tmp_path / "outside.txt"
-    other.write_text("human original")
-    if attack == "symlink":
-        target.unlink(); target.symlink_to(other)
-    elif attack == "hardlink":
-        target.unlink(); target.hardlink_to(other)
-    elif attack == "nonobject":
-        target.write_text("42\n")
-    else:
-        target.write_text('{"event_id":"unknown","human":"keep"}\n')
-    store.set_decision(row["candidate_id"], "ignored", row["revision"], "quality")
-    assert other.read_text() == "human original"
-    assert Feedback(store).status()["pending_deliveries"]
-    if attack == "edited":
-        assert "keep" in target.read_text()
-
-
-def test_profile_or_cross_project_task_rebinding_is_rejected(setup, tmp_path):
-    store, tasks, root, _, *_ = setup
-    with pytest.raises(ResearchError):
-        ProjectTasks(RecommendationStore(tmp_path / "other-pool"), "personal").enable(root)
-    second = tmp_path / "second-project"
-    second_id = project(second)
-    tasks.enable(second)
-    with pytest.raises(ResearchError):
-        tasks.register(second_id, "task-one", "Wrong project", expected_revision=1)
-
-
-def test_enable_does_not_shadow_existing_legacy_human_rules(tmp_path):
-    root = tmp_path / "legacy"
-    project(root)
-    (root / "AGENTS.md").rename(root / "AGENT.md")
-    tasks = ProjectTasks(RecommendationStore(tmp_path / "state"), "test")
-    with pytest.raises(ResearchError):
-        tasks.enable(root)
-    assert not (root / "AGENTS.md").exists()
-    assert not (root / ".agents/context/recommendations").exists()
-    assert "Preserve this original text." in (root / "AGENT.md").read_text()
+    feedback = Feedback(store, native_enabled=False)
+    feedback.flush()
+    feedback.flush()
+    assert len(feedback.events()["items"]) == 1
+    assert project_documents(root) == before
 
 
 def test_curator_consumes_exact_batch_and_keeps_new_arrivals(setup):
-    store, _, root, _, one, _ = setup
+    store, _, root, *_ = setup
+    before = project_documents(root)
     row = submit(store)
     row = store.set_decision(row["candidate_id"], "saved", row["revision"])
     feedback = Feedback(store)
@@ -216,10 +187,10 @@ def test_curator_consumes_exact_batch_and_keeps_new_arrivals(setup):
     assert feedback.status()["curator_pending"] == 1
     pending = records(next(store.state_dir.glob("context/inbox/*.jsonl")))
     assert len(pending) == 1 and pending[0]["decision"] == "ignored"
-    assert len(records(root / one["feedback_file"])) == 2
     assert (store.state_dir / "context/PREFERENCES.md").read_text() == payload["content"]
     assert later["decision"] == "ignored"
     assert len(feedback.events()["items"]) == 2
+    assert project_documents(root) == before
 
 
 def test_curator_revision_conflict_keeps_pending_files(setup):
@@ -248,20 +219,20 @@ def test_last_consumed_daily_file_is_removed_but_history_stays(setup):
         feedback.consume(overlapping["batch_id"], "Cannot consume it twice", 1, {"kind": "agent", "name": "curator"})
 
 
-def test_task_context_save_is_revision_checked_and_separate_from_delivery(setup):
-    store, tasks, _, _, *_ = setup
-    row = submit(store)
-    store.set_decision(row["candidate_id"], "saved", row["revision"])
-    guide = tasks.guide("task-one", include_context=True)
-    event_id = Feedback(store).events(producer_id="task-one")["items"][0]["event_id"]
-    assert guide["checkpoint"]["consumed_event_ids"] == []
-    result = tasks.save_context("task-one", "# Task\nRefined project requirements.\n", guide["context_revision"], [event_id])
-    assert result["checkpoint"]["consumed_event_ids"] == [event_id]
-    with pytest.raises(ResearchError):
-        tasks.save_context("task-one", "stale", guide["context_revision"], [])
-    wrong = tasks.guide("task-two", include_context=True)
-    with pytest.raises(ResearchError):
-        tasks.save_context("task-two", "wrong", wrong["context_revision"], [event_id])
+def test_task_guide_observes_human_document_edits_without_checkpoint(setup):
+    _, tasks, root, one, _ = setup
+    before = tasks.guide("task-one", include_context=True)
+    context = root / one["context_file"]
+    recommended = root / one["recommended_file"]
+    context.write_text("# Research context\nOnly retain evaluations of closed-loop driving.\n")
+    recommended.write_text("# Recommended\nAlready considered this work; keep its exact reason.\n")
+    after = tasks.guide("task-one", include_context=True)
+    assert after["context"] == context.read_text()
+    assert after["recommended"] == recommended.read_text()
+    assert after["context_revision"] != before["context_revision"]
+    assert after["recommended_revision"] != before["recommended_revision"]
+    assert "checkpoint" not in after
+    assert not list(root.rglob("state.json"))
 
 
 def test_task_event_pagination_is_scoped_and_uses_sequence_not_date(setup):
@@ -270,23 +241,25 @@ def test_task_event_pagination_is_scoped_and_uses_sequence_not_date(setup):
     row = store.set_decision(row["candidate_id"], "saved", row["revision"])
     store.set_decision(row["candidate_id"], "ignored", row["revision"], "quality")
     first = Feedback(store).events(producer_id="task-one", limit=1)
-    second = Feedback(store).events(producer_id="task-one", after=first["next_sequence"], limit=1, expected_pool=first["pool_id"])
+    second = Feedback(store).events(producer_id="task-one", after=first["next_sequence"], limit=1,
+                                    expected_pool=first["pool_id"])
     with pytest.raises(ResearchError):
-        Feedback(store).events(producer_id="task-one", after=first["next_sequence"], limit=1, expected_pool="another-pool")
+        Feedback(store).events(producer_id="task-one", after=first["next_sequence"], limit=1,
+                               expected_pool="another-pool")
     assert first["has_more"] and not second["has_more"]
     assert first["items"][0]["event_id"] != second["items"][0]["event_id"]
     assert not Feedback(store).events(producer_id="task-two")["items"]
 
 
 @pytest.mark.parametrize("reason", ["quality", "not_relevant", "other"])
-def test_processed_reason_is_automatically_delivered_to_task_and_curator(setup, reason):
-    store, _, root, _, task, _ = setup
+def test_processed_reason_is_recorded_without_machine_project_files(setup, reason):
+    store, _, root, *_ = setup
+    before = project_documents(root)
     row = submit(store)
     store.set_decision(row["candidate_id"], "ignored", row["revision"], reason)
-    task_record = records(root / task["feedback_file"])[-1]
-    inbox_files = list((store.state_dir / "context/inbox").glob("*.jsonl"))
-    central = [record for path in inbox_files for record in records(path)]
+    task_record = Feedback(store).events(producer_id="task-one")["items"][-1]
+    central = [record for path in (store.state_dir / "context/inbox").glob("*.jsonl") for record in records(path)]
     assert task_record["disposition"]["reason"] == reason
     assert central[-1]["event_id"] == task_record["event_id"]
     assert central[-1]["disposition"] == task_record["disposition"]
-    assert not Feedback(store).status()["pending_deliveries"]
+    assert project_documents(root) == before
