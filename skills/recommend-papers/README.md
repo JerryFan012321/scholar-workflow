@@ -173,3 +173,5 @@ UI and HTTP service closed. All agents share the selected profile/root; their ow
 harness schedules them. Run `scholar-research recommendations start`, then open its
 plain URL in any local browser or multiple windows. `status` rediscovers it;
 `open --no-browser` prints it. No URL token is needed. Refresh to see external changes.
+
+Paper details include a separate, sourced Contributions section after the abstract; the shared intake contract defines its fields and author-claim attribution.

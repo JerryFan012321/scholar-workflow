@@ -94,7 +94,7 @@ def _check_strings(value, key=""):
         for child in value:
             _check_strings(child, key)
     elif isinstance(value, str):
-        _safe_text(value, multiline=key in {"abstract_original", "abstract_zh", "description_original", "description_zh", "summary_zh", "recommendation_reason"})
+        _safe_text(value, multiline=key in {"abstract_original", "abstract_zh", "description_original", "description_zh", "summary_zh", "recommendation_reason", "text_zh", "text_original"})
     elif isinstance(value, float) and not math.isfinite(value):
         raise ResearchError("Recommendation numbers must be finite.")
 
@@ -126,6 +126,9 @@ def _normalize_resource(resource: dict) -> tuple[dict, str]:
         link["url"] = channel_url_identity(link["url"])
     if "summary_sources" in result:
         result["summary_sources"] = [channel_url_identity(url) for url in result["summary_sources"]]
+    for contribution in result.get("contributions", []):
+        # Validate the target while preserving the author's exact section anchor.
+        channel_url_identity(contribution["source_url"].split("#", 1)[0])
     kind = result["kind"]
     if kind == "paper":
         url_id = _arxiv_url_identity(result["url"])
@@ -227,6 +230,9 @@ def _merge_resource(previous, incoming):
                 # Metadata without a version cannot erase the version bound to the body.
                 incoming = {**incoming, "arxiv_id": previous["arxiv_id"], "url": previous["url"]}
     merged = {**previous, **incoming}
+    if (previous.get("arxiv_id") != incoming.get("arxiv_id", previous.get("arxiv_id"))
+            and "contributions" not in incoming):
+        merged.pop("contributions", None)
     for original, translated in (("abstract_original", "abstract_zh"),
                                  ("description_original", "description_zh")):
         if (original in incoming and incoming[original] != previous.get(original)
@@ -555,7 +561,7 @@ class RecommendationStore:
     def revise_content(self, candidate_id, expected_revision, changes, updated_by):
         """Correct an existing reading body without adding a recommendation event."""
         allowed = {"abstract_original", "abstract_zh", "description_original", "description_zh",
-                   "summary_zh", "summary_sources"}
+                   "summary_zh", "summary_sources", "contributions"}
         if (type(expected_revision) is not int or not 1 <= expected_revision < 2**63 - 1
                 or not isinstance(changes, dict) or not changes or set(changes) - allowed):
             raise ResearchError("Content correction needs an exact revision and supported reading fields.")
