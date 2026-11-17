@@ -1,3 +1,22 @@
+# 当前：0.58.0贡献栏目发布安装与单对象展示验收（2026-11-18）
+
+用户已授权提交、发布、正常安装，再用一个合成条目验证贡献及出处展示；不合并main。
+沿用codex/hotfix-recommendation-contributions，先全量unit/contract，再正常runtime-only发布与
+pipx/Codex/Claude更新；独立test池启动已安装服务，在真实浏览器核对两项贡献及原文出处。
+不写个人推荐池、不改现有定时任务、不发反馈或入库。回退基线0.57.0/runtime35ba5c6。
+结果见releases/0.58.0-contributions-release.md，源码测试不代替实际安装与页面验收。
+
+# 当前：推荐条目贡献栏目（2026-11-17，源码开发）
+
+用户要求推荐条目补充贡献，论文优先采用Introduction中的Contributions或类似表述。
+独立分支codex/hotfix-recommendation-contributions，从已验收0.57.0开发历史继续；不合并main。
+本批增加带原文定位的贡献列表、摘要后独立展示及内容修订；旧数据继续可读，未整理不推断为无贡献。
+开发测试用合成条目与离线DOM，不查真实论文、不改正式数据；实际发布安装另行取证。
+已实现resource.contributions逐项译文/可选原文/来源URL/章节定位，详情摘要后独立展示，
+缺失时提示尚未整理；revise-content支持修订，新arXiv版本不继承旧贡献。
+推荐相关回归610通过（含7个新增贡献用例），diff检查通过；新增行为eval仍pending，
+不以结构检查冒充真实论文来源充分性或页面人工评鉴。候选0.58.0，未提交或发布安装。
+
 # 当前：0.57.0已发布安装，原聊天反馈完整闭环通过（2026-11-17）
 
 后续反馈已自动作为原聊天新一轮进入；正常CLI start、实际context修改及complete全部完成。

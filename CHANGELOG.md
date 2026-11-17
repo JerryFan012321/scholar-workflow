@@ -3,6 +3,13 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.58.0] - 2026-11-17
+
+### Added
+- `recommend-papers`: display source-backed author contributions separately after
+  abstracts; preserve original wording and section links, support content corrections,
+  and retain compatibility with existing recommendations.
+
 ## [0.57.0] - 2026-11-16
 
 Installed acceptance on 2026-11-17 verified one synthetic feedback message returning

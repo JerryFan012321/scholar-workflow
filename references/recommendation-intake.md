@@ -181,11 +181,31 @@ label and review, including for non-paper resources. It adds no recommendation
 rationale or unsupported scientific assessment.
 
 The recommendation page also provides task/source attribution, domain labels and
-the raw observations above. These support browsing and filtering. Do not append
+the raw observations above. These support browsing and filtering. Author-stated contributions are a separate sourced item below the abstract. Do not append
 recommendation rationale, scientific analysis, reading-coverage sections or general
 evaluation to the Reading Report. Failed-source and unavailable-content diagnostics
 belong in the operation result, outside its content. A project/blog without an author abstract carries a source-backed synopsis under
 the reading-content requirements below. An excerpt alone is incomplete preparation.
+
+## Contributions
+
+Include a separate Contributions section for paper recommendations, after the complete
+abstract. Use `resource.contributions`, an ordered array with `text_zh`, `source_url`
+and `source_section` on every item; `text_original` optionally retains the author's
+wording. Preserve distinct substantive contributions without a fixed item count.
+Prefer the Introduction's Contributions list or equivalent author statement; retain
+its actual section/page locator and version-specific original link. Translate each
+claim faithfully, including conditions, rather than replacing it with a recommendation
+reason. If there is no explicit list, a body-supported account must identify its actual
+source section. Author claims are not independent verification. Do not infer this
+section from an abstract alone or invent novelty, comparisons or results.
+
+Unavailable contributions remain absent with an unavailable display; old submissions
+remain valid. An absent field is not proof that the author reported no contributions.
+Project/Blog resources may use the same field when their source explicitly supports
+contributions; do not manufacture a paper-style list. Content correction can update or
+remove this field through `revise-content` without another recommendation. Original
+producer submissions and human decisions retain their existing ownership.
 
 ## Reading content quality
 

@@ -140,3 +140,5 @@ scholar-research recommendations requirements save --input requirements.json
 `scholar-research recommendations start` 后，直接用输出的普通本地URL在浏览器/cmux等打开，
 可同时多窗口，无需token或额外参数。`status`查询地址，`open --no-browser`仅输出地址。
 关闭页面不停止服务；关闭HTTP服务也不影响CLI后台操作。刷新查看其他agent或窗口的新内容。
+
+论文详情在摘要后单独展示“贡献”，依据Introduction中的Contributions或同类作者表述，逐项保留出处；字段及来源要求由共享推荐契约持有。

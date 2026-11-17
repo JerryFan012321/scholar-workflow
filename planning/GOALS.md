@@ -1,3 +1,9 @@
+# 本轮：推荐条目的作者贡献（2026-11-17）
+
+推荐条目保留完整摘要，并独立展示有原文来源和章节定位的作者贡献。
+优先采用Introduction中的Contributions或类似表述，不将推荐理由、作者主张和独立核验混为一谈。
+具体字段和缺失处理由references/recommendation-intake.md持有；旧推荐保留，不批量补写真实内容。
+
 # 本轮：推荐任务简化与原聊天反馈（2026-11-16）
 
 项目侧每个推荐任务仅保留 `.agents/context/recommendations/<producer_id>/context.md`

@@ -55,6 +55,7 @@
         "published_at": {"type": "string", "anyOf": [{"format": "date"}, {"format": "date-time"}]},
         "abstract_original": {"$ref": "#/$defs/longText"},
         "abstract_zh": {"$ref": "#/$defs/longText"},
+        "contributions": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["text_zh", "source_url", "source_section"], "properties": {"text_zh": {"$ref": "#/$defs/longText"}, "text_original": {"$ref": "#/$defs/longText"}, "source_url": {"$ref": "#/$defs/url"}, "source_section": {"$ref": "#/$defs/shortText"}}}},
         "description_original": {"$ref": "#/$defs/longText"},
         "description_zh": {"$ref": "#/$defs/longText"},
         "summary_zh": {"$ref": "#/$defs/longText", "description": "Complete source-backed Chinese synopsis when no author abstract exists; follow the recommendation reading-content and shared style contracts. A tagline or snippet is not a synopsis."},
