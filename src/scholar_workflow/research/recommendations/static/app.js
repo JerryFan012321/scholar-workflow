@@ -553,7 +553,7 @@
         ? "尚无完整摘要译文。补齐后才能确认审阅并选择入库。"
         : "尚未提供完整简介，可直接打开原文查看。"));
     }
-    if (original || summaryActive) {
+    if (summaryActive || (!hasAbstract && !isPaper && original)) {
       const provenance = element("details", "original provenance");
       provenance.open = false;
       provenance.append(element("summary", null, "出处"));
@@ -577,24 +577,13 @@
     if (Array.isArray(resource.contributions) && resource.contributions.length) {
       const section = element("section", "contributions");
       section.append(element("h3", "summary-label", "贡献"));
-      const list = element("ol");
       for (const contribution of resource.contributions) {
-        const item = element("li");
-        item.append(element("p", "summary", contribution.text_zh));
-        const source = element("details", "provenance");
-        source.append(element("summary", null, "出处"));
-        source.append(element("p", "quiet", "作者主张 · " + contribution.source_section));
-        const link = externalLink("贡献原文 ↗", contribution.source_url);
-        if (link) source.append(link);
-        if (contribution.text_original) source.append(element("p", "source-original", contribution.text_original));
-        item.append(source);
-        list.append(item);
+        section.append(element("p", "summary", contribution.text_zh));
       }
-      section.append(list);
       article.append(section);
     } else if (isPaper) {
       article.append(element("h3", "summary-label", "贡献"));
-      article.append(element("p", "unavailable", "尚未整理贡献，可查看论文 Introduction 中的 Contributions 或相关表述。"));
+      article.append(element("p", "unavailable", "尚未提供贡献译文。"));
     }
 
     const links = element("nav", "links");

@@ -39,9 +39,11 @@ states which entries were accepted, already present, conflicting or invalid.
 ## What the page shows
 
 - Papers: verified paper information, the complete Chinese abstract translation,
-  the original abstract and the available project-homepage link.
+  and the available project-homepage link. The abstract body shows only the faithful
+  translation; the original and provenance remain internal for checking.
 - Project pages and blogs: source information, the actual introduction/excerpt and
-  its translation when available. A project announcement does not need a paper.
+  its translation when available. An existing author abstract uses the same
+  translation-only presentation. A project announcement does not need a paper.
 - Attributed raw platform data, such as repository stars, with the actual target,
   source link and observation time. The page does not evaluate popularity or add
   a combined score.
@@ -55,7 +57,7 @@ analysis or a reading-coverage report. Operation failures are reported separatel
 ## Choose resources to ingest
 
 Review the full translated abstract before selecting a paper for ingestion. Keep
-its original accessible for checking. Then export the selected-candidate handoff:
+its complete original internally for checking. Then export the selected-candidate handoff:
 
 ```bash
 scholar-research recommendations --profile personal handoff
@@ -174,4 +176,9 @@ harness schedules them. Run `scholar-research recommendations start`, then open 
 plain URL in any local browser or multiple windows. `status` rediscovers it;
 `open --no-browser` prints it. No URL token is needed. Refresh to see external changes.
 
-Paper details include a separate, sourced Contributions section after the abstract; the shared intake contract defines its fields and author-claim attribution.
+Paper details show Contributions after the abstract as a faithful translation of
+the complete short original passage or list, preserving its structure and order.
+The UI shows only Chinese text, without provenance labels, original-language text,
+author-claim notices or added numbering. Source wording and locators remain internal;
+the [intake contract](../../references/recommendation-intake.md#contributions) defines
+the unchanged fields and unavailable-content behavior.

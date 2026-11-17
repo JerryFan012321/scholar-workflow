@@ -28,8 +28,8 @@ scholar-research recommendations --profile personal open
 
 ## 页面展示
 
-- 论文：经核实的论文信息、完整中文摘要译文、可展开的原摘要，以及相关项目主页。
-- 项目主页和 Blog：来源信息、原文简介或摘录，以及已有译文；没有论文的项目也可推荐。
+- 论文：经核实的论文信息、完整中文摘要译文，以及相关项目主页。摘要正文只显示忠实中文译文，原文与来源在内部保留供核对。
+- 项目主页和 Blog：来源信息、原文简介或摘录，以及已有译文；有作者摘要时也只展示其完整中文译文。没有论文的项目也可推荐。
 - 平台原始数据：例如仓库 stars，注明对应对象、来源链接和采集时间，不作热度评价或合成总分。
 - 领域标签、推荐任务和发现渠道，以及独立的人类审阅与选择状态。
 
@@ -38,7 +38,7 @@ scholar-research recommendations --profile personal open
 
 ## 审阅后选择入库
 
-论文入库前先看完整中文摘要译文，原文也保留供核对。选择完成后，可导出入库交接清单：
+论文入库前先看完整中文摘要译文，完整原文在内部保留供核对。选择完成后，可导出入库交接清单：
 
 ```bash
 scholar-research recommendations --profile personal handoff
@@ -141,4 +141,4 @@ scholar-research recommendations requirements save --input requirements.json
 可同时多窗口，无需token或额外参数。`status`查询地址，`open --no-browser`仅输出地址。
 关闭页面不停止服务；关闭HTTP服务也不影响CLI后台操作。刷新查看其他agent或窗口的新内容。
 
-论文详情在摘要后单独展示“贡献”，依据Introduction中的Contributions或同类作者表述，逐项保留出处；字段及来源要求由共享推荐契约持有。
+论文详情在摘要后单独展示“贡献”，忠实翻译原文 Contributions 的完整短段或原列表，保留原有结构、顺序和条件，不重新概括成列表。界面只显示中文译文，不展示出处、章节、英文原文、作者主张提示，也不额外添加编号；原文和定位信息留在内部核对。字段及缺失内容处理见[共享推荐契约](../../references/recommendation-intake.md#contributions)。
