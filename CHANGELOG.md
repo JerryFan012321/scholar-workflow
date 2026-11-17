@@ -5,6 +5,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [0.58.0] - 2026-11-17
 
+Installed acceptance on 2026-11-18 verified two synthetic contributions, author
+wording and exact section-source links in the normally installed browser UI.
+
 ### Added
 - `recommend-papers`: display source-backed author contributions separately after
   abstracts; preserve original wording and section links, support content corrections,
