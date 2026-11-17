@@ -5,6 +5,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.
 
 ## [0.58.1] - 2026-11-18
 
+Installed browser acceptance verified complete translated passages without visible
+provenance, original-language text or added contribution numbering.
+
 ### Fixed
 - `recommend-papers`: show only complete abstract and contribution translations;
   retain source passages internally without provenance panels or added numbering.
