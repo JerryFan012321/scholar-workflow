@@ -535,7 +535,7 @@
     },
     {
       "id": "shared-recommendation-intake-and-human-review",
-      "description": "G19：独立agent/定时任务通过安装版统一CLI按版本JSON提交论文、项目主页和Blog；同对象合并且各推荐记录保留，幂等重试、冲突回执、同条记录标签筛选、个人/测试隔离和人工决定保全。页面呈现完整论文摘要译文及原文、项目主页、任务/渠道和平台原始数值，不作热度评价；人审阅后选择，导出可交给既有ingest-resource的清单，不自动写Zotero/Vault。源码合成、正常安装、浏览器实际操作和人工评鉴分别取证，未通过不冒称完整交付。",
+      "description": "G19：独立agent/定时任务通过安装版统一CLI按版本JSON提交论文、项目主页和Blog；同对象合并且各推荐记录保留，幂等重试、冲突回执、同条记录标签筛选、个人/测试隔离和人工决定保全。有作者摘要时仅展示完整忠实中文译文，不展示出处、英文原文或翻译说明，原文内部保留核对，不以agent总结替代。无原摘要的有来源简介继续保留其既有来源展示。页面保留项目主页、任务/渠道和平台原始数值，不作热度评价；人审阅后选择，导出可交给既有ingest-resource的清单，不自动写Zotero/Vault。源码合成、正常安装、浏览器实际操作和人工评鉴分别取证，未通过不冒称完整交付。",
       "status": "pending"
     },
     {
@@ -585,7 +585,7 @@
     },
     {
       "id": "recommendation-author-contributions",
-      "description": "Paper detail preserves a separate complete author-contribution list with section/version sources after the abstract. Missing contributions stay unavailable; no abstract-derived invention or independent-verification claim. Existing items and corrections remain supported.",
+      "description": "Paper details show Contributions after the abstract as a faithful Chinese translation of the complete short original Contributions passage or list, usually stored as one item. Preserve order, conditions and original structure without agent-authored regrouping or added numbering. The UI displays only Chinese text, without source/section labels, original-language text or author-claim notices; text_original and version/section locators remain internal for checking. An identifiable original passage is required; do not assemble contributions from the abstract or the rest of the paper. Missing content stays unavailable, and existing records/fields/corrections remain supported without migration. Source checks, installed rendering and human acceptance remain distinct.",
       "status": "pending"
     }
   ]

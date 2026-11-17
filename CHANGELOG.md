@@ -3,6 +3,14 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.58.1] - 2026-11-18
+
+### Fixed
+- `recommend-papers`: show only complete abstract and contribution translations;
+  retain source passages internally without provenance panels or added numbering.
+- Translate the original Contributions passage faithfully instead of synthesizing
+  a new contribution list from the paper body.
+
 ## [0.58.0] - 2026-11-17
 
 Installed acceptance on 2026-11-18 verified two synthetic contributions, author

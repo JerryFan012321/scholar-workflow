@@ -391,17 +391,15 @@ def test_settings_gear_opens_sources_and_records_without_resetting_recommendatio
     assert not result["posts"]
 
 
-def test_detail_preserves_complete_translation_original_and_every_attachment():
+def test_detail_shows_complete_abstract_translation_without_provenance_panel():
     result = render(action="detail")
     assert not result["detail_hidden"]
     assert candidate()["resource"]["abstract_zh"] in result["detail"]["text"]
-    assert candidate()["resource"]["abstract_original"] in result["detail"]["text"]
+    assert candidate()["resource"]["abstract_original"] not in result["detail"]["text"]
     links = nodes(result["detail"], "links")[0]["children"]
     assert {link["href"] for link in links} == {candidate()["resource"]["url"], candidate()["resource"]["project_url"], *[link["url"] for link in candidate()["resource"]["links"]]}
     assert nodes(result["detail"], "summary-label")[0]["text"] == "摘要"
-    provenance = nodes(result["detail"], "provenance")[0]
-    assert provenance["tag"] == "details" and not provenance.get("open", False)
-    assert provenance["children"][0]["text"] == "出处"
+    assert not nodes(result["detail"], "provenance")
     assert nodes(result["detail"], "review")
     assert nodes(result["detail"], "ingestion-open")
     assert "专项推荐 agent" in result["detail"]["text"]

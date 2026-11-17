@@ -172,8 +172,9 @@ contains only paper information, the paper's abstract and related project-homepa
 links. Paper information uses verified title, authors, publication information and
 original-source links. The compact list provides an expandable detail area with the
 complete Chinese abstract translation before the person confirms review and chooses
-papers to ingest;
-keep the complete original accessible for checking. Folding the detail area does not
+papers to ingest. The abstract body displays only that faithful Chinese translation,
+without source/section metadata, the original-language text or translation notices.
+Retain the complete original internally for checking. Folding the detail area does not
 permit truncating stored content, using a teaser or replacing an available abstract
 with a summary.
 The explicit no-abstract fallback above is a sourced agent summary with its own
@@ -181,7 +182,8 @@ label and review, including for non-paper resources. It adds no recommendation
 rationale or unsupported scientific assessment.
 
 The recommendation page also provides task/source attribution, domain labels and
-the raw observations above. These support browsing and filtering. Author-stated contributions are a separate sourced item below the abstract. Do not append
+the raw observations above. These support browsing and filtering. Contributions appear
+separately below the abstract as a faithful translation of the original passage. Do not append
 recommendation rationale, scientific analysis, reading-coverage sections or general
 evaluation to the Reading Report. Failed-source and unavailable-content diagnostics
 belong in the operation result, outside its content. A project/blog without an author abstract carries a source-backed synopsis under
@@ -191,19 +193,23 @@ the reading-content requirements below. An excerpt alone is incomplete preparati
 
 Include a separate Contributions section for paper recommendations, after the complete
 abstract. Use `resource.contributions`, an ordered array with `text_zh`, `source_url`
-and `source_section` on every item; `text_original` optionally retains the author's
-wording. Preserve distinct substantive contributions without a fixed item count.
-Prefer the Introduction's Contributions list or equivalent author statement; retain
-its actual section/page locator and version-specific original link. Translate each
-claim faithfully, including conditions, rather than replacing it with a recommendation
-reason. If there is no explicit list, a body-supported account must identify its actual
-source section. Author claims are not independent verification. Do not infer this
-section from an abstract alone or invent novelty, comparisons or results.
+and `source_section` on every item. Faithfully translate the complete short Contributions
+passage or original list, usually storing that whole passage in one item. Preserve its
+order, conditions, paragraph/list structure and any original numbering; do not split,
+merge or rewrite it into a new agent-authored contribution list. Use an identifiable
+Contributions passage or equivalent explicit statement, not an account assembled from
+the abstract or the rest of the paper.
+
+Retain the source wording in `text_original` when available, together with its actual
+section/page locator and version-specific original link, for internal checking. The
+contribution UI displays only the Chinese translation. It does not show source links,
+section/page labels, original-language text, author-claim notices or newly generated
+numbering. Existing records and their source metadata remain readable without migration.
 
 Unavailable contributions remain absent with an unavailable display; old submissions
 remain valid. An absent field is not proof that the author reported no contributions.
-Project/Blog resources may use the same field when their source explicitly supports
-contributions; do not manufacture a paper-style list. Content correction can update or
+Project/Blog resources may use the same field for an explicit contributions passage;
+do not manufacture a paper-style list. Content correction can update or
 remove this field through `revise-content` without another recommendation. Original
 producer submissions and human decisions retain their existing ownership.
 
@@ -235,8 +241,11 @@ is a view only; it never reduces the stored/detail content.
   source claims. Detailed paper-analysis, report or experiment sections are not
   added to this recommendation component.
 - Main labels are simply Abstract, Project introduction or Content introduction in
-  the page's language. Attribution, preparation method, original text and sources
-  live in the collapsed Source section. Keep prose free of prefixed warnings such
+  the page's language. An author abstract displays only its complete faithful Chinese
+  translation; keep its original and provenance internally, without a visible Source
+  section or translation explanation. Introductions and source-backed synopses without
+  an author abstract retain their existing collapsed Source section for attribution,
+  preparation method, original text and sources. Keep prose free of prefixed warnings such
   as “来源摘录译文（非完整论文摘要）”; report real limits once beside affected claims.
 
 The recommending agent checks the synopsis against the actual source body before

@@ -343,8 +343,8 @@ def test_project_with_author_abstract_uses_abstract_without_summary_bypass(trans
     card = nodes(render(item)["feed"], "card")[0]
     assert "Unused body summary." not in card["text"]
     assert not nodes(card, "summary-sources")
-    assert item["resource"]["abstract_original"] in nodes(card, "provenance")[0]["text"]
-    assert not nodes(card, "provenance")[0]["open"]
+    assert item["resource"]["abstract_original"] not in card["text"]
+    assert not nodes(card, "provenance")
     if translated:
         assert nodes(card, "summary-label")[0]["text"] == "摘要"
         assert nodes(card, "summary")[0]["text"] == item["resource"]["abstract_zh"]
