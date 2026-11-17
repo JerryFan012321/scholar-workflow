@@ -3,6 +3,26 @@
 All notable changes to scholar-workflow are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/) — Semver: major.minor.patch
 
+## [0.57.0] - 2026-11-16
+
+### Changed
+- `recommend-papers`: bind the original local Codex chat from recommendation
+  provenance and keep only `context.md` and `recommended.md` per project task.
+- Send committed human feedback as deterministic messages through `codex queue`;
+  retain central delivery/start/completion receipts independently of curator consumption.
+- Address acknowledgements to the exact originating pool and recover uncertain
+  attempts only after an explicit, revision-checked not-queued review.
+- Replace project enablement, JSONL projections and per-task consumption checkpoints
+  with central routing and agent-maintained Markdown. Preserve legacy records for
+  reviewed migration; do not silently migrate personal projects.
+
+### Fixed
+- Preserve an agent's start/completion receipt when the queue process returns late;
+  do not automatically resend feedback whose acceptance is uncertain.
+- Keep curator cleanup pending when consumption changes during inbox projection.
+- Locate the installed native Codex command in standard binary directories when
+  the recommendation service runs with a minimal process environment.
+
 ## [0.56.1] - 2026-11-15
 
 ### Changed

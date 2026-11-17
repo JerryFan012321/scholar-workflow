@@ -2,7 +2,7 @@
 
 未来新实验按[实验管理契约](../../references/experiment-management.md)组织。下文 Run/Attempt 说明仅适用已有档案，不用其规则强制划分新实验，也不迁移旧档案。
 
-显式需要项目推荐时，可在初始化后启用[项目推荐组件](../../references/recommendation-context.md)。组件保留人的 AGENTS 规则，添加一个入口链接；多个任务的背景与反馈留在项目内，普通初始化不自动创建推荐任务。
+显式需要项目推荐时，遵循[项目推荐上下文](../../references/recommendation-context.md)。每任务只保留 `context.md` 与 `recommended.md`，通过提交信息或显式绑定关联原有本地 Codex 聊天。普通初始化不创建推荐任务、不启用额外推荐组件、不改写 AGENTS。
 
 用标准的研究型目录骨架和宿主中立的项目规则，初始化一个由 Git 管理的项目。
 

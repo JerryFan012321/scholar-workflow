@@ -6,7 +6,7 @@ import json
 import os
 import secrets
 import stat
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 
 from scholar_workflow.research.models import ResearchError
@@ -70,13 +70,16 @@ def read_file(fd, name):
         os.close(handle)
 
 
-def replace_file(root, relative, content, *, expected=None, create_only=False):
+def replace_file(root, relative, content, *, expected=None, create_only=False, lock=True):
     """Use one directory lock and a compare-before-replace; preserve existing human files."""
     parts = _parts(relative)
     if len(content) > MAX_FILE:
         raise ResearchError("Context file exceeds its size limit.", 7)
     parent = str(Path(*parts[:-1])) if len(parts) > 1 else ""
-    with directory(root, parent, create=True) as fd, storage_lock(fd, name=".context.lock"):
+    # Task initialization holds the central writer lock, leaving no project lock file.
+    with directory(root, parent, create=True) as fd, (
+        storage_lock(fd, name=".context.lock") if lock else nullcontext()
+    ):
         old = read_file(fd, parts[-1])
         if create_only and old is not None:
             return old
@@ -108,10 +111,6 @@ def replace_file(root, relative, content, *, expected=None, create_only=False):
 
 def digest(content):
     return "absent" if content is None else hashlib.sha256(content).hexdigest()
-
-
-def json_bytes(value):
-    return (json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode()
 
 
 def read_context(root, relative):

@@ -87,12 +87,11 @@ or a claim that full migration and archive reception are complete.
 ## Project material context
 
 When project recommendations are requested, follow
-[project recommendation context](../../references/recommendation-context.md) after
-the ordinary schema-2 project identity exists. Enable the optional component with
-`scholar-research recommendations --profile personal projects enable --project-root TARGET`;
-it adds the AGENTS discovery link while preserving human rules. Register each
-selected recurring task separately. Ordinary initialization creates no task, copies
-no central preferences, and grants no agent special privileges.
+[project recommendation context](../../references/recommendation-context.md).
+Each selected task owns only `context.md` and `recommended.md`; its submission
+metadata or explicit `tasks bind` links it centrally to the original local Codex chat.
+There is no recommendation component enablement or AGENTS rewrite. Ordinary project
+initialization creates no recommendation task and copies no central preferences.
 
 Initialization creates layout, not research facts. When project materials are explicitly selected,
 the project may own a separate `project-context.json` inventory of code, papers, knowledge notes,

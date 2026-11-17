@@ -7,8 +7,9 @@ results; it does not run a model, choose weights, or start a maintenance worker.
 
 ## Owned information
 
-For incremental curator maintenance, project-owned task contexts and human-feedback
-files, follow [recommendation context](recommendation-context.md). Start with maintained
+For incremental curator maintenance, two-file project task contexts and centrally
+recorded feedback delivered to original chats, follow
+[recommendation context](recommendation-context.md). Start with maintained
 preferences and a bounded curator batch. Reading every candidate or project context
 is not the default maintenance step. Use the full snapshot below only for a task
 that needs the candidate pool, such as explicit reordering.

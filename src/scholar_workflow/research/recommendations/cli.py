@@ -60,7 +60,7 @@ def _json(payload: dict) -> None:
 
 def _store(context):
     from scholar_workflow.research.recommendations.store import RecommendationStore
-    return RecommendationStore(context["state_dir"])
+    return RecommendationStore(context["state_dir"], profile=context["profile"])
 
 
 @click.group()

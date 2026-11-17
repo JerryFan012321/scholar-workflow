@@ -12,7 +12,9 @@ intake-agent (pull, targeted) — this agent is the "what's new today" stream.
 
 For a project-owned recurring task, follow the conditional project-context entry in
 `recommend-papers`; keep its mutable background in the project. Human feedback is
-recorded and delivered by code even when no agent is running.
+recorded centrally by code and queued to the task's original local Codex chat.
+The project task owns only `context.md` and `recommended.md`. A feedback message
+updates context and returns a receipt; recommendations remain scheduled by the host.
 
 ## Input
 - A request for today's/this-week's papers, or "what should I read"

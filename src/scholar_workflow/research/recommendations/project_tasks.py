@@ -1,19 +1,19 @@
-"""Explicit project-owned recommendation tasks, independent of agent sessions."""
+"""Central task routing with only context.md and recommended.md in each project."""
 from __future__ import annotations
 
 import hashlib
 import json
 import re
+import uuid
 from pathlib import Path
 
-from scholar_workflow.project.layout import ProjectLayoutError, validate_project_identity
 from scholar_workflow.research.models import ResearchError
 from scholar_workflow.research.recommendations import context_files as disk
+from scholar_workflow.research.store import root_directory, root_path
 
 BASE = ".agents/context/recommendations"
 ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
 DDL = """
-CREATE TABLE IF NOT EXISTS recommendation_projects(project_id TEXT PRIMARY KEY, record TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS recommendation_tasks(producer_id TEXT PRIMARY KEY, project_id TEXT NOT NULL, record TEXT NOT NULL);
 """
 
@@ -28,111 +28,80 @@ def pool_id(store):
     return "pool-" + hashlib.sha256(str(store.state_dir).encode()).hexdigest()[:32]
 
 
-def project_identity(root):
-    try:
-        raw = disk.read_context(root, "project-layout.json")
-        return validate_project_identity(json.loads(raw or b"null"))
-    except (ValueError, TypeError, UnicodeError, ProjectLayoutError):
-        raise ResearchError("The selected project needs its existing schema-2 project_id; initialize it first.") from None
-
-
 class ProjectTasks:
     def __init__(self, store, profile="personal"):
         if profile not in {"personal", "test"}:
             raise ResearchError("Unknown recommendation profile.")
         self.store, self.profile = store, profile
 
-    def enable(self, project_root):
-        from scholar_workflow.research.store import root_path
-        from scholar_workflow.research.recommendations.store import _json
-
-        root = root_path(project_root)
-        project_id = project_identity(root)
-        with self.store._database() as db:
-            existing = db.execute("SELECT record FROM recommendation_projects WHERE project_id=?", (project_id,)).fetchone()
-            if existing and json.loads(existing[0])["root"] != str(root):
-                raise ResearchError("This project ID is already registered at another root; resolve it explicitly.", 5)
-        if disk.read_context(root, "AGENTS.md") is None:
-            if any(disk.read_context(root, name) is not None for name in ("AGENT.md", "CLAUDE.md")):
-                raise ResearchError("Resolve the existing instruction topology before adding a new canonical AGENTS entry.", 5)
-        component = {"schema_version": 1, "project_id": project_id,
-                     "pool_id": pool_id(self.store), "profile": self.profile}
-        actual = disk.replace_file(root, f"{BASE}/component.json", disk.json_bytes(component), create_only=True)
-        if actual != disk.json_bytes(component):
-            raise ResearchError("This project context belongs to another pool/profile; use a separate test project.", 5)
-        entry = ("# Project recommendation tasks\n\n"
-                 "Use the installed recommend-papers Skill for task registration, feedback and submission.\n"
-                 "Each directory under tasks/ is one recurring task, not an agent identity.\n"
-                 "Read only the selected task's CONTEXT.md and feedback.jsonl. Keep project background here.\n"
-                 "List registered tasks with `scholar-research recommendations --profile " + self.profile
-                 + " tasks list --project-id " + project_id + "`.\n"
-                 "Feedback is delivered by code. After incorporating it, save task context with its exact revision.\n")
-        disk.replace_file(root, f"{BASE}/CONTEXT.md", entry.encode(), create_only=True)
-        link = f"[Project recommendation tasks]({BASE}/CONTEXT.md)"
-        original = disk.read_context(root, "AGENTS.md")
-        if original is None or link.encode() not in original:
-            revised = (original or b"").rstrip() + (
-                "\n\n## Recommendation tasks\n\nFor project recommendations and feedback, read " + link + ".\n"
-            ).encode()
-            disk.replace_file(root, "AGENTS.md", revised, expected=disk.digest(original))
+    def bind(self, project_root, producer_id, title, thread_id, *, host="local", expected_revision=0):
+        """Explicit binding can update a route using the saved central revision."""
         with self.store._database(write=True) as db:
-            prior = db.execute("SELECT record FROM recommendation_projects WHERE project_id=?", (project_id,)).fetchone()
-            revision = json.loads(prior[0])["revision"] if prior else 0
-            if prior and json.loads(prior[0])["root"] != str(root):
-                raise ResearchError("This project ID is already registered at another root; resolve it explicitly.", 5)
-            record = {**component, "root": str(root), "revision": revision or 1,
-                      "entry": f"{BASE}/CONTEXT.md", "name": root.name}
-            db.execute("INSERT INTO recommendation_projects VALUES(?,?) ON CONFLICT(project_id) DO UPDATE SET record=excluded.record",
-                       (project_id, _json(record)))
-        return record
+            return self.bind_in_transaction(db, project_root, producer_id, title, thread_id,
+                                            host=host, expected_revision=expected_revision)
 
-    def project(self, project_id):
-        with self.store._database() as db:
-            row = db.execute("SELECT record FROM recommendation_projects WHERE project_id=?", (project_id,)).fetchone()
-        if row is None:
-            raise ResearchError("Project recommendation context is not registered.")
-        record = json.loads(row[0])
-        if record["profile"] != self.profile or record["pool_id"] != pool_id(self.store):
-            raise ResearchError("Project context belongs to another pool/profile.", 5)
-        return record
-
-    def register(self, project_id, producer_id, title, *, expected_revision=0):
+    def bind_in_transaction(self, db, project_root, producer_id, title, thread_id, *,
+                            host="local", expected_revision=None):
         from scholar_workflow.research.recommendations.store import _json, _nonsecret_management, _safe_text
-        from scholar_workflow.research.recommendations.feedback import record_baseline
 
         producer_id = identifier(producer_id)
+        if expected_revision is not None and (type(expected_revision) is not int or expected_revision < 0):
+            raise ResearchError("Task binding requires a non-negative integer revision.")
         if not isinstance(title, str) or not title.strip() or len(title) > 300:
             raise ResearchError("Task title must contain 1-300 characters.")
         _safe_text(title)
         _nonsecret_management(title)
-        project = self.project(project_id)
-        if project_identity(project["root"]) != project_id:
-            raise ResearchError("The registered project identity changed.", 5)
-        relative = f"{BASE}/tasks/{producer_id}"
-        with self.store._database(write=True) as db:
-            old = db.execute("SELECT record FROM recommendation_tasks WHERE producer_id=?", (producer_id,)).fetchone()
-            prior = json.loads(old[0]) if old else None
-            if type(expected_revision) is not int or expected_revision != (prior["revision"] if prior else 0):
-                raise ResearchError("Task registration changed; use its current revision.", 5)
-            if prior and prior["project_id"] != project_id:
-                raise ResearchError("A producer ID already belongs to another project.", 5)
-            record = {"schema_version": 1, "project_id": project_id, "producer_id": producer_id,
-                      "title": title, "project_title": project["name"], "revision": expected_revision + 1,
-                      "context_file": f"{relative}/CONTEXT.md", "feedback_file": f"{relative}/feedback.jsonl",
-                      "checkpoint_file": f"{relative}/state.json", "profile": self.profile,
-                      "pool_id": pool_id(self.store)}
-            disk.replace_file(project["root"], record["context_file"], (
-                f"# {title}\n\nDescribe this task's project-specific purpose and requirements here.\n"
-                "Read feedback.jsonl before continuing. Record scientific judgments here; keep human feedback unchanged.\n"
-            ).encode(), create_only=True)
-            disk.replace_file(project["root"], record["checkpoint_file"], disk.json_bytes({
-                "schema_version": 1, "revision": 0, "consumed_event_ids": [],
-                "project_id": project_id, "producer_id": producer_id, "pool_id": pool_id(self.store),
-            }), create_only=True)
-            db.execute("INSERT INTO recommendation_tasks VALUES(?,?,?) ON CONFLICT(producer_id) DO UPDATE SET record=excluded.record",
-                       (producer_id, project_id, _json(record)))
-            if not prior:
-                record_baseline(self.store, db, producer_id)
+        if not isinstance(project_root, (str, Path)) or not Path(project_root).is_absolute():
+            raise ResearchError("Feedback project_root must be an absolute local directory.")
+        root = root_path(project_root)
+        if host != "local":
+            raise ResearchError("Feedback routing currently supports only the local Codex host.")
+        try:
+            if not isinstance(thread_id, str) or str(uuid.UUID(thread_id)) != thread_id:
+                raise ValueError()
+        except (ValueError, AttributeError):
+            raise ResearchError("Feedback routing requires a canonical Codex thread UUID.") from None
+        with root_directory(root):
+            pass
+        old_row = db.execute("SELECT record FROM recommendation_tasks WHERE producer_id=?", (producer_id,)).fetchone()
+        old = json.loads(old_row[0]) if old_row else None
+        if old and old.get("schema_version") != 2:
+            raise ResearchError("This legacy task needs an explicit reviewed migration; old project files were preserved.", 5)
+        route = {"project_root": str(root), "thread_id": thread_id, "host": host}
+        if old and old["project_root"] != str(root):
+            raise ResearchError("A producer ID is already bound to another project; use a distinct task identity.", 5)
+        if old and (old["pool_id"] != pool_id(self.store) or old["profile"] != self.profile):
+            raise ResearchError("Task belongs to another pool/profile.", 5)
+        same = old is not None and all(old.get(k) == v for k, v in route.items()) and old["title"] == title
+        if expected_revision is None:
+            if old and not same:
+                raise ResearchError("Task route changed; explicitly bind it using its current revision.", 5)
+        elif type(expected_revision) is not int or expected_revision != (old["revision"] if old else 0):
+            if not (same and expected_revision == 0):
+                raise ResearchError("Task binding changed; use its current revision.", 5)
+        folder = f"{BASE}/{producer_id}"
+        context_file, recommended_file = f"{folder}/context.md", f"{folder}/recommended.md"
+        # The caller holds the central writer lock. Do not place lock/checkpoint
+        # files beside the two human-maintained Markdown documents.
+        disk.replace_file(root, context_file,
+                          (f"# {title}\n\nMaintain this task's purpose, requirements and learned preferences here.\n").encode(),
+                          create_only=True, lock=False)
+        disk.replace_file(root, recommended_file,
+                          (f"# {title}: recommended resources\n\nRecord each actual recommendation with its date, title and original link.\n").encode(),
+                          create_only=True, lock=False)
+        if same:
+            return old
+        project_id = "local-" + hashlib.sha256(str(root).encode()).hexdigest()[:32]
+        record = {"schema_version": 2, "producer_id": producer_id, "title": title,
+                  "project_id": project_id, "project_title": root.name, **route,
+                  "context_file": context_file, "recommended_file": recommended_file,
+                  "profile": self.profile, "pool_id": pool_id(self.store),
+                  "revision": old["revision"] + 1 if old else 1}
+        db.execute("INSERT INTO recommendation_tasks VALUES(?,?,?) ON CONFLICT(producer_id) DO UPDATE SET record=excluded.record",
+                   (producer_id, project_id, _json(record)))
+        if old is None:
+            from scholar_workflow.research.recommendations.feedback import record_baseline
+            record_baseline(self.store, db, producer_id)
         return record
 
     def list(self, project_id=None):
@@ -143,58 +112,22 @@ class ProjectTasks:
 
     def guide(self, producer_id, *, include_context=False):
         identifier(producer_id)
-        tasks = self.list()["tasks"]
-        task = next((row for row in tasks if row["producer_id"] == producer_id), None)
+        task = next((row for row in self.list()["tasks"] if row["producer_id"] == producer_id), None)
         if task is None:
-            raise ResearchError("Recommendation task is not registered.")
-        project = self.project(task["project_id"])
-        if project_identity(project["root"]) != task["project_id"]:
-            raise ResearchError("The registered project identity changed.", 5)
-        result = {"task": task, "project_root": project["root"], "project_entry": project["entry"]}
+            raise ResearchError("Recommendation task is not bound.")
+        if task.get("schema_version") != 2:
+            raise ResearchError("Legacy task routing is inactive; preserve and review its old files before migration.", 5)
+        if task["profile"] != self.profile or task["pool_id"] != pool_id(self.store):
+            raise ResearchError("Task belongs to another pool/profile.", 5)
+        result = {"task": task, "project_root": task["project_root"]}
         if include_context:
-            context = disk.read_context(project["root"], task["context_file"])
-            try:
-                checkpoint = json.loads(disk.read_context(project["root"], task["checkpoint_file"]) or b"null")
-                if (not isinstance(checkpoint, dict) or checkpoint.get("project_id") != task["project_id"]
-                        or checkpoint.get("producer_id") != producer_id or checkpoint.get("pool_id") != pool_id(self.store)
-                        or checkpoint.get("schema_version") != 1
-                        or type(checkpoint.get("revision")) is not int or checkpoint["revision"] < 0
-                        or not isinstance(checkpoint.get("consumed_event_ids"), list)
-                        or any(not isinstance(i, str) for i in checkpoint["consumed_event_ids"])):
-                    raise ValueError()
-            except (ValueError, TypeError, UnicodeError):
-                raise ResearchError("Task checkpoint is invalid or belongs to another project/task/pool.", 5) from None
-            result.update(context=(context or b"").decode(), context_revision=disk.digest(context), checkpoint=checkpoint)
+            for key, filename in (("context", "context_file"), ("recommended", "recommended_file")):
+                content = disk.read_context(task["project_root"], task[filename])
+                if content is None:
+                    raise ResearchError("A task Markdown file is missing; restore it explicitly before continuing.", 5)
+                try:
+                    result[key] = content.decode("utf-8")
+                except UnicodeError:
+                    raise ResearchError("Task Markdown must be UTF-8.") from None
+                result[key + "_revision"] = disk.digest(content)
         return result
-
-    def save_context(self, producer_id, content, expected_revision, consumed_event_ids):
-        from scholar_workflow.research.store import storage_lock
-        guide = self.guide(producer_id)
-        with disk.directory(guide["project_root"], str(Path(guide["task"]["context_file"]).parent)) as fd:
-            with storage_lock(fd, name=".task-update.lock"):
-                return self._save_context_locked(producer_id, content, expected_revision, consumed_event_ids)
-
-    def _save_context_locked(self, producer_id, content, expected_revision, consumed_event_ids):
-        """Commit interpretation first; advance the separate consumption checkpoint only afterward."""
-        from scholar_workflow.research.recommendations.store import _nonsecret_management
-        if not isinstance(content, str) or len(content.encode()) > 128 * 1024:
-            raise ResearchError("Task context must be UTF-8 text within 128 KiB.")
-        _nonsecret_management(content)
-        current = self.guide(producer_id, include_context=True)
-        if expected_revision != current["context_revision"]:
-            raise ResearchError("Task context changed; reread it before saving.", 5)
-        if not isinstance(consumed_event_ids, list) or len(consumed_event_ids) > 1000 or any(not isinstance(i, str) for i in consumed_event_ids):
-            raise ResearchError("Consumed feedback must be an explicit bounded event-ID list.")
-        with self.store._database() as db:
-            known = {row[0] for row in db.execute("SELECT event_id FROM feedback_deliveries WHERE recipient=?", ("task:" + producer_id,))}
-        if not set(consumed_event_ids) <= known:
-            raise ResearchError("Cannot consume another task's feedback.", 7)
-        task, root = current["task"], current["project_root"]
-        disk.replace_file(root, task["context_file"], content.encode(), expected=expected_revision)
-        before = disk.read_context(root, task["checkpoint_file"])
-        checkpoint = json.loads(before)
-        checkpoint["revision"] += 1
-        checkpoint["context_revision"] = disk.digest(content.encode())
-        checkpoint["consumed_event_ids"] = sorted(set(checkpoint["consumed_event_ids"]) | set(consumed_event_ids))
-        disk.replace_file(root, task["checkpoint_file"], disk.json_bytes(checkpoint), expected=disk.digest(before))
-        return {"producer_id": producer_id, "context_revision": checkpoint["context_revision"], "checkpoint": checkpoint}

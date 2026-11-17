@@ -1,9 +1,13 @@
 # recommend-papers
 
-Project-owned recurring tasks use the optional context component documented in
-[project recommendation context](../../references/recommendation-context.md). Each task
-has a stable producer ID and local context; human feedback is automatically written
-without an agent. Start curator maintenance with `curator batch`, not all project files.
+Project-owned recurring tasks follow
+[project recommendation context](../../references/recommendation-context.md). Each
+stable producer owns only `context.md` and `recommended.md` directly under its
+project recommendation directory. Producer metadata binds the original local Codex
+chat. Code saves human feedback centrally and sends a context-update message to
+that chat with `codex queue`; recommendations still follow the host's schedule.
+The recipient saves context before returning a central completion receipt.
+Start curator maintenance with `curator batch`, not all project files.
 
 Configure the receiving Zotero collection once through settings or `intake target`.
 Reviewed selections then receive metadata, links and exact human opinions through

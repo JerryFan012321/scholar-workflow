@@ -2,10 +2,11 @@
 
 For future experiment organization use [experiment management](../../references/experiment-management.md). Old Run/Attempt instructions below apply to existing archives; they do not prescribe new experiment identities or migrate records.
 
-For explicitly requested project recommendations, enable the optional component
-after initialization through [project recommendation context](../../references/recommendation-context.md).
-It preserves human AGENTS rules, adds one discovery link and keeps recurring-task
-background in the project; ordinary initialization registers no task.
+For explicitly requested project recommendations, follow
+[project recommendation context](../../references/recommendation-context.md).
+Each task keeps only `context.md` and `recommended.md`; submission metadata or an
+explicit binding links it to its original local Codex chat. Ordinary initialization
+creates no task, enables no recommendation component and does not rewrite AGENTS.
 
 Initialize a Git-managed project with the standard research-oriented directory skeleton and
 host-neutral project instructions.

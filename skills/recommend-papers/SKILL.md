@@ -48,13 +48,15 @@ sourced-summary branch and label the result explicitly; never fabricate an abstr
 
 ## Task requirements
 
-For a project-owned recurring task, its registration or its feedback/context update,
+For a project-owned recurring task, its binding or its feedback/context update,
 follow [project recommendation context](../../references/recommendation-context.md).
-Before continuing a registered task, resolve it through `tasks list/guide` and read
-its unconsumed feedback plus the shared maintained preferences, as specified there.
-Task background stays in the project. Any authorized project agent can continue it.
-Human feedback is delivered by code; agent interpretation is a later explicit update,
-not a prerequisite to recording a person's action.
+The task reads its own `context.md` and `recommended.md` before recommending and
+appends actual recommendations to the latter. Include the original local Codex
+destination in the producer metadata for feedback routing. Code records human
+feedback centrally and sends it to that chat through `codex queue`. A feedback-only
+turn updates task context and returns a central completion receipt; the next
+recommendation still waits for the host's schedule. Shared preferences remain an
+explicit central input, not a copy of all project background.
 
 When the task uses or maintains saved recommendation requirements, follow
 [recommendation requirements](../../references/recommendation-requirements.md).
@@ -129,8 +131,8 @@ NotebookLM package, account, login or fallback is used.
 
 ## References
 
-- [Project task context](../../references/recommendation-context.md) — project tasks,
-  feedback delivery/consumption and curator preferences; expand only the selected role.
+- [Project task context](../../references/recommendation-context.md) — two task files,
+  feedback-to-chat delivery, completion receipts and independent curator preferences.
 - [Zotero intake](../../references/zotero-intake.md) — receiving target and human-selected
   metadata/opinion handoff, without original files.
 - [Recommendation intake](../../references/recommendation-intake.md) — required for
